@@ -274,7 +274,7 @@
   "leads": {
     "title": "Leads",
     "subtitle": "Gestion des prospects",
-    "newLead": "Nouveau lead",
+    "newLead": "Nouveau prospect",
     "editLead": "Modifier lead",
     "confirmConvert": "Convertir ce lead en client ?",
     "allStatuses": "Tous statuts",
