@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, DropdownMenu, DropdownMenuTrigger, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItemStyled } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ClientFormDialog } from '@/components/clients/ClientFormDialog';
 import { StatutBadge } from './Dashboard';
 import type { Affaire, Client, Product, AffaireType, StatutAffaire, User } from '@/types';
 
@@ -55,6 +56,7 @@ export function Affaires() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [form, setForm] = useState<FormData>(EMPTY);
   const [clientSearch, setClientSearch] = useState('');
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [draggedAffaireId, setDraggedAffaireId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<StatutAffaire | null>(null);
@@ -926,20 +928,44 @@ export function Affaires() {
                 onChange={(e) => setClientSearch(e.target.value)}
                 className="mb-2"
               />
-              <Select value={form.clientId} onValueChange={(v) => setForm({ ...form, clientId: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
-                <SelectContent>
-                  {filteredClients.length > 0 ? (
-                    filteredClients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} {c.contactName ? `(${c.contactName})` : ''}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-sm text-muted-foreground">Aucun client trouvé</div>
-                  )}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Select value={form.clientId} onValueChange={(v) => setForm({ ...form, clientId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
+                    <SelectContent>
+                      {filteredClients.length > 0 ? (
+                        filteredClients.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} {c.contactName ? `(${c.contactName})` : ''}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground">Aucun client trouvé</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  title="Créer un nouveau client"
+                  onClick={() => setClientDialogOpen(true)}
+                >
+                  <Plus size={16} />
+                </Button>
+              </div>
+              {filteredClients.length === 0 && clientSearch.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setClientDialogOpen(true)}
+                  className="mt-1 text-xs text-leaf hover:underline inline-flex items-center gap-1"
+                >
+                  <Plus size={12} />
+                  Créer le client « {clientSearch.trim()} »
+                </button>
+              )}
               {form.clientId && affaires.filter(a => a.clientId === form.clientId && a.id !== form.id).length > 0 && (
                 <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
                   <p className="text-xs font-semibold text-blue-700">
@@ -1128,6 +1154,17 @@ export function Affaires() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Inline client creation - keeps the user inside the opportunity dialog */}
+      <ClientFormDialog
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        initialName={clientSearch}
+        onSuccess={(created) => {
+          setForm((prev) => ({ ...prev, clientId: created.id }));
+          setClientSearch(created.name);
+        }}
+      />
 
       {/* Import Dialog */}
       <Dialog open={importOpen} onOpenChange={setImportOpen}>

@@ -3,22 +3,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Mail, Phone, FileBadge, Search, TrendingUp, MoreVertical, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
-import { fmtDT } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItem } from '@/components/ui/form-controls';
+import { Input, Label, DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItem } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ClientFormDialog } from '@/components/clients/ClientFormDialog';
 import type { Client } from '@/types';
 import * as XLSX from 'xlsx';
 
-const EMPTY = { id: '', name: '', contactName: '', email: '', phone: '', address: '', matricule: '', qualificatif: 'NON_SPECIFIE', notes: '' };
+type ImportClient = {
+  name: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  address: string;
+  matricule: string;
+  qualificatif: string;
+  notes: string;
+};
 
 export function Clients() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [search, setSearch] = useState('');
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -50,38 +59,14 @@ export function Clients() {
   const avgAffairesPerClient =
     clients.length > 0 ? (totalAffairesOnPage / clients.length).toFixed(1) : '0';
 
-  const saveMutation = useMutation({
-    mutationFn: (data: typeof EMPTY) => {
-      const payload = { ...data };
-      delete (payload as any).id;
-      return data.id ? api.put(`/clients/${data.id}`, payload) : api.post('/clients', payload);
-    },
-    onSuccess: async (_data, variables) => {
-      // Nouveau client : page 1 + recherche vide ; invalidation « all » pour recharger même la page inactive (sinon ancienne page gardée en cache).
-      if (!variables.id) {
-        setPage(1);
-        setSearch('');
-      }
-      await qc.invalidateQueries({ queryKey: ['clients'], refetchType: 'all' });
-      setOpen(false);
-    },
-    onError: (error: any, variables) => {
-      const status = error.response?.status;
-      const msg = error.response?.data?.error || error.message || 'Erreur inconnue';
-      if (status === 409 && variables && !variables.id) {
-        const name = variables.name?.trim();
-        setPage(1);
-        if (name) setSearch(name);
-        void qc.invalidateQueries({ queryKey: ['clients'], refetchType: 'all' });
-        setOpen(false);
-        alert(
-          `${msg}\n\nLa liste a été rafraîchie : recherche remplie avec ce nom (page 1) pour retrouver la fiche.`
-        );
-        return;
-      }
-      alert(msg);
-    },
-  });
+  const handleClientSaved = () => {
+    if (!editingClient) {
+      setPage(1);
+      setSearch('');
+    }
+    void qc.invalidateQueries({ queryKey: ['clients'], refetchType: 'all' });
+    setEditingClient(null);
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/clients/${id}`),
@@ -89,7 +74,7 @@ export function Clients() {
   });
 
   const importMutation = useMutation({
-    mutationFn: (clients: Omit<typeof EMPTY, 'id'>[]) => api.post('/clients/import', { clients }),
+    mutationFn: (clients: ImportClient[]) => api.post('/clients/import', { clients }),
     onSuccess: async () => {
       setPage(1);
       setSearch('');
@@ -136,11 +121,12 @@ export function Clients() {
   };
 
   const openEdit = (c: Client) => {
-    setForm({
-      id: c.id, name: c.name, contactName: c.contactName || '',
-      email: c.email || '', phone: c.phone || '', address: c.address || '',
-      matricule: c.matricule || '', qualificatif: c.qualificatif || '', notes: c.notes || '',
-    });
+    setEditingClient(c);
+    setOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingClient(null);
     setOpen(true);
   };
 
@@ -155,7 +141,7 @@ export function Clients() {
           <Button onClick={() => setImportOpen(true)} variant="outline" className="w-full sm:w-auto">
             <Upload size={16} />{t('common.import')} Excel
           </Button>
-          <Button onClick={() => { setForm(EMPTY); setOpen(true); }} className="w-full sm:w-auto">
+          <Button onClick={openCreate} className="w-full sm:w-auto">
             <Plus size={16} />{t('clients.addClient')}
           </Button>
         </div>
@@ -403,58 +389,15 @@ export function Clients() {
         )}
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{form.id ? 'Modifier' : 'Nouveau'} client</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-1.5">
-              <Label>Raison sociale *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Contact</Label>
-              <Input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Matricule fiscal</Label>
-              <Input value={form.matricule} onChange={(e) => setForm({ ...form, matricule: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Qualificatif</Label>
-              <Select value={form.qualificatif} onValueChange={(v) => setForm({ ...form, qualificatif: v })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NON_SPECIFIE">Non spécifié</SelectItem>
-                  <SelectItem value="PROSPECT">🔍 Prospect</SelectItem>
-                  <SelectItem value="CLIENT">🤝 Client</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Téléphone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label>Adresse</Label>
-              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label>Notes</Label>
-              <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.name}>💾 Enregistrer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ClientFormDialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditingClient(null);
+        }}
+        client={editingClient}
+        onSuccess={handleClientSaved}
+      />
 
       {/* Import Dialog */}
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
