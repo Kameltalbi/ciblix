@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Mail, Phone, FileBadge, Search, TrendingUp, MoreVertical, Upload } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,6 +25,7 @@ type ImportClient = {
 
 export function Clients() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -227,7 +229,11 @@ export function Clients() {
         <CardContent className="p-0">
           <div className="md:hidden space-y-3 p-3">
             {filteredClients.map((c) => (
-              <Card key={c.id} className="border">
+              <Card
+                key={c.id}
+                className="border cursor-pointer hover:bg-sage/40 transition-colors"
+                onClick={() => navigate(`/clients/${c.id}`)}
+              >
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -253,7 +259,7 @@ export function Clients() {
                     <div className="text-muted-foreground">Matricule: {c.matricule || '—'}</div>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTriggerButton asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" title="Actions">
@@ -298,7 +304,11 @@ export function Clients() {
               </thead>
               <tbody>
                 {filteredClients.map((c) => (
-                  <tr key={c.id} className="border-b hover:bg-sage/50">
+                  <tr
+                    key={c.id}
+                    className="border-b hover:bg-sage/50 cursor-pointer"
+                    onClick={() => navigate(`/clients/${c.id}`)}
+                  >
                     <td className="p-3 font-medium">{c.name}</td>
                     <td className="p-3 text-muted-foreground">{c.contactName || '—'}</td>
                     <td className="p-3 text-muted-foreground">{c.email || '—'}</td>
@@ -312,7 +322,7 @@ export function Clients() {
                         {c._count?.affaires || 0}
                       </span>
                     </td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTriggerButton asChild>
                           <Button

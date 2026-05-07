@@ -21,6 +21,9 @@ const AffaireDetail = lazy(() =>
   import('./pages/AffaireDetail').then((m) => ({ default: m.AffaireDetail }))
 );
 const Clients = lazy(() => import('./pages/Clients').then((m) => ({ default: m.Clients })));
+const ClientDetail = lazy(() =>
+  import('./pages/ClientDetail').then((m) => ({ default: m.ClientDetail }))
+);
 const Leads = lazy(() => import('./pages/Leads').then((m) => ({ default: m.Leads })));
 const Calendar = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.Calendar })));
 const Expenses = lazy(() => import('./pages/Expenses').then((m) => ({ default: m.Expenses })));
@@ -114,6 +117,7 @@ export default function App() {
                         <Route path="/affaires" element={<Affaires />} />
                         <Route path="/affaires/:id" element={<AffaireDetail />} />
                         <Route path="/clients" element={<Clients />} />
+                        <Route path="/clients/:id" element={<ClientDetail />} />
                         <Route path="/leads" element={<Leads />} />
                         <Route path="/calendar" element={<Calendar />} />
                         <Route path="/expenses" element={<Expenses />} />

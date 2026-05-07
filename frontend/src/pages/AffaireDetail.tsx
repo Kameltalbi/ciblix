@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Plus, Phone, Mail, Calendar, FileText, Trash2, Pencil, DollarSign, Target, TrendingUp, Building2, Package, Clock, MoreVertical, Edit, Send } from 'lucide-react';
@@ -52,6 +52,7 @@ export function AffaireDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const [activityOpen, setActivityOpen] = useState(false);
   const [activityForm, setActivityForm] = useState<ActivityFormData>(EMPTY_ACTIVITY);
@@ -59,6 +60,14 @@ export function AffaireDetail() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState({ subject: '', body: '' });
+
+  useEffect(() => {
+    if (searchParams.get('addActivity') !== '1') return;
+    setActivityOpen(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('addActivity');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const { data: affaire, isLoading } = useQuery<Affaire>({
     queryKey: ['affaire', id],

@@ -58,7 +58,13 @@ clientsRoutes.get('/:id', async (req: AuthRequest, res, next) => {
       },
       include: {
         affaires: {
-          include: { _count: { select: { activites: true } } },
+          include: {
+            _count: { select: { activites: true } },
+            activites: {
+              orderBy: { createdAt: 'desc' },
+            },
+            product: true,
+          },
           orderBy: [{ anneePrevue: 'desc' }, { moisPrevu: 'desc' }],
         },
       },
