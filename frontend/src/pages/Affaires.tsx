@@ -166,6 +166,7 @@ export function Affaires() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['affaires'] });
       qc.invalidateQueries({ queryKey: ['kpis'] });
+      qc.invalidateQueries({ queryKey: ['calendar'] });
       setOpen(false);
     },
     onError: (error: any) => {

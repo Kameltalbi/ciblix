@@ -9,6 +9,10 @@ import path from 'path';
 import fs from 'fs';
 import { parsePagination } from '../lib/pagination.js';
 import { getUploadsDir } from '../lib/uploadsDir.js';
+import {
+  syncAffaireNextActionCalendar,
+  removeAffaireNextActionCalendarEvents,
+} from '../lib/syncAffaireNextActionCalendar.js';
 
 export const affairesRoutes = Router();
 affairesRoutes.use(auth);
@@ -78,6 +82,13 @@ function calculateLeadScore(affaire: any, clientHistory?: number): number {
   return Math.round(Math.min(100, score));
 }
 
+const optionalNullableDate = z.preprocess((v) => {
+  if (v === '' || v === undefined) return undefined;
+  if (v === null) return null;
+  const d = new Date(v as string);
+  return Number.isNaN(d.getTime()) ? null : d;
+}, z.date().nullable().optional());
+
 const affaireSchema = z.object({
   clientId: z.string().min(1),
   productId: z.string().optional().transform(v => v === '' ? undefined : v),
@@ -93,6 +104,8 @@ const affaireSchema = z.object({
   tauxCommission: z.number().min(0).max(100).optional(),
   assignedToId: z.string().optional().transform(v => v === '' ? undefined : v),
   notes: z.string().optional(),
+  prochaineAction: z.preprocess((v) => (v === '' ? null : v), z.string().max(800).nullable().optional()),
+  dateProchaineAction: optionalNullableDate,
 });
 
 // ─── LIST avec filtres ──────────────────────────────────────────
@@ -196,6 +209,15 @@ affairesRoutes.post('/', async (req: AuthRequest, res, next) => {
         content: `Nouvelle affaire : ${affaire.title}`,
       },
     });
+    await syncAffaireNextActionCalendar({
+      organizationId: req.organizationId!,
+      createdById: req.userId,
+      affaireId: affaire.id,
+      clientName: affaire.client?.name,
+      affaireTitle: affaire.title ?? '',
+      prochaineAction: affaire.prochaineAction,
+      dateProchaineAction: affaire.dateProchaineAction,
+    });
     res.status(201).json(affaire);
   } catch (e) { next(e); }
 });
@@ -255,6 +277,15 @@ affairesRoutes.put('/:id', async (req: AuthRequest, res, next) => {
         });
       }
     }
+    await syncAffaireNextActionCalendar({
+      organizationId: req.organizationId!,
+      createdById: req.userId,
+      affaireId: affaire.id,
+      clientName: affaire.client?.name,
+      affaireTitle: affaire.title ?? '',
+      prochaineAction: affaire.prochaineAction,
+      dateProchaineAction: affaire.dateProchaineAction,
+    });
     res.json(affaire);
   } catch (e) { next(e); }
 });
@@ -322,6 +353,10 @@ affairesRoutes.delete('/:id', async (req: AuthRequest, res, next) => {
     });
     if (!existing) return res.status(404).json({ error: 'Affaire introuvable' });
 
+    await removeAffaireNextActionCalendarEvents({
+      organizationId: req.organizationId!,
+      affaireId: id,
+    });
     await prisma.affaire.update({
       where: { id },
       data: { deletedAt: new Date() },

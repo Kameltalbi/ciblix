@@ -40,12 +40,15 @@ type ActivityFormData = {
   type: ActiviteType;
   title: string;
   content: string;
+  /** datetime-local lorsque type = RDV — crée aussi une entrée sur le calendrier */
+  scheduledStart: string;
 };
 
 const EMPTY_ACTIVITY: ActivityFormData = {
   type: 'NOTE',
   title: '',
   content: '',
+  scheduledStart: '',
 };
 
 export function AffaireDetail() {
@@ -82,10 +85,20 @@ export function AffaireDetail() {
 
   const saveActivityMutation = useMutation({
     mutationFn: (data: ActivityFormData) => {
-      return api.post('/activites', { ...data, affaireId: id });
+      const body: Record<string, unknown> = {
+        type: data.type,
+        title: data.title,
+        content: data.content,
+        affaireId: id,
+      };
+      if (data.type === 'RDV' && data.scheduledStart.trim()) {
+        body.scheduledStart = data.scheduledStart;
+      }
+      return api.post('/activites', body);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['affaire', id] });
+      qc.invalidateQueries({ queryKey: ['calendar'] });
       setActivityOpen(false);
       setActivityForm(EMPTY_ACTIVITY);
     },
@@ -118,7 +131,10 @@ export function AffaireDetail() {
 
   const deleteActivityMutation = useMutation({
     mutationFn: (activityId: string) => api.delete(`/activites/${activityId}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['affaire', id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['affaire', id] });
+      qc.invalidateQueries({ queryKey: ['calendar'] });
+    },
   });
 
   const handleCallClient = () => {
@@ -438,7 +454,13 @@ export function AffaireDetail() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Type *</Label>
-                <Select value={activityForm.type} onValueChange={(v) => setActivityForm({ ...activityForm, type: v as ActiviteType })}>
+                <Select value={activityForm.type} onValueChange={(v) =>
+                  setActivityForm({
+                    ...activityForm,
+                    type: v as ActiviteType,
+                    ...(v !== 'RDV' ? { scheduledStart: '' } : {}),
+                  })}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NOTE">📝 Note</SelectItem>
@@ -467,6 +489,19 @@ export function AffaireDetail() {
                   rows={3}
                 />
               </div>
+              {activityForm.type === 'RDV' && (
+                <div className="space-y-1.5">
+                  <Label>Date et heure du rendez-vous</Label>
+                  <Input
+                    type="datetime-local"
+                    value={activityForm.scheduledStart}
+                    onChange={(e) => setActivityForm({ ...activityForm, scheduledStart: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Si renseigné, une entrée est créée automatiquement sur la page Calendrier.
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => setActivityOpen(false)}>{t('common.cancel')}</Button>
