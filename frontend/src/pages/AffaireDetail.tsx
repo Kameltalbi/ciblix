@@ -472,6 +472,60 @@ export function AffaireDetail() {
                   </SelectContent>
                 </Select>
               </div>
+              {activityForm.type === 'RDV' && (
+                <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                  <Label>Date et heure du rendez-vous</Label>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-wide">Date</span>
+                      <Input
+                        type="date"
+                        value={activityForm.scheduledStart ? activityForm.scheduledStart.slice(0, 10) : ''}
+                        onChange={(e) => {
+                          const d = e.target.value;
+                          const t =
+                            activityForm.scheduledStart && activityForm.scheduledStart.includes('T')
+                              ? activityForm.scheduledStart.slice(11, 16)
+                              : '09:00';
+                          setActivityForm({
+                            ...activityForm,
+                            scheduledStart: d ? `${d}T${t}` : '',
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] text-muted-foreground uppercase tracking-wide">Heure</span>
+                      <Input
+                        type="time"
+                        disabled={
+                          !activityForm.scheduledStart ||
+                          activityForm.scheduledStart.length < 10
+                        }
+                        value={
+                          activityForm.scheduledStart && activityForm.scheduledStart.includes('T')
+                            ? activityForm.scheduledStart.slice(11, 16)
+                            : '09:00'
+                        }
+                        onChange={(e) => {
+                          const tm = e.target.value || '09:00';
+                          const raw = activityForm.scheduledStart;
+                          const d = raw && raw.length >= 10 ? raw.slice(0, 10) : '';
+                          if (!d) return;
+                          setActivityForm({
+                            ...activityForm,
+                            scheduledStart: `${d}T${tm}`,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Remplir date (et éventuellement l’heure) pour faire apparaître le RDV dans le{' '}
+                    <strong className="text-foreground font-medium">Calendrier</strong>.
+                  </p>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label>Titre *</Label>
                 <Input
@@ -489,19 +543,6 @@ export function AffaireDetail() {
                   rows={3}
                 />
               </div>
-              {activityForm.type === 'RDV' && (
-                <div className="space-y-1.5">
-                  <Label>Date et heure du rendez-vous</Label>
-                  <Input
-                    type="datetime-local"
-                    value={activityForm.scheduledStart}
-                    onChange={(e) => setActivityForm({ ...activityForm, scheduledStart: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Si renseigné, une entrée est créée automatiquement sur la page Calendrier.
-                  </p>
-                </div>
-              )}
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => setActivityOpen(false)}>{t('common.cancel')}</Button>
