@@ -522,6 +522,21 @@
     "footerContact": "Contact",
     "footerRights": "© 2026 ktOptima. Tous droits réservés."
   },
+  "onboardingChatbot": {
+    "titleLoggedIn": "Onboarding CRM",
+    "titlePublic": "Onboarding public",
+    "welcome": "Bonjour, je suis votre chatbot d'onboarding KTOptima. Je vous aide à comprendre rapidement comment démarrer.",
+    "fabLabel": "Chatbot onboarding",
+    "inputPlaceholder": "Posez votre question onboarding...",
+    "noAnswerFallback": "Je n'ai pas pu répondre pour le moment.",
+    "errorFallback": "Je rencontre un souci temporaire. Vous pouvez réessayer, ou poser une question simple comme: Comment démarrer ?",
+    "quickQuestions": {
+      "start": "Comment démarrer sur KTOptima ?",
+      "difference": "Quelle différence entre Prospect, Client et Affaire ?",
+      "convert": "Comment convertir un lead en affaire ?",
+      "kanban": "Comment utiliser le Kanban ?"
+    }
+  },
   "auth": {
     "loginTitle": "Connexion",
     "loginSubtitle": "Connectez-vous à votre compte",

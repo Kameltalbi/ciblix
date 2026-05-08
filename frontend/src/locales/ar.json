@@ -522,6 +522,21 @@
     "footerContact": "اتصل بنا",
     "footerRights": "© 2026 ktOptima. جميع الحقوق محفوظة."
   },
+  "onboardingChatbot": {
+    "titleLoggedIn": "تهيئة CRM",
+    "titlePublic": "تهيئة عامة",
+    "welcome": "مرحباً، أنا شات بوت التهيئة في KTOptima. أساعدك على فهم طريقة البدء بسرعة.",
+    "fabLabel": "شات بوت التهيئة",
+    "inputPlaceholder": "اكتب سؤال التهيئة...",
+    "noAnswerFallback": "تعذر إنشاء إجابة حالياً.",
+    "errorFallback": "هناك مشكلة مؤقتة. حاول مرة أخرى أو اسأل سؤالاً بسيطاً مثل: كيف أبدأ؟",
+    "quickQuestions": {
+      "start": "كيف أبدأ على KTOptima؟",
+      "difference": "ما الفرق بين عميل محتمل وعميل وصفقة؟",
+      "convert": "كيف أحول lead إلى صفقة؟",
+      "kanban": "كيف أستخدم لوحة Kanban؟"
+    }
+  },
   "auth": {
     "loginTitle": "تسجيل الدخول",
     "loginSubtitle": "سجل الدخول إلى حسابك",

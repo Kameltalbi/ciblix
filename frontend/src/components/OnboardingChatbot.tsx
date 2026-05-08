@@ -2,20 +2,15 @@ import { useMemo, useState } from 'react';
 import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
 };
 
-const QUICK_QUESTIONS = [
-  'Comment démarrer sur KTOptima ?',
-  'Quelle différence entre Prospect, Client et Affaire ?',
-  'Comment convertir un lead en affaire ?',
-  'Comment utiliser le Kanban ?',
-];
-
 export function OnboardingChatbot() {
+  const { t, i18n } = useTranslation();
   const isLoggedIn = Boolean(useAuth((s) => s.accessToken));
   const [isVisible, setIsVisible] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,13 +19,24 @@ export function OnboardingChatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content:
-        "Bonjour, je suis votre chatbot d'onboarding KTOptima. Je vous aide à comprendre rapidement comment démarrer.",
+      content: t('onboardingChatbot.welcome'),
     },
   ]);
 
   const canSend = input.trim().length > 0;
-  const title = useMemo(() => (isLoggedIn ? 'Onboarding CRM' : 'Onboarding public'), [isLoggedIn]);
+  const title = useMemo(
+    () => (isLoggedIn ? t('onboardingChatbot.titleLoggedIn') : t('onboardingChatbot.titlePublic')),
+    [isLoggedIn, t]
+  );
+  const quickQuestions = useMemo(
+    () => [
+      t('onboardingChatbot.quickQuestions.start'),
+      t('onboardingChatbot.quickQuestions.difference'),
+      t('onboardingChatbot.quickQuestions.convert'),
+      t('onboardingChatbot.quickQuestions.kanban'),
+    ],
+    [t]
+  );
 
   const sendQuestion = async (question: string) => {
     const userQuestion = question.trim();
@@ -42,17 +48,16 @@ export function OnboardingChatbot() {
     try {
       const { data } = await api.post('/onboarding-chatbot/query', {
         message: userQuestion,
-        language: 'fr',
+        language: i18n.language === 'ar' ? 'ar' : i18n.language === 'en' ? 'en' : 'fr',
       });
-      const answer = data?.answer || "Je n'ai pas pu répondre pour le moment.";
+      const answer = data?.answer || t('onboardingChatbot.noAnswerFallback');
       setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content:
-            "Je rencontre un souci temporaire. Vous pouvez réessayer, ou poser une question simple comme: 'Comment démarrer ?'",
+          content: t('onboardingChatbot.errorFallback'),
         },
       ]);
     } finally {
@@ -117,7 +122,7 @@ export function OnboardingChatbot() {
 
           <div className="space-y-2 border-t p-3">
             <div className="flex flex-wrap gap-1.5">
-              {QUICK_QUESTIONS.map((q) => (
+              {quickQuestions.map((q) => (
                 <button
                   key={q}
                   type="button"
@@ -135,7 +140,7 @@ export function OnboardingChatbot() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !isLoading) sendQuestion(input);
                 }}
-                placeholder="Posez votre question onboarding..."
+                placeholder={t('onboardingChatbot.inputPlaceholder')}
                 className="h-9 flex-1 rounded-lg border border-border px-3 text-xs outline-none focus:border-primary"
               />
               <button
@@ -169,7 +174,7 @@ export function OnboardingChatbot() {
           aria-label="Ouvrir le chatbot onboarding"
         >
           <MessageCircle size={16} className="shrink-0" />
-          <span className="hidden sm:inline">Chatbot onboarding</span>
+          <span className="hidden sm:inline">{t('onboardingChatbot.fabLabel')}</span>
         </button>
       </div>
     </div>

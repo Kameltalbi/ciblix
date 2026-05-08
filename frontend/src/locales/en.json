@@ -522,6 +522,21 @@
     "footerContact": "Contact",
     "footerRights": "© 2026 ktOptima. All rights reserved."
   },
+  "onboardingChatbot": {
+    "titleLoggedIn": "CRM Onboarding",
+    "titlePublic": "Public onboarding",
+    "welcome": "Hello, I am your KTOptima onboarding chatbot. I help you quickly understand how to get started.",
+    "fabLabel": "Onboarding chatbot",
+    "inputPlaceholder": "Ask your onboarding question...",
+    "noAnswerFallback": "I could not generate an answer right now.",
+    "errorFallback": "I am having a temporary issue. Please try again, or ask a simple question like: How do I start?",
+    "quickQuestions": {
+      "start": "How do I get started on KTOptima?",
+      "difference": "What is the difference between Prospect, Client and Deal?",
+      "convert": "How do I convert a lead into a deal?",
+      "kanban": "How do I use Kanban?"
+    }
+  },
   "auth": {
     "loginTitle": "Login",
     "loginSubtitle": "Sign in to your account",
