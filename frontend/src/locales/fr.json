@@ -42,7 +42,8 @@
     "aiAssistant": "Assistant IA",
     "commissions": "Commissions",
     "objectives": "Objectifs",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "support": "Support"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -155,6 +156,14 @@
     "balanceNegative": "Les dépenses dépassent les revenus",
     "coverageRate": "Taux de couverture",
     "coverageFormula": "CA / Dépenses",
+    "monthlyTrendTitle": "Dépenses par mois",
+    "expensesLabel": "Dépenses",
+    "monthFocusTitle": "Dépenses de {{month}}",
+    "monthTotal": "Total du mois",
+    "operationsCount": "Nombre d'opérations",
+    "vsPreviousMonth": "Variation vs mois précédent",
+    "monthFocusCurrentHint": "Affichage basé sur le mois en cours (change le filtre mois pour analyser un autre mois).",
+    "monthFocusSelectedHint": "Analyse focalisée sur le mois sélectionné dans les filtres.",
     "category": "Catégorie",
     "allCategories": "Toutes catégories",
     "period": "Période",

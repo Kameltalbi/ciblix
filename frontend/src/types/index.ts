@@ -3,7 +3,16 @@ export type StatutAffaire = 'PROSPECT' | 'QUALIFIE' | 'PROPOSITION' | 'NEGOCIATI
 export type ActiviteType = 'NOTE' | 'APPEL' | 'EMAIL_ENVOYE' | 'EMAIL_RECU' | 'RDV' | 'CHANGEMENT_STATUT' | 'DEVIS_CREE' | 'FACTURE_CREEE' | 'AUTRE';
 export type UserRole = 'OWNER' | 'PARTNER' | 'COMMERCIAL' | 'SUPERADMIN';
 export type ProductType = 'SERVICE' | 'PRODUCT';
-export type NotificationType = 'AFFAIRE_SANS_ACTIVITE' | 'TASK_OVERDUE' | 'AFFAIRE_PERDUE' | 'AFFAIRE_GAGNEE' | 'DEVIS_CREE' | 'FACTURE_CREEE' | 'RAPPEL';
+export type NotificationType =
+  | 'AFFAIRE_SANS_ACTIVITE'
+  | 'TASK_OVERDUE'
+  | 'AFFAIRE_PERDUE'
+  | 'AFFAIRE_GAGNEE'
+  | 'DEVIS_CREE'
+  | 'FACTURE_CREEE'
+  | 'RAPPEL'
+  | 'SUPPORT_TICKET_NEW'
+  | 'SUPPORT_TICKET_REPLY';
 
 export interface Organization {
   id: string;

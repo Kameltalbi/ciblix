@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItemStyled } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, Building2, CreditCard, Activity, CheckCircle, Clock, AlertTriangle, LogOut, LayoutDashboard, Receipt, Shield, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Settings as SettingsIcon, Key, UserCheck, UserX, Plus, Edit, Trash2 } from 'lucide-react';
+import { Users, Building2, CreditCard, Activity, CheckCircle, Clock, AlertTriangle, LogOut, LayoutDashboard, Receipt, Shield, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Settings as SettingsIcon, Key, UserCheck, UserX, Plus, Edit, Trash2, MessageSquare, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -17,6 +17,7 @@ const TABS = [
   { id: 'subscriptions', label: 'Abonnements', icon: CreditCard },
   { id: 'payments', label: 'Paiements', icon: Receipt },
   { id: 'users', label: 'Utilisateurs', icon: Users },
+  { id: 'tickets', label: 'Tickets', icon: MessageSquare },
   { id: 'settings', label: 'Paramètres', icon: SettingsIcon },
 ];
 
@@ -60,6 +61,7 @@ export function AdminDashboard() {
         {activeTab === 'subscriptions' && <SubscriptionsTab />}
         {activeTab === 'payments' && <PaymentsTab queryClient={queryClient} />}
         {activeTab === 'users' && <UsersTab />}
+        {activeTab === 'tickets' && <SupportTicketsTab />}
         {activeTab === 'settings' && <SettingsTab />}
       </div>
     </div>
@@ -969,6 +971,150 @@ function UsersTab() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function SupportTicketsTab() {
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [reply, setReply] = useState('');
+  const queryClient = useQueryClient();
+
+  const { data: ticketsData } = useQuery({
+    queryKey: ['superadmin-support-tickets'],
+    queryFn: () => api.get('/support-tickets', { params: { limit: 100 } }).then((r) => r.data),
+    refetchInterval: 15000,
+  });
+  const tickets = ticketsData?.data || [];
+
+  const { data: ticketDetail } = useQuery({
+    queryKey: ['superadmin-support-ticket', selectedTicketId],
+    queryFn: () => api.get(`/support-tickets/${selectedTicketId}`).then((r) => r.data),
+    enabled: Boolean(selectedTicketId),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.patch(`/support-tickets/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-support-tickets'] });
+      if (selectedTicketId) {
+        queryClient.invalidateQueries({ queryKey: ['superadmin-support-ticket', selectedTicketId] });
+      }
+    },
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: () => api.post(`/support-tickets/${selectedTicketId}/messages`, { body: reply }),
+    onSuccess: () => {
+      setReply('');
+      queryClient.invalidateQueries({ queryKey: ['superadmin-support-tickets'] });
+      if (selectedTicketId) {
+        queryClient.invalidateQueries({ queryKey: ['superadmin-support-ticket', selectedTicketId] });
+      }
+    },
+  });
+
+  const badgeClass = (status: string) => {
+    if (status === 'OPEN') return 'bg-yellow-100 text-yellow-700';
+    if (status === 'IN_PROGRESS') return 'bg-blue-100 text-blue-700';
+    if (status === 'WAITING_USER') return 'bg-purple-100 text-purple-700';
+    if (status === 'RESOLVED') return 'bg-emerald-100 text-emerald-700';
+    if (status === 'CLOSED') return 'bg-gray-100 text-gray-700';
+    return 'bg-gray-100 text-gray-700';
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-6">Tickets support</h2>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle>File des tickets</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 max-h-[70vh] overflow-auto">
+            {tickets.map((ticket: any) => (
+              <button
+                key={ticket.id}
+                onClick={() => setSelectedTicketId(ticket.id)}
+                className={`w-full rounded-lg border p-3 text-left ${selectedTicketId === ticket.id ? 'border-leaf bg-leaf/5' : 'hover:bg-muted/40'}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium truncate">{ticket.subject}</p>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${badgeClass(ticket.status)}`}>{ticket.status}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {ticket.priority} - {ticket.category} - {ticket.createdBy?.email}
+                </p>
+              </button>
+            ))}
+            {tickets.length === 0 && <p className="text-sm text-muted-foreground">Aucun ticket.</p>}
+          </CardContent>
+        </Card>
+
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>{ticketDetail?.subject || 'Sélectionnez un ticket'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!ticketDetail ? (
+              <p className="text-sm text-muted-foreground">Choisissez un ticket pour afficher la conversation.</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={ticketDetail.status}
+                    onValueChange={(status) => updateMutation.mutate({ id: ticketDetail.id, data: { status } })}
+                  >
+                    <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OPEN">OPEN</SelectItem>
+                      <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
+                      <SelectItem value="WAITING_USER">WAITING_USER</SelectItem>
+                      <SelectItem value="RESOLVED">RESOLVED</SelectItem>
+                      <SelectItem value="CLOSED">CLOSED</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={ticketDetail.priority}
+                    onValueChange={(priority) => updateMutation.mutate({ id: ticketDetail.id, data: { priority } })}
+                  >
+                    <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LOW">LOW</SelectItem>
+                      <SelectItem value="MEDIUM">MEDIUM</SelectItem>
+                      <SelectItem value="HIGH">HIGH</SelectItem>
+                      <SelectItem value="URGENT">URGENT</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 max-h-[420px] overflow-auto pr-1">
+                  {ticketDetail.messages?.map((m: any) => (
+                    <div key={m.id} className="rounded-lg border p-3">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{m.author?.name || m.author?.email} ({m.author?.role})</span>
+                        <span>{new Date(m.createdAt).toLocaleString('fr-FR')}</span>
+                      </div>
+                      <p className="text-sm mt-2 whitespace-pre-wrap">{m.body}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {ticketDetail.status !== 'CLOSED' && (
+                  <div className="space-y-2">
+                    <Label>Répondre</Label>
+                    <Input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Réponse au client..." />
+                    <Button onClick={() => replyMutation.mutate()} disabled={!reply.trim() || replyMutation.isPending}>
+                      <Send size={14} className="mr-2" />
+                      Envoyer
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

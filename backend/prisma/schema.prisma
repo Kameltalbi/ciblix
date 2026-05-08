@@ -41,6 +41,8 @@ model Organization {
   gmailTokens GmailToken[]
   previsionnels PrevisionMois[]
   notifications Notification[]
+  supportTickets SupportTicket[]
+  supportTicketMessages SupportTicketMessage[]
   auditLogs   AuditLog[]
   customCategories CustomCategory[]
   emailTemplates EmailTemplate[]
@@ -78,6 +80,9 @@ model User {
   expensesCreated  Expense[]
   gmailTokens      GmailToken?
   notifications    Notification[]
+  createdSupportTickets SupportTicket[] @relation("SupportTicketCreatedBy")
+  assignedSupportTickets SupportTicket[] @relation("SupportTicketAssignedTo")
+  supportTicketMessages SupportTicketMessage[]
   refreshTokens    RefreshToken[]
   auditLogs        AuditLog[]
   salesObjectives  SalesObjective[]
@@ -576,6 +581,71 @@ enum NotificationType {
   DEVIS_CREE             // Devis créé
   FACTURE_CREEE          // Facture créée
   RAPPEL                 // Rappel personnalisé
+  SUPPORT_TICKET_NEW     // Nouveau ticket support
+  SUPPORT_TICKET_REPLY   // Réponse sur ticket support
+}
+
+model SupportTicket {
+  id            String   @id @default(cuid())
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById   String
+  createdBy     User     @relation("SupportTicketCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  assigneeId    String?
+  assignee      User?    @relation("SupportTicketAssignedTo", fields: [assigneeId], references: [id], onDelete: SetNull)
+  subject       String
+  description   String   @db.Text
+  status        SupportTicketStatus @default(OPEN)
+  priority      SupportTicketPriority @default(MEDIUM)
+  category      SupportTicketCategory @default(OTHER)
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  closedAt      DateTime?
+  messages      SupportTicketMessage[]
+
+  @@index([organizationId, status])
+  @@index([createdById, createdAt])
+  @@index([assigneeId])
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id            String   @id @default(cuid())
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ticketId      String
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body          String   @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([organizationId, ticketId, createdAt])
+  @@index([authorId])
+  @@map("support_ticket_messages")
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SupportTicketCategory {
+  BUG
+  BILLING
+  FEATURE
+  OTHER
 }
 
 // ═══════════════════════════════════════════════════════════════

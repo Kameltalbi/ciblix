@@ -439,7 +439,7 @@ export function Expenses() {
         <Card className="xl:col-span-2 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              Dépenses par mois ({filterYear})
+              {t('expenses.monthlyTrendTitle')} ({filterYear})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -449,7 +449,7 @@ export function Expenses() {
                 <XAxis dataKey="shortLabel" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(value) => `${Math.round(value / 1000)}k`} />
                 <Tooltip
-                  formatter={(value: number) => [`${fmtDT(value)} TND`, 'Dépenses']}
+                  formatter={(value: number) => [`${fmtDT(value)} TND`, t('expenses.expensesLabel')]}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.label || ''}
                   contentStyle={{
                     backgroundColor: 'white',
@@ -485,20 +485,20 @@ export function Expenses() {
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              Dépenses de {selectedMonthData?.label}
+              {t('expenses.monthFocusTitle', { month: selectedMonthData?.label })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <p className="text-xs text-muted-foreground">Total du mois</p>
+              <p className="text-xs text-muted-foreground">{t('expenses.monthTotal')}</p>
               <p className="text-2xl font-bold text-red-600">{fmtDT(selectedMonthData?.amount || 0)} TND</p>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Nombre d'opérations</span>
+              <span className="text-muted-foreground">{t('expenses.operationsCount')}</span>
               <span className="font-semibold">{selectedMonthData?.count || 0}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Variation vs mois précédent</span>
+              <span className="text-muted-foreground">{t('expenses.vsPreviousMonth')}</span>
               <span
                 className={`font-semibold ${
                   monthlyDelta == null ? 'text-muted-foreground' : monthlyDelta <= 0 ? 'text-emerald-600' : 'text-red-600'
@@ -509,8 +509,8 @@ export function Expenses() {
             </div>
             <div className="pt-2 border-t text-xs text-muted-foreground">
               {filterMonth === 'all'
-                ? 'Affichage basé sur le mois en cours (change le filtre mois pour analyser un autre mois).'
-                : 'Analyse focalisée sur le mois sélectionné dans les filtres.'}
+                ? t('expenses.monthFocusCurrentHint')
+                : t('expenses.monthFocusSelectedHint')}
             </div>
           </CardContent>
         </Card>

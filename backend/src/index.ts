@@ -39,6 +39,7 @@ import { salesObjectivesRoutes } from './routes/sales-objectives.js';
 import { userPermissionsRoutes } from './routes/user-permissions.js';
 import { commissionsRoutes } from './routes/commissions.js';
 import { superadminRoutes } from './routes/superadmin.js';
+import { supportTicketsRoutes } from './routes/support-tickets.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 
@@ -158,6 +159,7 @@ app.use('/api/sales-objectives', salesObjectivesRoutes);
 app.use('/api/user-permissions', userPermissionsRoutes);
 app.use('/api/commissions', commissionsRoutes);
 app.use('/api/superadmin', superadminRoutes);
+app.use('/api/support-tickets', supportTicketsRoutes);
 
 // ─── Sentry request handler (no-op if SENTRY_DSN is unset) ───
 setupExpressErrorHandler(app);

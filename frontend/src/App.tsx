@@ -47,6 +47,9 @@ const AIAssistant = lazy(() =>
   import('./pages/AIAssistant').then((m) => ({ default: m.AIAssistant }))
 );
 const Objectifs = lazy(() => import('./pages/Objectifs').then((m) => ({ default: m.Objectifs })));
+const SupportTickets = lazy(() =>
+  import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
+);
 const AdminDashboard = lazy(() =>
   import('./pages/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
 );
@@ -129,6 +132,7 @@ export default function App() {
                         <Route path="/email-templates" element={<EmailTemplates />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />
                         <Route path="/objectifs" element={<Objectifs />} />
+                        <Route path="/support" element={<SupportTickets />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </Suspense>

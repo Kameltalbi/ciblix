@@ -42,7 +42,8 @@
     "aiAssistant": "AI Assistant",
     "commissions": "Commissions",
     "objectives": "Objectives",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "support": "Support"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -155,6 +156,14 @@
     "balanceNegative": "Expenses exceed revenue",
     "coverageRate": "Coverage rate",
     "coverageFormula": "Revenue / Expenses",
+    "monthlyTrendTitle": "Expenses by month",
+    "expensesLabel": "Expenses",
+    "monthFocusTitle": "Expenses for {{month}}",
+    "monthTotal": "Month total",
+    "operationsCount": "Number of entries",
+    "vsPreviousMonth": "Change vs previous month",
+    "monthFocusCurrentHint": "View is based on the current month (change the month filter to analyze another month).",
+    "monthFocusSelectedHint": "Analysis is focused on the month selected in filters.",
     "category": "Category",
     "allCategories": "All categories",
     "period": "Period",

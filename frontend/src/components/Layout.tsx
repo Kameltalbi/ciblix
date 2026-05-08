@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Users, Settings, LogOut, Menu, X, FileText, Building2, UserCheck, Calendar as CalendarIcon, Receipt, Mail, Sparkles, Target, Globe } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Users, Settings, LogOut, Menu, X, FileText, Building2, UserCheck, Calendar as CalendarIcon, Receipt, Mail, Sparkles, Target, Globe, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const nav = [
   { to: '/email-templates', label: 'nav.emailTemplates', icon: Mail, page: 'email-templates' },
   { to: '/ai-assistant', label: 'nav.aiAssistant',  icon: Sparkles, page: 'ai-assistant' },
   { to: '/objectifs',    label: 'nav.objectives',    icon: Target,          page: 'objectifs' },
+  { to: '/support',      label: 'nav.support',       icon: MessageSquare,   page: 'support' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -76,6 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     
     // COMMERCIAL: check specific permissions
     if (user?.role === 'COMMERCIAL') {
+      if (item.page === 'support') return true;
       const permission = permissionsData?.find(p => p.page === item.page);
       return permission?.canView ?? false;
     }

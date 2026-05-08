@@ -42,7 +42,8 @@
     "aiAssistant": "المساعد الذكي",
     "commissions": "العمولات",
     "objectives": "الأهداف",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "support": "الدعم"
   },
   "dashboard": {
     "title": "لوحة التحكم",
@@ -155,6 +156,14 @@
     "balanceNegative": "المصروفات تتجاوز الإيرادات",
     "coverageRate": "نسبة التغطية",
     "coverageFormula": "الإيرادات / المصروفات",
+    "monthlyTrendTitle": "المصروفات حسب الشهر",
+    "expensesLabel": "المصروفات",
+    "monthFocusTitle": "مصروفات {{month}}",
+    "monthTotal": "إجمالي الشهر",
+    "operationsCount": "عدد العمليات",
+    "vsPreviousMonth": "التغير مقارنة بالشهر السابق",
+    "monthFocusCurrentHint": "العرض مبني على الشهر الحالي (غيّر فلتر الشهر لتحليل شهر آخر).",
+    "monthFocusSelectedHint": "التحليل يركز على الشهر المحدد في الفلاتر.",
     "category": "الفئة",
     "allCategories": "كل الفئات",
     "period": "الفترة",
