@@ -8,64 +8,79 @@ import { api } from '@/lib/api';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
-const plans = [
+type PricingPlanRow = {
+  slug: string;
+  name: string;
+  monthlyPrice: number;
+  annualPrice: number;
+  features: string[];
+  cta: string;
+  popular?: boolean;
+};
+
+const plans: PricingPlanRow[] = [
   {
+    slug: 'FREE',
     name: 'Gratuit',
     monthlyPrice: 0,
     annualPrice: 0,
     features: [
       'Jusqu\'à 20 prospects',
       '1 utilisateur',
-      'Pipeline simple (kanban)',
+      'Pipeline Kanban',
       'Gestion des clients',
-      'Support email',
+      'Support inclus',
     ],
     cta: 'Commencer gratuitement',
   },
   {
-    name: 'Business',
-    monthlyPrice: 58,
-    annualPrice: 580,
+    slug: 'BASIC',
+    name: 'Basic',
+    monthlyPrice: 40,
+    annualPrice: 480,
     features: [
       'Prospects illimités',
-      '5 utilisateurs',
-      'Pipeline personnalisable',
-      'Objectifs de vente par commercial',
-      'Permissions d\'accès granulaires',
+      'Jusqu\'à 5 utilisateurs',
+      'Pipeline Kanban',
+      'Objectifs de vente',
+      'Reporting de base',
+    ],
+    cta: 'Choisir Basic',
+  },
+  {
+    slug: 'BUSINESS',
+    name: 'Business',
+    monthlyPrice: 98,
+    annualPrice: 980,
+    features: [
+      'Tout le plan Basic',
+      'Jusqu\'à 20 utilisateurs',
       'Reporting avancé',
-      'Automatisations basiques',
       'Support prioritaire',
     ],
     cta: 'Choisir Business',
     popular: true,
   },
   {
-    name: 'Entreprise',
-    monthlyPrice: 96,
-    annualPrice: 960,
+    slug: 'ENTERPRISE',
+    name: 'Professionnel',
+    monthlyPrice: 175,
+    annualPrice: 2100,
     features: [
-      'Tout du plan Business',
-      'Utilisateurs illimités',
+      'Tout le plan Business',
+      'Jusqu\'à 50 utilisateurs',
       'Gestion des dépenses',
-      'Taux de couverture des dépenses',
-      'Assistant IA conversationnel',
-      'Lead scoring automatique',
-      'Gestion des primes des commerciaux',
-      'Automatisations avancées',
-      'Intégration Softfacture',
-      'Dashboard avancé + KPI',
-      'Backup quotidien',
-      'Support dédié 24/7',
-      'Formation incluse',
+      'Assistant IA & scoring leads',
+      'Commissions & Softfacture',
     ],
-    cta: 'Contacter les ventes',
+    cta: 'Choisir Professionnel',
   },
 ];
 
 export function Pricing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [selectedPlanSlug, setSelectedPlanSlug] = useState<string>('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'VIREMENT' | 'ESPECES'>('VIREMENT');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isAnnual, setIsAnnual] = useState(true);
@@ -73,7 +88,13 @@ export function Pricing() {
 
   const subscribeMutation = useMutation({
     mutationFn: () =>
-      api.post('/subscriptions', { plan: selectedPlan, paymentMethod: selectedPaymentMethod }).then((r) => r.data),
+      api
+        .post('/subscriptions', {
+          plan: selectedPlanSlug,
+          paymentMethod: selectedPaymentMethod,
+          billingPeriod: isAnnual ? 'YEARLY' : 'MONTHLY',
+        })
+        .then((r) => r.data),
     onSuccess: () => {
       alert(t('pricingPage.requestSent', { defaultValue: "Demande d'abonnement envoyée ! Nous vous contacterons pour confirmer le paiement." }));
       setDialogOpen(false);
@@ -81,8 +102,12 @@ export function Pricing() {
     },
   });
 
-  const handleSubscribe = (plan: string) => {
-    setSelectedPlan(plan);
+  const handleSubscribe = (plan: PricingPlanRow) => {
+    if (plan.slug === 'FREE') {
+      navigate('/register');
+      return;
+    }
+    setSelectedPlanSlug(plan.slug);
     setDialogOpen(true);
   };
 
@@ -201,10 +226,10 @@ export function Pricing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1200px] mx-auto">
             {plans.map((plan) => (
               <Card 
-                key={plan.name} 
+                key={plan.slug} 
                 className={`border-2 transition-all hover:shadow-xl ${
                   plan.popular 
                     ? 'border-leaf shadow-xl relative scale-105 z-10' 
@@ -218,6 +243,9 @@ export function Pricing() {
                 )}
                 <CardHeader className="pt-8">
                   <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                  {plan.slug !== 'FREE' && (
+                    <p className="text-xs text-muted-foreground mt-1">Facturation hors TVA</p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
@@ -248,7 +276,7 @@ export function Pricing() {
                   <Button
                     className="w-full"
                     variant={plan.popular ? 'default' : 'outline'}
-                    onClick={() => handleSubscribe(plan.name)}
+                    onClick={() => handleSubscribe(plan)}
                     size="lg"
                   >
                     {plan.cta}
@@ -340,12 +368,13 @@ export function Pricing() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">Plan sélectionné</p>
-                <p className="font-semibold text-lg">{selectedPlan}</p>
+                <p className="font-semibold text-lg">
+                  {plans.find((p) => p.slug === selectedPlanSlug)?.name}
+                </p>
                 <p className="text-2xl font-bold">
-                  {isAnnual 
-                    ? `${plans.find(p => p.name === selectedPlan)?.annualPrice} DT/an`
-                    : `${plans.find(p => p.name === selectedPlan)?.monthlyPrice} DT/mois`
-                  }
+                  {isAnnual
+                    ? `${plans.find((p) => p.slug === selectedPlanSlug)?.annualPrice ?? '—'} DT/an`
+                    : `${plans.find((p) => p.slug === selectedPlanSlug)?.monthlyPrice ?? '—'} DT/mois`}
                 </p>
               </div>
 
@@ -374,7 +403,7 @@ export function Pricing() {
                   <p className="font-semibold mb-1">Informations de virement :</p>
                   <p>RIB : XX XXX XXX XXX XXX XXX XX</p>
                   <p>Banque : BIAT</p>
-                  <p>Reference : CRM-{selectedPlan}-{Date.now()}</p>
+                  <p>Reference : CRM-{selectedPlanSlug}-{Date.now()}</p>
                 </div>
               )}
 

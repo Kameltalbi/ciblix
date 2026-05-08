@@ -14,7 +14,7 @@ const updatePaymentStatusSchema = z.object({
 });
 
 const updatePlanSchema = z.object({
-  plan: z.enum(['FREE', 'BUSINESS', 'ENTERPRISE']),
+  plan: z.enum(['FREE', 'BASIC', 'BUSINESS', 'ENTERPRISE']),
 });
 
 const createSubscriptionSchema = z.object({
@@ -24,25 +24,42 @@ const createSubscriptionSchema = z.object({
   paymentMethod: z.string().min(1),
   startDate: z.string().min(1),
   endDate: z.string().min(1),
+  billingPeriod: z.enum(['MONTHLY', 'YEARLY']).optional(),
 });
 
 const updateSubscriptionSchema = z.object({
   organizationId: z.string().optional(),
   plan: z.string().optional(),
   price: z.union([z.number(), z.string()]).optional(),
+  billingPeriod: z.enum(['MONTHLY', 'YEARLY']).optional(),
   paymentMethod: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   paymentStatus: z.enum(['PENDING', 'PAID', 'REFUSED']).optional(),
 });
 
-const toOrganizationPlan = (plan: string) => {
-  if (plan === 'STARTER') return 'FREE';
-  if (plan === 'PRO') return 'BUSINESS';
-  if (plan === 'Gratuit') return 'FREE';
-  if (plan === 'Business') return 'BUSINESS';
-  if (plan === 'Entreprise') return 'ENTERPRISE';
-  return plan;
+const toOrganizationPlan = (plan: string): string => {
+  const raw = typeof plan === 'string' ? plan.trim() : '';
+  const u = raw.toUpperCase();
+  switch (u) {
+    case 'STARTER':
+      return 'FREE';
+    case 'PRO':
+      return 'BUSINESS';
+    case 'FREE':
+    case 'BASIC':
+    case 'BUSINESS':
+    case 'ENTERPRISE':
+      return u;
+    default:
+      break;
+  }
+  const lc = raw.toLowerCase();
+  if (lc === 'gratuit') return 'FREE';
+  if (lc === 'basic') return 'BASIC';
+  if (lc === 'business') return 'BUSINESS';
+  if (lc === 'entreprise' || lc === 'professionnel') return 'ENTERPRISE';
+  return raw.length > 0 ? raw : 'FREE';
 };
 
 const toOrganizationPaymentStatus = (paymentStatus: string) => {
@@ -392,8 +409,6 @@ superadminRoutes.get('/payments', async (req: AuthRequest, res, next) => {
 superadminRoutes.post('/payments/:id/validate', async (req: AuthRequest, res, next) => {
   try {
     const now = new Date();
-    const endDate = new Date(now);
-    endDate.setFullYear(endDate.getFullYear() + 1);
 
     const subscription = await prisma.subscription.findUnique({
       where: { id: req.params.id as string },
@@ -403,13 +418,21 @@ superadminRoutes.post('/payments/:id/validate', async (req: AuthRequest, res, ne
       return res.status(404).json({ error: 'Paiement introuvable' });
     }
 
+    const validatedEnd = new Date(now);
+    const cycle = subscription.billingPeriod === 'MONTHLY' ? 'MONTHLY' : 'YEARLY';
+    if (cycle === 'MONTHLY') {
+      validatedEnd.setMonth(validatedEnd.getMonth() + 1);
+    } else {
+      validatedEnd.setFullYear(validatedEnd.getFullYear() + 1);
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const paidSubscription = await tx.subscription.update({
         where: { id: subscription.id },
         data: {
           paymentStatus: 'PAID',
           startDate: now,
-          endDate,
+          endDate: validatedEnd,
         },
       });
 
@@ -458,7 +481,8 @@ superadminRoutes.post('/payments/:id/reject', async (req: AuthRequest, res, next
 
 superadminRoutes.post('/subscriptions', async (req: AuthRequest, res, next) => {
   try {
-    const { organizationId, plan, price, paymentMethod, startDate, endDate } = createSubscriptionSchema.parse(req.body);
+    const { organizationId, plan, price, paymentMethod, startDate, endDate, billingPeriod } =
+      createSubscriptionSchema.parse(req.body);
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
       select: { id: true },
@@ -467,14 +491,14 @@ superadminRoutes.post('/subscriptions', async (req: AuthRequest, res, next) => {
       return res.status(404).json({ error: 'Organisation introuvable' });
     }
     
-    // Map subscription plan to organization plan
-    const orgPlan = plan === 'STARTER' ? 'FREE' : plan === 'PRO' ? 'BUSINESS' : 'ENTERPRISE';
-    
+    const orgPlan = toOrganizationPlan(plan);
+
     const subscription = await prisma.subscription.create({
       data: {
         organizationId,
         plan,
         price: Number(price),
+        billingPeriod: billingPeriod || 'YEARLY',
         paymentMethod,
         paymentStatus: 'PAID',
         startDate: new Date(startDate),
@@ -513,7 +537,8 @@ superadminRoutes.delete('/subscriptions/:id', async (req: AuthRequest, res, next
 superadminRoutes.put('/subscriptions/:id', async (req: AuthRequest, res, next) => {
   try {
     const id = req.params.id as string;
-    const { organizationId, plan, price, paymentMethod, startDate, endDate, paymentStatus } = updateSubscriptionSchema.parse(req.body);
+    const { organizationId, plan, price, billingPeriod, paymentMethod, startDate, endDate, paymentStatus } =
+      updateSubscriptionSchema.parse(req.body);
 
     const existing = await prisma.subscription.findUnique({
       where: { id },
@@ -531,6 +556,7 @@ superadminRoutes.put('/subscriptions/:id', async (req: AuthRequest, res, next) =
       data: {
         plan: plan || undefined,
         price: price !== undefined && price !== '' ? Number(price) : undefined,
+        billingPeriod: billingPeriod || undefined,
         paymentMethod: paymentMethod || undefined,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,

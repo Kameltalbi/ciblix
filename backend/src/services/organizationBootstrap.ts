@@ -72,11 +72,22 @@ export async function seedTrialSubscriptionForOrganization(organization: Organiz
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + 1);
 
+  const tier = organization.plan || 'FREE';
+  const trialPrice =
+    tier === 'ENTERPRISE'
+      ? 2100
+      : tier === 'BUSINESS'
+        ? 980
+        : tier === 'BASIC'
+          ? 480
+          : 0;
+
   await prisma.subscription.create({
     data: {
       organizationId: organization.id,
-      plan: organization.plan || 'FREE',
-      price: organization.plan === 'ENTERPRISE' ? 980 : organization.plan === 'BUSINESS' ? 290 : 0,
+      plan: tier,
+      price: trialPrice,
+      billingPeriod: 'YEARLY',
       paymentMethod: 'VIREMENT',
       paymentStatus: 'PENDING',
       startDate,
@@ -84,3 +95,4 @@ export async function seedTrialSubscriptionForOrganization(organization: Organiz
     },
   });
 }
+

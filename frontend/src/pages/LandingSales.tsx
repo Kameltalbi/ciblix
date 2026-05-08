@@ -12,48 +12,44 @@ export function LandingSales() {
 
   const plans = [
     {
-      name: 'Starter',
-      price: '360 DT',
+      name: 'Basic',
+      price: '480 DT',
       period: '/an',
+      sub: '(40 DT/mois)',
       features: [
-        '3 opportunités',
-        '1 utilisateur',
-        'Email templates de base',
-        'Support email',
+        'Prospects illimités',
+        'Jusqu\'à 5 utilisateurs',
+        'Pipeline & objectifs de vente',
+        'Reporting de base',
       ],
-      cta: 'S\'abonner',
+      cta: 'Voir les tarifs',
       popular: false,
     },
     {
-      name: 'Pro',
-      price: '600 DT',
+      name: 'Business',
+      price: '980 DT',
       period: '/an',
+      sub: '(98 DT/mois)',
       features: [
-        'Opportunités illimitées',
-        '5 utilisateurs',
-        'Assistant IA conversationnel',
-        'Lead scoring automatique',
-        'Intégration Softfacture',
+        'Tout Basic',
+        'Jusqu\'à 20 utilisateurs',
+        'Reporting avancé',
         'Support prioritaire',
-        'Backup quotidien',
       ],
-      cta: 'S\'abonner',
+      cta: 'Voir les tarifs',
       popular: true,
     },
     {
-      name: 'Entreprise',
-      price: 'Contactez-nous',
-      period: '',
+      name: 'Professionnel',
+      price: '2100 DT',
+      period: '/an',
+      sub: '(175 DT/mois)',
       features: [
-        'Tout illimité',
-        'Utilisateurs illimités',
-        'Intégration personnalisée',
-        'Formation sur site',
-        'Support dédié 24/7',
-        'SLA garanti',
-        'Multi-sociétés',
+        'Tout Business',
+        'Jusqu\'à 50 utilisateurs',
+        'Dépenses, IA, primes, Softfacture',
       ],
-      cta: 'Demander un devis',
+      cta: 'Voir les tarifs',
       popular: false,
     },
   ];
@@ -183,6 +179,7 @@ export function LandingSales() {
                   <div className="mb-6">
                     <span className="text-4xl font-bold">{plan.price}</span>
                     <span className="text-gray-600">{plan.period}</span>
+                    {plan.sub && <p className="text-xs text-muted-foreground mt-1">{plan.sub}</p>}
                   </div>
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((feature, fidx) => (
@@ -195,7 +192,7 @@ export function LandingSales() {
                   <Button 
                     className="w-full" 
                     variant={plan.popular ? 'default' : 'outline'}
-                    onClick={() => navigate('/register')}
+                    onClick={() => navigate('/pricing')}
                   >
                     {plan.cta}
                   </Button>

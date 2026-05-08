@@ -750,8 +750,9 @@ model BackupLog {
 model Subscription {
   id            String   @id @default(cuid())
   organizationId String
-  plan          String   // STARTER, PRO
-  price         Int      // Prix annuel en DT
+  plan          String   // FREE tier via org only ; subscriptions: BASIC, BUSINESS, ENTERPRISE (legacy STARTER / PRO supportés au mapping)
+  price         Int      // Montant DT pour la période facturée (voir billingPeriod)
+  billingPeriod String   @default("YEARLY") // MONTHLY | YEARLY
   paymentMethod String   // VIREMENT, ESPECES
   paymentStatus String   // PENDING, PAID, EXPIRED
   startDate     DateTime

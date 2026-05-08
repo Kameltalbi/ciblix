@@ -227,7 +227,7 @@ function OrganizationsTab() {
   });
 
   const updatePlanMutation = useMutation({
-    mutationFn: ({ id, plan }: { id: string; plan: 'FREE' | 'BUSINESS' | 'ENTERPRISE' }) =>
+    mutationFn: ({ id, plan }: { id: string; plan: 'FREE' | 'BASIC' | 'BUSINESS' | 'ENTERPRISE' }) =>
       api.put(`/superadmin/organizations/${id}/plan`, { plan }),
     onSuccess: ({ data }) => {
       updateOrganizationCache(data);
@@ -297,8 +297,18 @@ function OrganizationsTab() {
   };
 
   const planBadge = (plan: string) => {
-    const colors: any = { FREE: 'bg-gray-100 text-gray-700', BUSINESS: 'bg-blue-100 text-blue-700', ENTERPRISE: 'bg-purple-100 text-purple-700' };
-    const labels: any = { FREE: 'Gratuit', BUSINESS: 'Business', ENTERPRISE: 'Entreprise' };
+    const colors: any = {
+      FREE: 'bg-gray-100 text-gray-700',
+      BASIC: 'bg-sky-100 text-sky-800',
+      BUSINESS: 'bg-blue-100 text-blue-700',
+      ENTERPRISE: 'bg-purple-100 text-purple-700',
+    };
+    const labels: any = {
+      FREE: 'Gratuit',
+      BASIC: 'Basic',
+      BUSINESS: 'Business',
+      ENTERPRISE: 'Professionnel',
+    };
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[plan] || 'bg-gray-100 text-gray-600'}`}>{labels[plan] || plan}</span>;
   };
 
@@ -338,6 +348,16 @@ function OrganizationsTab() {
               <span>Passer Gratuit</span>
             </DropdownMenuItemStyled>
           )}
+          {org.plan !== 'BASIC' && (
+            <DropdownMenuItemStyled
+              onClick={() => updatePlanMutation.mutate({ id: org.id, plan: 'BASIC' })}
+              disabled={updatePlanMutation.isPending}
+              className={itemClassName}
+            >
+              <Building2 className={iconClassName} />
+              <span>Passer Basic</span>
+            </DropdownMenuItemStyled>
+          )}
           {org.plan !== 'BUSINESS' && (
             <DropdownMenuItemStyled
               onClick={() => updatePlanMutation.mutate({ id: org.id, plan: 'BUSINESS' })}
@@ -355,7 +375,7 @@ function OrganizationsTab() {
               className={itemClassName}
             >
               <Building2 className={iconClassName} />
-              <span>Passer Entreprise</span>
+              <span>Passer Professionnel</span>
             </DropdownMenuItemStyled>
           )}
           {org.paymentStatus !== 'APPROVED' && (
@@ -477,7 +497,15 @@ function OrganizationsTab() {
 function SubscriptionsTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<any>(null);
-  const [formData, setFormData] = useState({ organizationId: '', plan: 'FREE', price: '', paymentMethod: 'VIREMENT', startDate: '', endDate: '' });
+  const [formData, setFormData] = useState({
+    organizationId: '',
+    plan: 'BASIC',
+    price: '',
+    billingPeriod: 'YEARLY' as 'MONTHLY' | 'YEARLY',
+    paymentMethod: 'VIREMENT',
+    startDate: '',
+    endDate: '',
+  });
   const queryClient = useQueryClient();
   const refreshSubscriptions = () => {
     queryClient.invalidateQueries({ queryKey: ['superadmin-subscriptions'], refetchType: 'all' });
@@ -513,7 +541,15 @@ function SubscriptionsTab() {
     onSuccess: () => {
       refreshSubscriptions();
       setIsDialogOpen(false);
-      setFormData({ organizationId: '', plan: 'FREE', price: '', paymentMethod: 'VIREMENT', startDate: '', endDate: '' });
+      setFormData({
+        organizationId: '',
+        plan: 'BASIC',
+        price: '',
+        billingPeriod: 'YEARLY',
+        paymentMethod: 'VIREMENT',
+        startDate: '',
+        endDate: '',
+      });
     },
     onError: (error: any) => {
       alert(error.response?.data?.error || error.message || 'Impossible de créer cet abonnement');
@@ -563,14 +599,23 @@ function SubscriptionsTab() {
       setFormData({
         organizationId: sub.organizationId,
         plan: sub.plan,
-        price: sub.price,
+        price: String(sub.price),
+        billingPeriod: (sub.billingPeriod === 'MONTHLY' ? 'MONTHLY' : 'YEARLY'),
         paymentMethod: sub.paymentMethod,
         startDate: sub.startDate?.split('T')[0] || '',
         endDate: sub.endDate?.split('T')[0] || '',
       });
     } else {
       setEditingSubscription(null);
-      setFormData({ organizationId: '', plan: 'FREE', price: '', paymentMethod: 'VIREMENT', startDate: '', endDate: '' });
+      setFormData({
+        organizationId: '',
+        plan: 'BASIC',
+        price: '',
+        billingPeriod: 'YEARLY',
+        paymentMethod: 'VIREMENT',
+        startDate: '',
+        endDate: '',
+      });
     }
     setIsDialogOpen(true);
   };
@@ -690,8 +735,19 @@ function SubscriptionsTab() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="FREE">Gratuit</SelectItem>
+                  <SelectItem value="BASIC">Basic</SelectItem>
                   <SelectItem value="BUSINESS">Business</SelectItem>
-                  <SelectItem value="ENTERPRISE">Entreprise</SelectItem>
+                  <SelectItem value="ENTERPRISE">Professionnel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Facturation</Label>
+              <Select value={formData.billingPeriod} onValueChange={(v) => setFormData({ ...formData, billingPeriod: v as 'MONTHLY' | 'YEARLY' })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MONTHLY">Mensuel</SelectItem>
+                  <SelectItem value="YEARLY">Annuel</SelectItem>
                 </SelectContent>
               </Select>
             </div>

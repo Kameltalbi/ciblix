@@ -94,3 +94,5 @@ GOOGLE_LOGIN_REDIRECT_URI="http://localhost:4000/api/auth/google/callback"
 3. Compte **nouveau** : une organisation + utilisateur propriétaire sont créés comme à l’inscription classique.
 
 **Lier un compte existant** : même e-mail qu’un compte créé au mot de passe, sans `googleSub` encore : la première connexion Google attache l’identifiant Google au compte.
+
+**Interface utilisateur** : les boutons Google sur login/inscription sont **masqués** tant que tu ne construis pas le front avec `VITE_ENABLE_GOOGLE_AUTH=true` (voir `.env.example`). Le flux API reste disponible pour activation ultérieure.

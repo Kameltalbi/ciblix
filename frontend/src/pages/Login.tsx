@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/form-controls';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getGoogleAuthHref } from '@/lib/googleAuthUrl';
+import { getGoogleAuthHref, isGoogleAuthUiEnabled } from '@/lib/googleAuthUrl';
 
 const OAUTH_FALLBACK_MESSAGES: Record<string, string> = {
   google_not_configured:
@@ -120,36 +120,38 @@ export function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t('common.loading') : t('auth.signIn')}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full gap-2"
-              disabled={loading}
-              onClick={() => {
-                window.location.href = getGoogleAuthHref();
-              }}
-              aria-label={t('auth.signInWithGoogle')}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-5 w-5 shrink-0" aria-hidden>
-                <path
-                  fill="#FFC107"
-                  d="M43.611 20.083H42V20H24v8h11.303C33.958 34.087 29.579 37 24 37c-7.18 0-13-5.82-13-13s5.82-13 13-13c3.32 0 6.362 1.254 8.659 3.293l6.058-6.058C34.068 9.834 29.296 8 24 8 12.955 8 4 16.955 4 28s8.955 20 20 20 20-8.955 20-20c0-1.341-.139-2.648-.389-3.917z"
-                />
-                <path
-                  fill="#FF3D00"
-                  d="m6.306 14.691 6.571 4.815C14.659 17.108 18.962 14 24 14c3.319 0 6.362 1.254 8.659 3.293l6.058-6.058C34.068 9.834 29.296 8 24 8 17.887 8 12.582 11.068 9.306 14.691z"
-                />
-                <path
-                  fill="#4CAF50"
-                  d="M24 44c5.078 0 9.743-1.918 13.279-5.069l-6.146-5.207C29.547 34.957 26.957 37 24 37c-5.551 0-10.237-3.596-11.957-8.579l-6.518 5.018C11.069 41.086 17.086 44 24 44z"
-                />
-                <path
-                  fill="#1976D2"
-                  d="M43.611 20.083H42V20H24v8h11.303a12.957 12.957 0 0 1-4.41 7.036l6.146 5.207C41.069 41.086 43 39.086 43 39.086 44 36.957 44 34 44 24c0-1.341-.139-2.647-.389-3.917z"
-                />
-              </svg>
-              {t('auth.signInWithGoogle')}
-            </Button>
+            {isGoogleAuthUiEnabled() && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                disabled={loading}
+                onClick={() => {
+                  window.location.href = getGoogleAuthHref();
+                }}
+                aria-label={t('auth.signInWithGoogle')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-5 w-5 shrink-0" aria-hidden>
+                  <path
+                    fill="#FFC107"
+                    d="M43.611 20.083H42V20H24v8h11.303C33.958 34.087 29.579 37 24 37c-7.18 0-13-5.82-13-13s5.82-13 13-13c3.32 0 6.362 1.254 8.659 3.293l6.058-6.058C34.068 9.834 29.296 8 24 8 12.955 8 4 16.955 4 28s8.955 20 20 20 20-8.955 20-20c0-1.341-.139-2.648-.389-3.917z"
+                  />
+                  <path
+                    fill="#FF3D00"
+                    d="m6.306 14.691 6.571 4.815C14.659 17.108 18.962 14 24 14c3.319 0 6.362 1.254 8.659 3.293l6.058-6.058C34.068 9.834 29.296 8 24 8 17.887 8 12.582 11.068 9.306 14.691z"
+                  />
+                  <path
+                    fill="#4CAF50"
+                    d="M24 44c5.078 0 9.743-1.918 13.279-5.069l-6.146-5.207C29.547 34.957 26.957 37 24 37c-5.551 0-10.237-3.596-11.957-8.579l-6.518 5.018C11.069 41.086 17.086 44 24 44z"
+                  />
+                  <path
+                    fill="#1976D2"
+                    d="M43.611 20.083H42V20H24v8h11.303a12.957 12.957 0 0 1-4.41 7.036l6.146 5.207C41.069 41.086 43 39.086 43 39.086 44 36.957 44 34 44 24c0-1.341-.139-2.647-.389-3.917z"
+                  />
+                </svg>
+                {t('auth.signInWithGoogle')}
+              </Button>
+            )}
             <div className="flex justify-between text-sm text-center">
               <Link to="/" className="text-muted-foreground hover:text-foreground">
                 ← {t('common.back')}

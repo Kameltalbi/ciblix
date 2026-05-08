@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../db/prisma.js';
 
-export type PlanType = 'FREE' | 'BUSINESS' | 'ENTERPRISE';
+export type PlanType = 'FREE' | 'BASIC' | 'BUSINESS' | 'ENTERPRISE';
 
 export const PLAN_LIMITS = {
   FREE: {
@@ -16,7 +16,7 @@ export const PLAN_LIMITS = {
       softfacture: false,
     },
   },
-  BUSINESS: {
+  BASIC: {
     maxProspects: Infinity,
     maxUsers: 5,
     features: {
@@ -28,9 +28,21 @@ export const PLAN_LIMITS = {
       softfacture: false,
     },
   },
+  BUSINESS: {
+    maxProspects: Infinity,
+    maxUsers: 20,
+    features: {
+      objectives: true,
+      expenses: false,
+      ai: false,
+      commissions: false,
+      advancedAutomations: false,
+      softfacture: false,
+    },
+  },
   ENTERPRISE: {
     maxProspects: Infinity,
-    maxUsers: Infinity,
+    maxUsers: 50,
     features: {
       objectives: true,
       expenses: true,
@@ -64,15 +76,19 @@ export function checkPlanFeature(feature: keyof typeof PLAN_LIMITS.FREE.features
         return res.status(404).json({ error: 'Organization not found' });
       }
 
-      const plan = organization.plan as PlanType;
+      const rawPlan = organization.plan as string;
+      const plan = (PLAN_LIMITS as Record<string, unknown>)[rawPlan]
+        ? (rawPlan as PlanType)
+        : ('FREE' as PlanType);
       const hasFeature = PLAN_LIMITS[plan].features[feature];
 
       if (!hasFeature) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'Feature not available in your plan',
           feature,
           currentPlan: plan,
-          requiredPlan: feature === 'expenses' || feature === 'ai' || feature === 'commissions' ? 'ENTERPRISE' : 'BUSINESS',
+          requiredPlan:
+            feature === 'expenses' || feature === 'ai' || feature === 'commissions' ? 'ENTERPRISE' : 'BASIC',
         });
       }
 
@@ -98,7 +114,10 @@ export async function checkProspectLimit(req: AuthRequest, res: Response, next: 
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    const plan = organization.plan as PlanType;
+    const rawPlan = organization.plan as string;
+    const plan = (PLAN_LIMITS as Record<string, unknown>)[rawPlan]
+      ? (rawPlan as PlanType)
+      : ('FREE' as PlanType);
     const maxProspects = PLAN_LIMITS[plan].maxProspects;
 
     if (maxProspects === Infinity) {
@@ -139,7 +158,10 @@ export async function checkUserLimit(req: AuthRequest, res: Response, next: Next
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    const plan = organization.plan as PlanType;
+    const rawPlan = organization.plan as string;
+    const plan = (PLAN_LIMITS as Record<string, unknown>)[rawPlan]
+      ? (rawPlan as PlanType)
+      : ('FREE' as PlanType);
     const maxUsers = PLAN_LIMITS[plan].maxUsers;
 
     if (maxUsers === Infinity) {

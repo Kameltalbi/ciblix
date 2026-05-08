@@ -7,40 +7,56 @@ export const subscriptionsRoutes = Router();
 subscriptionsRoutes.use(auth);
 
 const subscriptionSchema = z.object({
-  plan: z.enum(['STARTER', 'PRO']),
+  plan: z.enum(['BASIC', 'BUSINESS', 'ENTERPRISE']),
   paymentMethod: z.enum(['VIREMENT', 'ESPECES']),
+  billingPeriod: z.enum(['MONTHLY', 'YEARLY']).default('YEARLY'),
 });
 
-// PLANS CONFIGURATION
-const PLANS = {
-  STARTER: {
-    monthlyPrice: 30,
-    annualPrice: 360,
-    maxUsers: 1,
-    features: ['3 opportunités', '1 utilisateur', 'Email templates de base', 'Support email'],
-  },
-  PRO: {
-    monthlyPrice: 50,
-    annualPrice: 600,
+export const PLAN_CATALOG = {
+  BASIC: {
+    monthlyPrice: 40,
+    annualPrice: 480,
     maxUsers: 5,
+    label: 'Basic',
     features: [
-      'Opportunités illimitées',
-      '5 utilisateurs',
-      'Assistant IA conversationnel',
-      'Lead scoring automatique',
-      'Intégration Softfacture',
-      'Support prioritaire',
-      'Backup quotidien',
+      'Prospects illimités',
+      "Jusqu'à 5 utilisateurs",
+      'Pipeline Kanban',
+      'Objectifs de vente',
+      'Clients & activités',
     ],
   },
-};
+  BUSINESS: {
+    monthlyPrice: 98,
+    annualPrice: 980,
+    maxUsers: 20,
+    label: 'Business',
+    features: [
+      'Tout le plan Basic',
+      "Jusqu'à 20 utilisateurs",
+      'Reporting avancé',
+      'Support prioritaire',
+    ],
+  },
+  ENTERPRISE: {
+    monthlyPrice: 175,
+    /** Annuel aligné sur 175 × 12 (ajuste si promo annuelle différente) */
+    annualPrice: 2100,
+    maxUsers: 50,
+    label: 'Professionnel',
+    features: [
+      'Tout le plan Business',
+      "Jusqu'à 50 utilisateurs",
+      'Dépenses, IA, commissions, Softfacture',
+    ],
+  },
+} as const;
 
-// GET /api/subscriptions/plans - Get available plans
+// GET /api/subscriptions/plans - catalogue public pour le front / admin
 subscriptionsRoutes.get('/plans', (_, res) => {
-  res.json(PLANS);
+  res.json(PLAN_CATALOG);
 });
 
-// GET /api/subscriptions/current - Get current organization subscription
 subscriptionsRoutes.get('/current', async (req: AuthRequest, res, next) => {
   try {
     const subscription = await prisma.subscription.findFirst({
@@ -52,16 +68,16 @@ subscriptionsRoutes.get('/current', async (req: AuthRequest, res, next) => {
       orderBy: { createdAt: 'desc' },
     });
     res.json(subscription);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
-// POST /api/subscriptions - Create subscription request
 subscriptionsRoutes.post('/', async (req: AuthRequest, res, next) => {
   try {
-    const { plan, paymentMethod } = subscriptionSchema.parse(req.body);
-    const planConfig = PLANS[plan as keyof typeof PLANS];
+    const { plan, paymentMethod, billingPeriod } = subscriptionSchema.parse(req.body);
+    const planConfig = PLAN_CATALOG[plan];
 
-    // Check if organization already has active subscription
     const existing = await prisma.subscription.findFirst({
       where: {
         organizationId: req.organizationId,
@@ -75,14 +91,22 @@ subscriptionsRoutes.post('/', async (req: AuthRequest, res, next) => {
     }
 
     const startDate = new Date();
-    const endDate = new Date();
-    endDate.setFullYear(endDate.getFullYear() + 1);
+    const endDate = new Date(startDate);
+    if (billingPeriod === 'MONTHLY') {
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    }
+
+    const price =
+      billingPeriod === 'MONTHLY' ? planConfig.monthlyPrice : planConfig.annualPrice;
 
     const subscription = await prisma.subscription.create({
       data: {
         organizationId: req.organizationId!,
         plan,
-        price: planConfig.annualPrice,
+        price,
+        billingPeriod,
         paymentMethod,
         paymentStatus: 'PENDING',
         startDate,
@@ -91,10 +115,11 @@ subscriptionsRoutes.post('/', async (req: AuthRequest, res, next) => {
     });
 
     res.status(201).json(subscription);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
-// POST /api/subscriptions/:id/confirm - Confirm payment (admin only)
 subscriptionsRoutes.post('/:id/confirm', requireSuperAdmin, async (req: AuthRequest, res, next) => {
   try {
     const subscription = await prisma.subscription.findFirst({
@@ -111,5 +136,7 @@ subscriptionsRoutes.post('/:id/confirm', requireSuperAdmin, async (req: AuthRequ
     });
 
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
