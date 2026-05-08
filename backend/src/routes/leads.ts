@@ -34,6 +34,9 @@ const leadSchema = z.object({
 });
 
 const leadUpdateSchema = leadSchema.partial();
+const convertLeadSchema = z.object({
+  createAffaire: z.boolean().optional().default(true),
+});
 
 // GET /leads - Get all leads for the organization
 leadsRoutes.get('/', async (req: any, res) => {
@@ -199,6 +202,7 @@ leadsRoutes.post('/:id/convert', async (req: any, res) => {
   try {
     const organizationId = req.organizationId;
     const userId = req.userId;
+    const { createAffaire } = convertLeadSchema.parse(req.body ?? {});
 
     const lead = await prisma.lead.findFirst({
       where: { id: req.params.id, organizationId, deletedAt: null },
@@ -226,6 +230,47 @@ leadsRoutes.post('/:id/convert', async (req: any, res) => {
       },
     });
 
+    let affaire: any = null;
+    if (createAffaire) {
+      const now = new Date();
+      const defaultType = lead.company || lead.name || 'Prospection';
+      const defaultTitle = `Prospection - ${client.name}`;
+      const normalizedScore = Number.isFinite(Number(lead.score))
+        ? Math.max(0, Math.min(100, Number(lead.score)))
+        : 50;
+      const estimated = Number(lead.estimatedValue || 0);
+
+      affaire = await prisma.affaire.create({
+        data: {
+          organizationId,
+          createdById: userId,
+          clientId: client.id,
+          title: defaultTitle,
+          type: defaultType,
+          montantHT: estimated,
+          statut: 'PROSPECT',
+          probabilite: normalizedScore,
+          moisPrevu: now.getMonth() + 1,
+          anneePrevue: now.getFullYear(),
+          notes: lead.notes || undefined,
+        },
+        include: {
+          client: true,
+          product: true,
+        },
+      });
+
+      await prisma.activite.create({
+        data: {
+          organizationId,
+          affaireId: affaire.id,
+          type: 'AUTRE',
+          title: 'Affaire créée depuis un prospect',
+          content: `Conversion automatique du prospect ${lead.name}`,
+        },
+      });
+    }
+
     // Update lead
     const updatedLead = await prisma.lead.update({
       where: { id: req.params.id },
@@ -239,7 +284,7 @@ leadsRoutes.post('/:id/convert', async (req: any, res) => {
       },
     });
 
-    res.json({ lead: updatedLead, client });
+    res.json({ lead: updatedLead, client, affaire });
   } catch (error) {
     console.error('Error converting lead:', error);
     res.status(500).json({ error: 'Failed to convert lead' });

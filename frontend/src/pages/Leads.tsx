@@ -113,6 +113,7 @@ export function Leads() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leads'] });
       qc.invalidateQueries({ queryKey: ['clients'] });
+      qc.invalidateQueries({ queryKey: ['affaires'] });
     },
   });
 
