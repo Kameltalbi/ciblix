@@ -3,10 +3,26 @@ set -e
 
 # ═══════════════════════════════════════════════════════════════
 #  SCRIPT DE DÉPLOIEMENT — Bilan CRM
-#  Usage : ssh vps "cd /opt/bilan-crm && ./scripts/deploy.sh"
+#  Usage : cd /var/www/crm && bash scripts/deploy.sh
+#  (autrefois documenté sous /opt/bilan-crm)
 # ═══════════════════════════════════════════════════════════════
 
 cd "$(dirname "$0")/.."
+
+COMPOSE_FILE="docker-compose.prod.yml"
+
+run_compose() {
+  if docker compose version >/dev/null 2>&1; then
+    docker compose -f "$COMPOSE_FILE" "$@"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    docker-compose -f "$COMPOSE_FILE" "$@"
+  else
+    echo "❌ Docker Compose introuvable." >&2
+    echo "   Installez le plugin : apt install docker-compose-plugin (Ubuntu)" >&2
+    echo "   Ou le paquet legacy : apt install docker-compose" >&2
+    exit 1
+  fi
+}
 
 echo "🚀 Déploiement Bilan CRM"
 echo "════════════════════════════"
@@ -25,17 +41,17 @@ fi
 # 3. Build et redémarrer
 echo ""
 echo "🔨 Build Docker..."
-docker compose -f docker-compose.prod.yml build --pull
+run_compose build --pull
 
 echo ""
 echo "🔄 Redémarrage..."
-docker compose -f docker-compose.prod.yml up -d
+run_compose up -d
 
 # 4. Migrations Prisma (au cas où le schéma a changé)
 echo ""
 echo "🗄️  Migrations Prisma..."
 sleep 5  # Attendre postgres
-docker compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy
+run_compose exec -T backend npx prisma migrate deploy
 
 # 5. Nettoyer les vieilles images
 echo ""
@@ -44,5 +60,4 @@ docker image prune -f
 
 echo ""
 echo "✅ Déploiement terminé !"
-echo "   Vérifier : docker compose -f docker-compose.prod.yml ps"
-echo "   Logs     : docker compose -f docker-compose.prod.yml logs -f"
+echo "   Vérifier : (docker compose OU docker-compose) -f $COMPOSE_FILE ps"
