@@ -37,6 +37,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, []);
+
   const { data: organizationsData } = useQuery<Organization | Organization[]>({
     queryKey: ['organizations'],
     queryFn: () => api.get('/organizations').then((r) => r.data),

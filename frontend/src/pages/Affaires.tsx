@@ -115,7 +115,7 @@ export function Affaires() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({ statut: '', type: '', annee: '2026', mois: String(new Date().getMonth() + 1), viaPartenaire: '', sortBy: 'score' });
   const [page, setPage] = useState(1);
-  const [view, setView] = useState<'table' | 'kanban'>('table');
+  const [view, setView] = useState<'table' | 'kanban'>('kanban');
   const [open, setOpen] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [duplicateAffaireId, setDuplicateAffaireId] = useState<string>('');
