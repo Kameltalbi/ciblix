@@ -48,7 +48,6 @@ export function Organizations() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         finalData.logoUrl = uploadRes.data.url;
-        console.log('Upload response:', uploadRes.data);
       }
       return api.post('/organizations', finalData).then((r) => r.data);
     },
@@ -73,13 +72,10 @@ export function Organizations() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         finalData.logoUrl = uploadRes.data.url;
-        console.log('Upload response:', uploadRes.data);
       }
-      console.log('Updating organization:', id, finalData);
       return api.put(`/organizations/${id}`, finalData).then((r) => r.data);
     },
-    onSuccess: (data) => {
-      console.log('Update successful:', data);
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['organizations'] });
       setOpen(false);
       setForm(EMPTY);

@@ -488,8 +488,8 @@ model GmailToken {
   organizationId String
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken  String   @db.Text // TODO: encrypt at rest
-  refreshToken String   @db.Text // TODO: encrypt at rest
+  accessToken  String   @db.Text // Encrypted at rest
+  refreshToken String   @db.Text // Encrypted at rest
   expiresAt    DateTime
   scope        String
   createdAt    DateTime @default(now())
@@ -658,7 +658,7 @@ model RefreshToken {
   id           String   @id @default(cuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String   @unique // TODO: hash with bcrypt for production
+  token        String   @unique // Hashed with bcrypt
   expiresAt    DateTime
   createdAt    DateTime @default(now())
 

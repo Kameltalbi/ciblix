@@ -1,7 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check, CreditCard, Wallet, ArrowRight, X, Phone, Mail, MapPin, Menu } from 'lucide-react';
+import {
+  Check,
+  CreditCard,
+  Wallet,
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  Menu,
+  ChevronDown,
+  ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
@@ -18,21 +31,22 @@ type PricingPlanRow = {
   popular?: boolean;
 };
 
-const plans: PricingPlanRow[] = [
-  {
-    slug: 'FREE',
-    name: 'Gratuit',
-    monthlyPrice: 0,
-    annualPrice: 0,
-    features: [
-      'Jusqu\'à 20 prospects',
-      '1 utilisateur',
-      'Pipeline Kanban',
-      'Gestion des clients',
-      'Support inclus',
-    ],
-    cta: 'Commencer gratuitement',
-  },
+const FREE_PLAN: PricingPlanRow = {
+  slug: 'FREE',
+  name: 'Gratuit',
+  monthlyPrice: 0,
+  annualPrice: 0,
+  features: [
+    'Jusqu\'à 20 prospects',
+    '1 utilisateur',
+    'Pipeline Kanban',
+    'Gestion des clients',
+    'Support inclus',
+  ],
+  cta: 'Commencer gratuitement',
+};
+
+const PAID_PLANS: PricingPlanRow[] = [
   {
     slug: 'BASIC',
     name: 'Basic',
@@ -85,6 +99,8 @@ export function Pricing() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isAnnual, setIsAnnual] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  /** Panneau « Gratuit » ouvert (desktop : à côté du Basic ; mobile : accordéon). */
+  const [freeDrawerOpen, setFreeDrawerOpen] = useState(false);
 
   const subscribeMutation = useMutation({
     mutationFn: () =>
@@ -114,6 +130,93 @@ export function Pricing() {
   const handleConfirmSubscribe = () => {
     subscribeMutation.mutate();
   };
+
+  const renderPaidPlanCard = (plan: PricingPlanRow, opts?: { wrapClass?: string }) => (
+    <Card
+      className={`border-2 transition-all hover:shadow-xl ${
+        plan.popular ? 'border-leaf shadow-xl relative scale-[1.02] z-10 lg:scale-105' : 'border-gray-200'
+      } ${opts?.wrapClass ?? ''}`}
+    >
+      {plan.popular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-leaf text-white text-sm font-semibold px-4 py-1 rounded-full shadow-md">
+          Plus populaire
+        </div>
+      )}
+      <CardHeader className="pt-8">
+        <CardTitle className="text-2xl font-bold text-sky-700">{plan.name}</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">Facturation hors TVA</p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <p className="text-4xl font-bold text-gray-900">
+            {isAnnual ? plan.annualPrice : plan.monthlyPrice} DT
+          </p>
+          <p className="text-sm text-gray-500">
+            {isAnnual
+              ? t('pricingPage.perYear', { defaultValue: 'par an' })
+              : t('pricingPage.perMonth', { defaultValue: 'par mois' })}
+          </p>
+          {plan.annualPrice > 0 && (
+            <p className="text-xs text-gray-400">
+              {isAnnual ? `${plan.monthlyPrice} DT/mois` : `${plan.annualPrice} DT/an`}
+            </p>
+          )}
+          {plan.slug === 'BASIC' && (
+            <span className="inline-block mt-3 rounded-full bg-sky-100 text-sky-900 text-xs font-medium px-3 py-1">
+              Jusqu&apos;à 5 utilisateurs
+            </span>
+          )}
+        </div>
+
+        <ul className="space-y-4">
+          {plan.features.map((feature, idx) => (
+            <li key={idx} className="flex items-start gap-3">
+              <Check className="text-leaf flex-shrink-0 mt-0.5" size={20} />
+              <span className="text-sm text-gray-700">{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        <Button
+          className="w-full"
+          variant={plan.popular ? 'default' : 'outline'}
+          onClick={() => handleSubscribe(plan)}
+          size="lg"
+        >
+          {plan.cta}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  const renderFreeCardInner = (standalone = false) => (
+    <div
+      className={`flex flex-col h-full ${standalone ? '' : 'border-0 shadow-none'}`}
+    >
+      <div className={`${standalone ? 'rounded-xl border-2 border-emerald-100 bg-white p-6 shadow-sm' : ''} flex flex-col flex-1`}>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">{FREE_PLAN.name}</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Pour découvrir le CRM / entreprise sans engagement · facturation : 0 DT
+        </p>
+        <p className="text-4xl font-bold text-gray-900 mb-1">0 DT</p>
+        <p className="text-sm text-gray-500 mb-6">pour toujours (limites fonctionnelles)</p>
+        <span className="inline-block rounded-full bg-sky-100 text-sky-900 text-xs font-medium px-3 py-1 w-fit mb-6">
+          1 utilisateur · jusqu&apos;à 20 prospects
+        </span>
+        <ul className="space-y-4 flex-1 mb-6">
+          {FREE_PLAN.features.map((feature, idx) => (
+            <li key={idx} className="flex items-start gap-3">
+              <Check className="text-leaf flex-shrink-0 mt-0.5" size={20} />
+              <span className="text-sm text-gray-700">{feature}</span>
+            </li>
+          ))}
+        </ul>
+        <Button className="w-full" variant="outline" size="lg" onClick={() => handleSubscribe(FREE_PLAN)}>
+          {FREE_PLAN.cta}
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -226,63 +329,82 @@ export function Pricing() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1200px] mx-auto">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.slug} 
-                className={`border-2 transition-all hover:shadow-xl ${
-                  plan.popular 
-                    ? 'border-leaf shadow-xl relative scale-105 z-10' 
-                    : 'border-gray-200'
+          {/* Mobile : accordéon offre gratuite */}
+          <div className="lg:hidden max-w-xl mx-auto mb-8 rounded-xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-white shadow-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setFreeDrawerOpen((o) => !o)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left"
+              aria-expanded={freeDrawerOpen}
+            >
+              <div>
+                <p className="font-semibold text-emerald-900">{FREE_PLAN.name}</p>
+                <p className="text-xs text-emerald-800/80">0 DT · cliquez pour voir le détail</p>
+              </div>
+              {freeDrawerOpen ? <ChevronUp className="text-emerald-700 shrink-0" /> : <ChevronDown className="text-emerald-700 shrink-0" />}
+            </button>
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-out ${freeDrawerOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-4 pb-4 border-t border-emerald-100/80">{renderFreeCardInner(false)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop + tablette : groupe Basic avec onglet Free coulissant */}
+          <div className="flex flex-wrap justify-center gap-6 lg:gap-8 max-w-[1280px] mx-auto lg:justify-center">
+            <div className="w-full lg:w-auto lg:flex-[1_1_320px] lg:max-w-[380px] min-w-0 relative">
+              <div className="relative flex rounded-2xl min-h-[min(28rem,calc(100vh-12rem))]">
+                {/* Panneau Gratuit (largeur animée) */}
+                <div
+                  className={`hidden lg:flex flex-col shrink-0 transition-[width,opacity,margin] duration-300 ease-out overflow-hidden ${
+                    freeDrawerOpen ? 'w-[min(18rem,calc(100vw-28rem))] opacity-100 mr-1' : 'w-0 opacity-0 mr-0'
+                  }`}
+                  aria-hidden={!freeDrawerOpen}
+                >
+                  <div className="w-[min(18rem,calc(100vw-28rem))] rounded-l-2xl border-2 border-r-0 border-emerald-200 bg-white shadow-md h-full p-5 flex flex-col">
+                    {renderFreeCardInner(false)}
+                  </div>
+                </div>
+
+                {/* Onglet vertical Free */}
+                <button
+                  type="button"
+                  onClick={() => setFreeDrawerOpen((o) => !o)}
+                  aria-expanded={freeDrawerOpen}
+                  title={freeDrawerOpen ? 'Masquer l’offre gratuite' : 'Afficher l’offre gratuite'}
+                  className="hidden lg:flex shrink-0 w-11 flex-col items-center justify-center gap-3 rounded-l-xl bg-leaf text-white shadow-md hover:bg-leaf/90 transition-colors z-10 border-0 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-leaf cursor-pointer py-10"
+                  style={{ marginRight: -1 }}
+                >
+                  <span
+                    className="text-[0.6875rem] font-bold uppercase tracking-widest whitespace-nowrap"
+                    style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}
+                  >
+                    Gratuit
+                  </span>
+                  {freeDrawerOpen ? (
+                    <ChevronsLeft size={18} className="opacity-95" aria-hidden />
+                  ) : (
+                    <ChevronsRight size={18} className="opacity-95" aria-hidden />
+                  )}
+                </button>
+
+                <div className="flex-1 min-w-[260px] relative z-[1]">
+                  {renderPaidPlanCard(PAID_PLANS[0], { wrapClass: 'rounded-2xl h-full lg:rounded-l-none lg:rounded-r-2xl' })}
+                </div>
+              </div>
+            </div>
+
+            {PAID_PLANS.slice(1).map((plan) => (
+              <div
+                key={plan.slug}
+                className={`w-full sm:w-[calc(50%-0.75rem)] lg:flex-[1_1_260px] lg:max-w-[380px] ${
+                  plan.popular ? 'lg:pt-2' : ''
                 }`}
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-leaf text-white text-sm font-semibold px-4 py-1 rounded-full shadow-md">
-                    Plus populaire
-                  </div>
-                )}
-                <CardHeader className="pt-8">
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                  {plan.slug !== 'FREE' && (
-                    <p className="text-xs text-muted-foreground mt-1">Facturation hors TVA</p>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <p className="text-4xl font-bold text-gray-900">
-                      {isAnnual ? plan.annualPrice : plan.monthlyPrice} DT
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {isAnnual ? t('pricingPage.perYear', { defaultValue: 'par an' }) : t('pricingPage.perMonth', { defaultValue: 'par mois' })}
-                    </p>
-                    {plan.annualPrice > 0 && (
-                      <p className="text-xs text-gray-400">
-                        {isAnnual 
-                          ? `${plan.monthlyPrice} DT/mois` 
-                          : `${plan.annualPrice} DT/an`}
-                      </p>
-                    )}
-                  </div>
-
-                  <ul className="space-y-4">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <Check className="text-leaf flex-shrink-0 mt-0.5" size={20} />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    className="w-full"
-                    variant={plan.popular ? 'default' : 'outline'}
-                    onClick={() => handleSubscribe(plan)}
-                    size="lg"
-                  >
-                    {plan.cta}
-                  </Button>
-                </CardContent>
-              </Card>
+                {renderPaidPlanCard(plan, { wrapClass: 'rounded-2xl h-full' })}
+              </div>
             ))}
           </div>
 
@@ -369,12 +491,12 @@ export function Pricing() {
               <div>
                 <p className="text-sm text-gray-500">Plan sélectionné</p>
                 <p className="font-semibold text-lg">
-                  {plans.find((p) => p.slug === selectedPlanSlug)?.name}
+                  {PAID_PLANS.find((p) => p.slug === selectedPlanSlug)?.name}
                 </p>
                 <p className="text-2xl font-bold">
                   {isAnnual
-                    ? `${plans.find((p) => p.slug === selectedPlanSlug)?.annualPrice ?? '—'} DT/an`
-                    : `${plans.find((p) => p.slug === selectedPlanSlug)?.monthlyPrice ?? '—'} DT/mois`}
+                    ? `${PAID_PLANS.find((p) => p.slug === selectedPlanSlug)?.annualPrice ?? '—'} DT/an`
+                    : `${PAID_PLANS.find((p) => p.slug === selectedPlanSlug)?.monthlyPrice ?? '—'} DT/mois`}
                 </p>
               </div>
 

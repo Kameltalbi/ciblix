@@ -368,7 +368,6 @@ authRoutes.post('/forgot-password', async (req, res, next) => {
     });
     if (!sent) {
       // Fallback for environments without SMTP config.
-      console.log(`[auth] Password reset link generated for ${email}: ${resetUrl}`);
     }
 
     if ((process.env.NODE_ENV || 'development') !== 'production') {

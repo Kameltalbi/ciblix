@@ -11,13 +11,11 @@ uploadRoutes.use(auth);
 const storage = multer.diskStorage({
   destination: (_req: any, _file: any, cb: any) => {
     const uploadDir = getUploadsDir();
-    console.log('Upload directory:', uploadDir);
     cb(null, uploadDir);
   },
-  filename: (req: any, file: any, cb: any) => {
+  filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-    console.log('Saving file:', filename);
     cb(null, filename);
   },
 });
@@ -37,13 +35,9 @@ const upload = multer({
 });
 
 uploadRoutes.post('/', upload.single('file'), (req: any, res: any) => {
-  console.log('Upload request received');
   if (!req.file) {
-    console.error('No file uploaded');
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  console.log('File saved:', req.file);
   const url = `/api/uploads/${req.file.filename}`;
-  console.log('Returning URL:', url);
   res.json({ url });
 });

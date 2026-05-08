@@ -391,13 +391,10 @@ affairesRoutes.post('/:id/activites', async (req: AuthRequest, res, next) => {
 affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, res, next) => {
   let uploadedPath: string | null = null;
   try {
-    console.log('Import request received');
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier fourni' });
     }
     uploadedPath = req.file.path;
-
-    console.log('File uploaded:', req.file.path);
 
     // Read Excel file
     const workbook = xlsx.readFile(req.file.path, {
@@ -407,52 +404,26 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
       cellText: false,
       sheetStubs: false,
     });
-    console.log('Sheet names:', workbook.SheetNames);
     
     // Try to find a sheet with data
     let data: any[] = [];
     for (const sheetName of workbook.SheetNames) {
       const worksheet = workbook.Sheets[sheetName];
-      console.log(`Sheet ${sheetName} range:`, worksheet['!ref']);
-      
-      // Try with header option
       const sheetData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-      console.log(`Sheet ${sheetName} raw rows: ${sheetData.length}`);
       
-      // If only header row exists, try without header option
       if (sheetData.length === 1) {
-        console.log(`Only header row found, trying with header: 0`);
         const sheetDataNoHeader = xlsx.utils.sheet_to_json(worksheet, { header: 0 });
-        console.log(`Sheet ${sheetName} rows with header:0: ${sheetDataNoHeader.length}`);
         if (sheetDataNoHeader.length > 0) {
-          // Convert array to objects using first row as header
-          if (sheetDataNoHeader.length > 1) {
-            const headers = sheetDataNoHeader[0] as string[];
-            const rows = sheetDataNoHeader.slice(1).map((row: any) => {
-              const obj: any = {};
-              headers.forEach((header: string, index: number) => {
-                obj[header] = row[index];
-              });
-              return obj;
-            });
-            data = rows;
-            console.log(`Using sheet: ${sheetName} with ${data.length} data rows`);
-            break;
-          }
+          data = sheetDataNoHeader;
+          break;
         }
-      } else if (sheetData.length > 1) {
-        // Normal case with header and data rows
+      } else {
         data = xlsx.utils.sheet_to_json(worksheet);
-        console.log(`Sheet ${sheetName} has ${data.length} rows`);
-        console.log(`Using sheet: ${sheetName}`);
         break;
       }
     }
 
-    console.log('Excel data parsed, rows:', data.length);
-    console.log('First row sample:', JSON.stringify(data[0] || 'No rows'));
     if (data.length === 0) {
-      console.log('No data found in Excel file');
       return res.json({ created: 0, updated: 0, errors: ['Aucune donnée trouvée dans le fichier Excel'] });
     }
     if (data.length > 5000) {
@@ -482,8 +453,6 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
         const moisPrevu = Number(row.moisPrevu || row['Mois prévu'] || row['Mois'] || new Date().getMonth() + 1);
         const anneePrevue = Number(row.anneePrevue || row['Année prévu'] || row['Année'] || new Date().getFullYear());
 
-        console.log('Processing row:', { clientName, clientEmail, productName, title });
-
         // Create or find client
         let client;
         if (clientEmail) {
@@ -504,10 +473,8 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
               organizationId: req.organizationId!,
             },
           });
-          console.log('Client created:', client.id);
           results.created++;
         } else {
-          console.log('Client found:', client.id);
           results.updated++;
         }
 
@@ -530,7 +497,6 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
                 organizationId: req.organizationId!,
               },
             });
-            console.log('Product created:', product.id);
           }
         }
 
@@ -550,7 +516,6 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
             organizationId: req.organizationId!,
           },
         });
-        console.log('Affaire created:', affaire.id);
 
         // Log activity
         await prisma.activite.create({
@@ -565,12 +530,10 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
 
         results.created++;
       } catch (err: any) {
-        console.error('Error processing row:', err);
         results.errors.push(`Erreur ligne ${results.created + results.updated}: ${err.message}`);
       }
     }
 
-    console.log('Import completed:', results);
     res.json(results);
   } catch (e) { next(e); }
   finally {
@@ -578,7 +541,7 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
       try {
         fs.unlinkSync(uploadedPath);
       } catch (cleanupError) {
-        console.error('Erreur suppression fichier import:', cleanupError);
+        // Silently fail on cleanup error
       }
     }
   }
