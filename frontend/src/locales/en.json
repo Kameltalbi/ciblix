@@ -568,7 +568,22 @@
     "signIn": "Sign In",
     "registerHeroTagline": "Your online sales workspace",
     "registerCardTitle": "Create your account",
-    "backToHome": "Home"
+    "backToHome": "Home",
+    "signInWithGoogle": "Continue with Google",
+    "oauthErrors": {
+      "google_not_configured": "Google sign-in is not configured on this server.",
+      "google_denied": "Google sign-in was cancelled.",
+      "access_denied": "Google sign-in was cancelled.",
+      "invalid_profile": "Incomplete Google profile.",
+      "email_not_verified": "Your Google email must be verified.",
+      "google_already_linked_other": "This Google account is already linked to another user.",
+      "google_missing_tokens": "Sign-in failed (missing tokens).",
+      "google_profile_failed": "Could not load your profile after Google.",
+      "account_locked": "Account is temporarily locked.",
+      "google_failed": "Google sign-in failed. Please try again.",
+      "invalid_callback": "Invalid response from Google.",
+      "misconfiguration": "Server configuration error."
+    }
   },
   "pwa": {
     "title": "Install ktOptima",

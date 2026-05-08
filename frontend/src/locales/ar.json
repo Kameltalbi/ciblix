@@ -568,7 +568,22 @@
     "signIn": "تسجيل الدخول",
     "registerHeroTagline": "مساحة عملك التجارية عبر الإنترنت",
     "registerCardTitle": "إنشاء حسابك",
-    "backToHome": "الرئيسية"
+    "backToHome": "الرئيسية",
+    "signInWithGoogle": "المتابعة عبر Google",
+    "oauthErrors": {
+      "google_not_configured": "تسجيل الدخول عبر Google غير مُعدّ على هذا الخادم.",
+      "google_denied": "تم إلغاء تسجيل الدخول عبر Google.",
+      "access_denied": "تم إلغاء تسجيل الدخول عبر Google.",
+      "invalid_profile": "ملف Google غير مكتمل.",
+      "email_not_verified": "يجب أن يكون بريد Google مُفعّلاً.",
+      "google_already_linked_other": "هذا الحساب مرتبط بمستخدم آخر بالفعل.",
+      "google_missing_tokens": "فشل تسجيل الدخول (رموز ناقصة).",
+      "google_profile_failed": "تعذّر تحميل الملف بعد Google.",
+      "account_locked": "الحساب مقفل مؤقتًا.",
+      "google_failed": "فشل تسجيل الدخول عبر Google. حاول مجددًا.",
+      "invalid_callback": "استجابة غير صالحة من Google.",
+      "misconfiguration": "خطأ في إعدادات الخادم."
+    }
   },
   "pwa": {
     "title": "تثبيت ktOptima",

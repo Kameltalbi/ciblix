@@ -64,6 +64,8 @@ model User {
   passwordHash String
   name         String
   phone        String?
+  /// Identifiant OpenID Connect Google (« sub ») — connexion SSO
+  googleSub    String?  @unique
   role         UserRole @default(OWNER)
   failedLoginAttempts Int @default(0)
   lockedUntil  DateTime?

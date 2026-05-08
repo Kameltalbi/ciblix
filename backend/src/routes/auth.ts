@@ -1,15 +1,57 @@
-import { Router } from 'express';
+import { randomBytes } from 'crypto';
+import { Router, type Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { UserRole, AuditAction } from '@prisma/client';
 import { logAudit } from '../lib/audit.js';
-import { checkUserLimit, AuthRequest } from '../middleware/planRestrictions.js';
+import type { AuthRequest } from '../middleware/planRestrictions.js';
 import auth from '../middleware/auth.js';
 import { sendPasswordResetEmail } from '../services/passwordResetMailer.js';
+import {
+  seedDefaultEmailTemplates,
+  seedTrialSubscriptionForOrganization,
+} from '../services/organizationBootstrap.js';
+import {
+  assertValidGoogleOAuthState,
+  buildGoogleAuthorizeUrl,
+  fetchGoogleOidUserProfile,
+  mintGoogleOAuthState,
+} from '../services/googleLoginOAuth.js';
 
 export const authRoutes = Router();
+
+/** Crée une paire access + refresh (stocké comme hash Prisma). */
+async function createSessionTokens(userId: string): Promise<{ accessToken: string; refreshToken: string }> {
+  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET!, {
+    expiresIn: '15m',
+  });
+
+  const refreshToken = jwt.sign({ userId }, process.env.JWT_SECRET!, {
+    expiresIn: '30d',
+  });
+
+  const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await prisma.refreshToken.create({
+    data: {
+      userId,
+      token: refreshTokenHash,
+      expiresAt,
+    },
+  });
+
+  return { accessToken, refreshToken };
+}
+
+function redirectBrowser(res: Response, location: string) {
+  res.redirect(302, location);
+}
+
+function frontendBaseUrl(): string {
+  return (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -60,84 +102,8 @@ authRoutes.post('/register', async (req, res, next) => {
       },
     });
 
-    // Create default email templates
-    await prisma.emailTemplate.createMany({
-      data: [
-        {
-          organizationId: organization.id,
-          name: 'Suivi de devis',
-          subject: 'Votre devis de {montant} DT pour {titre}',
-          body: `Bonjour {client},
-
-Nous avons le plaisir de vous envoyer votre devis de {montant} DT concernant : {titre}.
-
-Détails de l'affaire :
-- Montant : {montant} DT
-- Probabilité : {probabilite}
-- Statut : {statut}
-- Date : {date}
-
-N'hésitez pas à nous contacter pour toute question.
-
-Cordialement`,
-          variables: JSON.stringify(['client', 'montant', 'titre', 'probabilite', 'statut', 'date']),
-          isActive: true,
-        },
-        {
-          organizationId: organization.id,
-          name: 'Relance client',
-          subject: 'Relance : Votre affaire {titre}',
-          body: `Bonjour {client},
-
-Nous faisons suite à notre dernière échange concernant votre affaire : {titre}.
-
-Statut actuel : {statut}
-Montant : {montant} DT
-
-Nous restons à votre disposition pour avancer sur ce dossier.
-
-Cordialement`,
-          variables: JSON.stringify(['client', 'titre', 'statut', 'montant']),
-          isActive: true,
-        },
-        {
-          organizationId: organization.id,
-          name: 'Confirmation de commande',
-          subject: 'Confirmation de votre commande - {titre}',
-          body: `Bonjour {client},
-
-Nous avons bien reçu votre commande pour : {titre}.
-
-Montant : {montant} DT
-Date : {date}
-
-Votre commande est maintenant en cours de traitement. Nous vous tiendrons informé de son évolution.
-
-Merci pour votre confiance.
-
-Cordialement`,
-          variables: JSON.stringify(['client', 'titre', 'montant', 'date']),
-          isActive: true,
-        },
-      ],
-    });
-
-    // Create default subscription (1 month trial from registration date)
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1);
-    
-    await prisma.subscription.create({
-      data: {
-        organizationId: organization.id,
-        plan: organization.plan || 'FREE',
-        price: organization.plan === 'ENTERPRISE' ? 980 : organization.plan === 'BUSINESS' ? 290 : 0,
-        paymentMethod: 'VIREMENT',
-        paymentStatus: 'PENDING',
-        startDate,
-        endDate,
-      },
-    });
+    await seedDefaultEmailTemplates(organization.id);
+    await seedTrialSubscriptionForOrganization(organization);
 
     // Create user with organization
     const user = await prisma.user.create({
@@ -151,28 +117,7 @@ Cordialement`,
       },
     });
 
-    // Generate access token (short-lived: 15 minutes)
-    const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: '15m',
-    });
-
-    // Generate refresh token (long-lived: 30 days)
-    const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: '30d',
-    });
-
-    // Hash refresh token before storing
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-
-    // Store refresh token hash in database
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        token: refreshTokenHash,
-        expiresAt,
-      },
-    });
+    const { accessToken, refreshToken } = await createSessionTokens(user.id);
 
     // Log audit
     await logAudit({
@@ -242,28 +187,7 @@ authRoutes.post('/login', async (req, res, next) => {
       data: { failedLoginAttempts: 0, lockedUntil: null },
     });
 
-    // Generate access token (short-lived: 15 minutes)
-    const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: '15m',
-    });
-
-    // Generate refresh token (long-lived: 30 days)
-    const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: '30d',
-    });
-
-    // Hash refresh token before storing
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
-
-    // Store refresh token hash in database
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        token: refreshTokenHash,
-        expiresAt,
-      },
-    });
+    const { accessToken, refreshToken } = await createSessionTokens(user.id);
 
     // Log audit
     await logAudit({
@@ -517,5 +441,158 @@ authRoutes.post('/change-password', auth, async (req: AuthRequest, res, next) =>
     res.json({ success: true, message: 'Mot de passe mis à jour avec succès' });
   } catch (e) {
     next(e);
+  }
+});
+
+// ─── Google OAuth (connexion / inscription) — scopes openid email profile ───
+
+authRoutes.get('/google', async (_req, res, next) => {
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      redirectBrowser(res, `${frontendBaseUrl()}/login?error=${encodeURIComponent('google_not_configured')}`);
+      return;
+    }
+    const state = mintGoogleOAuthState(process.env.JWT_SECRET!);
+    const url = buildGoogleAuthorizeUrl(state);
+    redirectBrowser(res, url);
+  } catch (e) {
+    next(e);
+  }
+});
+
+authRoutes.get('/google/callback', async (req, res, next) => {
+  const fail = (code: string) =>
+    redirectBrowser(res, `${frontendBaseUrl()}/login?error=${encodeURIComponent(code)}`);
+
+  try {
+    if (!process.env.JWT_SECRET) {
+      fail('misconfiguration');
+      return;
+    }
+
+    const qErr = req.query.error;
+    if (qErr) return fail(typeof qErr === 'string' ? qErr : 'google_denied');
+
+    const authCode = typeof req.query.code === 'string' ? req.query.code : '';
+    const state = typeof req.query.state === 'string' ? req.query.state : '';
+    if (!authCode || !state) return fail('invalid_callback');
+
+    assertValidGoogleOAuthState(state, process.env.JWT_SECRET);
+    const profile = await fetchGoogleOidUserProfile(authCode);
+
+    if (!profile.googleSub || !profile.email) return fail('invalid_profile');
+    if (!profile.emailVerified) return fail('email_not_verified');
+
+    let user = await prisma.user.findUnique({
+      where: { googleSub: profile.googleSub },
+    });
+
+    let justCreatedViaGoogle = false;
+
+    if (!user) {
+      const existingEmailUser = await prisma.user.findUnique({
+        where: { email: profile.email },
+      });
+      if (existingEmailUser?.googleSub && existingEmailUser.googleSub !== profile.googleSub) {
+        return fail('google_already_linked_other');
+      }
+      if (existingEmailUser && !existingEmailUser.googleSub) {
+        user = await prisma.user.update({
+          where: { id: existingEmailUser.id },
+          data: {
+            googleSub: profile.googleSub,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+          },
+        });
+      }
+    }
+
+    if (!user) {
+      const oauthPasswordHash = await bcrypt.hash(randomBytes(48).toString('base64url'), 10);
+      const organizationName =
+        `${profile.name}`.length > 80 ? `${`${profile.name}`.slice(0, 77)}…` : `${profile.name}`;
+
+      const organization = await prisma.organization.create({
+        data: {
+          name: `${organizationName} — Organisation`,
+          email: profile.email,
+          paymentStatus: 'PENDING',
+        },
+      });
+
+      await seedDefaultEmailTemplates(organization.id);
+      await seedTrialSubscriptionForOrganization(organization);
+
+      user = await prisma.user.create({
+        data: {
+          email: profile.email,
+          passwordHash: oauthPasswordHash,
+          name: profile.name,
+          googleSub: profile.googleSub,
+          role: UserRole.OWNER,
+          organizationId: organization.id,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
+
+      justCreatedViaGoogle = true;
+
+      await logAudit({
+        organizationId: organization.id,
+        userId: user.id,
+        action: AuditAction.CREATE,
+        entityType: 'User',
+        entityId: user.id,
+        newValues: { email: user.email, name: user.name, role: user.role, auth: 'google' },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+    }
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      return fail('account_locked');
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        ...(profile.name.trim().length > 0 ? { name: profile.name.trim() } : {}),
+      },
+    });
+
+    const { accessToken, refreshToken } = await createSessionTokens(user.id);
+
+    if (!justCreatedViaGoogle) {
+      await logAudit({
+        organizationId: user.organizationId,
+        userId: user.id,
+        action: AuditAction.LOGIN,
+        entityType: 'User',
+        entityId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        newValues: { method: 'google' },
+      });
+    }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { paymentStatus: true },
+    });
+    const ps = organization?.paymentStatus ?? 'PENDING';
+
+    const hash = [
+      `accessToken=${encodeURIComponent(accessToken)}`,
+      `refreshToken=${encodeURIComponent(refreshToken)}`,
+      `paymentStatus=${encodeURIComponent(ps)}`,
+    ].join('&');
+    redirectBrowser(res, `${frontendBaseUrl()}/auth/google-callback#${hash}`);
+  } catch (e) {
+    console.error('[auth/google/callback]', e);
+    return fail('google_failed');
   }
 });

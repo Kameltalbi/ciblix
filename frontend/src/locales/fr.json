@@ -568,7 +568,22 @@
     "signIn": "Se connecter",
     "registerHeroTagline": "Votre espace de travail commercial en ligne",
     "registerCardTitle": "Créez votre compte",
-    "backToHome": "Accueil"
+    "backToHome": "Accueil",
+    "signInWithGoogle": "Continuer avec Google",
+    "oauthErrors": {
+      "google_not_configured": "La connexion Google n’est pas configurée sur ce serveur.",
+      "google_denied": "Connexion Google annulée.",
+      "access_denied": "Connexion Google annulée.",
+      "invalid_profile": "Profil Google incomplet.",
+      "email_not_verified": "L’adresse e-mail Google doit être vérifiée.",
+      "google_already_linked_other": "Ce compte Google est déjà lié à un autre utilisateur.",
+      "google_missing_tokens": "Échec de la connexion (jetons manquants).",
+      "google_profile_failed": "Impossible de charger le profil après Google.",
+      "account_locked": "Compte temporairement verrouillé.",
+      "google_failed": "Échec de la connexion Google. Réessayez.",
+      "invalid_callback": "Réponse Google invalide.",
+      "misconfiguration": "Configuration serveur incorrecte."
+    }
   },
   "pwa": {
     "title": "Installer ktOptima",

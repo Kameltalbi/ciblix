@@ -12,6 +12,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
+import { GoogleAuthCallback } from './pages/GoogleAuthCallback';
 import { Landing } from './pages/Landing';
 
 // Heavy authenticated pages: lazy-loaded so they don't bloat the initial bundle.
@@ -94,6 +95,7 @@ export default function App() {
           <Route path="/sales" element={<LandingSales />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/google-callback" element={<GoogleAuthCallback />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/legal/:type" element={<Legal />} />

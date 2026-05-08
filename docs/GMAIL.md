@@ -54,3 +54,43 @@ GOOGLE_REDIRECT_URI="https://crm.tondomaine.com/api/gmail/callback"
 Tant que tu es seul à utiliser le CRM (mode test), pas besoin de publier l'app. Google limite à 100 utilisateurs test.
 
 Pour une utilisation pro, il faut soumettre l'app en vérification Google (plusieurs semaines).
+
+---
+
+## 7. Connexion « Se connecter avec Google » (SSO)
+
+Les **mêmes** `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` peuvent servir, avec **un URI de redirection supplémentaire** pour le login (différent du callback Gmail).
+
+### Scopes à ajouter dans l’écran de consentement
+
+- `openid`
+- `https://www.googleapis.com/auth/userinfo.email`
+- `https://www.googleapis.com/auth/userinfo.profile`
+
+(En pratique Google demande souvent `openid email profile` comme scope « combiné ».)
+
+### URI de redirection backend
+
+Dans la console Google Cloud → Identifiants → ton client OAuth « Application Web », ajoute :
+
+- Prod : `https://ton-domaine.com/api/auth/google/callback`
+- Dev (API sur le port 4000) : `http://localhost:4000/api/auth/google/callback`
+
+### Variable d’environnement optionnelle
+
+Par défaut le backend construit l’URI comme :  
+`FRONTEND_URL` + `/api/auth/google/callback` (même host que le front en prod derrière nginx).
+
+Si en développement ton front (Vite) et ton API ne partagent **pas** le même origin, définit explicitement dans `.env` :
+
+```env
+GOOGLE_LOGIN_REDIRECT_URI="http://localhost:4000/api/auth/google/callback"
+```
+
+### Flux côté utilisateur
+
+1. Clic sur « Continuer avec Google » → redirection vers Google.
+2. Retour sur `/api/auth/google/callback` → création de session (JWT) puis redirection vers `/auth/google-callback#...` sur le front.
+3. Compte **nouveau** : une organisation + utilisateur propriétaire sont créés comme à l’inscription classique.
+
+**Lier un compte existant** : même e-mail qu’un compte créé au mot de passe, sans `googleSub` encore : la première connexion Google attache l’identifiant Google au compte.
