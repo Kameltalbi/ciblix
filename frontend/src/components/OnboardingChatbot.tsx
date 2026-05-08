@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -37,6 +37,23 @@ export function OnboardingChatbot() {
     ],
     [t]
   );
+
+  useEffect(() => {
+    const knownWelcomeMessages = [
+      "Bonjour, je suis votre chatbot d'onboarding KTOptima. Je vous aide à comprendre rapidement comment démarrer.",
+      'Hello, I am your KTOptima onboarding chatbot. I help you quickly understand how to get started.',
+      'مرحباً، أنا شات بوت التهيئة في KTOptima. أساعدك على فهم طريقة البدء بسرعة.',
+    ];
+
+    setMessages((prev) => {
+      if (prev.length === 0) return [{ role: 'assistant', content: t('onboardingChatbot.welcome') }];
+      const first = prev[0];
+      if (first.role !== 'assistant' || !knownWelcomeMessages.includes(first.content)) return prev;
+      const next = [...prev];
+      next[0] = { role: 'assistant', content: t('onboardingChatbot.welcome') };
+      return next;
+    });
+  }, [i18n.language, t]);
 
   const sendQuestion = async (question: string) => {
     const userQuestion = question.trim();
