@@ -709,6 +709,74 @@ aiAssistantRoutes.post('/query', checkPlanFeature('ai'), async (req: AuthRequest
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+    // Dedicated onboarding helper for product adoption
+    if (
+      normalizedMessage.includes('onboarding') ||
+      normalizedMessage.includes('demarrer') ||
+      normalizedMessage.includes('commencer') ||
+      normalizedMessage.includes('utiliser') ||
+      normalizedMessage.includes('comment fonctionne') ||
+      normalizedMessage.includes('guide') ||
+      normalizedMessage.includes('prise en main')
+    ) {
+      const onboardingTextByLanguage = {
+        fr:
+          `🚀 Guide rapide KTOptima (prise en main)\n\n` +
+          `1) Commencez par les Prospects\n` +
+          `- Ajoutez vos leads dans "Prospects"\n` +
+          `- Qualifiez-les (score, source, notes)\n` +
+          `- Convertissez les leads chauds: client + affaire créés automatiquement\n\n` +
+          `2) Pilotez vos ventes dans "Affaires"\n` +
+          `- Vue Kanban = suivi visuel du pipeline\n` +
+          `- Déplacez les affaires entre étapes (drag & drop)\n` +
+          `- Suivez les prochaines actions et dates de relance\n\n` +
+          `3) Gérez les données clients\n` +
+          `- "Clients" pour la fiche client complète\n` +
+          `- Historisez vos interactions et opportunités\n\n` +
+          `4) Passez à l'exécution\n` +
+          `- "Calendrier" pour RDV et rappels\n` +
+          `- "Activités" pour les actions commerciales\n` +
+          `- "Dépenses" pour le suivi rentabilité\n\n` +
+          `5) Analysez et optimisez\n` +
+          `- Utilisez KPI + IA Assistant pour priorités et prévisions CA\n` +
+          `- Priorisez les affaires chaudes et les relances en retard\n\n` +
+          `💡 Astuce: workflow recommandé = Prospect -> Conversion -> Affaire (Kanban) -> Activités/RDV -> Clôture gagnée.`,
+        en:
+          `🚀 KTOptima Quick Onboarding\n\n` +
+          `1) Start with Prospects\n` +
+          `- Add and qualify leads\n` +
+          `- Convert hot leads (client + deal created automatically)\n\n` +
+          `2) Manage sales in Deals\n` +
+          `- Use Kanban for visual pipeline tracking\n` +
+          `- Move deals between stages\n` +
+          `- Track next actions and follow-up dates\n\n` +
+          `3) Work your customer base\n` +
+          `- Use Clients for complete account records\n\n` +
+          `4) Execute daily\n` +
+          `- Calendar for meetings and reminders\n` +
+          `- Activities for sales tasks\n` +
+          `- Expenses for profitability tracking\n\n` +
+          `5) Optimize\n` +
+          `- Use KPI + AI Assistant for priorities and forecasting.`,
+        ar:
+          `🚀 دليل سريع لاستخدام KTOptima\n\n` +
+          `1) ابدأ من صفحة العملاء المحتملين\n` +
+          `2) تابع المبيعات في لوحة Kanban\n` +
+          `3) نظم العملاء والفرص\n` +
+          `4) نفّذ يومياً عبر التقويم والأنشطة\n` +
+          `5) حسّن الأداء عبر مؤشرات KPI والمساعد الذكي.`,
+      } as const;
+
+      res.json({
+        intent: 'onboarding',
+        result: {
+          type: 'text',
+          value: onboardingTextByLanguage[language as keyof typeof onboardingTextByLanguage] || onboardingTextByLanguage.fr,
+        },
+      });
+      return;
+    }
+
     // Use deterministic rule-based predictions for forecast-related queries
     if (
       normalizedMessage.includes('prevision') ||

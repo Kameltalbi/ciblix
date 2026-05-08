@@ -29,6 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatbotVisible, setChatbotVisible] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const isRTL = i18n.language === 'ar';
 
@@ -257,6 +258,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 md:px-8 md:py-8">{children}</div>
         </main>
       </div>
+
+      {/* Floating chatbot quick access */}
+      {chatbotVisible && (
+        <div className="fixed bottom-5 right-5 z-40 flex items-end gap-2 sm:bottom-6 sm:right-6">
+          <button
+            type="button"
+            onClick={() => setChatbotVisible(false)}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-white text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+            title="Fermer le bouton chatbot"
+            aria-label="Fermer le bouton chatbot"
+          >
+            <X size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/ai-assistant')}
+            className="group inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
+            title="Ouvrir le chatbot IA"
+            aria-label="Ouvrir le chatbot IA"
+          >
+            <Sparkles size={16} className="shrink-0" />
+            <span className="hidden sm:inline">Chatbot IA</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

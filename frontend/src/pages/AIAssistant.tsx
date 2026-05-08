@@ -16,6 +16,9 @@ interface Message {
 export function AIAssistant() {
   const { t, i18n } = useTranslation();
   const suggestions = [
+    'Comment démarrer sur KTOptima ?',
+    'Explique-moi le workflow complet de l’app',
+    'Comment utiliser le pipeline Kanban ?',
     t('aiAssistant.suggestions.predictYearEnd'),
     t('aiAssistant.suggestions.recommendations'),
     t('aiAssistant.suggestions.targetAnalysis'),
@@ -46,6 +49,10 @@ export function AIAssistant() {
 
   const formatResponse = (data: any): string => {
     const { result } = data;
+
+    if (typeof result === 'string') {
+      return result;
+    }
     
     if (result.type === 'metric') {
       return `📊 ${result.title} : ${result.value}`;
