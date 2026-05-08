@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, Receipt, Repeat, TrendingUp, TrendingDown, Scale, Search } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '@/lib/api';
 import { fmtDT } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,6 +107,44 @@ export function Expenses() {
   });
   const allExpenses = allExpensesData?.data || [];
   const totalExpenses = allExpenses.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+  const monthLabels = [
+    t('expenses.months.january'),
+    t('expenses.months.february'),
+    t('expenses.months.march'),
+    t('expenses.months.april'),
+    t('expenses.months.may'),
+    t('expenses.months.june'),
+    t('expenses.months.july'),
+    t('expenses.months.august'),
+    t('expenses.months.september'),
+    t('expenses.months.october'),
+    t('expenses.months.november'),
+    t('expenses.months.december'),
+  ];
+  const expensesByMonth = Array.from({ length: 12 }, (_, idx) => {
+    const month = idx + 1;
+    const amount = allExpenses
+      .filter((e: any) => new Date(e.date).getMonth() + 1 === month)
+      .reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+    const count = allExpenses.filter((e: any) => new Date(e.date).getMonth() + 1 === month).length;
+    return {
+      month,
+      label: monthLabels[idx],
+      shortLabel: monthLabels[idx].slice(0, 3),
+      amount,
+      count,
+    };
+  });
+  const selectedMonthNumber = filterMonth !== 'all' ? Number(filterMonth) : new Date().getMonth() + 1;
+  const selectedMonthData = expensesByMonth.find((m) => m.month === selectedMonthNumber) || expensesByMonth[new Date().getMonth()];
+  const previousMonthData =
+    selectedMonthNumber > 1
+      ? expensesByMonth.find((m) => m.month === selectedMonthNumber - 1)
+      : undefined;
+  const monthlyDelta =
+    previousMonthData && previousMonthData.amount > 0
+      ? ((selectedMonthData.amount - previousMonthData.amount) / previousMonthData.amount) * 100
+      : null;
 
   // Fetch custom expense categories
   const { data: expenseCategories = [] } = useQuery<any[]>({
@@ -393,6 +432,88 @@ export function Expenses() {
             <SelectItem value="2027">2027</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Annual trends + selected month focus */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card className="xl:col-span-2 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              Dépenses par mois ({filterYear})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={expensesByMonth}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="shortLabel" stroke="#6b7280" fontSize={12} />
+                <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(value) => `${Math.round(value / 1000)}k`} />
+                <Tooltip
+                  formatter={(value: number) => [`${fmtDT(value)} TND`, 'Dépenses']}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.label || ''}
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="#ef4444"
+                  strokeWidth={3}
+                  dot={(props: any) => {
+                    const isSelected = props?.payload?.month === selectedMonthNumber;
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={isSelected ? 5 : 3}
+                        fill={isSelected ? '#dc2626' : '#ef4444'}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    );
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              Dépenses de {selectedMonthData?.label}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Total du mois</p>
+              <p className="text-2xl font-bold text-red-600">{fmtDT(selectedMonthData?.amount || 0)} TND</p>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Nombre d'opérations</span>
+              <span className="font-semibold">{selectedMonthData?.count || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Variation vs mois précédent</span>
+              <span
+                className={`font-semibold ${
+                  monthlyDelta == null ? 'text-muted-foreground' : monthlyDelta <= 0 ? 'text-emerald-600' : 'text-red-600'
+                }`}
+              >
+                {monthlyDelta == null ? '—' : `${monthlyDelta > 0 ? '+' : ''}${Math.round(monthlyDelta)}%`}
+              </span>
+            </div>
+            <div className="pt-2 border-t text-xs text-muted-foreground">
+              {filterMonth === 'all'
+                ? 'Affichage basé sur le mois en cours (change le filtre mois pour analyser un autre mois).'
+                : 'Analyse focalisée sur le mois sélectionné dans les filtres.'}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Expenses List */}

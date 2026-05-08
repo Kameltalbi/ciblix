@@ -92,7 +92,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
       return cached || networkPromise;
     })
   );
