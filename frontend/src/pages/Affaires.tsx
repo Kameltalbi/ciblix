@@ -1,6 +1,32 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, FileText, Receipt, Mail, Eye, Upload, MoreVertical, Search, Copy, SlidersHorizontal, X } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  FileText,
+  Receipt,
+  Mail,
+  Eye,
+  Upload,
+  MoreVertical,
+  Search,
+  Copy,
+  SlidersHorizontal,
+  X,
+  Phone,
+  MessageCircle,
+  StickyNote,
+  MoveRight,
+  Flame,
+  Snowflake,
+  AlertTriangle,
+  Star,
+  CalendarClock,
+  Activity,
+  UserCircle2,
+  TrendingUp,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
@@ -32,6 +58,55 @@ type FormData = {
 };
 
 const NO_ASSIGNEE_VALUE = '__none__';
+const KANBAN_BATCH_SIZE = 40;
+
+type KanbanColumnKey = StatutAffaire | 'RDV';
+
+const KANBAN_COLUMNS: Array<{
+  key: KanbanColumnKey;
+  status: StatutAffaire;
+  label: string;
+  colorClass: string;
+  headerAccentClass: string;
+}> = [
+  { key: 'PROSPECT', status: 'PROSPECT', label: 'Prospect', colorClass: 'bg-slate-50/90 border-slate-200', headerAccentClass: 'text-slate-700' },
+  { key: 'QUALIFIE', status: 'QUALIFIE', label: 'Qualifié', colorClass: 'bg-blue-50/80 border-blue-200', headerAccentClass: 'text-blue-700' },
+  { key: 'RDV', status: 'QUALIFIE', label: 'RDV', colorClass: 'bg-cyan-50/80 border-cyan-200', headerAccentClass: 'text-cyan-700' },
+  { key: 'PROPOSITION', status: 'PROPOSITION', label: 'Proposition', colorClass: 'bg-orange-50/80 border-orange-200', headerAccentClass: 'text-orange-700' },
+  { key: 'NEGOCIATION', status: 'NEGOCIATION', label: 'Négociation', colorClass: 'bg-violet-50/80 border-violet-200', headerAccentClass: 'text-violet-700' },
+  { key: 'GAGNE', status: 'GAGNE', label: 'Gagné', colorClass: 'bg-emerald-50/80 border-emerald-200', headerAccentClass: 'text-emerald-700' },
+  { key: 'PERDU', status: 'PERDU', label: 'Perdu', colorClass: 'bg-rose-50/80 border-rose-200', headerAccentClass: 'text-rose-700' },
+];
+
+const hasRdvSignal = (a: Affaire) => {
+  const nextAction = a.prochaineAction?.toLowerCase() || '';
+  const notes = a.notes?.toLowerCase() || '';
+  return nextAction.includes('rdv') || notes.includes('rdv') || notes.includes('rendez');
+};
+
+const getTemperature = (a: Affaire): 'hot' | 'warm' | 'cold' => {
+  const p = a.probabilite || 0;
+  if (p >= 75) return 'hot';
+  if (p >= 40) return 'warm';
+  return 'cold';
+};
+
+const isUrgent = (a: Affaire) => {
+  if (!a.dateProchaineAction) return false;
+  const target = new Date(a.dateProchaineAction);
+  const now = new Date();
+  return target.getTime() < now.getTime();
+};
+
+const getAssigneeInitials = (assigneeName?: string) => {
+  if (!assigneeName) return 'NA';
+  return assigneeName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+};
 
 const EMPTY: FormData = {
   clientId: '', productId: '', type: '', montantHT: '',
@@ -59,7 +134,17 @@ export function Affaires() {
   const [clientDialogOpen, setClientDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [draggedAffaireId, setDraggedAffaireId] = useState<string | null>(null);
-  const [dropTargetStatus, setDropTargetStatus] = useState<StatutAffaire | null>(null);
+  const [dropTargetStatus, setDropTargetStatus] = useState<KanbanColumnKey | null>(null);
+  const [mobileKanbanColumn, setMobileKanbanColumn] = useState<KanbanColumnKey>('PROSPECT');
+  const [visibleByColumn, setVisibleByColumn] = useState<Record<KanbanColumnKey, number>>({
+    PROSPECT: KANBAN_BATCH_SIZE,
+    QUALIFIE: KANBAN_BATCH_SIZE,
+    RDV: KANBAN_BATCH_SIZE,
+    PROPOSITION: KANBAN_BATCH_SIZE,
+    NEGOCIATION: KANBAN_BATCH_SIZE,
+    GAGNE: KANBAN_BATCH_SIZE,
+    PERDU: KANBAN_BATCH_SIZE,
+  });
 
   const { data: affairesData } = useQuery<{ data: Affaire[], pagination: any }>({
     queryKey: ['affaires', filters, page],
@@ -317,9 +402,10 @@ export function Affaires() {
     setDropTargetStatus(null);
   };
 
-  const handleDropOnStatus = (targetStatus: StatutAffaire) => {
+  const handleDropOnStatus = (targetColumn: KanbanColumnKey) => {
     if (!draggedAffaireId) return;
     const current = sortedAllAffaires.find((a) => a.id === draggedAffaireId);
+    const targetStatus: StatutAffaire = targetColumn === 'RDV' ? 'QUALIFIE' : targetColumn;
     if (!current || current.statut === targetStatus) {
       handleDragEnd();
       return;
@@ -346,6 +432,16 @@ export function Affaires() {
   const winRate = allAffaires.filter(a => a.statut === 'GAGNE' || a.statut === 'PERDU').length > 0
     ? Math.round((allAffaires.filter(a => a.statut === 'GAGNE').length / allAffaires.filter(a => a.statut === 'GAGNE' || a.statut === 'PERDU').length) * 100)
     : 0;
+
+  const kanbanByColumn: Record<KanbanColumnKey, Affaire[]> = {
+    PROSPECT: sortedAllAffaires.filter((a) => a.statut === 'PROSPECT'),
+    QUALIFIE: sortedAllAffaires.filter((a) => a.statut === 'QUALIFIE' && !hasRdvSignal(a)),
+    RDV: sortedAllAffaires.filter((a) => a.statut === 'QUALIFIE' && hasRdvSignal(a)),
+    PROPOSITION: sortedAllAffaires.filter((a) => a.statut === 'PROPOSITION'),
+    NEGOCIATION: sortedAllAffaires.filter((a) => a.statut === 'NEGOCIATION'),
+    GAGNE: sortedAllAffaires.filter((a) => a.statut === 'GAGNE'),
+    PERDU: sortedAllAffaires.filter((a) => a.statut === 'PERDU'),
+  };
 
   return (
     <div className="space-y-5 px-2 md:px-0">
@@ -384,30 +480,42 @@ export function Affaires() {
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="border-2">
+        <Card className="border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-sm">
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">CA Total</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">CA Total</p>
+              <TrendingUp size={14} className="text-slate-500" />
+            </div>
             <p className="text-lg md:text-2xl font-bold text-gray-900 mt-1">{fmtDT(totalCA)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.length} affaires</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.length} affaires actives</p>
           </CardContent>
         </Card>
-        <Card className="border-2 border-blue-200 bg-blue-50/30">
+        <Card className="border border-blue-200 bg-gradient-to-br from-white via-blue-50 to-blue-100/70 shadow-sm">
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">En cours</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">En cours</p>
+              <Activity size={14} className="text-blue-500" />
+            </div>
             <p className="text-lg md:text-2xl font-bold text-blue-600 mt-1">{fmtDT(pipelineCA)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.filter(a => ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut)).length} en cours</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.filter(a => ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut)).length} opportunités en cours</p>
           </CardContent>
         </Card>
-        <Card className="border-2 border-emerald-200 bg-emerald-50/30">
+        <Card className="border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100/70 shadow-sm">
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gagné</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gagné</p>
+              <Star size={14} className="text-emerald-500" />
+            </div>
             <p className="text-lg md:text-2xl font-bold text-emerald-600 mt-1">{fmtDT(realiseCA)}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.filter(a => a.statut === 'GAGNE').length} gagnées</p>
           </CardContent>
         </Card>
-        <Card className="border-2 border-violet-200 bg-violet-50/30">
+        <Card className="border border-violet-200 bg-gradient-to-br from-white via-violet-50 to-violet-100/70 shadow-sm">
           <CardContent className="p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Taux conversion</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Taux conversion</p>
+              <TrendingUp size={14} className="text-violet-500" />
+            </div>
             <p className="text-lg md:text-2xl font-bold text-violet-600 mt-1">{winRate}%</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.filter(a => a.statut === 'PERDU').length} perdues</p>
           </CardContent>
@@ -840,75 +948,296 @@ export function Affaires() {
       {/* Kanban View */}
       {view === 'kanban' && (
         <div className="overflow-x-auto pb-2">
-          <div className="grid grid-cols-6 gap-4 min-w-[1320px]">
-          {(['PROSPECT', 'QUALIFIE', 'PROPOSITION', 'NEGOCIATION', 'GAGNE', 'PERDU'] as const).map((statut) => {
-            const statutAffaires = sortedAllAffaires.filter(a => a.statut === statut);
-            const statutCA = statutAffaires.reduce((sum, a) => sum + Number(a.montantHT), 0);
-            const statutLabels = {
-              PROSPECT: { label: t('affaires.status.prospect'), color: 'bg-yellow-50 border-yellow-200' },
-              QUALIFIE: { label: t('affaires.status.qualified'), color: 'bg-blue-50 border-blue-200' },
-              PROPOSITION: { label: t('affaires.status.proposal'), color: 'bg-orange-50 border-orange-200' },
-              NEGOCIATION: { label: t('affaires.status.negotiation'), color: 'bg-purple-50 border-purple-200' },
-              GAGNE: { label: t('affaires.status.won'), color: 'bg-green-50 border-green-200' },
-              PERDU: { label: t('affaires.status.lost'), color: 'bg-red-50 border-red-200' },
-            };
-            const statutInfo = statutLabels[statut];
-            return (
-              <Card key={statut} className={`flex flex-col ${statutInfo.color}`}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold">{statutInfo.label}</CardTitle>
-                  <p className="text-xs text-muted-foreground">{statutAffaires.length} affaires • {fmtDT(statutCA)}</p>
-                </CardHeader>
-                <CardContent
-                  className={cn(
-                    'flex-1 space-y-2 overflow-y-auto max-h-[68vh] rounded-b-lg transition-colors',
-                    dropTargetStatus === statut ? 'bg-primary/5 ring-1 ring-primary/20' : ''
-                  )}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDropTargetStatus(statut);
-                  }}
-                  onDragLeave={() => {
-                    if (dropTargetStatus === statut) setDropTargetStatus(null);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleDropOnStatus(statut);
-                  }}
-                >
-                  {statutAffaires.map((a) => {
-                    const ht = Number(a.montantHT);
-                    return (
-                      <Card
-                        key={a.id}
-                        draggable
-                        onDragStart={() => handleDragStart(a.id)}
-                        onDragEnd={handleDragEnd}
-                        className={cn(
-                          'p-3 hover:shadow-md transition-shadow cursor-pointer',
-                          draggedAffaireId === a.id ? 'opacity-60' : ''
-                        )}
-                        onClick={() => navigate(`/affaires/${a.id}`)}
+          <div className="md:hidden mb-3">
+            <Card className="border border-slate-200 bg-white/80">
+              <CardContent className="p-3">
+                <Label className="text-xs text-muted-foreground">Étape pipeline</Label>
+                <Select value={mobileKanbanColumn} onValueChange={(v) => setMobileKanbanColumn(v as KanbanColumnKey)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KANBAN_COLUMNS.map((column) => (
+                      <SelectItem key={column.key} value={column.key}>
+                        {column.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="md:hidden">
+            {(() => {
+              const column = KANBAN_COLUMNS.find((c) => c.key === mobileKanbanColumn)!;
+              const columnAffaires = kanbanByColumn[column.key];
+              const columnCA = columnAffaires.reduce((sum, a) => sum + Number(a.montantHT), 0);
+              const visibleLimit = visibleByColumn[column.key] || KANBAN_BATCH_SIZE;
+              const visibleAffaires = columnAffaires.slice(0, visibleLimit);
+              const hasMore = columnAffaires.length > visibleLimit;
+
+              return (
+                <Card className={cn('rounded-2xl border shadow-sm', column.colorClass)}>
+                  <CardHeader className="sticky top-0 z-10 rounded-t-2xl border-b bg-white/90 backdrop-blur pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className={cn('text-sm font-semibold', column.headerAccentClass)}>
+                        {column.label}
+                      </CardTitle>
+                      <Badge variant="outline" className="rounded-full bg-white/80">{columnAffaires.length}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{fmtDT(columnCA)}</p>
+                  </CardHeader>
+                  <CardContent
+                    className={cn(
+                      'h-[calc(100vh-320px)] space-y-3 overflow-y-auto p-3 rounded-b-2xl',
+                      dropTargetStatus === column.key ? 'bg-primary/5 ring-1 ring-primary/25' : ''
+                    )}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDropTargetStatus(column.key);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDropOnStatus(column.key);
+                    }}
+                  >
+                    {visibleAffaires.map((a) => {
+                      const temperature = getTemperature(a);
+                      const urgent = isUrgent(a);
+                      return (
+                        <div
+                          key={a.id}
+                          draggable
+                          onDragStart={() => handleDragStart(a.id)}
+                          onDragEnd={handleDragEnd}
+                          onClick={() => navigate(`/affaires/${a.id}`)}
+                          className={cn(
+                            'rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-150 active:scale-[0.99]',
+                            draggedAffaireId === a.id ? 'opacity-60' : ''
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">{a.client?.name || 'N/A'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{a.type || a.title || 'Opportunité'}</p>
+                            </div>
+                            <p className="text-sm font-bold text-slate-900">{fmtDT(Number(a.montantHT))}</p>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <Badge variant="outline">{a.probabilite}%</Badge>
+                            {temperature === 'hot' && <Badge className="bg-orange-500 text-white"><Flame size={12} className="mr-1" /> Chaud</Badge>}
+                            {temperature === 'warm' && <Badge className="bg-amber-500 text-white">🟡 Moyen</Badge>}
+                            {temperature === 'cold' && <Badge className="bg-cyan-600 text-white"><Snowflake size={12} className="mr-1" /> Froid</Badge>}
+                            {urgent && <Badge className="bg-rose-600 text-white"><AlertTriangle size={12} className="mr-1" /> À relancer</Badge>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {hasMore && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() =>
+                          setVisibleByColumn((prev) => ({
+                            ...prev,
+                            [column.key]: prev[column.key] + KANBAN_BATCH_SIZE,
+                          }))
+                        }
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="font-semibold text-sm">{a.client?.name || 'N/A'}</div>
-                          <div className="text-sm font-bold">{fmtDT(ht)}</div>
-                        </div>
-                        <div className="text-xs text-muted-foreground mb-2">{a.title}</div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{MOIS[a.moisPrevu]}</span>
-                          <span>{a.probabilite}%</span>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                  {statutAffaires.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-4">Aucune affaire</p>
+                        Afficher plus ({columnAffaires.length - visibleLimit})
+                      </Button>
+                    )}
+                    {columnAffaires.length === 0 && (
+                      <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 py-8 text-center text-xs text-muted-foreground">
+                        Aucune affaire
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+          </div>
+
+          <div className="hidden md:flex gap-4 min-w-[1880px]">
+            {KANBAN_COLUMNS.map((column) => {
+              const columnAffaires = kanbanByColumn[column.key];
+              const columnCA = columnAffaires.reduce((sum, a) => sum + Number(a.montantHT), 0);
+              const visibleLimit = visibleByColumn[column.key] || KANBAN_BATCH_SIZE;
+              const visibleAffaires = columnAffaires.slice(0, visibleLimit);
+              const hasMore = columnAffaires.length > visibleLimit;
+
+              return (
+                <Card
+                  key={column.key}
+                  className={cn(
+                    'w-[270px] shrink-0 rounded-2xl border shadow-sm',
+                    column.colorClass
                   )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                >
+                  <CardHeader className="sticky top-0 z-10 rounded-t-2xl border-b bg-white/85 backdrop-blur pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className={cn('text-sm font-semibold', column.headerAccentClass)}>
+                        {column.label}
+                      </CardTitle>
+                      <Badge variant="outline" className="rounded-full bg-white/80">
+                        {columnAffaires.length}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{fmtDT(columnCA)}</p>
+                  </CardHeader>
+
+                  <CardContent
+                    className={cn(
+                      'h-[calc(100vh-260px)] space-y-3 overflow-y-auto p-3 rounded-b-2xl transition-colors',
+                      dropTargetStatus === column.key ? 'bg-primary/5 ring-1 ring-primary/25' : ''
+                    )}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDropTargetStatus(column.key);
+                    }}
+                    onDragLeave={() => {
+                      if (dropTargetStatus === column.key) setDropTargetStatus(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDropOnStatus(column.key);
+                    }}
+                  >
+                    {visibleAffaires.map((a) => {
+                      const temperature = getTemperature(a);
+                      const urgent = isUrgent(a);
+                      const nextDate = a.dateProchaineAction ? new Date(a.dateProchaineAction).toLocaleDateString('fr-FR') : 'Non planifiée';
+                      const assigneeName = a.assignedTo?.name || 'Non assigné';
+                      const openWhatsAppHref = `https://wa.me/?text=${encodeURIComponent(`Bonjour ${a.client?.name || ''}`)}`;
+                      return (
+                        <div
+                          key={a.id}
+                          draggable
+                          onDragStart={() => handleDragStart(a.id)}
+                          onDragEnd={handleDragEnd}
+                          onClick={() => navigate(`/affaires/${a.id}`)}
+                          className={cn(
+                            'group rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer',
+                            draggedAffaireId === a.id ? 'opacity-60 scale-[0.99]' : ''
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">{a.client?.name || 'N/A'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{a.type || a.title || 'Opportunité'}</p>
+                            </div>
+                            <p className="text-sm font-bold text-slate-900">{fmtDT(Number(a.montantHT))}</p>
+                          </div>
+
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <Badge variant="outline">{a.probabilite}%</Badge>
+                            <Badge variant="outline" className="bg-slate-50">{a.statut}</Badge>
+                            {temperature === 'hot' && <Badge className="bg-orange-500 text-white"><Flame size={12} className="mr-1" /> Chaud</Badge>}
+                            {temperature === 'warm' && <Badge className="bg-amber-500 text-white">🟡 Moyen</Badge>}
+                            {temperature === 'cold' && <Badge className="bg-cyan-600 text-white"><Snowflake size={12} className="mr-1" /> Froid</Badge>}
+                            {(a.score || 0) >= 75 && <Badge className="bg-violet-600 text-white"><Star size={12} className="mr-1" /> Priorité IA</Badge>}
+                            {urgent && <Badge className="bg-rose-600 text-white"><AlertTriangle size={12} className="mr-1" /> À relancer</Badge>}
+                          </div>
+
+                          {(a.score || 0) >= 75 && (
+                            <p className="mt-2 rounded-lg bg-violet-50 px-2 py-1 text-[11px] text-violet-700">
+                              IA recommande une relance aujourd'hui.
+                            </p>
+                          )}
+
+                          <div className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Activity size={12} />
+                              <span className="truncate">Dernière activité: {new Date(a.updatedAt).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <MoveRight size={12} />
+                              <span className="truncate">Prochaine action: {a.prochaineAction || 'À définir'}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="inline-flex items-center gap-1.5">
+                                <CalendarClock size={12} />
+                                {nextDate}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px]">
+                                <UserCircle2 size={12} />
+                                <span className="rounded-full bg-slate-300 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700">
+                                  {getAssigneeInitials(assigneeName)}
+                                </span>
+                                {assigneeName}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div
+                            className="mt-3 hidden flex-wrap gap-1.5 border-t border-slate-100 pt-2 group-hover:flex"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px]"
+                              onClick={() => window.open(`tel:${a.client?.phone || ''}`)}
+                            >
+                              <Phone size={12} className="mr-1" /> Appeler
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px]"
+                              onClick={() => window.open(openWhatsAppHref, '_blank')}
+                            >
+                              <MessageCircle size={12} className="mr-1" /> WhatsApp
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px]"
+                              onClick={() => window.open(`mailto:${a.client?.email || ''}?subject=${encodeURIComponent(`Suivi opportunité - ${a.client?.name || ''}`)}`)}
+                            >
+                              <Mail size={12} className="mr-1" /> Email
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => handleEdit(a)}>
+                              <StickyNote size={12} className="mr-1" /> Note
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => navigate(`/affaires/${a.id}`)}>
+                              <MoveRight size={12} className="mr-1" /> Déplacer
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => navigate(`/affaires/${a.id}`)}>
+                              <Eye size={12} className="mr-1" /> Ouvrir
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {hasMore && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() =>
+                          setVisibleByColumn((prev) => ({
+                            ...prev,
+                            [column.key]: prev[column.key] + KANBAN_BATCH_SIZE,
+                          }))
+                        }
+                      >
+                        Afficher plus ({columnAffaires.length - visibleLimit})
+                      </Button>
+                    )}
+
+                    {columnAffaires.length === 0 && (
+                      <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 py-8 text-center text-xs text-muted-foreground">
+                        Aucune affaire
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}

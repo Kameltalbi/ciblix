@@ -28,6 +28,8 @@ export function SupportTickets() {
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
   const [category, setCategory] = useState<'BUG' | 'BILLING' | 'FEATURE' | 'OTHER'>('OTHER');
   const [reply, setReply] = useState('');
+  const subjectLength = subject.trim().length;
+  const descriptionLength = description.trim().length;
 
   const { data: ticketsData } = useQuery<{ data: Ticket[] }>({
     queryKey: ['support-tickets', 'me'],
@@ -49,8 +51,15 @@ export function SupportTickets() {
         priority,
         category,
       }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['support-tickets'] });
+    onSuccess: ({ data: createdTicket }: { data: Ticket }) => {
+      qc.setQueryData<{ data: Ticket[] } | undefined>(['support-tickets', 'me'], (current) => {
+        const currentData = current?.data || [];
+        const alreadyExists = currentData.some((ticket) => ticket.id === createdTicket.id);
+        if (alreadyExists) return current;
+        return { data: [createdTicket, ...currentData] };
+      });
+      qc.invalidateQueries({ queryKey: ['support-tickets', 'me'] });
+      setSelectedTicketId(createdTicket.id);
       setOpen(false);
       setSubject('');
       setDescription('');
@@ -171,6 +180,9 @@ export function SupportTickets() {
             <div className="space-y-1.5">
               <Label>Sujet</Label>
               <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: Problème de connexion" />
+              {subjectLength > 0 && subjectLength < 3 && (
+                <p className="text-xs text-destructive">Le sujet doit contenir au moins 3 caractères.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
@@ -180,6 +192,12 @@ export function SupportTickets() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Décrivez votre problème en détail..."
               />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Minimum 10 caractères.</p>
+                <p className={`text-xs ${descriptionLength < 10 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {descriptionLength}/10
+                </p>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -212,7 +230,7 @@ export function SupportTickets() {
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button
               onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending || subject.trim().length < 3 || description.trim().length < 10}
+              disabled={createMutation.isPending || subjectLength < 3 || descriptionLength < 10}
             >
               Créer
             </Button>

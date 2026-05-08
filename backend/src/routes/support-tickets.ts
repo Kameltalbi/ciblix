@@ -32,61 +32,69 @@ const updateTicketSchema = z.object({
 });
 
 async function notifySuperAdminsNewTicket(ticket: any, creator: any) {
-  const superAdmins = await prisma.user.findMany({
-    where: { role: 'SUPERADMIN' },
-    select: { id: true, email: true, name: true, organizationId: true },
-  });
-  if (superAdmins.length === 0) return;
+  try {
+    const superAdmins = await prisma.user.findMany({
+      where: { role: 'SUPERADMIN' },
+      select: { id: true, email: true, name: true, organizationId: true },
+    });
+    if (superAdmins.length === 0) return;
 
-  await prisma.notification.createMany({
-    data: superAdmins.map((sa) => ({
-      userId: sa.id,
-      organizationId: sa.organizationId,
-      type: NotificationType.SUPPORT_TICKET_NEW,
-      title: `Nouveau ticket: ${ticket.subject}`,
-      content: `${creator.name || creator.email} a créé un ticket (${ticket.priority}).`,
-      link: '/admin',
-      read: false,
-    })),
-  });
+    await prisma.notification.createMany({
+      data: superAdmins.map((sa) => ({
+        userId: sa.id,
+        organizationId: sa.organizationId,
+        type: NotificationType.SUPPORT_TICKET_NEW,
+        title: `Nouveau ticket: ${ticket.subject}`,
+        content: `${creator.name || creator.email} a créé un ticket (${ticket.priority}).`,
+        link: '/admin',
+        read: false,
+      })),
+    });
 
-  await Promise.all(
-    superAdmins.map((sa) =>
-      sendSupportTicketEmail({
-        toEmail: sa.email,
-        subject: `[Support] Nouveau ticket - ${ticket.subject}`,
-        text: `Nouveau ticket ${ticket.id}\nSujet: ${ticket.subject}\nPriorité: ${ticket.priority}\nOrganisation: ${ticket.organizationId}`,
-        html: `<p>Nouveau ticket <strong>${ticket.id}</strong></p><p><strong>Sujet:</strong> ${ticket.subject}</p><p><strong>Priorité:</strong> ${ticket.priority}</p><p><strong>Créé par:</strong> ${creator.name || creator.email}</p>`,
-      })
-    )
-  );
+    await Promise.all(
+      superAdmins.map((sa) =>
+        sendSupportTicketEmail({
+          toEmail: sa.email,
+          subject: `[Support] Nouveau ticket - ${ticket.subject}`,
+          text: `Nouveau ticket ${ticket.id}\nSujet: ${ticket.subject}\nPriorité: ${ticket.priority}\nOrganisation: ${ticket.organizationId}`,
+          html: `<p>Nouveau ticket <strong>${ticket.id}</strong></p><p><strong>Sujet:</strong> ${ticket.subject}</p><p><strong>Priorité:</strong> ${ticket.priority}</p><p><strong>Créé par:</strong> ${creator.name || creator.email}</p>`,
+        })
+      )
+    );
+  } catch (error) {
+    console.error('[support-tickets] Failed to notify superadmins', error);
+  }
 }
 
 async function notifyTicketCreatorReply(ticket: any, author: any) {
-  const creator = await prisma.user.findUnique({
-    where: { id: ticket.createdById },
-    select: { id: true, email: true, organizationId: true },
-  });
-  if (!creator) return;
+  try {
+    const creator = await prisma.user.findUnique({
+      where: { id: ticket.createdById },
+      select: { id: true, email: true, organizationId: true },
+    });
+    if (!creator) return;
 
-  await prisma.notification.create({
-    data: {
-      userId: creator.id,
-      organizationId: creator.organizationId,
-      type: NotificationType.SUPPORT_TICKET_REPLY,
-      title: `Réponse sur votre ticket: ${ticket.subject}`,
-      content: `${author.name || author.email} a répondu à votre ticket.`,
-      link: '/support',
-      read: false,
-    },
-  });
+    await prisma.notification.create({
+      data: {
+        userId: creator.id,
+        organizationId: creator.organizationId,
+        type: NotificationType.SUPPORT_TICKET_REPLY,
+        title: `Réponse sur votre ticket: ${ticket.subject}`,
+        content: `${author.name || author.email} a répondu à votre ticket.`,
+        link: '/support',
+        read: false,
+      },
+    });
 
-  await sendSupportTicketEmail({
-    toEmail: creator.email,
-    subject: `[Support] Réponse sur votre ticket - ${ticket.subject}`,
-    text: `Votre ticket ${ticket.id} a reçu une réponse.\nAuteur: ${author.name || author.email}`,
-    html: `<p>Votre ticket <strong>${ticket.id}</strong> a reçu une réponse.</p><p><strong>Auteur:</strong> ${author.name || author.email}</p>`,
-  });
+    await sendSupportTicketEmail({
+      toEmail: creator.email,
+      subject: `[Support] Réponse sur votre ticket - ${ticket.subject}`,
+      text: `Votre ticket ${ticket.id} a reçu une réponse.\nAuteur: ${author.name || author.email}`,
+      html: `<p>Votre ticket <strong>${ticket.id}</strong> a reçu une réponse.</p><p><strong>Auteur:</strong> ${author.name || author.email}</p>`,
+    });
+  } catch (error) {
+    console.error('[support-tickets] Failed to notify ticket creator', error);
+  }
 }
 
 // List tickets
