@@ -565,7 +565,10 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "signUp": "Sign Up",
-    "signIn": "Sign In"
+    "signIn": "Sign In",
+    "registerHeroTagline": "Your online sales workspace",
+    "registerCardTitle": "Create your account",
+    "backToHome": "Home"
   },
   "pwa": {
     "title": "Install ktOptima",

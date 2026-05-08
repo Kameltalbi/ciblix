@@ -565,7 +565,10 @@
     "noAccount": "ليس لديك حساب؟",
     "hasAccount": "لديك حساب بالفعل؟",
     "signUp": "التسجيل",
-    "signIn": "تسجيل الدخول"
+    "signIn": "تسجيل الدخول",
+    "registerHeroTagline": "مساحة عملك التجارية عبر الإنترنت",
+    "registerCardTitle": "إنشاء حسابك",
+    "backToHome": "الرئيسية"
   },
   "pwa": {
     "title": "تثبيت ktOptima",
