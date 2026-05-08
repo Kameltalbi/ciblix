@@ -25,17 +25,25 @@ const nav = [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const CONSENT_VERSION = 'v1';
+  const CONSENT_STORAGE_KEY = `ktoptima-privacy-consent-${CONSENT_VERSION}`;
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatbotVisible, setChatbotVisible] = useState(true);
+  const [consentOpen, setConsentOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const isRTL = i18n.language === 'ar';
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+    setConsentOpen(!stored);
   }, []);
 
   useEffect(() => {
@@ -70,6 +78,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
     if (window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
+  };
+
+  const acceptConsent = () => {
+    localStorage.setItem(
+      CONSENT_STORAGE_KEY,
+      JSON.stringify({
+        accepted: true,
+        acceptedAt: new Date().toISOString(),
+      })
+    );
+    setConsentOpen(false);
+  };
+
+  const rejectConsent = async () => {
+    localStorage.removeItem(CONSENT_STORAGE_KEY);
+    setConsentOpen(false);
+    await logout();
+    navigate('/login');
   };
 
   // Filter nav items based on user permissions
@@ -281,6 +307,42 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Sparkles size={16} className="shrink-0" />
             <span className="hidden sm:inline">Chatbot IA</span>
           </button>
+        </div>
+      )}
+
+      {/* Privacy consent (RGPD + Tunisian law) */}
+      {consentOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-white p-5 shadow-2xl sm:p-6">
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">
+              Consentement au traitement des donnees personnelles
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Afin d'utiliser KTOptima, vous devez donner votre consentement pour le traitement de vos donnees
+              personnelles conformement au RGPD et a la loi tunisienne relative a la protection des donnees
+              personnelles (notamment la loi organique ndeg2004-63).
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vos donnees sont utilisees uniquement pour fournir les fonctionnalites CRM, la securite du compte et
+              l'amelioration du service.
+            </p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={rejectConsent}
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Je refuse
+              </button>
+              <button
+                type="button"
+                onClick={acceptConsent}
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-95"
+              >
+                J'accepte
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
