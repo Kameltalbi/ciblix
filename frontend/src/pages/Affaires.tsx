@@ -60,7 +60,7 @@ type FormData = {
 const NO_ASSIGNEE_VALUE = '__none__';
 const KANBAN_BATCH_SIZE = 40;
 
-type KanbanColumnKey = StatutAffaire | 'RDV';
+type KanbanColumnKey = StatutAffaire;
 
 const KANBAN_COLUMNS: Array<{
   key: KanbanColumnKey;
@@ -71,18 +71,11 @@ const KANBAN_COLUMNS: Array<{
 }> = [
   { key: 'PROSPECT', status: 'PROSPECT', label: 'Prospect', colorClass: 'bg-slate-50/90 border-slate-200', headerAccentClass: 'text-slate-700' },
   { key: 'QUALIFIE', status: 'QUALIFIE', label: 'Qualifié', colorClass: 'bg-blue-50/80 border-blue-200', headerAccentClass: 'text-blue-700' },
-  { key: 'RDV', status: 'QUALIFIE', label: 'RDV', colorClass: 'bg-cyan-50/80 border-cyan-200', headerAccentClass: 'text-cyan-700' },
   { key: 'PROPOSITION', status: 'PROPOSITION', label: 'Proposition', colorClass: 'bg-orange-50/80 border-orange-200', headerAccentClass: 'text-orange-700' },
   { key: 'NEGOCIATION', status: 'NEGOCIATION', label: 'Négociation', colorClass: 'bg-violet-50/80 border-violet-200', headerAccentClass: 'text-violet-700' },
   { key: 'GAGNE', status: 'GAGNE', label: 'Gagné', colorClass: 'bg-emerald-50/80 border-emerald-200', headerAccentClass: 'text-emerald-700' },
   { key: 'PERDU', status: 'PERDU', label: 'Perdu', colorClass: 'bg-rose-50/80 border-rose-200', headerAccentClass: 'text-rose-700' },
 ];
-
-const hasRdvSignal = (a: Affaire) => {
-  const nextAction = a.prochaineAction?.toLowerCase() || '';
-  const notes = a.notes?.toLowerCase() || '';
-  return nextAction.includes('rdv') || notes.includes('rdv') || notes.includes('rendez');
-};
 
 const getTemperature = (a: Affaire): 'hot' | 'warm' | 'cold' => {
   const p = a.probabilite || 0;
@@ -139,7 +132,6 @@ export function Affaires() {
   const [visibleByColumn, setVisibleByColumn] = useState<Record<KanbanColumnKey, number>>({
     PROSPECT: KANBAN_BATCH_SIZE,
     QUALIFIE: KANBAN_BATCH_SIZE,
-    RDV: KANBAN_BATCH_SIZE,
     PROPOSITION: KANBAN_BATCH_SIZE,
     NEGOCIATION: KANBAN_BATCH_SIZE,
     GAGNE: KANBAN_BATCH_SIZE,
@@ -405,7 +397,7 @@ export function Affaires() {
   const handleDropOnStatus = (targetColumn: KanbanColumnKey) => {
     if (!draggedAffaireId) return;
     const current = sortedAllAffaires.find((a) => a.id === draggedAffaireId);
-    const targetStatus: StatutAffaire = targetColumn === 'RDV' ? 'QUALIFIE' : targetColumn;
+    const targetStatus: StatutAffaire = targetColumn;
     if (!current || current.statut === targetStatus) {
       handleDragEnd();
       return;
@@ -435,8 +427,7 @@ export function Affaires() {
 
   const kanbanByColumn: Record<KanbanColumnKey, Affaire[]> = {
     PROSPECT: sortedAllAffaires.filter((a) => a.statut === 'PROSPECT'),
-    QUALIFIE: sortedAllAffaires.filter((a) => a.statut === 'QUALIFIE' && !hasRdvSignal(a)),
-    RDV: sortedAllAffaires.filter((a) => a.statut === 'QUALIFIE' && hasRdvSignal(a)),
+    QUALIFIE: sortedAllAffaires.filter((a) => a.statut === 'QUALIFIE'),
     PROPOSITION: sortedAllAffaires.filter((a) => a.statut === 'PROPOSITION'),
     NEGOCIATION: sortedAllAffaires.filter((a) => a.statut === 'NEGOCIATION'),
     GAGNE: sortedAllAffaires.filter((a) => a.statut === 'GAGNE'),
