@@ -14,6 +14,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { GoogleAuthCallback } from './pages/GoogleAuthCallback';
 import { Landing } from './pages/Landing';
+import { Leads } from './pages/Leads';
 
 // Heavy authenticated pages: lazy-loaded so they don't bloat the initial bundle.
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
@@ -25,7 +26,6 @@ const Clients = lazy(() => import('./pages/Clients').then((m) => ({ default: m.C
 const ClientDetail = lazy(() =>
   import('./pages/ClientDetail').then((m) => ({ default: m.ClientDetail }))
 );
-const Leads = lazy(() => import('./pages/Leads').then((m) => ({ default: m.Leads })));
 const Calendar = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.Calendar })));
 const Expenses = lazy(() => import('./pages/Expenses').then((m) => ({ default: m.Expenses })));
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
