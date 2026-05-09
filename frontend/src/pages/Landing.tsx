@@ -261,7 +261,7 @@ export function Landing() {
               </div>
             </div>
 
-            <div className="rounded-3xl border bg-card p-4 md:p-6 min-h-[420px] h-full flex flex-col">
+            <div className="hidden md:flex rounded-3xl border bg-card p-4 md:p-6 min-h-[420px] h-full flex-col">
               <div className="relative flex-1 rounded-2xl overflow-hidden border bg-white">
                 <img
                   src="/image.png"
