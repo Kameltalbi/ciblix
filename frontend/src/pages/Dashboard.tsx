@@ -8,7 +8,7 @@ import { fmtDT, MOIS_S } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
-import type { KPIs, Affaire } from '@/types';
+import type { KPIs } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
 
 function KpiCard({ title, subtitle, value, icon, color, ttcValue }: {
@@ -47,20 +47,10 @@ export function Dashboard() {
   const { t } = useTranslation();
   const [selectedYear, setSelectedYear] = useState<string>('2026');
 
-  const { data: kpis } = useQuery<KPIs>({
+  const { data: kpis, isPending: kpisPending } = useQuery<KPIs>({
     queryKey: ['kpis', selectedYear],
     queryFn: () => api.get('/kpis', { params: { annee: selectedYear } }).then((r) => r.data),
   });
-  const { data: affairesData } = useQuery<{ data: Affaire[], pagination: any }>({
-    queryKey: ['affaires', selectedYear],
-    queryFn: () => api.get('/affaires', { params: { annee: selectedYear } }).then((r) => r.data),
-  });
-  const affaires = affairesData?.data || [];
-  const { data: productsData } = useQuery<{ data: any[], pagination: any }>({
-    queryKey: ['products'],
-    queryFn: () => api.get('/products').then((r) => r.data),
-  });
-  const products = productsData?.data || [];
 
   const { data: revenueCategories = [] } = useQuery<any[]>({
     queryKey: ['categories', 'REVENUE'],
@@ -81,28 +71,12 @@ export function Dashboard() {
   const caTotalTTC = kpis ? Number(kpis.caTotalAll) * 1.19 : 0;
   const tauxCouverture = totalExpenses > 0 ? Math.round((caTotalTTC / totalExpenses) * 100) : null;
 
-  if (!kpis || !affaires || !expenses) {
+  if (kpisPending || !kpis) {
     return <div className="text-center py-20 text-muted-foreground">Chargement...</div>;
   }
 
-  const calculateMetrics = (affairesList: Affaire[]) => {
-    const realise = affairesList.filter(a => a.statut === 'GAGNE');
-    const pipeline = affairesList.filter(a => ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut));
-    const prospection = affairesList.filter(a => a.statut === 'PROSPECT');
-    const perdu = affairesList.filter(a => a.statut === 'PERDU');
-    
-    return {
-      count: affairesList.length,
-      caRealise: realise.reduce((sum, a) => sum + Number(a.montantHT), 0),
-      caPipeline: pipeline.reduce((sum, a) => sum + Number(a.montantHT), 0),
-      caProspection: prospection.reduce((sum, a) => sum + Number(a.montantHT), 0),
-      countRealise: realise.length,
-      countPipeline: pipeline.length,
-      countProspection: prospection.length,
-      countPerdu: perdu.length,
-      avgMontant: affairesList.length > 0 ? affairesList.reduce((sum, a) => sum + Number(a.montantHT), 0) / affairesList.length : 0,
-    };
-  };
+  const affairesTotal =
+    kpis.counts.gagne + kpis.counts.enCours + kpis.counts.prospect + kpis.counts.perdu;
 
   // Prepare chart data
   const monthlyData = Object.entries(kpis.parMois).map(([month, data]) => ({
@@ -231,7 +205,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <KpiCard
           title={t('dashboard.kpis.totalCA')}
-          subtitle={`${affaires.length} ${t('affaires.title')}`}
+          subtitle={`${affairesTotal} ${t('affaires.title')}`}
           value={fmtDT(kpis.caTotalAll)}
           ttcValue={fmtDT(kpis.caTotalAll * 1.19)}
           icon={<DollarSign className="w-6 h-6" />}
@@ -303,7 +277,7 @@ export function Dashboard() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Répartition du CA par statut ({affaires.length})</CardTitle>
+            <CardTitle className="text-base font-semibold">Répartition du CA par statut ({affairesTotal})</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -333,7 +307,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-sm md:text-base">État du pipeline des opportunités ({affaires.length})</CardTitle>
+            <CardTitle className="text-sm md:text-base">État du pipeline des opportunités ({affairesTotal})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 mb-4">

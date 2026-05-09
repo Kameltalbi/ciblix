@@ -77,7 +77,16 @@ kpisRoutes.get('/', async (req: any, res, next) => {
     
     const affaires = await prisma.affaire.findMany({
       where,
-      include: { client: true },
+      select: {
+        id: true,
+        statut: true,
+        montantHT: true,
+        type: true,
+        moisPrevu: true,
+        probabilite: true,
+        viaPartenaire: true,
+        tauxCommission: true,
+      },
     });
 
     const realise  = affaires.filter(a => a.statut === 'GAGNE');

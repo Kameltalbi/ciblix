@@ -46,6 +46,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
     setConsentOpen(!stored);
   }, []);
 
+  // Télécharge le chunk Dashboard en parallèle (ex. bandeau RGPD) pour réduire l’attente après acceptation
+  useEffect(() => {
+    if (user) void import('../pages/Dashboard');
+  }, [user]);
+
   useEffect(() => {
     setSidebarOpen(false);
   }, []);
