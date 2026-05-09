@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../lib/prismaInterop.js';
 import auth from '../middleware/auth.js';
 
 export const categoriesRoutes = Router();

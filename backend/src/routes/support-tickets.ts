@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { parsePagination } from '../lib/pagination.js';
+import type { SupportTicketPriority, SupportTicketStatus } from '@prisma/client';
 import {
   NotificationType,
   SupportTicketCategory,
-  SupportTicketPriority,
-  SupportTicketStatus,
-} from '@prisma/client';
+  SupportTicketPriority as SupportTicketPriorityEnum,
+  SupportTicketStatus as SupportTicketStatusEnum,
+} from '../lib/prismaInterop.js';
 import { sendSupportTicketEmail } from '../services/supportTicketMailer.js';
 
 export const supportTicketsRoutes = Router();
@@ -17,7 +18,7 @@ supportTicketsRoutes.use(auth);
 const createTicketSchema = z.object({
   subject: z.string().min(3).max(200),
   description: z.string().min(10).max(10000),
-  priority: z.nativeEnum(SupportTicketPriority).default(SupportTicketPriority.MEDIUM),
+  priority: z.nativeEnum(SupportTicketPriorityEnum).default(SupportTicketPriorityEnum.MEDIUM),
   category: z.nativeEnum(SupportTicketCategory).default(SupportTicketCategory.OTHER),
 });
 
@@ -26,8 +27,8 @@ const addMessageSchema = z.object({
 });
 
 const updateTicketSchema = z.object({
-  status: z.nativeEnum(SupportTicketStatus).optional(),
-  priority: z.nativeEnum(SupportTicketPriority).optional(),
+  status: z.nativeEnum(SupportTicketStatusEnum).optional(),
+  priority: z.nativeEnum(SupportTicketPriorityEnum).optional(),
   assigneeId: z.string().nullable().optional(),
 });
 
@@ -40,9 +41,9 @@ async function notifySuperAdminsNewTicket(ticket: any, creator: any) {
     if (superAdmins.length === 0) return;
 
     await prisma.notification.createMany({
-      data: superAdmins.map((sa) => ({
+      data: superAdmins.map((sa: { id: string }) => ({
         userId: sa.id,
-        organizationId: sa.organizationId,
+        organizationId: ticket.organizationId,
         type: NotificationType.SUPPORT_TICKET_NEW,
         title: `Nouveau ticket: ${ticket.subject}`,
         content: `${creator.name || creator.email} a créé un ticket (${ticket.priority}).`,
@@ -52,7 +53,7 @@ async function notifySuperAdminsNewTicket(ticket: any, creator: any) {
     });
 
     await Promise.all(
-      superAdmins.map((sa) =>
+      superAdmins.map((sa: { email: string }) =>
         sendSupportTicketEmail({
           toEmail: sa.email,
           subject: `[Support] Nouveau ticket - ${ticket.subject}`,
@@ -234,7 +235,7 @@ supportTicketsRoutes.post('/:id/messages', async (req: AuthRequest, res, next) =
         where: { id: ticket.id },
         data: {
           lastMessageAt: new Date(),
-          status: req.user?.role === 'SUPERADMIN' ? SupportTicketStatus.WAITING_USER : SupportTicketStatus.IN_PROGRESS,
+          status: req.user?.role === 'SUPERADMIN' ? SupportTicketStatusEnum.WAITING_USER : SupportTicketStatusEnum.IN_PROGRESS,
         },
       }),
     ]);
@@ -262,7 +263,7 @@ supportTicketsRoutes.patch('/:id', async (req: AuthRequest, res, next) => {
       if (ticket.organizationId !== req.organizationId || ticket.createdById !== req.userId) {
         return res.status(403).json({ error: 'Accès refusé' });
       }
-      if (payload.status && payload.status !== SupportTicketStatus.CLOSED) {
+      if (payload.status && payload.status !== SupportTicketStatusEnum.CLOSED) {
         return res.status(403).json({ error: 'Seule la fermeture est autorisée' });
       }
     }
@@ -273,7 +274,7 @@ supportTicketsRoutes.patch('/:id', async (req: AuthRequest, res, next) => {
         status: payload.status,
         priority: payload.priority,
         assigneeId: payload.assigneeId,
-        closedAt: payload.status === SupportTicketStatus.CLOSED ? new Date() : null,
+        closedAt: payload.status === SupportTicketStatusEnum.CLOSED ? new Date() : null,
       },
     });
 

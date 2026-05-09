@@ -1,5 +1,5 @@
+import type { AuditAction } from '@prisma/client';
 import { prisma } from '../db/prisma.js';
-import { AuditAction } from '@prisma/client';
 
 export async function logAudit({
   organizationId,

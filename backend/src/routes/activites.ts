@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
-import { ActiviteType } from '@prisma/client';
+import { ActiviteType } from '../lib/prismaInterop.js';
 import { parsePagination } from '../lib/pagination.js';
 
 export const activitesRoutes = Router();

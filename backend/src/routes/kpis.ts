@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { StatutAffaire } from '@prisma/client';
 import { prisma } from '../db/prisma.js';
 import auth from '../middleware/auth.js';
 
@@ -89,31 +90,43 @@ kpisRoutes.get('/', async (req: any, res, next) => {
       },
     });
 
-    const realise  = affaires.filter(a => a.statut === 'GAGNE');
-    const pipeline = affaires.filter(a => ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut));
-    const prospect = affaires.filter(a => a.statut === 'PROSPECT');
-    const perdu    = affaires.filter(a => a.statut === 'PERDU');
+    type KpisAffRow = {
+      id: string;
+      statut: StatutAffaire;
+      montantHT: unknown;
+      type: string | null;
+      moisPrevu: number;
+      probabilite: number;
+      viaPartenaire: boolean;
+      tauxCommission: unknown;
+    };
+    const rows = affaires as KpisAffRow[];
 
-    const sum = (arr: typeof affaires) =>
-      arr.reduce((s, a) => s + Number(a.montantHT), 0);
+    const realise  = rows.filter((a) => a.statut === 'GAGNE');
+    const pipeline = rows.filter((a) => ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut));
+    const prospect = rows.filter((a) => a.statut === 'PROSPECT');
+    const perdu    = rows.filter((a) => a.statut === 'PERDU');
 
-    const caTotalAll = sum(affaires.filter(a => a.statut !== 'PERDU')); // All statuses except PERDU
+    const sum = (arr: KpisAffRow[]) =>
+      arr.reduce((s: number, a: KpisAffRow) => s + Number(a.montantHT), 0);
+
+    const caTotalAll = sum(rows.filter((a) => a.statut !== 'PERDU')); // All statuses except PERDU
 
     const commissionDue = realise
-      .filter(a => a.viaPartenaire)
-      .reduce((s, a) => s + Number(a.montantHT) * (Number(a.tauxCommission) / 100), 0);
+      .filter((a) => a.viaPartenaire)
+      .reduce((s: number, a: KpisAffRow) => s + Number(a.montantHT) * (Number(a.tauxCommission) / 100), 0);
 
     const caRealise = sum(realise);
     const netRealise = caRealise - commissionDue;
     const netPondere = caRealise +
-      pipeline.reduce((s, a) => s + Number(a.montantHT) * (a.probabilite / 100), 0);
+      pipeline.reduce((s: number, a: KpisAffRow) => s + Number(a.montantHT) * (a.probabilite / 100), 0);
 
     // Calculer la prévision intelligente
     const smartForecast = calculateSmartForecast(realise, pipeline, prospect, perdu);
 
     // Répartition par type (dynamique)
     const parType: Record<string, number> = {};
-    for (const a of affaires) {
+    for (const a of rows) {
       const t = a.type || 'Autre';
       parType[t] = (parType[t] || 0) + Number(a.montantHT);
     }
@@ -121,7 +134,7 @@ kpisRoutes.get('/', async (req: any, res, next) => {
     // Distribution mensuelle
     const parMois: Record<number, { realise: number; pipeline: number; prospect: number }> = {};
     for (let m = 1; m <= 12; m++) parMois[m] = { realise: 0, pipeline: 0, prospect: 0 };
-    for (const a of affaires) {
+    for (const a of rows) {
       const k = a.statut === 'GAGNE' ? 'realise' :
                 ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut) ? 'pipeline' :
                 a.statut === 'PROSPECT' ? 'prospect' : null;

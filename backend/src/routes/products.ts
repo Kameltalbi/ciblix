@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { parsePagination } from '../lib/pagination.js';
-import { ProductType } from '@prisma/client';
+import { ProductType } from '../lib/prismaInterop.js';
 
 export const productsRoutes = Router();
 productsRoutes.use(auth);

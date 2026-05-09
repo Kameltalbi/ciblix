@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../lib/prismaInterop.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { checkPlanFeature } from '../middleware/planRestrictions.js';
 

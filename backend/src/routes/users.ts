@@ -3,7 +3,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../lib/prismaInterop.js';
 import { parsePagination } from '../lib/pagination.js';
 import { checkUserLimit } from '../middleware/planRestrictions.js';
 

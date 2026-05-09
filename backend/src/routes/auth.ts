@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
-import { UserRole, AuditAction } from '@prisma/client';
+import { UserRole, AuditAction } from '../lib/prismaInterop.js';
 import { logAudit } from '../lib/audit.js';
 import type { AuthRequest } from '../middleware/planRestrictions.js';
 import auth from '../middleware/auth.js';
