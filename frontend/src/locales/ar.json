@@ -27,7 +27,7 @@
   },
   "nav": {
     "dashboard": "لوحة التحكم",
-    "clients": "العملاء",
+    "clients": "الحرفاء",
     "prospects": "الاستكشاف التجاري",
     "affaires": "الصفقات",
     "calendar": "التقويم",
@@ -49,7 +49,7 @@
     "title": "لوحة التحكم",
     "overview": "نظرة عامة على أنشطتك",
     "kpis": {
-      "totalClients": "إجمالي العملاء",
+      "totalClients": "إجمالي الحرفاء",
       "totalAffaires": "إجمالي الصفقات",
       "totalCA": "إجمالي المبيعات",
       "pipelineCA": "مبيعات القناة",
@@ -60,19 +60,19 @@
     "upcomingTasks": "المهام القادمة"
   },
   "clients": {
-    "title": "العملاء",
-    "manageClients": "إدارة العملاء والعملاء المحتملين",
-    "totalClients": "إجمالي العملاء",
+    "title": "الحرفاء",
+    "manageClients": "في المغرب العربي «الحرفاء» يُقصد به الزبائن والمتعاملون معكم — إدارة السجلات والمتابعة هنا.",
+    "totalClients": "إجمالي الحرفاء",
     "totalAffaires": "إجمالي الصفقات",
-    "avgPerClient": "المتوسط لكل عميل",
+    "avgPerClient": "المتوسط لكل سجل",
     "searchPlaceholder": "بحث بالاسم، جهة الاتصال أو البريد الإلكتروني...",
-    "addClient": "إضافة عميل",
-    "editClient": "تعديل العميل",
-    "deleteClient": "حذف العميل",
-    "clientName": "اسم العميل",
-    "clientEmail": "بريد العميل الإلكتروني",
-    "clientPhone": "هاتف العميل",
-    "clientAddress": "عنوان العميل"
+    "addClient": "إضافة سجل",
+    "editClient": "تعديل السجل",
+    "deleteClient": "حذف السجل",
+    "clientName": "اسم السجل",
+    "clientEmail": "البريد الإلكتروني",
+    "clientPhone": "الهاتف",
+    "clientAddress": "العنوان"
   },
   "affaires": {
     "title": "الصفقات",

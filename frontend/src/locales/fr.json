@@ -27,7 +27,7 @@
   },
   "nav": {
     "dashboard": "Tableau de bord",
-    "clients": "Clients",
+    "clients": "Horafs",
     "prospects": "Prospection",
     "affaires": "Affaires",
     "calendar": "Calendrier",
@@ -49,7 +49,7 @@
     "title": "Tableau de bord",
     "overview": "Vue d'ensemble de vos activités",
     "kpis": {
-      "totalClients": "Total Clients",
+      "totalClients": "Total horafs",
       "totalAffaires": "Total Affaires",
       "totalCA": "CA Total",
       "pipelineCA": "CA Pipeline",
@@ -60,19 +60,19 @@
     "upcomingTasks": "Tâches à venir"
   },
   "clients": {
-    "title": "Clients",
-    "manageClients": "Gestion des clients et prospects",
-    "totalClients": "Total clients",
+    "title": "Horafs",
+    "manageClients": "Au Maghreb, les horafs (الحرفاء) désignent vos clients et partenaires habituels — fiches et suivi ici.",
+    "totalClients": "Total contacts",
     "totalAffaires": "Total affaires",
-    "avgPerClient": "Moyenne/client",
+    "avgPerClient": "Moyenne / contact",
     "searchPlaceholder": "Rechercher par nom, contact ou email...",
-    "addClient": "Ajouter un client",
-    "editClient": "Modifier le client",
-    "deleteClient": "Supprimer le client",
-    "clientName": "Nom du client",
-    "clientEmail": "Email du client",
-    "clientPhone": "Téléphone du client",
-    "clientAddress": "Adresse du client"
+    "addClient": "Ajouter un contact",
+    "editClient": "Modifier le contact",
+    "deleteClient": "Supprimer le contact",
+    "clientName": "Nom du contact",
+    "clientEmail": "Email du contact",
+    "clientPhone": "Téléphone du contact",
+    "clientAddress": "Adresse du contact"
   },
   "affaires": {
     "title": "Affaires",
@@ -285,7 +285,7 @@
     "subtitle": "Gestion de la prospection",
     "newLead": "Nouveau prospect",
     "editLead": "Modifier lead",
-    "confirmConvert": "Convertir ce lead en client ?",
+    "confirmConvert": "Convertir ce prospect en fiche contact (horaf) ?",
     "pipelineStatuses": "À traiter (sans convertis/perdus)",
     "allStatuses": "Tous statuts",
     "allSources": "Toutes sources",
