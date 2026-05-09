@@ -549,8 +549,8 @@ export function Landing() {
         <div
           className={cn(
             'fixed inset-y-0 left-0 z-[100] w-[min(19rem,88vw)] flex flex-col shadow-2xl',
-            'bg-gradient-to-b from-indigo-600 via-violet-600 to-fuchsia-600',
-            'ring-2 ring-white/25 border-r border-white/20',
+            'bg-gradient-to-b from-leaf-mid via-leaf to-[#0f3d22]',
+            'ring-2 ring-sage/40 border-r border-leaf-light/35',
             'transition-transform duration-500 ease-out',
             popupExiting || !popupEntered ? '-translate-x-full' : 'translate-x-0',
           )}
@@ -581,7 +581,7 @@ export function Landing() {
                   Gérez votre facturation facilement avec notre solution Softfacture.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-200 group-hover:text-amber-100 transition-colors">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-light group-hover:text-white transition-colors drop-shadow-sm">
                 Découvrir
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
               </span>
