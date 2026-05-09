@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Phone, Mail, Building2, Trash2, Pencil, TrendingUp, UserCheck } from 'lucide-react';
@@ -61,18 +61,29 @@ export function Leads() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormData>(EMPTY);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  /** pipeline = liste sans convertis/perdus (défaut) ; all = tous les statuts */
+  const [filterStatus, setFilterStatus] = useState<string>('pipeline');
   const [filterSource, setFilterSource] = useState<string>('all');
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>('2026');
   const [page, setPage] = useState(1);
 
-  const { data: leadsData } = useQuery<{ data: any[], pagination: any }>({
+  const { data: leadsData } = useQuery<{ data: any[]; pagination: any; rollup?: { estimatedValueSumHT: number } }>({
     queryKey: ['leads', filterStatus, filterSource, page],
-    queryFn: () => api.get('/leads', { params: { status: filterStatus !== 'all' ? filterStatus : undefined, source: filterSource !== 'all' ? filterSource : undefined, page } }).then((r) => r.data),
+    queryFn: () => {
+      const params: Record<string, string | number> = { page };
+      if (filterSource !== 'all') params.source = filterSource;
+      if (filterStatus === 'all') params.listScope = 'all';
+      else if (filterStatus !== 'pipeline') params.status = filterStatus;
+      return api.get('/leads', { params }).then((r) => r.data);
+    },
   });
   const leads = leadsData?.data || [];
   const pagination = leadsData?.pagination;
+
+  useEffect(() => {
+    setPage(1);
+  }, [filterStatus, filterSource]);
 
   const { data: clientsData } = useQuery<{ data: any[], pagination: any }>({
     queryKey: ['clients'],
@@ -160,11 +171,12 @@ export function Leads() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <Select value={filterStatus || 'all'} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder={t('leads.allStatuses')} />
+        <Select value={filterStatus || 'pipeline'} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-48 min-w-[12rem]">
+            <SelectValue placeholder={t('leads.pipelineStatuses')} />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="pipeline">{t('leads.pipelineStatuses')}</SelectItem>
             <SelectItem value="all">{t('leads.allStatuses')}</SelectItem>
             {Object.entries(STATUS_LABELS).map(([key, { label }]) => (
               <SelectItem key={key} value={key}>{t(`leads.status.${key.toLowerCase()}`, { defaultValue: label })}</SelectItem>
@@ -205,21 +217,26 @@ export function Leads() {
         </Select>
       </div>
 
-      {/* Summary */}
-      {leads.length > 0 && (() => {
-        const totalLeadsValueHT = leads.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0);
+      {/* Summary — CA : caTotalAll (API) exclut déjà uniquement les affaires PERDU */}
+      {(kpisData != null || (leadsData?.rollup?.estimatedValueSumHT ?? 0) > 0 || leads.length > 0 || (pagination?.total ?? 0) > 0) && (() => {
+        const totalLeadsValueHT = Number(leadsData?.rollup?.estimatedValueSumHT ?? 0);
         const totalLeadsValue = Math.round(totalLeadsValueHT * 1.19);
         const totalCA = kpisData ? Math.round(Number(kpisData.caTotalAll) * 1.19) : 0;
         const totalExpenses = (expensesData?.data || []).reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
         const totalPotentiel = totalCA + totalLeadsValue;
         const tauxCouverture = totalExpenses > 0 ? Math.round((totalPotentiel / totalExpenses) * 100) : 0;
+        const listTotal = pagination?.total ?? leads.length;
+        const avgScore =
+          leads.length > 0
+            ? Math.round(leads.reduce((sum: number, l: any) => sum + (Number(l.score) || 0), 0) / leads.length)
+            : null;
 
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="py-3 px-4">
               <p className="text-xs text-muted-foreground">{t('leads.kpiTotal')}</p>
-                <p className="text-xl font-bold mt-1">{leads.length}</p>
+                <p className="text-xl font-bold mt-1">{listTotal}</p>
               </CardContent>
             </Card>
             <Card>
@@ -234,7 +251,7 @@ export function Leads() {
               <CardContent className="py-3 px-4">
                 <p className="text-xs text-muted-foreground">{t('leads.kpiAvgScore')}</p>
                 <p className="text-xl font-bold mt-1">
-                  {Math.round(leads.reduce((sum: number, l: any) => sum + (Number(l.score) || 0), 0) / leads.length)}
+                  {avgScore !== null ? avgScore : '—'}
                 </p>
               </CardContent>
             </Card>
@@ -245,7 +262,11 @@ export function Leads() {
                   {tauxCouverture}%
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  (CA {Math.round(totalCA).toLocaleString('fr-FR')} + Leads {totalLeadsValue.toLocaleString('fr-FR')}) / Dépenses {Math.round(totalExpenses).toLocaleString('fr-FR')}
+                  {t('leads.kpiCoverageFootnote', {
+                    ca: Math.round(totalCA).toLocaleString('fr-FR'),
+                    leads: totalLeadsValue.toLocaleString('fr-FR'),
+                    dep: Math.round(totalExpenses).toLocaleString('fr-FR'),
+                  })}
                 </p>
               </CardContent>
             </Card>

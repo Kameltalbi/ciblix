@@ -124,9 +124,10 @@ kpisRoutes.get('/', async (req: any, res, next) => {
     // Calculer la prévision intelligente
     const smartForecast = calculateSmartForecast(realise, pipeline, prospect, perdu);
 
-    // Répartition par type (dynamique)
+    // Répartition par type (hors affaires perdues — le seul CA retiré des agrégats)
     const parType: Record<string, number> = {};
     for (const a of rows) {
+      if (a.statut === 'PERDU') continue;
       const t = a.type || 'Autre';
       parType[t] = (parType[t] || 0) + Number(a.montantHT);
     }
@@ -146,7 +147,7 @@ kpisRoutes.get('/', async (req: any, res, next) => {
       caPipeline: sum(pipeline),
       caProspection: sum(prospect),
       caTotal: caRealise + sum(pipeline) + sum(prospect),
-      caTotalAll, // All statuses including PERDU
+      caTotalAll, // Tous statuts sauf PERDU (CA des affaires perdues exclu)
       caPondere: netPondere,
       commissionPartenaireDue: commissionDue,
       netRealise,

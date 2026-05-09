@@ -42,15 +42,27 @@ const convertLeadSchema = z.object({
 leadsRoutes.get('/', async (req: any, res) => {
   try {
     const organizationId = req.organizationId;
-    const { status, source, page = 1, limit = 50 } = req.query;
+    const { status, source, page = 1, limit = 50, listScope } = req.query;
 
     const where: any = { organizationId, deletedAt: null };
-    if (status) where.status = status;
     if (source) where.source = source;
+
+    const hasExplicitStatus = typeof status === 'string' && status.length > 0;
+    if (hasExplicitStatus) {
+      where.status = status;
+    } else if (listScope === 'all') {
+      // aucun filtre statut
+    } else {
+      // défaut ou listScope=pipeline : masquer convertis / perdus de la liste
+      where.status = { notIn: ['CONVERTED', 'LOST'] };
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const [data, total] = await Promise.all([
+    // Potentiel prospection : toutes les valeurs estimées (le CA « affaires perdues » est géré côté /kpis via caTotalAll)
+    const rollupWhere = { organizationId, deletedAt: null };
+
+    const [data, total, rollupAgg] = await Promise.all([
       prisma.lead.findMany({
         where,
         include: {
@@ -62,7 +74,13 @@ leadsRoutes.get('/', async (req: any, res) => {
         take: Number(limit),
       }),
       prisma.lead.count({ where }),
+      prisma.lead.aggregate({
+        where: rollupWhere,
+        _sum: { estimatedValue: true },
+      }),
     ]);
+
+    const estimatedValueSumHT = Number(rollupAgg._sum.estimatedValue ?? 0);
 
     res.json({
       data,
@@ -70,6 +88,10 @@ leadsRoutes.get('/', async (req: any, res) => {
         currentPage: Number(page),
         totalPages: Math.ceil(total / Number(limit)),
         total,
+      },
+      rollup: {
+        /** Somme HT des valeurs estimées (tous statuts lead sauf suppression) — le CA exclu ailleurs = uniquement affaires PERDU */
+        estimatedValueSumHT,
       },
     });
   } catch (error) {
