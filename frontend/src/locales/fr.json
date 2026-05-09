@@ -28,7 +28,7 @@
   "nav": {
     "dashboard": "Tableau de bord",
     "clients": "Clients",
-    "prospects": "Prospects",
+    "prospects": "Prospection",
     "affaires": "Affaires",
     "calendar": "Calendrier",
     "activities": "Activités",
@@ -281,8 +281,8 @@
     "semester": "Semestre"
   },
   "leads": {
-    "title": "Prospects",
-    "subtitle": "Gestion des prospects",
+    "title": "Prospection",
+    "subtitle": "Gestion de la prospection",
     "newLead": "Nouveau prospect",
     "editLead": "Modifier lead",
     "confirmConvert": "Convertir ce lead en client ?",
