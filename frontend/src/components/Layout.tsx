@@ -44,12 +44,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
     void i18n.changeLanguage(order[(idx + 1) % order.length]);
   };
 
-  const appLangLabel = (() => {
-    const raw = i18n.resolvedLanguage || i18n.language || 'fr';
-    if (raw.startsWith('ar')) return 'AR';
-    if (raw.startsWith('en')) return 'EN';
-    return 'FR';
-  })();
+  const rawLang = i18n.resolvedLanguage || i18n.language || 'fr';
+  const appLangLabel = rawLang.startsWith('ar') ? 'AR' : rawLang.startsWith('en') ? 'EN' : 'FR';
+
+  const sidebarNavText = (page: string, labelKey: string) => {
+    if (page === 'clients') {
+      const lng = i18n.resolvedLanguage || i18n.language || '';
+      if (lng.startsWith('ar')) return 'العملاء';
+      return 'Clients';
+    }
+    return t(labelKey);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -256,7 +261,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {({ isActive }) => (
                     <>
                       <Icon size={18} className={cn('shrink-0', isDisabled && 'opacity-50')} />
-                      <span className="flex-1">{t(label)}</span>
+                      <span className="flex-1">{sidebarNavText(page, label)}</span>
                       {isDisabled && (
                         <span className="ml-2 rounded-full bg-amber-400/90 px-2 py-0.5 text-xs font-semibold text-amber-900">
                           Upgrade
