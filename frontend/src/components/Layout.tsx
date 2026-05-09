@@ -36,6 +36,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const isRTL = i18n.language === 'ar';
 
+  const cycleAppLanguage = () => {
+    const order = ['fr', 'en', 'ar'] as const;
+    const raw = i18n.resolvedLanguage || i18n.language || 'fr';
+    const current = order.find((l) => raw.startsWith(l)) ?? 'fr';
+    const idx = order.indexOf(current);
+    void i18n.changeLanguage(order[(idx + 1) % order.length]);
+  };
+
+  const appLangLabel = (() => {
+    const raw = i18n.resolvedLanguage || i18n.language || 'fr';
+    if (raw.startsWith('ar')) return 'AR';
+    if (raw.startsWith('en')) return 'EN';
+    return 'FR';
+  })();
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -171,6 +186,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={cycleAppLanguage}
+            className="flex h-10 items-center gap-1.5 rounded-xl border border-border/60 bg-white px-2.5 text-xs font-semibold text-muted-foreground shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground"
+            title="Langue / Language / اللغة"
+            aria-label="Changer la langue de l'interface"
+          >
+            <Globe size={16} strokeWidth={2} className="shrink-0 text-primary" />
+            <span className="tabular-nums">{appLangLabel}</span>
+          </button>
           <Notifications />
           <div className="flex items-center gap-2 border-l border-border/60 pl-2 sm:pl-3">
             <div className="hidden text-right sm:block">
