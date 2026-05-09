@@ -8,6 +8,7 @@
     "backend"
   ],
   "scripts": {
+    "build:frontend": "npm run build -w bilan-crm-frontend",
     "dev": "docker compose up",
     "dev:down": "docker compose down",
     "dev:logs": "docker compose logs -f",
