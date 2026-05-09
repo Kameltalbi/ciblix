@@ -1,259 +1,137 @@
-# 🚀 Guide de déploiement — Bilan CRM
+# Guide de déploiement — Bilan CRM
 
-Déploiement sur VPS Ubuntu 24.04 LTS via Git.
+Déploiement sur VPS (Ubuntu) via **Git**, build **Vite** du frontend et **PM2**.  
+Les fichiers `docker-compose*.yml` à la racine servent au **développement local** uniquement ; ce guide ne les utilise pas pour la mise en production.
 
-## 📋 Prérequis
+## Prérequis
 
-- Un VPS Ubuntu 24.04 avec accès SSH
-- Un nom de domaine pointé vers l'IP du VPS (ex: `crm.tondomaine.com`)
-- Un compte GitHub avec le repo `bilan-crm` créé
-- Les accès OAuth Gmail configurés (voir [GMAIL.md](GMAIL.md))
+- VPS avec accès SSH
+- Nom de domaine pointé vers le VPS (ex. `crm.tondomaine.com`)
+- **Node.js** LTS (ex. 20.x), **npm**, **PM2** (`npm i -g pm2`)
+- Repo cloné sur le serveur (exemple ci-dessous : `/var/www/crm`)
+- Variables d’environnement (`.env`) pour le backend et le build frontend si besoin
+- OAuth Gmail configuré si tu l’utilises : [GMAIL.md](GMAIL.md)
 
 ---
 
-## 1️⃣ Setup initial du VPS (une seule fois)
+## 1. Première installation sur le VPS
 
-### Se connecter au VPS
+### Connexion et dépôt
+
 ```bash
 ssh tonuser@ton-ip-vps
+sudo mkdir -p /var/www/crm
+sudo chown $USER:$USER /var/www/crm
+cd /var/www/crm
+git clone git@github.com:TON-USER/crm.git .
+# ou adapte l’URL / le dossier à ton organisation
 ```
 
-### Exécuter le setup automatique
-```bash
-# Télécharger et exécuter le script de setup
-curl -O https://raw.githubusercontent.com/TON-USER/bilan-crm/main/scripts/setup-vps.sh
-chmod +x setup-vps.sh
-./setup-vps.sh
-```
+### Variables d’environnement
 
-Le script fait :
-- ✅ Update système Ubuntu
-- ✅ Installation Docker + Docker Compose
-- ✅ Configuration firewall (ports 80, 443, 22)
-- ✅ Installation fail2ban
-- ✅ Création du dossier `/opt/bilan-crm`
-
-**⚠️ Déconnecte-toi puis reconnecte-toi** pour utiliser Docker sans `sudo`.
-
----
-
-## 2️⃣ Cloner le projet
-
-### Générer une clé SSH sur le VPS
-```bash
-ssh-keygen -t ed25519 -C "vps-bilan-crm"
-cat ~/.ssh/id_ed25519.pub
-```
-
-### Ajouter cette clé dans GitHub
-- GitHub → Settings → SSH and GPG keys → New SSH key
-- Coller la clé publique
-
-### Cloner le repo
-```bash
-cd /opt/bilan-crm
-git clone git@github.com:TON-USER/bilan-crm.git .
-```
-
----
-
-## 3️⃣ Configuration
-
-### Copier et remplir le .env
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Remplir **obligatoirement** :
+Renseigne au minimum ce qui concerne PostgreSQL, JWT, URLs (`FRONTEND_URL`, domaine API), Softfacture, Google OAuth si applicable (voir [GMAIL.md](GMAIL.md)).
 
-```env
-# Base de données
-POSTGRES_USER="bilan"
-POSTGRES_PASSWORD="genere-un-mot-de-passe-fort-aleatoire"
-POSTGRES_DB="bilan_crm"
+Générer un secret :
 
-# JWT
-JWT_SECRET="genere-une-chaine-aleatoire-de-32-caracteres-minimum"
-
-# Domaine
-DOMAIN="crm.tondomaine.com"
-FRONTEND_URL="https://crm.tondomaine.com"
-
-# Softfacture API
-SOFTFACTURE_API_URL="https://api.softfacture.com"
-SOFTFACTURE_API_KEY="ton-api-key-softfacture"
-
-# Google OAuth (voir GMAIL.md)
-GOOGLE_CLIENT_ID="..."
-GOOGLE_CLIENT_SECRET="..."
-GOOGLE_REDIRECT_URI="https://crm.tondomaine.com/api/gmail/callback"
-```
-
-**Générer des secrets forts** :
 ```bash
 openssl rand -base64 32
 ```
 
+### Backend (Node + Prisma)
+
+À adapter selon la façon dont tu lances l’API sur le serveur (PM2, systemd, etc.) :
+
+```bash
+cd /var/www/crm/backend
+npm ci
+npx prisma migrate deploy
+# pm2 start ecosystem.config.cjs   # si tu utilises PM2 pour le backend
+```
+
+### Frontend (build statique + PM2)
+
+```bash
+cd /var/www/crm/frontend
+npm ci
+npm run build
+# pm2 start …   # une première fois, selon ta config (nom du process : souvent « frontend »)
+```
+
+Configure **Caddy** ou **Nginx** devant le front (fichiers servis depuis `frontend/dist`) et le reverse proxy vers l’API ; obtention du certificat TLS selon ton choix (Let’s Encrypt, etc.).
+
 ---
 
-## 4️⃣ DNS — Pointer le domaine
+## 2. DNS
 
-Chez ton registrar, créer un enregistrement A :
+Chez ton registrar, enregistrement **A** :
+
+```text
+crm.tondomaine.com  →  IP-du-VPS
 ```
-crm.tondomaine.com  →  IP-de-ton-VPS
-```
 
-Attendre la propagation (quelques minutes à quelques heures).
+Vérification :
 
-**Vérifier** :
 ```bash
 dig crm.tondomaine.com
 ```
 
 ---
 
-## 5️⃣ Premier démarrage
+## 3. Mises à jour (production)
+
+Après un `git push` sur `main`, sur le VPS :
 
 ```bash
-cd /opt/bilan-crm
-
-# Build des images
-docker compose -f docker-compose.prod.yml build
-
-# Démarrer tous les services
-docker compose -f docker-compose.prod.yml up -d
-
-# Voir les logs
-docker compose -f docker-compose.prod.yml logs -f
+cd /var/www/crm && git pull origin main && cd frontend && npm run build && pm2 restart frontend
 ```
 
-Caddy va automatiquement :
-- Obtenir un certificat SSL via Let's Encrypt
-- Configurer HTTPS
-- Rediriger HTTP → HTTPS
-
-**Attendre ~30 secondes** puis ouvrir `https://crm.tondomaine.com`
-
-### Initialiser la BDD avec les données
-```bash
-docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
-docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
-```
-
-**Identifiants par défaut** : `admin@bilan-crm.tn` / `changeme123`
-⚠️ **Change le mot de passe immédiatement après la première connexion !**
-
----
-
-## 6️⃣ Déploiements suivants
-
-Workflow de mise à jour manuel via Git :
+Si le backend a changé (dépendances, migrations, code), après le même `git pull` à la racine :
 
 ```bash
-# En local, après tes modifs
-git add . && git commit -m "feat: nouvelle fonctionnalité"
-git push origin main
-
-# Sur le VPS
-ssh tonuser@vps
-cd /opt/bilan-crm
-./scripts/deploy.sh
-```
-
-Le script `deploy.sh` fait automatiquement :
-- `git pull`
-- Rebuild des images
-- Restart des containers
-- Applique les nouvelles migrations
-- Nettoie les vieilles images Docker
-
----
-
-## 🔍 Commandes utiles
-
-```bash
-# Statut des services
-docker compose -f docker-compose.prod.yml ps
-
-# Logs en temps réel
-docker compose -f docker-compose.prod.yml logs -f
-
-# Logs d'un service spécifique
-docker compose -f docker-compose.prod.yml logs -f backend
-docker compose -f docker-compose.prod.yml logs -f caddy
-
-# Redémarrer un service
-docker compose -f docker-compose.prod.yml restart backend
-
-# Entrer dans un container
-docker compose -f docker-compose.prod.yml exec backend sh
-
-# Backup de la BDD
-docker compose -f docker-compose.prod.yml exec postgres \
-  pg_dump -U bilan bilan_crm > backup-$(date +%Y%m%d).sql
-
-# Restaurer une BDD
-docker compose -f docker-compose.prod.yml exec -T postgres \
-  psql -U bilan bilan_crm < backup.sql
-
-# Tout arrêter
-docker compose -f docker-compose.prod.yml down
-
-# Tout arrêter + supprimer volumes (⚠️ efface la BDD)
-docker compose -f docker-compose.prod.yml down -v
+cd /var/www/crm/backend
+npm ci
+npx prisma migrate deploy
+pm2 restart backend   # adapte le nom du processus PM2
 ```
 
 ---
 
-## 🔐 Sécurité
+## 4. Commandes utiles (PM2)
 
-### Changer le mot de passe admin
-1. Se connecter sur `https://crm.tondomaine.com`
-2. Aller dans Paramètres → Changer mot de passe
-
-### Backups automatiques de la BDD
-Créer un cron :
 ```bash
-crontab -e
-```
-Ajouter :
-```cron
-0 3 * * * cd /opt/bilan-crm && docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U bilan bilan_crm | gzip > /opt/backups/db-$(date +\%Y\%m\%d).sql.gz
-```
-
-### Mises à jour système
-```bash
-sudo apt update && sudo apt upgrade -y
+pm2 status
+pm2 logs frontend
+pm2 restart frontend
 ```
 
 ---
 
-## 🆘 Troubleshooting
+## 5. Sécurité et sauvegardes
 
-### Le site ne répond pas
+- Changer le mot de passe admin après la première connexion.
+- Sauvegardes PostgreSQL : `pg_dump` (cron quotidien vers un répertoire dédié, idéalement hors du serveur).
+
+---
+
+## 6. Dépannage
+
+- **Page blanche / ancien bundle** : revérifier `npm run build` dans `frontend/` et `pm2 restart frontend`.
+- **Erreurs API** : logs PM2 du process backend, variables `.env`, migrations Prisma à jour.
+- **SSL** : vérifier DNS, ports 80/443 ouverts, configuration du reverse proxy.
+
+---
+
+## Développement local (Docker)
+
+Pour lancer **tout l’environnement en local** sans installer Node/Postgres sur ta machine, tu peux utiliser à la racine du repo :
+
 ```bash
-# Vérifier que Caddy tourne
-docker compose -f docker-compose.prod.yml ps caddy
-
-# Logs Caddy
-docker compose -f docker-compose.prod.yml logs caddy
-
-# Vérifier que le DNS est propagé
-dig crm.tondomaine.com
+docker compose up -d
 ```
 
-### Erreur 502 Bad Gateway
-Le backend n'est pas accessible. Vérifier :
-```bash
-docker compose -f docker-compose.prod.yml logs backend
-```
-
-### BDD vide après redémarrage
-Le volume `postgres-data` a été supprimé. Les données sont perdues — restaurer depuis un backup.
-
-### Certificat SSL non obtenu
-Caddy ne peut pas valider le domaine. Vérifier :
-- Le DNS pointe bien vers l'IP
-- Les ports 80 et 443 sont ouverts sur le firewall
-- `docker compose logs caddy` pour voir l'erreur exacte
+Voir le [README](../README.md) section Quick start. Ce n’est **pas** le flux de déploiement VPS décrit ci-dessus.

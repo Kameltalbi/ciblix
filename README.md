@@ -17,10 +17,10 @@ CRM moderne solo avec intégration Softfacture et Gmail, pour la gestion des aff
 - JWT auth
 - Google APIs (Gmail)
 
-**Déploiement**
-- Docker Compose
-- Caddy (SSL auto via Let's Encrypt)
-- VPS Ubuntu 24.04
+**Déploiement (production type VPS)**
+- Git sur le serveur, build Vite (`frontend`), **PM2** (ex. `git pull` → `npm run build` → `pm2 restart`)
+- Reverse proxy (Caddy / Nginx) + TLS selon ta config  
+*(Docker Compose à la racine = surtout pour le dev local.)*
 
 ## 🚀 Quick start local
 
@@ -45,9 +45,9 @@ docker compose exec backend npx prisma db seed
 # http://localhost:4000/api (backend)
 ```
 
-## 🌐 Déploiement sur VPS
+## Déploiement sur VPS
 
-Voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)
+Voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
 
 ## 📚 Documentation
 
