@@ -7,6 +7,25 @@ export interface CompanySearchCriteria {
   keywords?: string;
 }
 
+/** Résultat enrichissement crawl site (champs persistés côté AiProspect). */
+export interface WebEnrichmentResult {
+  websiteTitle: string | null;
+  websiteDescription: string | null;
+  detectedEmails: string[];
+  phoneFromPage: string | null;
+  facebookUrl: string | null;
+  instagramUrl: string | null;
+  linkedinUrlsFound: string[];
+  faviconUrl: string | null;
+  hasResponsiveWebsite: boolean;
+  hasSsl: boolean;
+  seoScore: number;
+  digitalPresenceLevel: 'FORT' | 'MOYEN' | 'FAIBLE';
+  technologiesDetected: string[];
+  fetchedUrl: string | null;
+  fetchError?: string | null;
+}
+
 /** Résultat brut d’un fournisseur de recherche (Apollo, Hunter, Maps, Clearbit…). */
 export interface CompanySearchHit {
   companyName: string;
@@ -56,6 +75,10 @@ export interface LeadQualification {
   interestProbability: number;
   aiTags: string[];
   followUpPlan: Array<{ dayOffset: number; approach: string; tone: string }>;
+  /** Problème métier probable (1 phrase) */
+  probableBusinessProblem: string;
+  /** Offre / levier CRM adapté (1 phrase) */
+  suggestedOffer: string;
 }
 
 export type OutreachMessageType =

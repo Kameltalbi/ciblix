@@ -3,10 +3,10 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
-import { searchCompaniesWithFallback } from '../services/prospecting/index.js';
+import { searchCompaniesWithCache, enrichHitWebsiteCached } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
 import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
-import type { CompanySearchCriteria, OutreachMessageType } from '../services/prospecting/types.js';
+import type { CompanySearchCriteria, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
 
 export const prospectingRoutes = Router();
 
@@ -40,11 +40,28 @@ const scheduleSchema = z.object({
   dayOffset: z.union([z.literal(3), z.literal(7), z.literal(15)]),
 });
 
+function enrichmentPersistFields(e: WebEnrichmentResult) {
+  return {
+    websiteTitle: e.websiteTitle,
+    websiteDescription: e.websiteDescription,
+    detectedEmails: e.detectedEmails.length ? e.detectedEmails : undefined,
+    facebookUrl: e.facebookUrl,
+    instagramUrl: e.instagramUrl,
+    faviconUrl: e.faviconUrl,
+    hasResponsiveWebsite: e.hasResponsiveWebsite,
+    hasSsl: e.hasSsl,
+    seoScore: e.seoScore,
+    digitalPresenceLevel: e.digitalPresenceLevel,
+    technologiesDetected: e.technologiesDetected.length ? e.technologiesDetected : undefined,
+  };
+}
+
 function hitToProspectData(
   hit: import('../services/prospecting/types.js').CompanySearchHit,
   q: LeadQualificationLike,
   criteria: CompanySearchCriteria,
-  rawProvider: string
+  rawProvider: string,
+  enrichment: WebEnrichmentResult
 ) {
   return {
     companyName: hit.companyName,
@@ -65,9 +82,12 @@ function hitToProspectData(
     aiSummary: q.aiSummary,
     interestProbability: q.interestProbability,
     followUpPlan: q.followUpPlan as object,
+    probableBusinessProblem: q.probableBusinessProblem,
+    suggestedOffer: q.suggestedOffer,
     status: 'QUALIFIED' as const,
     lastSearchQuery: JSON.stringify(criteria),
     rawProvider,
+    ...enrichmentPersistFields(enrichment),
   };
 }
 
@@ -137,19 +157,85 @@ prospectingRoutes.get('/prospects', async (req: AuthRequest, res, next) => {
   }
 });
 
+// ─── Timeline / tracking (champs + activités futures) ───────────
+prospectingRoutes.get('/prospects/:id/timeline', async (req: AuthRequest, res, next) => {
+  try {
+    const id = req.params.id as string;
+    const row = await prisma.aiProspect.findFirst({
+      where: { id, organizationId: req.organizationId!, deletedAt: null },
+      include: {
+        activities: { orderBy: { createdAt: 'desc' }, take: 40 },
+      },
+    });
+    if (!row) return res.status(404).json({ error: 'Prospect introuvable' });
+
+    type Item = { at: string; type: string; title: string; meta?: Record<string, unknown> };
+    const items: Item[] = [];
+
+    items.push({
+      at: row.createdAt.toISOString(),
+      type: 'SYSTEM',
+      title: 'Prospect créé (recherche IA)',
+    });
+    if (row.emailOpenedAt) {
+      items.push({
+        at: row.emailOpenedAt.toISOString(),
+        type: 'EMAIL_OPENED',
+        title: 'Email ouvert',
+      });
+    }
+    if (row.linkClickedAt) {
+      items.push({
+        at: row.linkClickedAt.toISOString(),
+        type: 'LINK_CLICKED',
+        title: 'Lien cliqué',
+      });
+    }
+    if (row.lastReplyAt) {
+      items.push({
+        at: row.lastReplyAt.toISOString(),
+        type: 'REPLY',
+        title: 'Réponse reçue',
+      });
+    }
+    if (row.lastContactAt) {
+      items.push({
+        at: row.lastContactAt.toISOString(),
+        type: 'CONTACT',
+        title: 'Dernier contact',
+      });
+    }
+
+    for (const a of row.activities) {
+      items.push({
+        at: a.createdAt.toISOString(),
+        type: a.type,
+        title: a.title || a.type,
+        meta: (a.metadata as Record<string, unknown>) || undefined,
+      });
+    }
+
+    items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+    res.json({ events: items });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ─── Recherche + qualification (POST corps JSON, GET mêmes champs en query) ─
 async function runProspectingSearch(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const criteria = parseSearchCriteria(req);
-    const { hits, providerUsed } = await searchCompaniesWithFallback(criteria);
+    const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(req.organizationId!, criteria);
 
     const created: unknown[] = [];
-    for (const hit of hits.slice(0, 10)) {
-      const q = await qualifyCompanyHit(hit, criteria);
+    for (const hitBase of hits.slice(0, 10)) {
+      const { hit, enrichment } = await enrichHitWebsiteCached(hitBase);
+      const q = await qualifyCompanyHit(hit, criteria, enrichment);
       const row = await prisma.aiProspect.create({
         data: {
           organizationId: req.organizationId!,
-          ...hitToProspectData(hit, q, criteria, providerUsed),
+          ...hitToProspectData(hit, q, criteria, fromCache ? `${providerUsed}|search_cache` : providerUsed, enrichment),
         },
       });
       created.push(row);
@@ -157,6 +243,7 @@ async function runProspectingSearch(req: AuthRequest, res: Response, next: NextF
 
     res.json({
       providerUsed,
+      fromCache,
       count: created.length,
       prospects: created,
     });
@@ -189,10 +276,12 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
       industry: row.industry,
       companySize: row.companySize,
     };
-    const q = await qualifyCompanyHit(hit, criteria);
+    const { hit: merged, enrichment } = await enrichHitWebsiteCached(hit);
+    const q = await qualifyCompanyHit(merged, criteria, enrichment);
     const updated = await prisma.aiProspect.update({
       where: { id },
       data: {
+        ...enrichmentPersistFields(enrichment),
         score: q.score,
         scoreReason: q.scoreReason,
         suggestedPitch: q.suggestedPitch,
@@ -202,6 +291,11 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
         aiSummary: q.aiSummary,
         interestProbability: q.interestProbability,
         followUpPlan: q.followUpPlan as object,
+        probableBusinessProblem: q.probableBusinessProblem,
+        suggestedOffer: q.suggestedOffer,
+        phone: merged.phone,
+        email: merged.email,
+        linkedin: merged.linkedin,
         status: 'QUALIFIED',
       },
     });
@@ -278,8 +372,16 @@ prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, asy
 
     const notes = [
       'Créé depuis Prospection IA',
-      row.aiSummary ? `Résumé IA : ${row.aiSummary}` : '',
-      row.commercialAngle ? `Angle : ${row.commercialAngle}` : '',
+      `Score IA : ${row.score}/100 — Niveau : ${row.potentialLevel || '—'}`,
+      row.aiSummary ? `Résumé IA :\n${row.aiSummary}` : '',
+      row.scoreReason ? `Pourquoi ce score :\n${row.scoreReason}` : '',
+      row.commercialAngle ? `Angle d'approche :\n${row.commercialAngle}` : '',
+      row.probableBusinessProblem ? `Problème métier probable :\n${row.probableBusinessProblem}` : '',
+      row.suggestedOffer ? `Offre suggérée :\n${row.suggestedOffer}` : '',
+      row.websiteTitle ? `Site — ${row.websiteTitle}` : '',
+      row.websiteDescription ? `Description site :\n${String(row.websiteDescription).slice(0, 500)}` : '',
+      row.digitalPresenceLevel ? `Présence digitale : ${row.digitalPresenceLevel}` : '',
+      row.seoScore != null ? `Score SEO (heuristique) : ${row.seoScore}/100` : '',
     ]
       .filter(Boolean)
       .join('\n\n');
@@ -301,7 +403,21 @@ prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, asy
 
     const updated = await prisma.aiProspect.update({
       where: { id },
-      data: { leadId: lead.id, status: 'IN_PIPELINE' },
+      data: {
+        leadId: lead.id,
+        status: 'IN_PIPELINE',
+        lastContactAt: new Date(),
+      },
+    });
+
+    await prisma.aiProspectActivity.create({
+      data: {
+        organizationId: req.organizationId!,
+        aiProspectId: id,
+        type: 'SYSTEM',
+        title: 'Ajout au pipeline CRM',
+        metadata: { leadId: lead.id } as object,
+      },
     });
 
     await prisma.leadActivite.create({
@@ -310,7 +426,7 @@ prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, asy
         leadId: lead.id,
         type: 'NOTE',
         title: 'Import Prospection IA',
-        content: `Prospect IA #${row.id} — score ${row.score}`,
+        content: `Prospect IA #${row.id} — score ${row.score}. Enrichissement et résumé IA dans les notes du lead.`,
       },
     });
 

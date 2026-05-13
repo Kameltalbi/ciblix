@@ -229,6 +229,21 @@ model AiProspect {
   aiSummary        String?           @db.Text
   interestProbability Int?           // 0–100
 
+  /// Enrichissement crawl site (si website présent)
+  websiteTitle          String?
+  websiteDescription    String?      @db.Text
+  detectedEmails        Json?        // string[]
+  facebookUrl           String?
+  instagramUrl          String?
+  faviconUrl              String?
+  hasResponsiveWebsite    Boolean?
+  hasSsl                  Boolean?
+  seoScore                Int?       // 0–100 heuristique
+  digitalPresenceLevel    String?    // FORT | MOYEN | FAIBLE
+  technologiesDetected    Json?      // string[] (signaux simples : WordPress, GA, etc.)
+  probableBusinessProblem String?    @db.Text
+  suggestedOffer          String?    @db.Text
+
   leadId           String?           @unique
   lead             Lead?             @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
@@ -239,7 +254,10 @@ model AiProspect {
   emailOpenedAt    DateTime?
   linkClickedAt    DateTime?
   lastReplyAt      DateTime?
+  lastContactAt    DateTime?
   rawProvider      String?
+
+  activities       AiProspectActivity[]
 
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -248,6 +266,45 @@ model AiProspect {
   @@index([organizationId])
   @@index([status])
   @@map("ai_prospects")
+}
+
+/// Cache résultats recherche (évite appels Google répétés) — TTL côté métier (ex. 7 j.)
+model ProspectingSearchCache {
+  cacheKey      String   @id
+  providerUsed  String
+  payload       Json
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+
+  @@index([expiresAt])
+  @@map("prospecting_search_cache")
+}
+
+/// Cache enrichissement par URL normalisée
+model ProspectingWebsiteCache {
+  urlKey     String   @id
+  payload    Json
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  @@index([expiresAt])
+  @@map("prospecting_website_cache")
+}
+
+/// Timeline / tracking commercial (extensions futures : webhooks, pixel)
+model AiProspectActivity {
+  id             String     @id @default(cuid())
+  organizationId String
+  aiProspectId   String
+  aiProspect     AiProspect @relation(fields: [aiProspectId], references: [id], onDelete: Cascade)
+  type           String     // NOTE | EMAIL_OPENED | LINK_CLICKED | REPLY | CONTACT | SYSTEM
+  title          String?
+  metadata       Json?
+  createdAt      DateTime   @default(now())
+
+  @@index([aiProspectId, createdAt])
+  @@index([organizationId])
+  @@map("ai_prospect_activities")
 }
 
 // ═══════════════════════════════════════════════════════════════
