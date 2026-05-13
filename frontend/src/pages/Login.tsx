@@ -87,10 +87,10 @@ export function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <div className="mx-auto">
-            <img src="/logo.png" alt="ktOptima" className="h-16 w-auto" />
+            <img src="/logo-ciblix.png" alt="CIBLIX" className="h-16 w-auto" />
           </div>
           <div>
-            <CardTitle>ktOptima</CardTitle>
+            <CardTitle>CIBLIX</CardTitle>
             <CardDescription>{t('auth.loginSubtitle')}</CardDescription>
           </div>
         </CardHeader>

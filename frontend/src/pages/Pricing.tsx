@@ -225,8 +225,7 @@ export function Pricing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="ktOptima" className="h-8 w-auto" />
-              <span className="text-xl font-bold text-foreground">CRM</span>
+              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-8 w-auto" />
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/#features" className="text-lg text-muted-foreground hover:text-foreground transition-colors">
@@ -440,8 +439,7 @@ export function Pricing() {
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="/logo.png" alt="ktOptima" className="h-8 w-auto" />
-                <span className="text-xl font-bold">CRM</span>
+                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-8 w-auto" />
               </div>
               <p className="text-gray-400 text-sm">
                 Le CRM simple et puissant pour gérer vos ventes et vos clients.
@@ -456,7 +454,7 @@ export function Pricing() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail size={16} />
-                  <span>contact@ktoptima.com</span>
+                  <span>contact@ciblix.tn</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin size={16} />
@@ -475,7 +473,7 @@ export function Pricing() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>© 2026 ktOptima CRM. Tous droits réservés.</p>
+            <p>© 2026 CIBLIX CRM. Tous droits réservés.</p>
           </div>
         </div>
       </footer>

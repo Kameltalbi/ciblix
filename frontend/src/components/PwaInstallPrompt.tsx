@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
-const STORAGE_KEY = 'ktoptima_pwa_prompt_dismissed';
+const STORAGE_KEY = 'ciblix_pwa_prompt_dismissed';
 
 function isIosDevice(): boolean {
   return /iPad|iPhone|iPod/.test(window.navigator.userAgent);

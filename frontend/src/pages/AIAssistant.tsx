@@ -251,7 +251,7 @@ export function AIAssistant() {
             <span className="break-words">Assistant IA</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Résumé quotidien, priorités commerciales et copilote conversationnel — vos données KTOptima, sans saisie
+            Résumé quotidien, priorités commerciales et copilote conversationnel — vos données CIBLIX, sans saisie
             superflue.
           </p>
         </div>

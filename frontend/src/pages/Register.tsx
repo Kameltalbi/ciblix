@@ -75,10 +75,7 @@ export function Register() {
         {/* Colonne marque (desktop) */}
         <div className="hidden flex-col justify-center gap-6 px-6 pb-8 pt-16 text-white lg:flex lg:flex-1 lg:px-0 lg:pb-24 lg:pt-24 xl:pb-32">
           <div className="space-y-3">
-            <img src="/logo.png" alt="ktOptima" className="h-14 w-auto brightness-0 invert lg:h-[4.25rem]" />
-            <p className="max-w-md text-xl font-semibold tracking-tight text-white/95 xl:text-2xl">
-              ktOptima
-            </p>
+            <img src="/logo-ciblix.png" alt="CIBLIX" className="h-14 w-auto brightness-0 invert lg:h-[4.25rem]" />
             <p className="max-w-md text-sm font-normal leading-relaxed text-white/80 xl:text-base">
               {t('auth.registerHeroTagline')}
             </p>
@@ -90,7 +87,7 @@ export function Register() {
           <Card className="w-full rounded-2xl border-0 shadow-2xl shadow-slate-900/25 ring-1 ring-black/5">
             <CardContent className="p-6 pt-8 sm:p-8 sm:pt-10">
               <div className="mb-8 flex justify-center lg:hidden">
-                <img src="/logo.png" alt="" className="h-11 w-auto" />
+                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-11 w-auto" />
               </div>
               <h1 className="mb-8 text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-left sm:text-2xl rtl:sm:text-right">
                 {t('auth.registerCardTitle')}

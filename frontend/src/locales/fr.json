@@ -507,8 +507,8 @@
     "featureBonusesDesc": "Calculez et gérez les primes de vos commerciaux en fonction de leurs performances et objectifs atteints.",
     "featureBonusCustomization": "Primes personnalisables",
     "featureBonusCustomizationDesc": "Personnalisez vos mécanismes de prime et automatisez le calcul pour chaque commercial.",
-    "whyTitle": "Pourquoi choisir ktOptima ?",
-    "whySubtitle": "Conçu spécifiquement pour les entreprises tunisiennes, ktOptima s'adapte à vos besoins locaux avec une interface intuitive et des fonctionnalités puissantes.",
+    "whyTitle": "Pourquoi choisir CIBLIX ?",
+    "whySubtitle": "Conçu spécifiquement pour les entreprises tunisiennes, CIBLIX s'adapte à vos besoins locaux avec une interface intuitive et des fonctionnalités puissantes.",
     "whyLocal": "100% Tunisien",
     "whyLocalDesc": "Développé localement avec un support en arabe et en français.",
     "whyEasy": "Facile à utiliser",
@@ -518,23 +518,23 @@
     "whyPrice": "Prix transparent",
     "whyPriceDesc": "Pas de frais cachés, payez uniquement ce que vous utilisez.",
     "ctaTitle": "Prêt à transformer votre entreprise ?",
-    "ctaSubtitle": "Rejoignez des centaines d'entreprises tunisiennes qui utilisent déjà ktOptima.",
+    "ctaSubtitle": "Rejoignez des centaines d'entreprises tunisiennes qui utilisent déjà CIBLIX.",
     "ctaButton": "Commencer maintenant",
     "footerDesc": "La solution CRM moderne pour les entreprises tunisiennes. Gérez vos affaires, vos clients et vos prévisions en toute simplicité.",
     "footerLinks": "Liens rapides",
     "footerContact": "Contact",
-    "footerRights": "© 2026 ktOptima. Tous droits réservés."
+    "footerRights": "© 2026 CIBLIX. Tous droits réservés."
   },
   "onboardingChatbot": {
     "titleLoggedIn": "Onboarding CRM",
     "titlePublic": "Onboarding public",
-    "welcome": "Bonjour, je suis votre chatbot d'onboarding KTOptima. Je vous aide à comprendre rapidement comment démarrer.",
+    "welcome": "Bonjour, je suis votre chatbot d'onboarding CIBLIX. Je vous aide à comprendre rapidement comment démarrer.",
     "fabLabel": "Chatbot onboarding",
     "inputPlaceholder": "Posez votre question onboarding...",
     "noAnswerFallback": "Je n'ai pas pu répondre pour le moment.",
     "errorFallback": "Je rencontre un souci temporaire. Vous pouvez réessayer, ou poser une question simple comme: Comment démarrer ?",
     "quickQuestions": {
-      "start": "Comment démarrer sur KTOptima ?",
+      "start": "Comment démarrer sur CIBLIX ?",
       "difference": "Quelle différence entre Prospect, Client et Affaire ?",
       "convert": "Comment convertir un lead en affaire ?",
       "kanban": "Comment utiliser le Kanban ?"

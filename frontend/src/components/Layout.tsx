@@ -28,7 +28,7 @@ const nav = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const CONSENT_VERSION = 'v1';
-  const CONSENT_STORAGE_KEY = `ktoptima-privacy-consent-${CONSENT_VERSION}`;
+  const CONSENT_STORAGE_KEY = `ciblix-privacy-consent-${CONSENT_VERSION}`;
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
@@ -182,8 +182,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="ktOptima" className="h-9 w-auto opacity-95 sm:h-10" />
-                <span className="text-lg font-bold tracking-tight text-white/95 sm:text-xl">KTOptima</span>
+                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-9 w-auto opacity-95 sm:h-10" />
               </div>
             )}
           </div>
@@ -361,7 +360,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Consentement au traitement des donnees personnelles
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Afin d'utiliser KTOptima, vous devez donner votre consentement pour le traitement de vos donnees
+              Afin d'utiliser CIBLIX, vous devez donner votre consentement pour le traitement de vos donnees
               personnelles conformement au RGPD et a la loi tunisienne relative a la protection des donnees
               personnelles (notamment la loi organique ndeg2004-63).
             </p>

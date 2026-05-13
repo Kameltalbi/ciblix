@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
-  /** Base URL du backend pour axios (ex. `https://ktoptima.com/api` ou `/api`). */
+interface ImportMetaEnv {
+  /** Base URL du backend pour axios (ex. `https://ciblix.tn/api` ou `/api`). */
   readonly VITE_API_URL?: string;
   readonly VITE_SENTRY_DSN?: string;
   readonly VITE_SENTRY_ENVIRONMENT?: string;

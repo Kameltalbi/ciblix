@@ -507,8 +507,8 @@
     "featureBonusesDesc": "Calculate and manage your sales team bonuses based on their performance and achieved targets.",
     "featureBonusCustomization": "Custom bonus rules",
     "featureBonusCustomizationDesc": "Customize your bonus mechanisms and automate calculations for each salesperson.",
-    "whyTitle": "Why choose ktOptima?",
-    "whySubtitle": "Designed specifically for Tunisian businesses, ktOptima adapts to your local needs with an intuitive interface and powerful features.",
+    "whyTitle": "Why choose CIBLIX?",
+    "whySubtitle": "Designed specifically for Tunisian businesses, CIBLIX adapts to your local needs with an intuitive interface and powerful features.",
     "whyLocal": "100% Tunisian",
     "whyLocalDesc": "Developed locally with support in Arabic and French.",
     "whyEasy": "Easy to use",
@@ -518,23 +518,23 @@
     "whyPrice": "Transparent pricing",
     "whyPriceDesc": "No hidden fees, pay only for what you use.",
     "ctaTitle": "Ready to transform your business?",
-    "ctaSubtitle": "Join hundreds of Tunisian businesses already using ktOptima.",
+    "ctaSubtitle": "Join hundreds of Tunisian businesses already using CIBLIX.",
     "ctaButton": "Start now",
     "footerDesc": "The modern CRM solution for Tunisian businesses. Manage your deals, clients, and forecasts with ease.",
     "footerLinks": "Quick links",
     "footerContact": "Contact",
-    "footerRights": "© 2026 ktOptima. All rights reserved."
+    "footerRights": "© 2026 CIBLIX. All rights reserved."
   },
   "onboardingChatbot": {
     "titleLoggedIn": "CRM Onboarding",
     "titlePublic": "Public onboarding",
-    "welcome": "Hello, I am your KTOptima onboarding chatbot. I help you quickly understand how to get started.",
+    "welcome": "Hello, I am your CIBLIX onboarding chatbot. I help you quickly understand how to get started.",
     "fabLabel": "Onboarding chatbot",
     "inputPlaceholder": "Ask your onboarding question...",
     "noAnswerFallback": "I could not generate an answer right now.",
     "errorFallback": "I am having a temporary issue. Please try again, or ask a simple question like: How do I start?",
     "quickQuestions": {
-      "start": "How do I get started on KTOptima?",
+      "start": "How do I get started on CIBLIX?",
       "difference": "What is the difference between Prospect, Client and Deal?",
       "convert": "How do I convert a lead into a deal?",
       "kanban": "How do I use Kanban?"

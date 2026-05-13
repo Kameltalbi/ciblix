@@ -89,8 +89,7 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="KTOptima" className="h-8 w-auto" />
-              <span className="text-xl font-bold tracking-tight text-[#0071DD]">KTOptima</span>
+              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-8 w-auto" />
             </div>
             <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
               <a href="#features" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
@@ -489,7 +488,7 @@ export function Landing() {
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <img src="/logo.png" alt="KTOptima" className="h-8 w-auto opacity-95" />
+                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-8 w-auto opacity-95" />
               </div>
               <p className="text-white/75 mb-4 max-w-md text-base">
                 {t('landing.footerDesc')}
@@ -533,7 +532,7 @@ export function Landing() {
               <ul className="space-y-2 text-base text-white/80">
                 <li className="flex items-center gap-2">
                   <Mail size={16} />
-                  contact@ktoptima.com
+                  contact@ciblix.tn
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone size={16} />
