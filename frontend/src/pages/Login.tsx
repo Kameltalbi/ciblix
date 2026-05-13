@@ -58,8 +58,25 @@ export function Login() {
           navigate('/ai-assistant');
         }
       }, 100);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erreur de connexion');
+    } catch (err: unknown) {
+      const ax = err as {
+        response?: { data?: { error?: string }; status?: number };
+        message?: string;
+        code?: string;
+      };
+      if (!ax.response) {
+        const net =
+          ax.code === 'ERR_NETWORK' ||
+          ax.message === 'Network Error' ||
+          /network/i.test(ax.message || '');
+        setError(
+          net
+            ? 'Impossible de joindre le serveur API (réseau, DNS ou configuration). Vérifiez que le backend tourne et que /api est bien exposé (Nginx / HTTPS).'
+            : ax.message || 'Erreur de connexion'
+        );
+      } else {
+        setError(ax.response.data?.error || `Erreur serveur (${ax.response.status ?? '?'})`);
+      }
     } finally {
       setLoading(false);
     }
