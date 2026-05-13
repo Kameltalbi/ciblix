@@ -176,4 +176,8 @@ app.use(errorHandler);
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  // Si cette ligne n’apparaît pas après déploiement, PM2 sert encore un ancien build (sans /api/prospecting ni briefing).
+  console.log(
+    '[bootstrap] IA routes actives: GET /api/prospecting/ping, /api/prospecting/*, GET /api/ai-assistant/operational-briefing'
+  );
 });
