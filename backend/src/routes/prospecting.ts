@@ -9,6 +9,12 @@ import { generateOutreachMessage } from '../services/prospecting/generateOutreac
 import type { CompanySearchCriteria, OutreachMessageType } from '../services/prospecting/types.js';
 
 export const prospectingRoutes = Router();
+
+/** Santé du module (sans auth) — utile pour vérifier Nginx / déploiement si /dashboard renvoie 404. */
+prospectingRoutes.get('/ping', (_req, res) => {
+  res.status(200).json({ ok: true, module: 'prospecting', at: new Date().toISOString() });
+});
+
 prospectingRoutes.use(auth);
 prospectingRoutes.use(requirePaymentApproved);
 
