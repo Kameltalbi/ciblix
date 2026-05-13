@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/form-controls';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getGoogleAuthHref, isGoogleAuthUiEnabled } from '@/lib/googleAuthUrl';
 
 const OAUTH_FALLBACK_MESSAGES: Record<string, string> = {
@@ -85,14 +85,8 @@ export function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sage to-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-3">
-          <div className="mx-auto">
-            <img src="/logo-ciblix.png" alt="CIBLIX" className="h-16 w-auto" />
-          </div>
-          <div>
-            <CardTitle>CIBLIX</CardTitle>
-            <CardDescription>{t('auth.loginSubtitle')}</CardDescription>
-          </div>
+        <CardHeader className="flex justify-center pb-2 pt-6">
+          <img src="/logo-ciblix.png" alt="CIBLIX" className="h-16 w-auto" />
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
