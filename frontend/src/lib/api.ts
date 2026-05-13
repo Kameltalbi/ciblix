@@ -1,7 +1,16 @@
 import axios from 'axios';
 import { useAuth } from './auth';
 
-const API_URL = '/api';
+/** Base API : relatif `/api` (même origine) ou URL absolue / chemin au build (`VITE_API_URL`, idéalement se terminer par `/api`). */
+function resolveApiBaseUrl(): string {
+  const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (!raw) return '/api';
+  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '');
+  if (raw.startsWith('/')) return raw.replace(/\/$/, '') || '/api';
+  return '/api';
+}
+
+const API_URL = resolveApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_URL,

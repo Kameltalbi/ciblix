@@ -1,8 +1,7 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  /** `true` = afficher « Continuer avec Google » sur login / inscription */
-  readonly VITE_ENABLE_GOOGLE_AUTH?: string;
+  /** Base URL du backend pour axios (ex. `https://ktoptima.com/api` ou `/api`). */
+  readonly VITE_API_URL?: string;
   readonly VITE_SENTRY_DSN?: string;
   readonly VITE_SENTRY_ENVIRONMENT?: string;
   readonly VITE_SENTRY_RELEASE?: string;
