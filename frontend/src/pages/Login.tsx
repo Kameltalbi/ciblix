@@ -86,7 +86,11 @@ export function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sage to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="flex justify-center pb-2 pt-6">
-          <img src="/logo-ciblix.png" alt="CIBLIX" className="h-16 w-auto" />
+          <img
+            src="/logo-ciblix.png"
+            alt="CIBLIX"
+            className="h-[4.25rem] w-auto max-w-[min(16rem,85vw)] object-contain sm:h-20"
+          />
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

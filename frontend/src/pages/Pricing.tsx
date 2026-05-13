@@ -225,7 +225,11 @@ export function Pricing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20 sm:py-0">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-12 w-auto sm:h-14 md:h-16" />
+              <img
+                src="/logo-ciblix.png"
+                alt="CIBLIX"
+                className="h-[3.35rem] w-auto max-w-[min(14rem,58vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
+              />
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/#features" className="text-lg text-muted-foreground hover:text-foreground transition-colors">
@@ -439,7 +443,11 @@ export function Pricing() {
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-12 w-auto sm:h-14" />
+                <img
+                  src="/logo-ciblix.png"
+                  alt="CIBLIX"
+                  className="h-12 w-auto max-w-[min(12rem,70vw)] object-contain brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)] sm:h-14"
+                />
               </div>
               <p className="text-gray-400 text-sm">
                 Le CRM simple et puissant pour gérer vos ventes et vos clients.

@@ -89,7 +89,11 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20 sm:py-0">
             <div className="flex items-center gap-2">
-              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-12 w-auto sm:h-14 md:h-16" />
+              <img
+                src="/logo-ciblix.png"
+                alt="CIBLIX"
+                className="h-[3.35rem] w-auto max-w-[min(14rem,58vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
+              />
             </div>
             <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
               <a href="#features" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
@@ -488,7 +492,11 @@ export function Landing() {
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-8 w-auto opacity-95" />
+                <img
+                  src="/logo-ciblix.png"
+                  alt="CIBLIX"
+                  className="h-12 w-auto max-w-[min(12rem,70vw)] object-contain brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)] sm:h-14"
+                />
               </div>
               <p className="text-white/75 mb-4 max-w-md text-base">
                 {t('landing.footerDesc')}
