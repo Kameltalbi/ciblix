@@ -87,9 +87,9 @@ export function Landing() {
       {/* Header — même ADN que l’app (bleu structure) */}
       <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/90 shadow-sm backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20 sm:py-0">
             <div className="flex items-center gap-2">
-              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-8 w-auto" />
+              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-12 w-auto sm:h-14 md:h-16" />
             </div>
             <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
               <a href="#features" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
