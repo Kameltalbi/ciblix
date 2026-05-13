@@ -25,6 +25,7 @@ const AVAILABLE_PAGES = [
   'activites',
   'email-templates',
   'ai-assistant',
+  'prospection-ia',
   'objectifs',
   'settings',
 ] as const;

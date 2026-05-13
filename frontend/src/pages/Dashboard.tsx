@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Plus, DollarSign, Target, Wallet, X } from 'lucide-react';
+import { TrendingUp, Plus, DollarSign, Target, Wallet, X, Sparkles, Flame, AlertTriangle, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
@@ -70,6 +70,12 @@ export function Dashboard() {
   const totalExpenses = expenses.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
   const caTotalTTC = kpis ? Number(kpis.caTotalAll) * 1.19 : 0;
   const tauxCouverture = totalExpenses > 0 ? Math.round((caTotalTTC / totalExpenses) * 100) : null;
+
+  const { data: briefing } = useQuery({
+    queryKey: ['operational-briefing'],
+    queryFn: () => api.get('/ai-assistant/operational-briefing').then((r) => r.data),
+    staleTime: 60_000,
+  });
 
   if (kpisPending || !kpis) {
     return <div className="text-center py-20 text-muted-foreground">Chargement...</div>;
@@ -200,6 +206,51 @@ export function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {briefing && (
+        <Card className="border-violet-200/70 bg-gradient-to-r from-violet-50/80 via-white to-sky-50/50 shadow-sm overflow-hidden">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="text-violet-600" size={22} />
+                Pilotage IA
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Priorités, risques et CA pondéré du mois — mis à jour automatiquement depuis votre pipeline.
+              </p>
+            </div>
+            <Link to="/ai-assistant">
+              <Button size="sm" className="gap-1.5 shrink-0">
+                Assistant IA <ChevronRight size={16} />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl border bg-white/80 p-3">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Flame size={12} className="text-orange-500" /> Chaudes / prioritaires
+                </p>
+                <p className="text-xl font-bold">{briefing.summary?.priorityOpportunities ?? 0}</p>
+              </div>
+              <div className="rounded-xl border bg-white/80 p-3">
+                <p className="text-xs text-muted-foreground">Sans réponse 7j+</p>
+                <p className="text-xl font-bold">{briefing.summary?.quotesWithoutReply7d ?? 0}</p>
+              </div>
+              <div className="rounded-xl border bg-white/80 p-3">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <AlertTriangle size={12} className="text-rose-500" /> À risque
+                </p>
+                <p className="text-xl font-bold">{briefing.summary?.atRiskCount ?? 0}</p>
+              </div>
+              <div className="rounded-xl border bg-white/80 p-3">
+                <p className="text-xs text-muted-foreground">CA pondéré mois</p>
+                <p className="text-xl font-bold">{fmtDT(briefing.summary?.monthForecastWeightedHT ?? 0)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -97,6 +97,17 @@ export interface Affaire {
   product?: Product;
   activites?: Activite[];
   _count?: { activites: number };
+  /** Présent quand `GET /affaires?insights=true` */
+  iaInsight?: {
+    iaScoreLabel: 'TRES_CHAUD' | 'CHAUD' | 'MOYEN' | 'FAIBLE' | 'RISQUE_PERTE';
+    iaScoreNumeric: number;
+    heatLevel: 'TRES_CHAUD' | 'CHAUD' | 'TIEDE' | 'FROID' | 'GELE';
+    daysSinceLastTouch: number;
+    daysOverdueNextAction: number | null;
+    staleQuoteNoReply: boolean;
+    negotiationBlocked: boolean;
+    signatureProbabilityPct: number;
+  };
 }
 
 export interface Activite {

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Users, Settings, LogOut, Menu, X, FileText, Building2, UserCheck, Calendar as CalendarIcon, Receipt, Mail, Sparkles, Target, Globe, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Users, Settings, LogOut, Menu, X, FileText, Building2, UserCheck, Calendar as CalendarIcon, Receipt, Mail, Sparkles, Target, Globe, MessageSquare, Radio } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ import { OnboardingChatbot } from './OnboardingChatbot';
 
 const nav = [
   { to: '/dashboard',     label: 'nav.dashboard',     icon: LayoutDashboard, page: 'dashboard' },
+  { to: '/prospection-ia', label: 'nav.prospectionIa', icon: Radio, page: 'prospection-ia' },
+  { to: '/ai-assistant', label: 'nav.aiAssistant',  icon: Sparkles, page: 'ai-assistant' },
   { to: '/affaires',     label: 'nav.affaires',      icon: Briefcase,       page: 'affaires' },
   { to: '/clients',      label: 'nav.clients',       icon: Users,           page: 'clients' },
   { to: '/leads',        label: 'nav.prospects',     icon: UserCheck,       page: 'leads' },
@@ -20,7 +22,6 @@ const nav = [
   { to: '/expenses',     label: 'nav.expenses',      icon: Receipt,         page: 'expenses' },
   { to: '/activites',    label: 'nav.activities',    icon: FileText,        page: 'activites' },
   { to: '/email-templates', label: 'nav.emailTemplates', icon: Mail, page: 'email-templates' },
-  { to: '/ai-assistant', label: 'nav.aiAssistant',  icon: Sparkles, page: 'ai-assistant' },
   { to: '/objectifs',    label: 'nav.objectives',    icon: Target,          page: 'objectifs' },
   { to: '/support',      label: 'nav.support',       icon: MessageSquare,   page: 'support' },
 ];
@@ -125,15 +126,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   // Filter nav items based on user permissions
   const filteredNav = nav.filter(item => {
-    // OWNER has access to everything
-    if (user?.role === 'OWNER') return true;
-    
+    // Propriétaire org ou superadmin : menu complet
+    if (user?.role === 'OWNER' || user?.role === 'SUPERADMIN') return true;
+
     // PARTNER has access to everything (read-only)
     if (user?.role === 'PARTNER') return true;
     
     // COMMERCIAL: check specific permissions
     if (user?.role === 'COMMERCIAL') {
       if (item.page === 'support') return true;
+      // Prospection IA : même famille que l’assistant ; les anciens profils n’avaient souvent que « ai-assistant »
+      if (item.page === 'prospection-ia') {
+        const prospecting = permissionsData?.find((p) => p.page === 'prospection-ia');
+        const assistant = permissionsData?.find((p) => p.page === 'ai-assistant');
+        return Boolean(prospecting?.canView || assistant?.canView);
+      }
       const permission = permissionsData?.find(p => p.page === item.page);
       return permission?.canView ?? false;
     }
@@ -225,8 +232,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b from-primary via-primary to-[hsl(148,58%,17%)] text-white shadow-[4px_0_24px_-4px_rgba(0,0,0,0.12)] transition-[width,transform] duration-300 ease-out lg:relative lg:h-auto',
-            sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:w-0 lg:translate-x-0'
+            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b from-primary via-primary to-[hsl(148,58%,17%)] text-white shadow-[4px_0_24px_-4px_rgba(0,0,0,0.12)] transition-[width,transform] duration-300 ease-out',
+            // Mobile : tiroir selon sidebarOpen ; desktop (lg+) : barre toujours visible (éviter lg:w-0 qui masquait tout le menu)
+            sidebarOpen
+              ? 'w-64 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
+              : 'w-64 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-64 lg:flex-shrink-0 lg:translate-x-0'
           )}
         >
           <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">

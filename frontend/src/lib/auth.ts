@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { api } from './api';
 import type { User } from '../types';
 
+function readStoredUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw) return null;
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+}
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
@@ -24,7 +35,7 @@ function clearAuthStorage() {
 }
 
 export const useAuth = create<AuthState>((set, get) => ({
-  user: null,
+  user: readStoredUser(),
   accessToken: localStorage.getItem('accessToken'),
   refreshToken: localStorage.getItem('refreshToken'),
   paymentStatus: localStorage.getItem('paymentStatus'),

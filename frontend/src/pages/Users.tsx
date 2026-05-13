@@ -21,6 +21,7 @@ const PAGES = [
   { key: 'activites', label: 'Activités' },
   { key: 'email-templates', label: 'Templates Emails' },
   { key: 'ai-assistant', label: 'Assistant IA' },
+  { key: 'prospection-ia', label: 'Prospection IA' },
   { key: 'objectifs', label: 'Objectifs' },
   { key: 'settings', label: 'Paramètres' },
 ];

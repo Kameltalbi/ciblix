@@ -22,6 +22,10 @@ import {
 
 export const authRoutes = Router();
 
+function isJwtClientError(e: unknown): e is jwt.JsonWebTokenError {
+  return e instanceof jwt.JsonWebTokenError;
+}
+
 /** Crée une paire access + refresh (stocké comme hash Prisma). */
 async function createSessionTokens(userId: string): Promise<{ accessToken: string; refreshToken: string }> {
   const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET!, {
@@ -243,6 +247,9 @@ authRoutes.get('/me', async (req, res, next) => {
 
     res.json({ user, paymentStatus: organization?.paymentStatus });
   } catch (e) {
+    if (isJwtClientError(e)) {
+      return res.status(401).json({ error: 'Token invalide ou expiré' });
+    }
     next(e);
   }
 });
@@ -287,6 +294,9 @@ authRoutes.post('/refresh', async (req, res, next) => {
 
     res.json({ accessToken });
   } catch (e) {
+    if (isJwtClientError(e)) {
+      return res.status(401).json({ error: 'Refresh token invalide ou expiré' });
+    }
     next(e);
   }
 });
@@ -333,6 +343,9 @@ authRoutes.post('/logout', async (req, res, next) => {
     }
     res.json({ success: true });
   } catch (e) {
+    if (isJwtClientError(e)) {
+      return res.json({ success: true });
+    }
     next(e);
   }
 });
@@ -412,6 +425,9 @@ authRoutes.post('/reset-password', async (req, res, next) => {
 
     res.json({ success: true });
   } catch (e) {
+    if (isJwtClientError(e)) {
+      return res.status(400).json({ error: 'Lien de réinitialisation invalide ou expiré' });
+    }
     next(e);
   }
 });

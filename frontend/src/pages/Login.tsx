@@ -55,7 +55,7 @@ export function Login() {
         if (currentUser?.role === 'SUPERADMIN') {
           navigate('/admin');
         } else {
-          navigate('/dashboard');
+          navigate('/ai-assistant');
         }
       }, 100);
     } catch (err: any) {

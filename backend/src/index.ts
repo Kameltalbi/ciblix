@@ -41,6 +41,7 @@ import { commissionsRoutes } from './routes/commissions.js';
 import { superadminRoutes } from './routes/superadmin.js';
 import { supportTicketsRoutes } from './routes/support-tickets.js';
 import { onboardingChatbotRoutes } from './routes/onboarding-chatbot.js';
+import { prospectingRoutes } from './routes/prospecting.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 
@@ -161,7 +162,7 @@ app.use('/api/user-permissions', userPermissionsRoutes);
 app.use('/api/commissions', commissionsRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/support-tickets', supportTicketsRoutes);
-app.use('/api/onboarding-chatbot', onboardingChatbotRoutes);
+app.use('/api/prospecting', prospectingRoutes);
 
 // ─── Sentry request handler (no-op if SENTRY_DSN is unset) ───
 setupExpressErrorHandler(app);

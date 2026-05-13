@@ -50,6 +50,7 @@ model Organization {
   salesObjectives SalesObjective[]
   userPermissions UserPermission[]
   commissionConfigs CommissionConfig[]
+  aiProspects     AiProspect[]
 
   @@map("organizations")
 }
@@ -164,6 +165,7 @@ model Lead {
   activites     LeadActivite[]
   calendarEvents CalendarEvent[]
   expenses      Expense[]
+  aiProspectOrigin AiProspect?
 
   @@index([organizationId])
   @@index([status])
@@ -180,6 +182,7 @@ enum LeadSource {
   PHONE
   EVENT
   PARTNER
+  AI_PROSPECTION
   AUTRE
 }
 
@@ -189,6 +192,62 @@ enum LeadStatus {
   QUALIFIED  // Qualifié, prêt pour conversion
   CONVERTED  // Converti en client
   LOST       // Perdu
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AI PROSPECT — Résultats prospection IA (recherche + qualification)
+// ═══════════════════════════════════════════════════════════════
+enum AiProspectStatus {
+  FOUND
+  QUALIFIED
+  CONTACTED
+  IN_PIPELINE
+  IGNORED
+}
+
+model AiProspect {
+  id               String            @id @default(cuid())
+  organizationId   String
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  companyName      String
+  website          String?
+  linkedin         String?
+  phone            String?
+  email            String?
+  city             String?
+  country          String?
+  industry         String?
+  companySize      String?
+
+  score            Int               @default(0)
+  scoreReason      String?           @db.Text
+  suggestedPitch   String?           @db.Text
+  aiTags           Json?
+  potentialLevel   String?
+  commercialAngle  String?           @db.Text
+  aiSummary        String?           @db.Text
+  interestProbability Int?           // 0–100
+
+  leadId           String?           @unique
+  lead             Lead?             @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  status           AiProspectStatus  @default(FOUND)
+  lastSearchQuery  String?          @db.Text
+  followUpPlan     Json?
+
+  emailOpenedAt    DateTime?
+  linkClickedAt    DateTime?
+  lastReplyAt      DateTime?
+  rawProvider      String?
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("ai_prospects")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -807,7 +866,7 @@ model UserPermission {
   organizationId String
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  page          String   // dashboard, affaires, clients, leads, calendar, expenses, activites, email-templates, ai-assistant, objectifs, settings
+  page          String   // dashboard, affaires, clients, leads, calendar, expenses, activites, email-templates, ai-assistant, prospection-ia, objectifs, settings
   canView       Boolean  @default(true)
   canCreate     Boolean  @default(false)
   canEdit       Boolean  @default(false)

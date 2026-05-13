@@ -47,6 +47,9 @@ const EmailTemplates = lazy(() =>
 const AIAssistant = lazy(() =>
   import('./pages/AIAssistant').then((m) => ({ default: m.AIAssistant }))
 );
+const ProspectionIA = lazy(() =>
+  import('./pages/ProspectionIA').then((m) => ({ default: m.ProspectionIA }))
+);
 const Objectifs = lazy(() => import('./pages/Objectifs').then((m) => ({ default: m.Objectifs })));
 const SupportTickets = lazy(() =>
   import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
@@ -117,7 +120,7 @@ export default function App() {
                   <Layout>
                     <Suspense fallback={<PageFallback />}>
                       <Routes>
-                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/" element={<Navigate to="/ai-assistant" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/affaires" element={<Affaires />} />
                         <Route path="/affaires/:id" element={<AffaireDetail />} />
@@ -132,10 +135,11 @@ export default function App() {
                         <Route path="/products" element={<Products />} />
                         <Route path="/activites" element={<Activites />} />
                         <Route path="/email-templates" element={<EmailTemplates />} />
+                        <Route path="/prospection-ia" element={<ProspectionIA />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />
                         <Route path="/objectifs" element={<Objectifs />} />
                         <Route path="/support" element={<SupportTickets />} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<Navigate to="/ai-assistant" replace />} />
                       </Routes>
                     </Suspense>
                   </Layout>

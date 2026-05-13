@@ -3,12 +3,262 @@ import { z } from 'zod';
 import { PrismaClient } from '../lib/prismaInterop.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { checkPlanFeature } from '../middleware/planRestrictions.js';
+import {
+  buildFollowUpTemplates,
+  computeCommercialInsight,
+  heatToFrench,
+  labelToFrench,
+} from '../lib/commercialIntel.js';
 
 export const aiAssistantRoutes = Router();
 const prisma = new PrismaClient();
 
 // Apply auth middleware to all routes
 aiAssistantRoutes.use(auth);
+
+const OPEN_PIPELINE = ['PROSPECT', 'QUALIFIE', 'PROPOSITION', 'NEGOCIATION'] as const;
+
+async function buildOperationalBriefing(organizationId: string) {
+  const now = new Date();
+  const cy = now.getFullYear();
+  const cm = now.getMonth() + 1;
+
+  const [openAffaires, hotLeadsCount, monthWeighted, users] = await Promise.all([
+    prisma.affaire.findMany({
+      where: { organizationId, deletedAt: null, statut: { in: [...OPEN_PIPELINE] } },
+      take: 400,
+      orderBy: { updatedAt: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        statut: true,
+        probabilite: true,
+        score: true,
+        montantHT: true,
+        createdAt: true,
+        updatedAt: true,
+        dateProchaineAction: true,
+        devisId: true,
+        devisNumero: true,
+        prochaineAction: true,
+        assignedToId: true,
+        client: { select: { name: true } },
+      },
+    }),
+    prisma.lead.count({
+      where: { organizationId, deletedAt: null, status: 'QUALIFIED', score: { gte: 70 } },
+    }),
+    prisma.affaire.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+        statut: { in: [...OPEN_PIPELINE] },
+        moisPrevu: cm,
+        anneePrevue: cy,
+      },
+      select: { montantHT: true, probabilite: true },
+    }),
+    prisma.user.findMany({
+      where: { organizationId },
+      select: { id: true, name: true },
+    }),
+  ]);
+
+  const ids = openAffaires.map((a) => a.id);
+  const lastActs =
+    ids.length === 0
+      ? []
+      : await prisma.activite.groupBy({
+          by: ['affaireId'],
+          where: { organizationId, affaireId: { in: ids } },
+          _max: { createdAt: true },
+        });
+  const lastMap: Record<string, Date> = {};
+  for (const r of lastActs) {
+    if (r._max.createdAt) lastMap[r.affaireId] = r._max.createdAt;
+  }
+
+  const insights = openAffaires.map((a) => {
+    const ins = computeCommercialInsight(
+      {
+        statut: a.statut,
+        probabilite: a.probabilite,
+        score: a.score,
+        montantHT: Number(a.montantHT),
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+        lastActivityAt: lastMap[a.id] ?? null,
+        dateProchaineAction: a.dateProchaineAction,
+        hasDevis: Boolean(a.devisId || a.devisNumero),
+      },
+      now
+    );
+    return { affaire: a, ins };
+  });
+
+  const priorityOpps = insights.filter(
+    (x) => x.ins.iaScoreLabel === 'TRES_CHAUD' || x.ins.iaScoreLabel === 'CHAUD'
+  ).length;
+  const quotesNoReply = insights.filter((x) => x.ins.staleQuoteNoReply).length;
+  const atRisk = insights.filter(
+    (x) => x.ins.iaScoreLabel === 'RISQUE_PERTE' || x.ins.negotiationBlocked
+  ).length;
+
+  const forecastMonth = Math.round(
+    monthWeighted.reduce((s, a) => s + Number(a.montantHT) * (a.probabilite / 100), 0)
+  );
+
+  const sortedRec = [...insights].sort((a, b) => b.ins.iaScoreNumeric - a.ins.iaScoreNumeric).slice(0, 12);
+
+  const recommendations = sortedRec.map(({ affaire: a, ins }) => {
+    let action = 'Planifier une relance courte';
+    if (ins.staleQuoteNoReply) {
+      action = `Relancer ${a.client?.name || 'le client'} (offre sans réponse depuis ${ins.daysSinceLastTouch} j.)`;
+    } else if (ins.negotiationBlocked) {
+      action = `Débloquer la négociation avec ${a.client?.name || 'le client'}`;
+    } else if (ins.daysOverdueNextAction != null) {
+      action = `Rattraper l’action prévue (+${ins.daysOverdueNextAction} j.) — ${a.client?.name || ''}`;
+    } else if (ins.iaScoreLabel === 'TRES_CHAUD') {
+      action = `Accélérer la clôture — ${a.client?.name || ''} (${labelToFrench(ins.iaScoreLabel)})`;
+    }
+    return {
+      affaireId: a.id,
+      clientName: a.client?.name ?? '—',
+      action,
+      iaLabel: ins.iaScoreLabel,
+      iaLabelFr: labelToFrench(ins.iaScoreLabel),
+      score: ins.iaScoreNumeric,
+    };
+  });
+
+  const alerts = insights
+    .filter(
+      (x) =>
+        x.ins.staleQuoteNoReply ||
+        x.ins.negotiationBlocked ||
+        (x.ins.daysOverdueNextAction !== null && x.ins.daysOverdueNextAction > 5)
+    )
+    .slice(0, 15)
+    .map(({ affaire: a, ins }) => ({
+      type: ins.staleQuoteNoReply
+        ? 'DEVIS_SILENCE'
+        : ins.negotiationBlocked
+          ? 'NEGO_BLOC'
+          : 'ACTION_RETARD',
+      affaireId: a.id,
+      title: a.title,
+      clientName: a.client?.name,
+      message:
+        ins.staleQuoteNoReply
+          ? `Sans nouvelles depuis ${ins.daysSinceLastTouch} j. — ${a.statut}`
+          : ins.negotiationBlocked
+            ? 'Négociation sans animation depuis 14+ j.'
+            : `Action commerciale en retard de ${ins.daysOverdueNextAction} j.`,
+    }));
+
+  const hotOpportunitiesTop = [...insights]
+    .sort((a, b) => b.ins.iaScoreNumeric - a.ins.iaScoreNumeric)
+    .slice(0, 5)
+    .map(({ affaire: a, ins }) => ({
+      id: a.id,
+      clientName: a.client?.name,
+      montantHT: Number(a.montantHT),
+      iaLabelFr: labelToFrench(ins.iaScoreLabel),
+      heatFr: heatToFrench(ins.heatLevel),
+      daysSinceLastTouch: ins.daysSinceLastTouch,
+      signatureProbabilityPct: ins.signatureProbabilityPct,
+      statut: a.statut,
+    }));
+
+  const userMap = Object.fromEntries(users.map((u) => [u.id, u.name]));
+
+  return {
+    generatedAt: now.toISOString(),
+    summary: {
+      priorityOpportunities: priorityOpps,
+      quotesWithoutReply7d: quotesNoReply,
+      atRiskCount: atRisk,
+      hotLeads: hotLeadsCount,
+      monthForecastWeightedHT: forecastMonth,
+    },
+    recommendations,
+    alerts,
+    hotOpportunities: hotOpportunitiesTop,
+    userNamesById: userMap,
+  };
+}
+
+aiAssistantRoutes.get('/operational-briefing', async (req: AuthRequest, res, next) => {
+  try {
+    const briefing = await buildOperationalBriefing(req.organizationId!);
+    res.json(briefing);
+  } catch (e) {
+    next(e);
+  }
+});
+
+const followUpDraftSchema = z.object({
+  affaireId: z.string().min(1),
+  tone: z.enum(['soft', 'commercial', 'firm']),
+  channel: z.enum(['email', 'whatsapp']),
+  length: z.enum(['short', 'long']),
+  language: z.string().optional(),
+});
+
+aiAssistantRoutes.post('/follow-up-draft', async (req: AuthRequest, res, next) => {
+  try {
+    const body = followUpDraftSchema.parse(req.body);
+    const affaire = await prisma.affaire.findFirst({
+      where: { id: body.affaireId, organizationId: req.organizationId!, deletedAt: null },
+      include: { client: { select: { name: true } } },
+    });
+    if (!affaire) return res.status(404).json({ error: 'Affaire introuvable' });
+
+    const clientName = affaire.client?.name || 'Madame, Monsieur';
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (apiKey) {
+      try {
+        const prompt =
+          `Génère une relance ${body.channel === 'whatsapp' ? 'type message court (sans objet)' : 'email avec objet'}.\n` +
+          `Ton : ${body.tone === 'soft' ? 'doux' : body.tone === 'firm' ? 'ferme' : 'commercial'}.\n` +
+          `Longueur : ${body.length === 'short' ? 'courte' : 'plus développée'}.\n` +
+          `Client : ${clientName}\n` +
+          `Statut opportunité : ${affaire.statut}, montant HT : ${affaire.montantHT} DT, probabilité : ${affaire.probabilite}%.\n` +
+          (body.language?.startsWith('en')
+            ? 'Write in English.'
+            : body.language?.startsWith('ar')
+              ? 'Write in Arabic.'
+              : 'Write in French.');
+
+        const systemPrompt =
+          'Tu es un assistant commercial PME. Messages clairs, respectueux, orientés action. Pas de jargon inutile.';
+        const aiResponse = await callOpenAI(prompt, systemPrompt);
+        res.json({ source: 'openai', text: aiResponse, affaireId: affaire.id });
+        return;
+      } catch {
+        // fallback templates
+      }
+    }
+
+    const tpl = buildFollowUpTemplates({
+      clientName,
+      montantHT: Number(affaire.montantHT),
+      statut: affaire.statut,
+      tone: body.tone,
+      channel: body.channel,
+      length: body.length,
+    });
+    res.json({
+      source: 'template',
+      subject: tpl.subject,
+      body: tpl.body,
+      affaireId: affaire.id,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 
 // OpenAI API integration
 async function callOpenAI(prompt: string, systemPrompt?: string): Promise<string> {
@@ -381,7 +631,35 @@ function processQuery(message: string, organizationId: string): string {
   if (lowerMessage.includes('dépense') || lowerMessage.includes('dépense') && (lowerMessage.includes('ca') || lowerMessage.includes('comparer'))) {
     return 'ca_vs_expenses';
   }
-  
+
+  if (
+    lowerMessage.includes('relancer') ||
+    (lowerMessage.includes('client') && (lowerMessage.includes('relanc') || lowerMessage.includes('rappel')))
+  ) {
+    return 'clients_to_follow_up';
+  }
+
+  if (
+    (lowerMessage.includes('chaud') || lowerMessage.includes('chaude')) &&
+    (lowerMessage.includes('opportun') || lowerMessage.includes('affaire'))
+  ) {
+    return 'hot_opportunities';
+  }
+
+  if (
+    lowerMessage.includes('bloqu') &&
+    (lowerMessage.includes('dossier') || lowerMessage.includes('opportun') || lowerMessage.includes('affaire'))
+  ) {
+    return 'stalled_opportunities';
+  }
+
+  if (
+    lowerMessage.includes('commercial') &&
+    (lowerMessage.includes('perform') || lowerMessage.includes('meilleur') || lowerMessage.includes('classement'))
+  ) {
+    return 'sales_rep_leaderboard';
+  }
+
   return 'unknown';
 }
 
@@ -689,7 +967,95 @@ async function executeQuery(intent: string, organizationId: string) {
         value: `CA: ${caYear.toLocaleString('fr-TN')} DT\nDépenses: ${expensesYearTotal.toLocaleString('fr-TN')} DT\nRatio dépenses/CA: ${ratio}%`,
       };
     }
-    
+
+    case 'clients_to_follow_up': {
+      const now = new Date();
+      const rows = await prisma.affaire.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          statut: { in: ['PROSPECT', 'QUALIFIE', 'PROPOSITION', 'NEGOCIATION'] },
+          OR: [
+            { dateProchaineAction: { lt: now } },
+            { updatedAt: { lt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) } },
+          ],
+        },
+        include: { client: { select: { name: true } } },
+        orderBy: { dateProchaineAction: 'asc' },
+        take: 25,
+      });
+      return {
+        type: 'list',
+        title: `Contacts / dossiers à relancer (${rows.length})`,
+        data: rows.map((a) => ({
+          client: a.client?.name || 'N/A',
+          statut: a.statut,
+          prochaine: a.prochaineAction || '—',
+          montant: Number(a.montantHT).toLocaleString('fr-TN') + ' DT',
+        })),
+      };
+    }
+
+    case 'hot_opportunities': {
+      const briefing = await buildOperationalBriefing(organizationId);
+      const top = briefing.hotOpportunities.slice(0, 12);
+      return {
+        type: 'list',
+        title: 'Opportunités les plus chaudes (score IA)',
+        data: top.map((o) => ({
+          client: o.clientName || 'N/A',
+          montant: o.montantHT.toLocaleString('fr-TN') + ' DT',
+          niveau: o.iaLabelFr,
+          chaleur: o.heatFr,
+          proba_signature: `${o.signatureProbabilityPct}%`,
+        })),
+      };
+    }
+
+    case 'stalled_opportunities': {
+      const briefing = await buildOperationalBriefing(organizationId);
+      const stalled = briefing.alerts.slice(0, 20);
+      return {
+        type: 'list',
+        title: `Dossiers à risque ou bloqués (${stalled.length})`,
+        data: stalled.map((s) => ({
+          client: s.clientName || 'N/A',
+          detail: s.message,
+          type: s.type,
+        })),
+      };
+    }
+
+    case 'sales_rep_leaderboard': {
+      const rows = await prisma.affaire.groupBy({
+        by: ['assignedToId'],
+        where: {
+          organizationId,
+          deletedAt: null,
+          statut: 'GAGNE',
+          anneePrevue: currentYear,
+          assignedToId: { not: null },
+        },
+        _sum: { montantHT: true },
+        _count: true,
+      });
+      const users = await prisma.user.findMany({
+        where: { organizationId },
+        select: { id: true, name: true },
+      });
+      const nm = Object.fromEntries(users.map((u) => [u.id, u.name]));
+      const sorted = [...rows].sort((a, b) => Number(b._sum.montantHT ?? 0) - Number(a._sum.montantHT ?? 0));
+      return {
+        type: 'list',
+        title: `CA gagné par commercial (${currentYear})`,
+        data: sorted.map((r) => ({
+          commercial: r.assignedToId ? nm[r.assignedToId] || r.assignedToId : '—',
+          ca_gagne: Number(r._sum.montantHT ?? 0).toLocaleString('fr-TN') + ' DT',
+          affaires: r._count,
+        })),
+      };
+    }
+
     default:
       return {
         type: 'text',
@@ -812,6 +1178,13 @@ aiAssistantRoutes.post('/query', checkPlanFeature('ai'), async (req: AuthRequest
           recommendations,
         },
       });
+      return;
+    }
+
+    const structuredIntent = processQuery(message, organizationId);
+    if (structuredIntent !== 'unknown') {
+      const result = await executeQuery(structuredIntent, organizationId);
+      res.json({ intent: structuredIntent, result });
       return;
     }
 

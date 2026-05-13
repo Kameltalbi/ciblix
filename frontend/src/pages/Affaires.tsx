@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 import { cn, fmtDT, MOIS } from '@/lib/utils';
+import { labelToFrench } from '@/lib/commercialIntel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, DropdownMenu, DropdownMenuTrigger, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItemStyled } from '@/components/ui/form-controls';
@@ -140,7 +141,7 @@ export function Affaires() {
 
   const { data: affairesData } = useQuery<{ data: Affaire[], pagination: any }>({
     queryKey: ['affaires', filters, page],
-    queryFn: () => api.get('/affaires', { params: { ...filters, page } }).then((r) => r.data),
+    queryFn: () => api.get('/affaires', { params: { ...filters, page, insights: true } }).then((r) => r.data),
   });
   const affaires = affairesData?.data || [];
   const pagination = affairesData?.pagination;
@@ -148,7 +149,7 @@ export function Affaires() {
   // Fetch all affaires (unfiltered) for KPI calculations
   const { data: allAffairesData } = useQuery<{ data: Affaire[], pagination: any }>({
     queryKey: ['affaires', 'all', filters],
-    queryFn: () => api.get('/affaires', { params: { ...filters, limit: 9999 } }).then((r) => r.data),
+    queryFn: () => api.get('/affaires', { params: { ...filters, limit: 9999, insights: true } }).then((r) => r.data),
   });
   const allAffaires = allAffairesData?.data || [];
 
@@ -312,15 +313,17 @@ export function Affaires() {
       formData.append('file', file);
       return api.post('/affaires/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      }).then((r) => r.data as { created?: number; updated?: number });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { created?: number; updated?: number }) => {
       qc.invalidateQueries({ queryKey: ['affaires'] });
       qc.invalidateQueries({ queryKey: ['clients'] });
       qc.invalidateQueries({ queryKey: ['products'] });
       setImportOpen(false);
       setImportFile(null);
-      alert(`Import réussi ! ${data.data.created} affaires créées, ${data.data.updated} mises à jour.`);
+      const c = data?.created ?? 0;
+      const u = data?.updated ?? 0;
+      alert(`Import réussi ! ${c} affaires créées, ${u} mises à jour.`);
     },
     onError: (error: any) => {
       console.error('Import error:', error);
@@ -1017,6 +1020,30 @@ export function Affaires() {
                           </div>
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             <Badge variant="outline">{a.probabilite}%</Badge>
+                            {a.iaInsight && (
+                              <Badge
+                                className={cn(
+                                  'text-white border-0',
+                                  a.iaInsight.iaScoreLabel === 'TRES_CHAUD' && 'bg-violet-600',
+                                  a.iaInsight.iaScoreLabel === 'CHAUD' && 'bg-orange-500',
+                                  a.iaInsight.iaScoreLabel === 'MOYEN' && 'bg-amber-500',
+                                  a.iaInsight.iaScoreLabel === 'FAIBLE' && 'bg-slate-500',
+                                  a.iaInsight.iaScoreLabel === 'RISQUE_PERTE' && 'bg-rose-600'
+                                )}
+                              >
+                                IA {labelToFrench(a.iaInsight.iaScoreLabel)}
+                              </Badge>
+                            )}
+                            {a.iaInsight && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {a.iaInsight.daysSinceLastTouch}j sans échange
+                              </Badge>
+                            )}
+                            {a.iaInsight && (
+                              <Badge variant="outline" className="text-[10px]">
+                                ~{a.iaInsight.signatureProbabilityPct}% sign.
+                              </Badge>
+                            )}
                             {temperature === 'hot' && <Badge className="bg-orange-500 text-white"><Flame size={12} className="mr-1" /> Chaud</Badge>}
                             {temperature === 'warm' && <Badge className="bg-amber-500 text-white">🟡 Moyen</Badge>}
                             {temperature === 'cold' && <Badge className="bg-cyan-600 text-white"><Snowflake size={12} className="mr-1" /> Froid</Badge>}
@@ -1125,6 +1152,30 @@ export function Affaires() {
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             <Badge variant="outline">{a.probabilite}%</Badge>
                             <Badge variant="outline" className="bg-slate-50">{a.statut}</Badge>
+                            {a.iaInsight && (
+                              <Badge
+                                className={cn(
+                                  'text-white border-0',
+                                  a.iaInsight.iaScoreLabel === 'TRES_CHAUD' && 'bg-violet-600',
+                                  a.iaInsight.iaScoreLabel === 'CHAUD' && 'bg-orange-500',
+                                  a.iaInsight.iaScoreLabel === 'MOYEN' && 'bg-amber-500',
+                                  a.iaInsight.iaScoreLabel === 'FAIBLE' && 'bg-slate-500',
+                                  a.iaInsight.iaScoreLabel === 'RISQUE_PERTE' && 'bg-rose-600'
+                                )}
+                              >
+                                IA {labelToFrench(a.iaInsight.iaScoreLabel)}
+                              </Badge>
+                            )}
+                            {a.iaInsight && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {a.iaInsight.daysSinceLastTouch}j sans échange
+                              </Badge>
+                            )}
+                            {a.iaInsight && (
+                              <Badge variant="outline" className="text-[10px]">
+                                ~{a.iaInsight.signatureProbabilityPct}% sign.
+                              </Badge>
+                            )}
                             {temperature === 'hot' && <Badge className="bg-orange-500 text-white"><Flame size={12} className="mr-1" /> Chaud</Badge>}
                             {temperature === 'warm' && <Badge className="bg-amber-500 text-white">🟡 Moyen</Badge>}
                             {temperature === 'cold' && <Badge className="bg-cyan-600 text-white"><Snowflake size={12} className="mr-1" /> Froid</Badge>}
@@ -1491,15 +1542,15 @@ export function Affaires() {
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Importer des affaires depuis Excel</DialogTitle>
+            <DialogTitle>Importer des affaires (Excel ou CSV)</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="importFile">Fichier Excel (.xlsx, .xls)</Label>
+              <Label htmlFor="importFile">Fichier (.xlsx, .xls, .csv)</Label>
               <Input
                 id="importFile"
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".xlsx,.xls,.csv"
                 onChange={(e) => setImportFile(e.target.files?.[0] || null)}
               />
             </div>

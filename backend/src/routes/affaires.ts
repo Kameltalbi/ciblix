@@ -13,6 +13,7 @@ import {
   syncAffaireNextActionCalendar,
   removeAffaireNextActionCalendarEvents,
 } from '../lib/syncAffaireNextActionCalendar.js';
+import { computeCommercialInsight } from '../lib/commercialIntel.js';
 
 export const affairesRoutes = Router();
 affairesRoutes.use(auth);
@@ -33,6 +34,8 @@ const allowedImportMimeTypes = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
   'application/octet-stream',
+  'text/csv',
+  'application/csv',
 ]);
 
 const upload = multer({
@@ -40,10 +43,10 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const extAllowed = ext === '.xlsx' || ext === '.xls';
+    const extAllowed = ext === '.xlsx' || ext === '.xls' || ext === '.csv';
     const mimeAllowed = allowedImportMimeTypes.has(file.mimetype);
     if (!extAllowed || !mimeAllowed) {
-      return cb(new Error('Format de fichier non autorisé. Utilisez .xlsx ou .xls'));
+      return cb(new Error('Format de fichier non autorisé. Utilisez .xlsx, .xls ou .csv'));
     }
     cb(null, true);
   },
@@ -113,6 +116,8 @@ affairesRoutes.get('/', async (req: AuthRequest, res, next) => {
   try {
     const { page, limit, skip } = parsePagination(req.query);
     const { statut, type, annee, viaPartenaire } = req.query;
+    const withInsights =
+      req.query.insights === 'true' || req.query.insights === '1' || req.query.insights === 'yes';
     const where: any = { organizationId: req.organizationId, deletedAt: null };
     if (statut)        where.statut = statut;
     if (type)          where.type = type;
@@ -130,8 +135,54 @@ affairesRoutes.get('/', async (req: AuthRequest, res, next) => {
       prisma.affaire.count({ where }),
     ]);
 
+    if (!withInsights) {
+      res.json({
+        data: affaires,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+      return;
+    }
+
+    const ids = affaires.map((a) => a.id);
+    const lastActs =
+      ids.length === 0
+        ? []
+        : await prisma.activite.groupBy({
+            by: ['affaireId'],
+            where: { organizationId: req.organizationId!, affaireId: { in: ids } },
+            _max: { createdAt: true },
+          });
+    const lastMap: Record<string, Date> = {};
+    for (const r of lastActs) {
+      if (r._max.createdAt) lastMap[r.affaireId] = r._max.createdAt;
+    }
+
+    const now = new Date();
+    const data = affaires.map((a) => ({
+      ...a,
+      iaInsight: computeCommercialInsight(
+        {
+          statut: a.statut,
+          probabilite: a.probabilite,
+          score: a.score,
+          montantHT: Number(a.montantHT),
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+          lastActivityAt: lastMap[a.id] ?? null,
+          dateProchaineAction: a.dateProchaineAction,
+          hasDevis: Boolean(a.devisId || a.devisNumero),
+        },
+        now
+      ),
+    }));
+
     res.json({
-      data: affaires,
+      data,
       pagination: {
         page,
         limit,
@@ -396,7 +447,7 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
     }
     uploadedPath = req.file.path;
 
-    // Read Excel file
+    // Read Excel / CSV
     const workbook = xlsx.readFile(req.file.path, {
       dense: true,
       cellFormula: false,
@@ -424,7 +475,7 @@ affairesRoutes.post('/import', upload.single('file'), async (req: AuthRequest, r
     }
 
     if (data.length === 0) {
-      return res.json({ created: 0, updated: 0, errors: ['Aucune donnée trouvée dans le fichier Excel'] });
+      return res.json({ created: 0, updated: 0, errors: ['Aucune donnée trouvée dans le fichier'] });
     }
     if (data.length > 5000) {
       return res.status(400).json({
