@@ -182,7 +182,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-9 w-auto opacity-95 sm:h-10" />
+                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-12 w-auto sm:h-14" />
               </div>
             )}
           </div>
