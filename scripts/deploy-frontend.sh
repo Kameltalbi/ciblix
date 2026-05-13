@@ -32,10 +32,15 @@ if [ "$MODE" = "docker" ]; then
     echo "Utilisez MODE=static ou définissez COMPOSE_FILE=..." >&2
     exit 1
   fi
-  echo ">>> Rebuild image Docker frontend + redémarrage..."
-  docker compose -f "$COMPOSE_FILE" build frontend
+  echo ">>> Rebuild image Docker frontend (sans cache) + redémarrage..."
+  echo "    Compose: $COMPOSE_FILE"
+  # --no-cache évite une image frontend obsolète si Docker réutilisait des couches COPY.
+  docker compose -f "$COMPOSE_FILE" build --no-cache frontend
   docker compose -f "$COMPOSE_FILE" up -d frontend
-  echo ">>> Terminé. Le conteneur frontend sert la nouvelle image."
+  echo ">>> Conteneurs :"
+  docker compose -f "$COMPOSE_FILE" ps frontend 2>/dev/null || true
+  echo ">>> Terminé. Vérifiez avec : ./scripts/diagnose-frontend.sh"
+  echo "    Si le site ne change toujours pas, nginx sur l’hôte sert un autre dossier → MODE=static + DEPLOY_ROOT."
   exit 0
 fi
 
