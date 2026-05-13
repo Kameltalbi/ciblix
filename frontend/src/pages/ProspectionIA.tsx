@@ -21,6 +21,7 @@ import {
   Filter,
   Clock,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -274,6 +275,7 @@ function TimelineDialog({
 }
 
 export function ProspectionIA() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [sector, setSector] = useState('');
   const [country, setCountry] = useState('Tunisie');
@@ -429,7 +431,7 @@ export function ProspectionIA() {
           </Card>
           <Card className="shadow-card transition-smooth hover:shadow-card-hover">
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dans le pipeline</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('prospectionIA.inOpportunitiesLabel')}</p>
               <p className="mt-1 text-3xl font-bold tabular-nums text-foreground">{dash.inPipeline}</p>
             </CardContent>
           </Card>
@@ -781,7 +783,7 @@ export function ProspectionIA() {
                         className="gap-1 rounded-full"
                       >
                         <KanbanSquare size={14} />
-                        {inPipe ? 'Dans le pipeline' : 'Ajouter au pipeline'}
+                        {inPipe ? t('prospectionIA.inOpportunitiesLabel') : t('prospectionIA.addToOpportunities')}
                       </Button>
                       <Button
                         size="sm"

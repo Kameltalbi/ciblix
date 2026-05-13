@@ -47,6 +47,14 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
+    // Sans Docker : le front appelle `/api` (voir `src/lib/api.ts`). Vite doit relayer vers le backend local.
+    // Surcharge éventuelle : VITE_DEV_PROXY_TARGET=http://127.0.0.1:4000 npm run dev
+    proxy: {
+      '/api': {
+        target: process.env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:4000',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port: 3000,

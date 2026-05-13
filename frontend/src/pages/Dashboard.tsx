@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, Plus, DollarSign, Target, Wallet, X, Sparkles, Flame, AlertTriangle, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -77,28 +77,32 @@ export function Dashboard() {
     staleTime: 60_000,
   });
 
+  const monthlyData = useMemo(() => {
+    if (!kpis) return [];
+    return Object.entries(kpis.parMois).map(([month, data]) => ({
+      month: MOIS_S[parseInt(month)],
+      gagne: Number(data.realise),
+      enCours: Number(data.pipeline),
+      prospect: Number(data.prospect),
+      total: Number(data.realise) + Number(data.pipeline) + Number(data.prospect),
+    }));
+  }, [kpis]);
+
+  const statusDistributionData = useMemo(() => {
+    if (!kpis) return [];
+    return [
+      { name: t('dashboard.caStatusWon'), value: kpis.caRealise, color: '#22c55e' },
+      { name: t('dashboard.caStatusActive'), value: kpis.caPipeline, color: '#0ea5e9' },
+      { name: t('dashboard.caStatusNew'), value: kpis.caProspection, color: '#f59e0b' },
+    ];
+  }, [kpis, t]);
+
   if (kpisPending || !kpis) {
     return <div className="text-center py-20 text-muted-foreground">Chargement...</div>;
   }
 
   const affairesTotal =
     kpis.counts.gagne + kpis.counts.enCours + kpis.counts.prospect + kpis.counts.perdu;
-
-  // Prepare chart data
-  const monthlyData = Object.entries(kpis.parMois).map(([month, data]) => ({
-    month: MOIS_S[parseInt(month)],
-    gagne: Number(data.realise),
-    enCours: Number(data.pipeline),
-    prospect: Number(data.prospect),
-    total: Number(data.realise) + Number(data.pipeline) + Number(data.prospect),
-  }));
-
-  // Status distribution for pie chart
-  const statusDistributionData = [
-    { name: 'Réalisé', value: kpis.caRealise, color: '#22c55e' },
-    { name: 'Pipeline', value: kpis.caPipeline, color: '#0ea5e9' },
-    { name: 'Prospection', value: kpis.caProspection, color: '#f59e0b' },
-  ];
 
   // Opportunities per month (count)
   const opportunitiesByMonth: { month: string; count: number }[] = [];
@@ -213,15 +217,13 @@ export function Dashboard() {
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Sparkles className="text-violet-600" size={22} />
-                Pilotage IA
+                {t('dashboard.briefingTitle')}
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Priorités, risques et CA pondéré du mois — mis à jour automatiquement depuis votre pipeline.
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.briefingSubtitle')}</p>
             </div>
             <Link to="/ai-assistant">
               <Button size="sm" className="gap-1.5 shrink-0">
-                Assistant IA <ChevronRight size={16} />
+                {t('dashboard.assistantCta')} <ChevronRight size={16} />
               </Button>
             </Link>
           </CardHeader>
@@ -229,22 +231,22 @@ export function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-xl border bg-white/80 p-3">
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Flame size={12} className="text-orange-500" /> Chaudes / prioritaires
+                  <Flame size={12} className="text-orange-500" /> {t('dashboard.briefKpiHot')}
                 </p>
                 <p className="text-xl font-bold">{briefing.summary?.priorityOpportunities ?? 0}</p>
               </div>
               <div className="rounded-xl border bg-white/80 p-3">
-                <p className="text-xs text-muted-foreground">Sans réponse 7j+</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.briefKpiNoReply')}</p>
                 <p className="text-xl font-bold">{briefing.summary?.quotesWithoutReply7d ?? 0}</p>
               </div>
               <div className="rounded-xl border bg-white/80 p-3">
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <AlertTriangle size={12} className="text-rose-500" /> À risque
+                  <AlertTriangle size={12} className="text-rose-500" /> {t('dashboard.briefKpiAtRisk')}
                 </p>
                 <p className="text-xl font-bold">{briefing.summary?.atRiskCount ?? 0}</p>
               </div>
               <div className="rounded-xl border bg-white/80 p-3">
-                <p className="text-xs text-muted-foreground">CA pondéré mois</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.briefKpiWeighted')}</p>
                 <p className="text-xl font-bold">{fmtDT(briefing.summary?.monthForecastWeightedHT ?? 0)}</p>
               </div>
             </div>
@@ -279,22 +281,22 @@ export function Dashboard() {
           color="emerald"
         />
         <KpiCard
-          title="Taux de couverture"
-          subtitle="CA total TTC / Dépenses"
+          title={t('dashboard.kpiCoverageTitle')}
+          subtitle={t('dashboard.kpiCoverageSubtitle')}
           value={tauxCouverture !== null ? `${tauxCouverture}%` : '—'}
           icon={<TrendingUp className="w-6 h-6" />}
           color="amber"
         />
         <KpiCard
-          title="Opportunités gagnées"
-          subtitle={`${kpis.counts.gagne} opportunités`}
+          title={t('dashboard.kpiWonOppsTitle')}
+          subtitle={t('dashboard.kpiWonOppsSubtitle', { count: kpis.counts.gagne })}
           value={`${kpis.counts.gagne}`}
           icon={<Wallet className="w-6 h-6" />}
           color="emerald"
         />
         <KpiCard
-          title="Conversion"
-          subtitle={`${kpis.counts.gagne + kpis.counts.perdu} conclues`}
+          title={t('dashboard.kpiConversionTitle')}
+          subtitle={t('dashboard.kpiConversionSubtitle', { count: kpis.counts.gagne + kpis.counts.perdu })}
           value={`${winRate}%`}
           icon={<Target className="w-6 h-6" />}
           color="purple"
@@ -305,7 +307,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Évolution mensuelle du CA ({selectedYear})</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('dashboard.chartEvolutionTitle', { year: selectedYear })}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -318,9 +320,9 @@ export function Dashboard() {
                   contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="gagne" stroke="#22c55e" strokeWidth={3} name="Réalisé" dot={{ r: 5 }} />
-                <Line type="monotone" dataKey="enCours" stroke="#0ea5e9" strokeWidth={3} name="Pipeline" dot={{ r: 5 }} />
-                <Line type="monotone" dataKey="prospect" stroke="#f59e0b" strokeWidth={3} name="Prospection" dot={{ r: 5 }} />
+                <Line type="monotone" dataKey="gagne" stroke="#22c55e" strokeWidth={3} name={t('dashboard.serieWon')} dot={{ r: 5 }} />
+                <Line type="monotone" dataKey="enCours" stroke="#0ea5e9" strokeWidth={3} name={t('dashboard.serieActive')} dot={{ r: 5 }} />
+                <Line type="monotone" dataKey="prospect" stroke="#f59e0b" strokeWidth={3} name={t('dashboard.serieNew')} dot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -328,7 +330,7 @@ export function Dashboard() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Répartition du CA par statut ({affairesTotal})</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('dashboard.chartRepartitionTitle', { count: affairesTotal })}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -358,20 +360,20 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-sm md:text-base">État du pipeline des opportunités ({affairesTotal})</CardTitle>
+            <CardTitle className="text-sm md:text-base">{t('dashboard.chartByHeatTitle', { count: affairesTotal })}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 mb-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Réalisé</span>
+                <span className="text-sm text-muted-foreground">{t('dashboard.caStatusWon')}</span>
                 <span className="font-semibold text-sky-600">{fmtDT(kpis.caRealise)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Pipeline</span>
+                <span className="text-sm text-muted-foreground">{t('dashboard.caStatusActive')}</span>
                 <span className="font-semibold text-blue-600">{fmtDT(kpis.caPipeline)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Prospection</span>
+                <span className="text-sm text-muted-foreground">{t('dashboard.caStatusNew')}</span>
                 <span className="font-semibold text-amber-600">{fmtDT(kpis.caProspection)}</span>
               </div>
             </div>
@@ -393,7 +395,7 @@ export function Dashboard() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-sm md:text-base">Opportunités par mois ({selectedYear})</CardTitle>
+            <CardTitle className="text-sm md:text-base">{t('dashboard.opportunitiesPerMonth', { year: selectedYear })}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -402,7 +404,7 @@ export function Dashboard() {
                 <XAxis dataKey="month" stroke="#6b7280" fontSize={11} />
                 <YAxis stroke="#6b7280" fontSize={11} />
                 <Tooltip
-                  formatter={(value: number) => [value, 'opportunité(s)']}
+                  formatter={(value: number) => [value, t('dashboard.tooltipOpportunityCount')]}
                   contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
@@ -416,7 +418,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Revenus par catégorie ({fmtDT(kpis.caTotal)})</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('dashboard.revenueByCategory', { amount: fmtDT(kpis.caTotal) })}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -466,7 +468,7 @@ export function Dashboard() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Dépenses par catégorie ({fmtDT(totalExpenses)})</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('dashboard.expensesByCategory', { amount: fmtDT(totalExpenses) })}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>

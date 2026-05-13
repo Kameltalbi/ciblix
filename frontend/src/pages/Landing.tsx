@@ -276,7 +276,7 @@ export function Landing() {
               <div className="relative flex-1 rounded-2xl overflow-hidden border bg-white">
                 <img
                   src="/image.png"
-                  alt="Aperçu du dashboard CRM"
+                  alt="Aperçu du Centre IA CIBLIX"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />

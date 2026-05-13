@@ -945,7 +945,7 @@ export function Affaires() {
           <div className="md:hidden mb-3">
             <Card className="border border-slate-200 bg-white/80">
               <CardContent className="p-3">
-                <Label className="text-xs text-muted-foreground">Étape pipeline</Label>
+                <Label className="text-xs text-muted-foreground">{t('affaires.opportunityStageLabel')}</Label>
                 <Select value={mobileKanbanColumn} onValueChange={(v) => setMobileKanbanColumn(v as KanbanColumnKey)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />

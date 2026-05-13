@@ -41,8 +41,14 @@ export function OnboardingChatbot() {
   useEffect(() => {
     const knownWelcomeMessages = [
       "Bonjour, je suis votre chatbot d'onboarding KTOptima. Je vous aide à comprendre rapidement comment démarrer.",
+      "Bonjour, je suis votre chatbot d'onboarding CIBLIX. Je vous aide à comprendre rapidement comment démarrer.",
+      "Bonjour ! Je suis votre assistant CIBLIX. Je vous aide à trouver des prospects, prioriser vos opportunités et lancer vos relances.",
       'Hello, I am your KTOptima onboarding chatbot. I help you quickly understand how to get started.',
+      'Hello, I am your CIBLIX onboarding chatbot. I help you quickly understand how to get started.',
+      "Hi! I'm your CIBLIX assistant. I'll help you find prospects, prioritize opportunities, and launch follow-ups.",
       'مرحباً، أنا شات بوت التهيئة في KTOptima. أساعدك على فهم طريقة البدء بسرعة.',
+      'مرحباً، أنا شات بوت التهيئة في CIBLIX. أساعدك على فهم طريقة البدء بسرعة.',
+      'مرحباً! أنا مساعد CIBLIX. أساعدك على إيجاد العملاء المحتملين، ترتيب الفرص، وتشغيل المتابعات.',
     ];
 
     setMessages((prev) => {

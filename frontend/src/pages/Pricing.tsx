@@ -196,7 +196,7 @@ export function Pricing() {
       <div className={`${standalone ? 'rounded-xl border-2 border-sky-100 bg-white p-6 shadow-sm' : ''} flex flex-col flex-1`}>
         <h3 className="text-2xl font-bold text-gray-900 mb-1">{FREE_PLAN.name}</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Pour découvrir le CRM / entreprise sans engagement · facturation : 0 DT
+          Pour découvrir CIBLIX sans engagement · facturation : 0 DT
         </p>
         <p className="text-4xl font-bold text-gray-900 mb-1">0 DT</p>
         <p className="text-sm text-gray-500 mb-6">pour toujours (limites fonctionnelles)</p>
@@ -450,7 +450,7 @@ export function Pricing() {
                 />
               </div>
               <p className="text-gray-400 text-sm">
-                Le CRM simple et puissant pour gérer vos ventes et vos clients.
+                Plateforme simple et puissante pour la prospection, les opportunités et vos contacts.
               </p>
             </div>
             <div>
@@ -481,7 +481,7 @@ export function Pricing() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>© 2026 CIBLIX CRM. Tous droits réservés.</p>
+            <p>© 2026 CIBLIX. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
@@ -531,7 +531,7 @@ export function Pricing() {
                   <p className="font-semibold mb-1">Informations de virement :</p>
                   <p>RIB : XX XXX XXX XXX XXX XXX XX</p>
                   <p>Banque : BIAT</p>
-                  <p>Reference : CRM-{selectedPlanSlug}-{Date.now()}</p>
+                  <p>Reference : CIBLIX-{selectedPlanSlug}-{Date.now()}</p>
                 </div>
               )}
 

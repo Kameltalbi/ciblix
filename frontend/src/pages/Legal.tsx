@@ -12,11 +12,11 @@ export function Legal() {
       sections: [
         {
           title: '1. Acceptation des CGU',
-          content: 'En utilisant le service CRM Tunisie, vous acceptez les présentes conditions générales d\'utilisation.',
+          content: 'En utilisant la plateforme CIBLIX, vous acceptez les présentes conditions générales d\'utilisation.',
         },
         {
           title: '2. Description du service',
-          content: 'CRM Tunisie est un service de gestion de la relation client destiné aux entreprises tunisiennes. Le service permet la gestion des opportunités, clients, et activités commerciales.',
+          content: 'CIBLIX est une plateforme d\'intelligence commerciale et de prospection assistée par IA, destinée aux entreprises tunisiennes. Elle permet de suivre contacts, opportunités, relances et activités liées à la vente.',
         },
         {
           title: '3. Compte utilisateur',
@@ -32,15 +32,15 @@ export function Legal() {
         },
         {
           title: '6. Limitation de responsabilité',
-          content: 'CRM Tunisie ne peut être tenu responsable des dommages directs ou indirects résultant de l\'utilisation ou de l\'impossibilité d\'utiliser le service.',
+          content: 'CIBLIX ne peut être tenu responsable des dommages directs ou indirects résultant de l\'utilisation ou de l\'impossibilité d\'utiliser le service.',
         },
         {
           title: '7. Propriété intellectuelle',
-          content: 'Tous les éléments du service (logiciel, design, contenu) sont la propriété exclusive de CRM Tunisie.',
+          content: 'Tous les éléments du service (logiciel, design, contenu) sont la propriété exclusive de CIBLIX.',
         },
         {
           title: '8. Résiliation',
-          content: 'L\'utilisateur peut résilier son compte à tout moment. CRM Tunisie se réserve le droit de suspendre ou résilier un compte en cas de violation des CGU.',
+          content: 'L\'utilisateur peut résilier son compte à tout moment. CIBLIX se réserve le droit de suspendre ou résilier un compte en cas de violation des CGU.',
         },
       ],
     },
@@ -86,7 +86,7 @@ export function Legal() {
       sections: [
         {
           title: '1. Éditeur du service',
-          content: 'CRM Tunisie - [Adresse légale] - [Matricule fiscal] - [Registre commerce]',
+          content: 'CIBLIX - [Adresse légale] - [Matricule fiscal] - [Registre commerce]',
         },
         {
           title: '2. Contact',
@@ -98,7 +98,7 @@ export function Legal() {
         },
         {
           title: '4. Propriété intellectuelle',
-          content: 'CRM Tunisie est une marque déposée. Tous droits réservés.',
+          content: 'CIBLIX est une marque déposée. Tous droits réservés.',
         },
       ],
     },

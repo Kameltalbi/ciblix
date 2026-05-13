@@ -1,38 +1,93 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Users, Settings, LogOut, Menu, X, FileText, Building2, UserCheck, Calendar as CalendarIcon, Receipt, Mail, Sparkles, Target, Globe, MessageSquare, Radio } from 'lucide-react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Briefcase,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  FileText,
+  Building2,
+  UserCheck,
+  Calendar as CalendarIcon,
+  Receipt,
+  Mail,
+  Sparkles,
+  Target,
+  Globe,
+  MessageSquare,
+  Radio,
+  ChevronDown,
+  LayoutGrid,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useOrganizationLogoSrc } from '@/hooks/useOrganizationLogoSrc';
 import type { Organization } from '@/types';
 import { Notifications } from './Notifications';
 import { useTranslation } from 'react-i18next';
 import { OnboardingChatbot } from './OnboardingChatbot';
+import type { LucideIcon } from 'lucide-react';
 
-const nav = [
-  { to: '/dashboard',     label: 'nav.dashboard',     icon: LayoutDashboard, page: 'dashboard' },
-  { to: '/prospection-ia', label: 'nav.prospectionIa', icon: Radio, page: 'prospection-ia' },
-  { to: '/ai-assistant', label: 'nav.aiAssistant',  icon: Sparkles, page: 'ai-assistant' },
-  { to: '/affaires',     label: 'nav.affaires',      icon: Briefcase,       page: 'affaires' },
-  { to: '/clients',      label: 'nav.clients',       icon: Users,           page: 'clients' },
-  { to: '/leads',        label: 'nav.prospects',     icon: UserCheck,       page: 'leads' },
-  { to: '/calendar',     label: 'nav.calendar',      icon: CalendarIcon,    page: 'calendar' },
-  { to: '/expenses',     label: 'nav.expenses',      icon: Receipt,         page: 'expenses' },
-  { to: '/activites',    label: 'nav.activities',    icon: FileText,        page: 'activites' },
-  { to: '/email-templates', label: 'nav.emailTemplates', icon: Mail, page: 'email-templates' },
-  { to: '/objectifs',    label: 'nav.objectives',    icon: Target,          page: 'objectifs' },
-  { to: '/support',      label: 'nav.support',       icon: MessageSquare,   page: 'support' },
+type NavChild = { to: string; labelKey: string; icon: LucideIcon; page: string; requiresEnterprise?: boolean };
+type NavGroup = { type: 'group'; id: string; labelKey: string; icon: LucideIcon; children: NavChild[] };
+type NavLinkItem = { type: 'link'; to: string; labelKey: string; icon: LucideIcon; page: string };
+type NavItem = NavLinkItem | NavGroup;
+
+const NAV_STRUCTURE: NavItem[] = [
+  { type: 'link', to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard' },
+  { type: 'link', to: '/prospection-ia', labelKey: 'nav.prospection', icon: Radio, page: 'prospection-ia' },
+  { type: 'link', to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires' },
+  {
+    type: 'group',
+    id: 'contacts',
+    labelKey: 'nav.sectionContacts',
+    icon: Users,
+    children: [
+      { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients' },
+      { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads' },
+    ],
+  },
+  {
+    type: 'group',
+    id: 'tools',
+    labelKey: 'nav.sectionTools',
+    icon: LayoutGrid,
+    children: [
+      { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar' },
+      { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites' },
+      { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates' },
+      { to: '/objectifs', labelKey: 'nav.objectives', icon: Target, page: 'objectifs' },
+      { to: '/expenses', labelKey: 'nav.expenses', icon: Receipt, page: 'expenses', requiresEnterprise: true },
+      { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support' },
+    ],
+  },
 ];
+
+const TOOLS_PATH_PREFIXES = [
+  '/calendar',
+  '/activites',
+  '/email-templates',
+  '/objectifs',
+  '/expenses',
+  '/support',
+] as const;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const CONSENT_VERSION = 'v1';
   const CONSENT_STORAGE_KEY = `ciblix-privacy-consent-${CONSENT_VERSION}`;
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { i18n, t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navGroupsOpen, setNavGroupsOpen] = useState<Record<string, boolean>>({ contacts: false, tools: false });
+  const prevInContactsSection = useRef(false);
+  const prevInToolsSection = useRef(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const isRTL = i18n.language === 'ar';
@@ -48,14 +103,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const rawLang = i18n.resolvedLanguage || i18n.language || 'fr';
   const appLangLabel = rawLang.startsWith('ar') ? 'AR' : rawLang.startsWith('en') ? 'EN' : 'FR';
 
-  const sidebarNavText = (page: string, labelKey: string) => {
-    if (page === 'clients') {
-      const lng = i18n.resolvedLanguage || i18n.language || '';
-      if (lng.startsWith('ar')) return 'العملاء';
-      return 'Clients';
-    }
-    return t(labelKey);
-  };
+  const sidebarNavText = (_page: string, labelKey: string) => t(labelKey);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -74,7 +122,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setSidebarOpen(false);
-  }, []);
+  }, [location.pathname]);
 
   const { data: organizationsData } = useQuery<Organization | Organization[]>({
     queryKey: ['organizations'],
@@ -124,32 +172,60 @@ export function Layout({ children }: { children: React.ReactNode }) {
     navigate('/login');
   };
 
-  // Filter nav items based on user permissions
-  const filteredNav = nav.filter(item => {
-    // Propriétaire org ou superadmin : menu complet
-    if (user?.role === 'OWNER' || user?.role === 'SUPERADMIN') return true;
-
-    // PARTNER has access to everything (read-only)
-    if (user?.role === 'PARTNER') return true;
-    
-    // COMMERCIAL: check specific permissions
-    if (user?.role === 'COMMERCIAL') {
-      if (item.page === 'support') return true;
-      // Prospection IA : même famille que l’assistant ; les anciens profils n’avaient souvent que « ai-assistant »
-      if (item.page === 'prospection-ia') {
-        const prospecting = permissionsData?.find((p) => p.page === 'prospection-ia');
-        const assistant = permissionsData?.find((p) => p.page === 'ai-assistant');
-        return Boolean(prospecting?.canView || assistant?.canView);
+  const canViewPage = useCallback(
+    (page: string) => {
+      if (!user) return false;
+      if (user.role === 'OWNER' || user.role === 'SUPERADMIN' || user.role === 'PARTNER') return true;
+      if (user.role === 'COMMERCIAL') {
+        if (page === 'support') return true;
+        if (page === 'prospection-ia') {
+          const prospecting = permissionsData?.find((p) => p.page === 'prospection-ia');
+          const assistant = permissionsData?.find((p) => p.page === 'ai-assistant');
+          return Boolean(prospecting?.canView || assistant?.canView);
+        }
+        const permission = permissionsData?.find((p) => p.page === page);
+        return permission?.canView ?? false;
       }
-      const permission = permissionsData?.find(p => p.page === item.page);
-      return permission?.canView ?? false;
-    }
-    
-    return true;
-  });
+      return true;
+    },
+    [user, permissionsData],
+  );
 
-  // Check if expenses is accessible
   const expensesAccessible = currentPlan === 'ENTERPRISE';
+
+  const filteredNav = useMemo(() => {
+    const out: NavItem[] = [];
+    for (const item of NAV_STRUCTURE) {
+      if (item.type === 'link') {
+        if (canViewPage(item.page)) out.push(item);
+        continue;
+      }
+      const children = item.children.filter(
+        (ch) => (!ch.requiresEnterprise || expensesAccessible) && canViewPage(ch.page),
+      );
+      if (children.length > 0) out.push({ ...item, children });
+    }
+    return out;
+  }, [canViewPage, expensesAccessible]);
+
+  const showAssistantFab = canViewPage('ai-assistant');
+
+  useEffect(() => {
+    const p = location.pathname;
+    const inContacts = p.startsWith('/clients') || p.startsWith('/leads');
+    const inTools = TOOLS_PATH_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
+
+    setNavGroupsOpen((prev) => {
+      const next = { ...prev };
+      if (inContacts && !prevInContactsSection.current) next.contacts = true;
+      if (!inContacts) next.contacts = false;
+      if (inTools && !prevInToolsSection.current) next.tools = true;
+      if (!inTools) next.tools = false;
+      return next;
+    });
+    prevInContactsSection.current = inContacts;
+    prevInToolsSection.current = inTools;
+  }, [location.pathname]);
 
   return (
     <div
@@ -241,59 +317,158 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
         >
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-5">
-            {filteredNav.map(({ to, label, icon: Icon, page }) => {
-              const isExpenses = page === 'expenses';
-              const isDisabled = isExpenses && !expensesAccessible;
-              
-              return (
-                <NavLink
-                  key={to}
-                  to={isDisabled ? '#' : to}
-                  end={to === '/'}
-                  onClick={(e) => {
-                    if (isDisabled) {
-                      e.preventDefault();
-                      // Optionally show upgrade dialog or redirect to pricing
-                      return;
+            {filteredNav.map((entry) => {
+              if (entry.type === 'link') {
+                const { to, labelKey, icon: Icon, page } = entry;
+                const isExpenses = page === 'expenses';
+                const isDisabled = isExpenses && !expensesAccessible;
+
+                return (
+                  <NavLink
+                    key={to}
+                    to={isDisabled ? '#' : to}
+                    end={to === '/'}
+                    onClick={(e) => {
+                      if (isDisabled) {
+                        e.preventDefault();
+                        return;
+                      }
+                      closeSidebarOnMobile();
+                    }}
+                    className={({ isActive }) =>
+                      cn(
+                        'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
+                        isDisabled
+                          ? 'cursor-not-allowed text-white/35'
+                          : isActive
+                            ? 'bg-white/16 text-white shadow-nav-active'
+                            : 'text-white/78 hover:bg-white/10 hover:text-white',
+                      )
                     }
-                    closeSidebarOnMobile();
-                  }}
-                  className={({ isActive }) =>
-                    cn(
-                      'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
-                      isDisabled
-                        ? 'cursor-not-allowed text-white/35'
-                        : isActive
-                          ? 'bg-white/16 text-white shadow-nav-active'
-                          : 'text-white/78 hover:bg-white/10 hover:text-white'
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && !isDisabled ? (
-                        <span
-                          className="pointer-events-none absolute inset-y-1.5 left-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
-                          aria-hidden
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && !isDisabled ? (
+                          <span
+                            className="pointer-events-none absolute inset-y-1.5 start-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
+                            aria-hidden
+                          />
+                        ) : null}
+                        <Icon
+                          size={18}
+                          className={cn(
+                            'relative z-[1] shrink-0 transition-transform duration-200 group-hover:scale-[1.03]',
+                            isDisabled && 'opacity-50',
+                          )}
+                          strokeWidth={isActive ? 2.25 : 2}
                         />
-                      ) : null}
-                      <Icon
-                        size={18}
-                        className={cn(
-                          'relative z-[1] shrink-0 transition-transform duration-200 group-hover:scale-[1.03]',
-                          isDisabled && 'opacity-50'
+                        <span className="relative z-[1] flex-1">{sidebarNavText(page, labelKey)}</span>
+                        {isDisabled && (
+                          <span className="ms-2 rounded-full bg-[#BED6F6]/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E72B9]">
+                            Pro
+                          </span>
                         )}
-                        strokeWidth={isActive ? 2.25 : 2}
+                      </>
+                    )}
+                  </NavLink>
+                );
+              }
+
+              const open = navGroupsOpen[entry.id] ?? false;
+              const GroupIcon = entry.icon;
+              const anyChildActive = entry.children.some(
+                (c) => location.pathname === c.to || location.pathname.startsWith(`${c.to}/`),
+              );
+
+              return (
+                <div key={entry.id} className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    onClick={() => setNavGroupsOpen((s) => ({ ...s, [entry.id]: !open }))}
+                    className={cn(
+                      'group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm font-medium transition-smooth',
+                      anyChildActive && !open
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/78 hover:bg-white/10 hover:text-white',
+                    )}
+                  >
+                    {anyChildActive ? (
+                      <span
+                        className="pointer-events-none absolute inset-y-1.5 start-1 w-1 rounded-full bg-[#BED6F6]/70 shadow-[0_0_10px_rgba(190,214,246,0.6)]"
+                        aria-hidden
                       />
-                      <span className="relative z-[1] flex-1">{sidebarNavText(page, label)}</span>
-                      {isDisabled && (
-                        <span className="ml-2 rounded-full bg-[#BED6F6]/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E72B9]">
-                          Pro
-                        </span>
+                    ) : null}
+                    <GroupIcon size={18} className="relative z-[1] shrink-0" strokeWidth={2} />
+                    <span className="relative z-[1] flex-1">{t(entry.labelKey)}</span>
+                    <ChevronDown
+                      size={16}
+                      className={cn(
+                        'relative z-[1] shrink-0 text-white/70 transition-transform duration-200',
+                        open && 'rotate-180',
                       )}
-                    </>
-                  )}
-                </NavLink>
+                      aria-hidden
+                    />
+                  </button>
+                  {open ? (
+                    <div className="ms-1 flex flex-col gap-0.5 border-s border-white/15 ps-2">
+                      {entry.children.map((child) => {
+                        const isExpenses = child.page === 'expenses';
+                        const isDisabled = isExpenses && !expensesAccessible;
+                        const ChildIcon = child.icon;
+
+                        return (
+                          <NavLink
+                            key={child.to}
+                            to={isDisabled ? '#' : child.to}
+                            onClick={(e) => {
+                              if (isDisabled) {
+                                e.preventDefault();
+                                return;
+                              }
+                              closeSidebarOnMobile();
+                            }}
+                            className={({ isActive }) =>
+                              cn(
+                                'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-smooth',
+                                isDisabled
+                                  ? 'cursor-not-allowed text-white/35'
+                                  : isActive
+                                    ? 'bg-white/16 text-white shadow-nav-active'
+                                    : 'text-white/75 hover:bg-white/10 hover:text-white',
+                              )
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                {isActive && !isDisabled ? (
+                                  <span
+                                    className="pointer-events-none absolute inset-y-1 start-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
+                                    aria-hidden
+                                  />
+                                ) : null}
+                                <ChildIcon
+                                  size={17}
+                                  className={cn(
+                                    'relative z-[1] shrink-0 transition-transform duration-200 group-hover:scale-[1.03]',
+                                    isDisabled && 'opacity-50',
+                                  )}
+                                  strokeWidth={isActive ? 2.25 : 2}
+                                />
+                                <span className="relative z-[1] flex-1">{sidebarNavText(child.page, child.labelKey)}</span>
+                                {isDisabled && (
+                                  <span className="ms-1 shrink-0 rounded-full bg-[#BED6F6]/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E72B9]">
+                                    Pro
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
               );
             })}
             {user?.role === 'OWNER' && (
@@ -307,7 +482,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
                       isActive
                         ? 'bg-white/16 text-white shadow-nav-active'
-                        : 'text-white/78 hover:bg-white/10 hover:text-white'
+                        : 'text-white/78 hover:bg-white/10 hover:text-white',
                     )
                   }
                 >
@@ -315,19 +490,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <>
                       {isActive ? (
                         <span
-                          className="pointer-events-none absolute inset-y-1.5 left-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
+                          className="pointer-events-none absolute inset-y-1.5 start-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
                           aria-hidden
                         />
                       ) : null}
                       <span
                         className={cn(
                           'relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth',
-                          isActive ? 'bg-white/20 text-white' : 'bg-transparent text-white/85 group-hover:bg-white/12 group-hover:text-white'
+                          isActive ? 'bg-white/20 text-white' : 'bg-transparent text-white/85 group-hover:bg-white/12 group-hover:text-white',
                         )}
                       >
                         <Settings size={18} strokeWidth={2} />
                       </span>
-                      <span className="relative z-[1] truncate">Paramètres</span>
+                      <span className="relative z-[1] truncate">{t('nav.settings')}</span>
                     </>
                   )}
                 </NavLink>
@@ -350,6 +525,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      {showAssistantFab ? (
+        <button
+          type="button"
+          className="fixed bottom-24 end-5 z-[130] flex h-14 w-14 items-center justify-center rounded-full border border-[#BED6F6]/60 bg-white text-[#1E72B9] shadow-xl shadow-[#1E72B9]/25 transition-smooth hover:scale-[1.04] hover:bg-[#eef4fc] sm:bottom-28 sm:end-6"
+          title={t('nav.floatingAssistant')}
+          aria-label={t('nav.floatingAssistant')}
+          onClick={() => {
+            void navigate('/ai-assistant');
+            closeSidebarOnMobile();
+          }}
+        >
+          <Sparkles size={24} strokeWidth={2} className="text-[#0071DD]" />
+        </button>
+      ) : null}
+
       <OnboardingChatbot />
 
       {/* Privacy consent (RGPD + Tunisian law) */}
@@ -365,7 +555,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               personnelles (notamment la loi organique ndeg2004-63).
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Vos donnees sont utilisees uniquement pour fournir les fonctionnalites CRM, la securite du compte et
+              Vos donnees sont utilisees uniquement pour fournir les fonctionnalites de la plateforme CIBLIX (prospection et opportunites assistees par IA), la securite du compte et
               l'amelioration du service.
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -43,7 +43,7 @@ export function GmailSettings() {
             </div>
             <div className="flex-1">
               <CardTitle className="text-lg">Gmail</CardTitle>
-              <CardDescription>Envoyer devis et factures directement depuis le CRM</CardDescription>
+              <CardDescription>Envoyer devis et factures directement depuis CIBLIX</CardDescription>
             </div>
             {gmailStatus?.connected ? (
               <div className="flex items-center gap-1.5 text-sm text-leaf font-medium">

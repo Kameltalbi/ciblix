@@ -19,7 +19,7 @@ export function LandingSales() {
       features: [
         'Prospects illimités',
         'Jusqu\'à 5 utilisateurs',
-        'Pipeline & objectifs de vente',
+        'Opportunités IA & objectifs de vente',
         'Reporting de base',
       ],
       cta: 'Voir les tarifs',
@@ -77,8 +77,8 @@ export function LandingSales() {
     },
     {
       icon: Users,
-      title: 'Gestion Client',
-      description: 'Centralisez vos clients, opportunités et activités dans une seule interface intuitive.',
+      title: 'Contacts & suivi',
+      description: 'Centralisez vos contacts, opportunités et activités dans une interface simple, orientée résultats.',
     },
     {
       icon: Mail,
@@ -110,7 +110,7 @@ export function LandingSales() {
       {/* Hero */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="font-serif text-2xl font-bold text-leaf">CRM Tunisie</div>
+          <div className="font-serif text-2xl font-bold text-leaf">CIBLIX</div>
           <div className="flex gap-4">
             <Button variant="ghost" onClick={() => navigate('/login')}>{t('common.login')}</Button>
             <Button onClick={() => navigate('/register')}>{t('landing.cta')}</Button>
@@ -122,10 +122,10 @@ export function LandingSales() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="font-serif text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Le CRM pour les TPE et PME tunisiennes
+            La prospection intelligente pour les TPE et PME tunisiennes
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Gérez vos opportunités, clients et facturation avec un assistant IA. 
+            Gérez vos opportunités, contacts et relances avec un assistant IA. 
             Simple, local, et adapté à votre business.
           </p>
           <div className="flex gap-4 justify-center">
@@ -143,7 +143,7 @@ export function LandingSales() {
       <section className="py-20 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <h2 className="font-serif text-4xl font-bold text-center mb-12">
-            Pourquoi choisir CRM Tunisie ?
+            Pourquoi choisir CIBLIX ?
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, idx) => (
@@ -229,10 +229,10 @@ export function LandingSales() {
       <section className="py-20 px-4 bg-leaf text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-serif text-4xl font-bold mb-6">
-            Prêt à transformer votre gestion commerciale ?
+            Prêt à accélérer votre prospection avec l'IA ?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Rejoignez les entreprises tunisiennes qui font confiance à CRM Tunisie
+            Rejoignez les équipes tunisiennes qui font confiance à CIBLIX
           </p>
           <Button size="lg" onClick={() => navigate('/register')} className="bg-white text-leaf hover:bg-gray-100 text-lg px-8">
             Démarrer gratuitement <ArrowRight className="ml-2" size={20} />
@@ -244,8 +244,8 @@ export function LandingSales() {
       <footer className="bg-gray-900 text-white py-12 px-4">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-serif text-2xl font-bold mb-4">CRM Tunisie</h3>
-            <p className="text-gray-400">La solution CRM adaptée aux TPE et PME tunisiennes.</p>
+            <h3 className="font-serif text-2xl font-bold mb-4">CIBLIX</h3>
+            <p className="text-gray-400">Plateforme de prospection intelligente pour les TPE et PME tunisiennes.</p>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Produit</h4>
@@ -266,14 +266,14 @@ export function LandingSales() {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-gray-400">
-              <li className="flex items-center gap-2"><Mail size={16} /> contact@crmtunisie.tn</li>
+              <li className="flex items-center gap-2"><Mail size={16} /> contact@ciblix.tn</li>
               <li className="flex items-center gap-2"><Phone size={16} /> +216 XX XXX XXX</li>
               <li className="flex items-center gap-2"><MapPin size={16} /> Tunis, Tunisie</li>
             </ul>
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-          <p>© 2026 CRM Tunisie. Tous droits réservés.</p>
+          <p>© 2026 CIBLIX. Tous droits réservés.</p>
         </div>
       </footer>
     </div>

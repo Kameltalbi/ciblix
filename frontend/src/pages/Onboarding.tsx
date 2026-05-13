@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,35 +6,37 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input, Label } from '@/components/ui/form-controls';
 
-const steps = [
-  {
-    title: 'Bienvenue !',
-    content: 'CRM Tunisie vous aide à gérer vos clients et opportunités simplement. Commençons en 3 étapes.',
-  },
-  {
-    title: 'Ajoutez votre premier client',
-    content: 'Créez votre premier client pour commencer à suivre vos opportunités commerciales.',
-    input: {
-      label: 'Nom de l\'entreprise',
-      placeholder: 'Ex: Mon Entreprise SARL',
-    },
-  },
-  {
-    title: 'Créez votre première opportunité',
-    content: 'Ajoutez une opportunité pour suivre vos chances de vente.',
-    input: {
-      label: 'Montant estimé (DT)',
-      placeholder: 'Ex: 5000',
-    },
-  },
-  {
-    title: 'C\'est prêt !',
-    content: 'Vous avez configuré les bases. Explorez le dashboard et commencez à utiliser CRM Tunisie.',
-  },
-];
-
 export function Onboarding() {
   const { t } = useTranslation();
+  const steps = useMemo(
+    () => [
+      {
+        title: t('onboarding.step0Title'),
+        content: t('onboarding.step0Body'),
+      },
+      {
+        title: t('onboarding.step1Title'),
+        content: t('onboarding.step1Body'),
+        input: {
+          label: t('onboarding.step1Label'),
+          placeholder: t('onboarding.step1Placeholder'),
+        },
+      },
+      {
+        title: t('onboarding.step2Title'),
+        content: t('onboarding.step2Body'),
+        input: {
+          label: t('onboarding.step2Label'),
+          placeholder: t('onboarding.step2Placeholder'),
+        },
+      },
+      {
+        title: t('onboarding.step3Title'),
+        content: t('onboarding.step3Body'),
+      },
+    ],
+    [t],
+  );
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({ companyName: '', amount: '' });
@@ -81,7 +83,7 @@ export function Onboarding() {
               onClick={handleSkip}
               className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
-              {t('onboarding.skip', { defaultValue: 'Ignorer' })}
+              {t('onboarding.skip')}
             </button>
           </div>
           <CardTitle className="text-2xl">{step.title}</CardTitle>
@@ -110,15 +112,15 @@ export function Onboarding() {
             <div className="space-y-3 pt-4">
               <div className="flex items-center gap-2 text-sm text-green-700">
                 <Check size={16} />
-                <span>{t('onboarding.done1', { defaultValue: 'Lead scoring automatique activé' })}</span>
+                <span>{t('onboarding.done1')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-green-700">
                 <Check size={16} />
-                <span>{t('onboarding.done2', { defaultValue: 'Assistant IA disponible' })}</span>
+                <span>{t('onboarding.done2')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-green-700">
                 <Check size={16} />
-                <span>{t('onboarding.done3', { defaultValue: "Templates d'emails configurés" })}</span>
+                <span>{t('onboarding.done3')}</span>
               </div>
             </div>
           )}
@@ -133,7 +135,7 @@ export function Onboarding() {
               {t('common.back')}
             </Button>
             <Button onClick={handleNext}>
-              {currentStep === steps.length - 1 ? t('onboarding.start', { defaultValue: 'Commencer' }) : t('common.next')}
+              {currentStep === steps.length - 1 ? t('onboarding.start') : t('common.next')}
               <ArrowRight size={16} className="ml-2" />
             </Button>
           </div>
