@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Leaf, TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe } from 'lucide-react';
+import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { OnboardingChatbot } from '@/components/OnboardingChatbot';
@@ -83,26 +83,26 @@ export function Landing() {
   };
   
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-kt-mesh">
+      {/* Header — même ADN que l’app (bleu structure) */}
+      <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/90 shadow-sm backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="ktOptima" className="h-8 w-auto" />
-              <span className="text-xl font-bold text-foreground">CRM</span>
+              <img src="/logo.png" alt="KTOptima" className="h-8 w-auto" />
+              <span className="text-xl font-bold tracking-tight text-[#0071DD]">KTOptima</span>
             </div>
             <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
-              <a href="#features" className="text-lg text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#features" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navFeatures')}
               </a>
-              <a href="#why" className="text-lg text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#why" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navWhy')}
               </a>
-              <Link to="/pricing" className="text-lg text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/pricing" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navPricing')}
               </Link>
-              <a href="#contact" className="text-lg text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#contact" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navContact')}
               </a>
             </nav>
@@ -114,30 +114,30 @@ export function Landing() {
                   const nextIndex = (currentIndex + 1) % languages.length;
                   i18n.changeLanguage(languages[nextIndex]);
                 }}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#eef4fc] hover:text-[#1E72B9]"
                 title="Change language"
               >
-                <Globe size={18} />
-                <span className={`font-semibold ${
-                  i18n.language === 'ar' ? 'text-green-600' :
-                  i18n.language === 'fr' ? 'text-blue-600' :
-                  'text-red-600'
-                }`}>{i18n.language.toUpperCase()}</span>
+                <Globe size={18} className="text-[#016AEB]" />
+                <span className="font-semibold text-[#0071DD]">{i18n.language.toUpperCase()}</span>
               </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                className="md:hidden rounded-xl p-2 text-[#1E72B9] transition-colors hover:bg-[#eef4fc]"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
               <div className="hidden md:flex items-center gap-3">
                 <Link to="/login">
-                  <Button variant="ghost" size="lg" className="bg-[#d1fae4] hover:bg-[#c1ebe0]">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-[#BED6F6] bg-white text-[#0071DD] hover:bg-[#e8f1fc]"
+                  >
                     {t('auth.signIn')}
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="lg" className="bg-leaf hover:bg-leaf/90">
+                  <Button size="lg" className="shadow-glow">
                     {t('auth.signUp')}
                   </Button>
                 </Link>
@@ -150,26 +150,30 @@ export function Landing() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t bg-white">
             <div className="px-4 py-4 space-y-3">
-              <a href="#features" className="block text-lg text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              <a href="#features" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navFeatures')}
               </a>
-              <a href="#why" className="block text-lg text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              <a href="#why" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navWhy')}
               </a>
-              <Link to="/pricing" className="block text-lg text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/pricing" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navPricing')}
               </Link>
-              <a href="#contact" className="block text-lg text-muted-foreground hover:text-foreground transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              <a href="#contact" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navContact')}
               </a>
               <div className="pt-4 space-y-2">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" size="lg" className="w-full bg-[#d1fae4] hover:bg-[#c1ebe0]">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full border-[#BED6F6] bg-white text-[#0071DD] hover:bg-[#e8f1fc]"
+                  >
                     {t('auth.signIn')}
                   </Button>
                 </Link>
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button size="lg" className="w-full bg-leaf hover:bg-leaf/90">
+                  <Button size="lg" className="w-full shadow-glow">
                     {t('auth.signUp')}
                   </Button>
                 </Link>
@@ -179,45 +183,49 @@ export function Landing() {
         )}
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-sage/20 via-background to-sky-50/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+      {/* Hero — palette KTOptima uniquement (plus de vert / arc-en-ciel) */}
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-[#f4f8fd] to-[#e8f1fc]/80" aria-hidden />
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-[32rem] w-[min(100vw,56rem)] -translate-x-1/2 rounded-full bg-[#BED6F6]/35 blur-3xl" aria-hidden />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-100 text-sky-700 text-lg font-medium mb-6">
-              <TrendingUp size={24} />
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#BED6F6]/70 bg-white/90 px-4 py-2 text-lg font-medium text-[#1E72B9] shadow-sm backdrop-blur-sm">
+              <TrendingUp size={24} className="text-[#016AEB]" />
               {t('landing.badge')}
             </div>
-            <h1 className="text-6xl md:text-8xl font-serif font-bold text-foreground mb-6">
+            <h1 className="mb-6 text-5xl font-serif font-bold tracking-tight text-foreground md:text-7xl lg:text-8xl">
               {t('landing.heroTitle1')}{' '}
-              <span className="text-leaf">{t('landing.heroTitle2')}</span>
+              <span className="bg-gradient-to-r from-[#0071DD] to-[#016AEB] bg-clip-text text-transparent">
+                {t('landing.heroTitle2')}
+              </span>
             </h1>
-            <p className="text-2xl md:text-3xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="mb-10 max-w-2xl mx-auto text-xl text-muted-foreground md:text-2xl">
               {t('landing.heroSubtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" className="bg-leaf hover:bg-leaf/90 text-lg px-8">
+                <Button size="lg" className="px-8 text-lg shadow-glow">
                   {t('landing.cta')}
                   <ArrowRight size={20} className="ml-2" />
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="text-lg px-8">
+                <Button size="lg" variant="outline" className="border-[#BED6F6] px-8 text-lg text-[#0071DD] hover:bg-[#e8f1fc]">
                   {t('landing.demo')}
                 </Button>
               </Link>
             </div>
-            <div className="flex items-center gap-3 text-base">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-base text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-sky-500" />
+                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
                 {t('landing.noCommitment')}
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-sky-500" />
+                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
                 {t('landing.localSupport')}
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-sky-500" />
+                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
                 {t('landing.secure')}
               </div>
             </div>
@@ -229,33 +237,33 @@ export function Landing() {
       <section className="bg-white py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-            <div className="rounded-3xl border bg-gradient-to-br from-sage/10 to-sky-50/20 p-8 md:p-10 min-h-[420px] h-full flex flex-col justify-between">
+            <div className="flex h-full min-h-[420px] flex-col justify-between rounded-3xl border border-[#BED6F6]/40 bg-gradient-to-br from-white to-[#eef4fc] p-8 md:p-10 shadow-card">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-100 text-sky-700 text-sm font-medium mb-4">
-                  <BarChart3 size={16} />
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#BED6F6]/60 bg-white/80 px-3 py-1.5 text-sm font-medium text-[#1E72B9]">
+                  <BarChart3 size={16} className="text-[#016AEB]" />
                   {t('landing.heroSection2Badge', { defaultValue: 'Pilotage visuel' })}
                 </div>
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
+                <h2 className="mb-4 text-3xl font-serif font-bold tracking-tight text-[#0071DD] md:text-4xl">
                   {t('landing.heroSection2Title', { defaultValue: 'Suivez vos indicateurs en un coup d’œil' })}
                 </h2>
-                <p className="text-lg text-muted-foreground mb-6">
+                <p className="mb-6 text-lg text-muted-foreground">
                   {t('landing.heroSection2Subtitle', {
                     defaultValue:
                       'Une vue claire du CA, du pipeline et de la conversion pour décider vite et garder le contrôle.',
                   })}
                 </p>
               </div>
-              <div className="space-y-3 text-sm md:text-base text-muted-foreground">
+              <div className="space-y-3 text-sm text-muted-foreground md:text-base">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-sky-500" />
+                  <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
                   {t('landing.heroSection2Point1', { defaultValue: 'KPIs mis à jour en temps réel' })}
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-sky-500" />
+                  <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
                   {t('landing.heroSection2Point2', { defaultValue: 'Graphiques mensuels simples à lire' })}
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-sky-500" />
+                  <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
                   {t('landing.heroSection2Point3', { defaultValue: 'Répartition CA réalisée, pipeline, prospection' })}
                 </div>
               </div>
@@ -276,10 +284,10 @@ export function Landing() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="bg-[#f7faff] py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+            <h2 className="mb-4 text-4xl font-serif font-bold tracking-tight text-[#0071DD] md:text-5xl">
               {t('landing.featuresTitle')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -287,110 +295,110 @@ export function Landing() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center mb-4">
-                <BarChart3 size={24} className="text-sky-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <BarChart3 size={24} className="text-[#016AEB]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureDashboard')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureDashboard')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureDashboardDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
-                <Users size={24} className="text-blue-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <Users size={24} className="text-[#1E72B9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureClients')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureClients')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureClientsDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-4">
-                <Zap size={24} className="text-purple-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f1fc] ring-1 ring-[#016AEB]/20">
+                <Zap size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureAI')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureAI')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureAIDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center mb-4">
-                <Shield size={24} className="text-orange-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <Shield size={24} className="text-[#1E72B9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureSecurity')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureSecurity')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureSecurityDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center mb-4">
-                <TrendingUp size={24} className="text-rose-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <TrendingUp size={24} className="text-[#016AEB]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureAnalytics')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureAnalytics')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureAnalyticsDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center mb-4">
-                <Users size={24} className="text-teal-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <Users size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureCollaboration')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureCollaboration')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureCollaborationDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center mb-4">
-                <Target size={24} className="text-indigo-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <Target size={24} className="text-[#016AEB]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureObjectives')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureObjectives')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureObjectivesDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-4">
-                <Lock size={24} className="text-amber-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <Lock size={24} className="text-[#1E72B9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featurePermissions')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featurePermissions')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featurePermissionsDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-4">
-                <DollarSign size={24} className="text-green-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <DollarSign size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureExpenses')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureExpenses')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureExpensesDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-cyan-100 flex items-center justify-center mb-4">
-                <PieChart size={24} className="text-cyan-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <PieChart size={24} className="text-[#016AEB]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureCoverage')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureCoverage')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureCoverageDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center mb-4">
-                <Award size={24} className="text-yellow-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f1fc] ring-1 ring-[#016AEB]/20">
+                <Award size={24} className="text-[#1E72B9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureBonuses')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureBonuses')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureBonusesDesc')}
               </p>
             </div>
-            <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mb-4">
-                <Target size={24} className="text-violet-600" />
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
+                <Target size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{t('landing.featureBonusCustomization')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureBonusCustomization')}</h3>
               <p className="text-base text-muted-foreground">
                 {t('landing.featureBonusCustomizationDesc')}
               </p>
@@ -400,20 +408,20 @@ export function Landing() {
       </section>
 
       {/* Why Use Section */}
-      <section id="why" className="py-20 bg-gradient-to-br from-sage/10 to-sky-50/20">
+      <section id="why" className="bg-gradient-to-b from-white via-[#f4f8fd] to-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              <h2 className="mb-6 text-4xl font-serif font-bold tracking-tight text-[#0071DD] md:text-5xl">
                 {t('landing.whyTitle')}
               </h2>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="mb-8 text-xl text-muted-foreground">
                 {t('landing.whySubtitle')}
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-sky-600" />
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef4fc] ring-1 ring-[#BED6F6]/60">
+                    <CheckCircle2 size={16} className="text-[#016AEB]" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whyLocal')}</h4>
@@ -423,8 +431,8 @@ export function Landing() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-sky-600" />
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef4fc] ring-1 ring-[#BED6F6]/60">
+                    <CheckCircle2 size={16} className="text-[#016AEB]" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whyEasy')}</h4>
@@ -434,8 +442,8 @@ export function Landing() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-sky-600" />
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef4fc] ring-1 ring-[#BED6F6]/60">
+                    <CheckCircle2 size={16} className="text-[#016AEB]" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whySupport')}</h4>
@@ -445,8 +453,8 @@ export function Landing() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-sky-600" />
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef4fc] ring-1 ring-[#BED6F6]/60">
+                    <CheckCircle2 size={16} className="text-[#016AEB]" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whyPrice')}</h4>
@@ -476,53 +484,53 @@ export function Landing() {
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="bg-gray-900 text-white py-16">
+      <footer id="contact" className="bg-gradient-to-b from-[#1E72B9] to-[#0a2540] py-16 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <img src="/logo.png" alt="ktOptima" className="h-8 w-auto" />
+                <img src="/logo.png" alt="KTOptima" className="h-8 w-auto opacity-95" />
               </div>
-              <p className="text-gray-400 mb-4 max-w-md text-base">
+              <p className="text-white/75 mb-4 max-w-md text-base">
                 {t('landing.footerDesc')}
               </p>
               <div className="flex items-center gap-4">
-                <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors">
+                <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
                   <Mail size={20} />
                 </a>
-                <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors">
+                <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
                   <Phone size={20} />
                 </a>
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-lg">{t('landing.footerLinks')}</h4>
-              <ul className="space-y-2 text-gray-400 text-base">
+              <h4 className="font-semibold mb-4 text-lg text-[#BED6F6]">{t('landing.footerLinks')}</h4>
+              <ul className="space-y-2 text-base text-white/80">
                 <li>
-                  <a href="#features" className="hover:text-white transition-colors">
+                  <a href="#features" className="transition-colors hover:text-white">
                     {t('landing.navFeatures')}
                   </a>
                 </li>
                 <li>
-                  <a href="#why" className="hover:text-white transition-colors">
+                  <a href="#why" className="transition-colors hover:text-white">
                     {t('landing.navWhy')}
                   </a>
                 </li>
                 <li>
-                  <Link to="/login" className="hover:text-white transition-colors">
+                  <Link to="/login" className="transition-colors hover:text-white">
                     {t('auth.signIn')}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/register" className="hover:text-white transition-colors">
+                  <Link to="/register" className="transition-colors hover:text-white">
                     {t('auth.signUp')}
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-lg">{t('landing.footerContact')}</h4>
-              <ul className="space-y-2 text-gray-400 text-base">
+              <h4 className="font-semibold mb-4 text-lg text-[#BED6F6]">{t('landing.footerContact')}</h4>
+              <ul className="space-y-2 text-base text-white/80">
                 <li className="flex items-center gap-2">
                   <Mail size={16} />
                   contact@ktoptima.com
@@ -538,7 +546,7 @@ export function Landing() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-base">
+          <div className="border-t border-white/15 pt-8 text-center text-base text-white/65">
             <p>{t('landing.footerRights')}</p>
           </div>
         </div>
@@ -581,7 +589,7 @@ export function Landing() {
                   Gérez votre facturation facilement avec notre solution Softfacture.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-light group-hover:text-white transition-colors drop-shadow-sm">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#BED6F6] transition-colors group-hover:text-white drop-shadow-sm">
                 Découvrir
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
               </span>
