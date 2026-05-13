@@ -14,7 +14,7 @@ module.exports = {
     {
       name: 'backend',
       cwd: __dirname,
-      script: 'dist/index.js',
+      script: 'dist/bootstrap.js',
       interpreter: 'node',
       instances: 1,
       autorestart: true,
