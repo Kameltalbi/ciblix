@@ -163,6 +163,8 @@ app.use('/api/commissions', commissionsRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/support-tickets', supportTicketsRoutes);
 app.use('/api/prospecting', prospectingRoutes);
+// Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
+app.use('/prospecting', prospectingRoutes);
 
 // ─── Sentry request handler (no-op if SENTRY_DSN is unset) ───
 setupExpressErrorHandler(app);
