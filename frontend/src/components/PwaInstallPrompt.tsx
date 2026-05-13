@@ -68,7 +68,7 @@ export function PwaInstallPrompt() {
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[1000] mx-auto max-w-xl rounded-2xl border border-border bg-white/95 p-4 shadow-xl backdrop-blur-sm">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-lg bg-emerald-100 p-2 text-emerald-700">
+        <div className="mt-0.5 rounded-lg bg-sky-100 p-2 text-sky-700">
           {deferredPrompt ? <Download size={18} /> : <Smartphone size={18} />}
         </div>
 

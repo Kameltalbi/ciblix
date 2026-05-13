@@ -180,10 +180,10 @@ export function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-sage/20 via-background to-emerald-50/30">
+      <section className="relative overflow-hidden bg-gradient-to-br from-sage/20 via-background to-sky-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-lg font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-100 text-sky-700 text-lg font-medium mb-6">
               <TrendingUp size={24} />
               {t('landing.badge')}
             </div>
@@ -209,15 +209,15 @@ export function Landing() {
             </div>
             <div className="flex items-center gap-3 text-base">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-emerald-500" />
+                <CheckCircle2 size={18} className="text-sky-500" />
                 {t('landing.noCommitment')}
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-emerald-500" />
+                <CheckCircle2 size={18} className="text-sky-500" />
                 {t('landing.localSupport')}
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-emerald-500" />
+                <CheckCircle2 size={18} className="text-sky-500" />
                 {t('landing.secure')}
               </div>
             </div>
@@ -229,9 +229,9 @@ export function Landing() {
       <section className="bg-white py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-            <div className="rounded-3xl border bg-gradient-to-br from-sage/10 to-emerald-50/20 p-8 md:p-10 min-h-[420px] h-full flex flex-col justify-between">
+            <div className="rounded-3xl border bg-gradient-to-br from-sage/10 to-sky-50/20 p-8 md:p-10 min-h-[420px] h-full flex flex-col justify-between">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-100 text-sky-700 text-sm font-medium mb-4">
                   <BarChart3 size={16} />
                   {t('landing.heroSection2Badge', { defaultValue: 'Pilotage visuel' })}
                 </div>
@@ -247,15 +247,15 @@ export function Landing() {
               </div>
               <div className="space-y-3 text-sm md:text-base text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-500" />
+                  <CheckCircle2 size={18} className="text-sky-500" />
                   {t('landing.heroSection2Point1', { defaultValue: 'KPIs mis à jour en temps réel' })}
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-500" />
+                  <CheckCircle2 size={18} className="text-sky-500" />
                   {t('landing.heroSection2Point2', { defaultValue: 'Graphiques mensuels simples à lire' })}
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-emerald-500" />
+                  <CheckCircle2 size={18} className="text-sky-500" />
                   {t('landing.heroSection2Point3', { defaultValue: 'Répartition CA réalisée, pipeline, prospection' })}
                 </div>
               </div>
@@ -288,8 +288,8 @@ export function Landing() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-4">
-                <BarChart3 size={24} className="text-emerald-600" />
+              <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center mb-4">
+                <BarChart3 size={24} className="text-sky-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2">{t('landing.featureDashboard')}</h3>
               <p className="text-base text-muted-foreground">
@@ -400,7 +400,7 @@ export function Landing() {
       </section>
 
       {/* Why Use Section */}
-      <section id="why" className="py-20 bg-gradient-to-br from-sage/10 to-emerald-50/20">
+      <section id="why" className="py-20 bg-gradient-to-br from-sage/10 to-sky-50/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -412,8 +412,8 @@ export function Landing() {
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 size={16} className="text-sky-600" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whyLocal')}</h4>
@@ -423,8 +423,8 @@ export function Landing() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 size={16} className="text-sky-600" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whyEasy')}</h4>
@@ -434,8 +434,8 @@ export function Landing() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 size={16} className="text-sky-600" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whySupport')}</h4>
@@ -445,8 +445,8 @@ export function Landing() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle2 size={16} className="text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 size={16} className="text-sky-600" />
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">{t('landing.whyPrice')}</h4>
@@ -458,13 +458,13 @@ export function Landing() {
               </div>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-leaf to-emerald-600 rounded-3xl p-8 text-white">
-                <h3 className="text-2xl font-bold mb-4">{t('landing.ctaTitle')}</h3>
-                <p className="text-emerald-100 mb-6">
+              <div className="rounded-3xl bg-gradient-to-br from-[#016AEB] to-[#1E72B9] p-8 text-white shadow-glow">
+                <h3 className="mb-4 text-2xl font-bold">{t('landing.ctaTitle')}</h3>
+                <p className="mb-6 text-white/85">
                   {t('landing.ctaSubtitle')}
                 </p>
                 <Link to="/register">
-                  <Button size="lg" className="bg-white text-leaf hover:bg-white/90 w-full">
+                  <Button size="lg" className="w-full bg-white text-[#016AEB] hover:bg-white/90">
                     {t('landing.ctaButton')}
                     <ArrowRight size={20} className="ml-2" />
                   </Button>
@@ -549,8 +549,8 @@ export function Landing() {
         <div
           className={cn(
             'fixed inset-y-0 left-0 z-[100] w-[min(19rem,88vw)] flex flex-col shadow-2xl',
-            'bg-gradient-to-b from-leaf-mid via-leaf to-[#0f3d22]',
-            'ring-2 ring-sage/40 border-r border-leaf-light/35',
+            'bg-gradient-to-b from-[#0071DD] via-[#016AEB] to-[#0a2540]',
+            'ring-2 ring-brand-soft/40 border-r border-white/20',
             'transition-transform duration-500 ease-out',
             popupExiting || !popupEntered ? '-translate-x-full' : 'translate-x-0',
           )}

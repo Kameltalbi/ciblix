@@ -307,9 +307,9 @@ export function AIAssistant() {
                 <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.atRiskCount}</p>
               </CardContent>
             </Card>
-            <Card className="border-emerald-200/80 bg-white shadow-sm">
+            <Card className="border-sky-200/80 bg-white shadow-sm">
               <CardContent className="p-4">
-                <p className="text-xs font-medium text-emerald-800 flex items-center gap-1">
+                <p className="text-xs font-medium text-sky-800 flex items-center gap-1">
                   <Zap size={14} /> Leads chauds
                 </p>
                 <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.hotLeads}</p>

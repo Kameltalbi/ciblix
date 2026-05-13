@@ -130,24 +130,29 @@ function potentialLabel(p: Potential | undefined) {
   if (p === 'TRES_FORT')
     return {
       text: 'Très fort potentiel',
-      emoji: '🔥',
-      cls: 'bg-gradient-to-r from-orange-500/20 to-amber-500/15 text-orange-900 border-orange-200/80',
+      emoji: '●',
+      cls: 'border-brand-soft/80 bg-gradient-to-r from-[#016AEB]/12 to-[#BED6F6]/40 text-[#0b3d7a]',
     };
   if (p === 'MOYEN')
     return {
       text: 'Potentiel moyen',
-      emoji: '🟡',
-      cls: 'bg-violet-500/10 text-violet-900 border-violet-200/80',
+      emoji: '◆',
+      cls: 'border-brand-soft/60 bg-[#BED6F6]/25 text-[#1E72B9]',
     };
   if (p === 'FAIBLE')
-    return { text: 'Faible potentiel', emoji: '❄️', cls: 'bg-slate-500/10 text-slate-800 border-slate-200/80' };
-  return { text: 'À qualifier', emoji: '◆', cls: 'bg-muted text-muted-foreground border-border' };
+    return {
+      text: 'Faible potentiel',
+      emoji: '○',
+      cls: 'bg-slate-100/90 text-slate-700 border-slate-200/90',
+    };
+  return { text: 'À qualifier', emoji: '◇', cls: 'bg-muted/80 text-muted-foreground border-border' };
 }
 
 function cardHeatClass(score: number) {
-  if (score >= 72) return 'border-orange-400/70 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20';
-  if (score >= 48) return 'border-violet-300/80 shadow-md shadow-violet-500/10 hover:shadow-violet-500/15';
-  return 'border-border/80 hover:border-muted-foreground/25';
+  if (score >= 72)
+    return 'border-brand-soft/90 shadow-card hover:shadow-glow hover:border-[#016AEB]/35';
+  if (score >= 48) return 'border-[#BED6F6]/80 shadow-card hover:shadow-card-hover';
+  return 'border-border/70 hover:border-brand-soft/50 hover:shadow-sm';
 }
 
 function ScoreRing({ score }: { score: number }) {
@@ -156,26 +161,30 @@ function ScoreRing({ score }: { score: number }) {
   const pct = Math.min(100, Math.max(0, score)) / 100;
   const offset = c * (1 - pct);
   const stroke =
-    score >= 72 ? 'stroke-orange-500' : score >= 48 ? 'stroke-violet-600' : 'stroke-slate-400';
+    score >= 72 ? 'stroke-[#016AEB]' : score >= 48 ? 'stroke-[#0071DD]' : 'stroke-slate-400';
   return (
-    <svg width="76" height="76" viewBox="0 0 80 80" className="shrink-0" aria-hidden>
-      <circle cx="40" cy="40" r={r} fill="none" className="stroke-muted/30" strokeWidth="7" />
-      <circle
-        cx="40"
-        cy="40"
-        r={r}
-        fill="none"
-        className={cn('transition-all duration-500', stroke)}
-        strokeWidth="7"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={offset}
-        transform="rotate(-90 40 40)"
-      />
-      <text x="40" y="44" textAnchor="middle" className="fill-foreground text-sm font-bold">
-        {score}
-      </text>
-    </svg>
+    <div className="relative shrink-0">
+      <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-br from-[#BED6F6]/50 to-transparent blur-md" aria-hidden />
+      <svg width="76" height="76" viewBox="0 0 80 80" className="relative shrink-0 drop-shadow-sm" aria-hidden>
+        <circle cx="40" cy="40" r={r} fill="none" className="stroke-muted/35" strokeWidth="7" />
+        <circle
+          cx="40"
+          cy="40"
+          r={r}
+          fill="none"
+          className={cn('transition-all duration-700 ease-out', stroke)}
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          transform="rotate(-90 40 40)"
+        />
+        <text x="40" y="44" textAnchor="middle" className="fill-[#0071DD] text-sm font-bold">
+          {score}
+        </text>
+      </svg>
+      <span className="sr-only">Score IA {score} sur 100</span>
+    </div>
   );
 }
 
@@ -232,7 +241,7 @@ function TimelineDialog({
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Clock size={18} className="text-violet-600" />
+            <Clock size={18} className="text-[#0071DD]" />
             Activité — {companyName}
           </DialogTitle>
         </DialogHeader>
@@ -241,10 +250,10 @@ function TimelineDialog({
             <Loader2 className="animate-spin h-6 w-6" />
           </div>
         ) : (
-          <ul className="space-y-3 text-sm border-l-2 border-violet-200 pl-4 ml-1">
+          <ul className="ml-1 space-y-3 border-l-2 border-[#BED6F6] pl-4 text-sm">
             {(data?.events || []).map((ev, i) => (
               <li key={`${ev.at}-${i}`} className="relative">
-                <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-violet-500 ring-4 ring-white" />
+                <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-[#016AEB] ring-4 ring-white shadow-[0_0_0_3px_rgba(190,214,246,0.5)]" />
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {new Date(ev.at).toLocaleString('fr-FR')}
                 </p>
@@ -363,16 +372,27 @@ export function ProspectionIA() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 pb-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="relative mx-auto max-w-6xl space-y-10 pb-16">
+      {/* Halo IA — fond premium */}
+      <div
+        className="pointer-events-none absolute -left-24 -top-32 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-[#BED6F6]/50 via-[#016AEB]/8 to-transparent blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-20 top-40 h-[22rem] w-[22rem] rounded-full bg-gradient-to-bl from-[#0071DD]/10 to-transparent blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight flex items-center gap-2">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25">
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-[#0071DD] md:text-4xl flex items-center gap-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#016AEB] to-[#1E72B9] text-white shadow-glow">
               <Sparkles className="h-5 w-5" strokeWidth={2.2} />
+              <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/25" aria-hidden />
             </span>
             Prospection IA
           </h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
             Recherche ciblée, enrichissement web automatique, scoring et angles commerciaux — copilote premium pour
             équipes PME. Toujours valider avant envoi.
           </p>
@@ -392,31 +412,31 @@ export function ProspectionIA() {
       </div>
 
       {dash && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="border-violet-200/60 bg-gradient-to-br from-violet-50/80 to-white shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Trouvés / qualifiés</p>
-              <p className="text-2xl font-bold tabular-nums">{dash.prospectsFound}</p>
+        <div className="relative grid grid-cols-2 gap-4 md:grid-cols-4">
+          <Card className="border-brand-soft/50 bg-gradient-to-br from-white to-[#f4f8fd] shadow-card transition-smooth hover:shadow-card-hover">
+            <CardContent className="p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trouvés / qualifiés</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-[#0071DD]">{dash.prospectsFound}</p>
             </CardContent>
           </Card>
-          <Card className="border-orange-200/60 shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Flame size={14} className="text-orange-500" /> Leads chauds
+          <Card className="border-[#BED6F6]/70 bg-gradient-to-br from-[#eef4fc] to-white shadow-card transition-smooth hover:shadow-card-hover">
+            <CardContent className="p-5">
+              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <Flame size={14} className="text-[#016AEB]" /> Leads chauds
               </p>
-              <p className="text-2xl font-bold tabular-nums">{dash.hotLeads}</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-[#016AEB]">{dash.hotLeads}</p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Dans le pipeline</p>
-              <p className="text-2xl font-bold tabular-nums">{dash.inPipeline}</p>
+          <Card className="shadow-card transition-smooth hover:shadow-card-hover">
+            <CardContent className="p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dans le pipeline</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums text-foreground">{dash.inPipeline}</p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Leads source IA</p>
-              <p className="text-2xl font-bold tabular-nums">{dash.opportunitiesFromAi}</p>
+          <Card className="shadow-card transition-smooth hover:shadow-card-hover">
+            <CardContent className="p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Leads source IA</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums text-foreground">{dash.opportunitiesFromAi}</p>
             </CardContent>
           </Card>
         </div>
@@ -436,11 +456,11 @@ export function ProspectionIA() {
         </div>
       ) : null}
 
-      <Card className="overflow-hidden border-border/70 shadow-md">
-        <div className="h-1 w-full bg-gradient-to-r from-violet-500 via-indigo-500 to-sky-500" />
+      <Card className="relative overflow-hidden border-brand-soft/40 shadow-card">
+        <div className="h-1 w-full bg-gradient-to-r from-[#BED6F6] via-[#0071DD] to-[#016AEB]" />
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Search className="text-violet-600" size={20} />
+          <CardTitle className="flex items-center gap-2 text-lg text-[#0071DD]">
+            <Search className="text-[#016AEB]" size={20} />
             Recherche prospects
           </CardTitle>
           <p className="text-xs text-muted-foreground font-normal">
@@ -478,7 +498,7 @@ export function ProspectionIA() {
           <Button
             size="lg"
             className={cn(
-              'w-full sm:w-auto min-w-[220px] gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/30 transition-transform hover:scale-[1.01] active:scale-[0.99]',
+              'w-full min-w-[220px] gap-2 rounded-2xl bg-[#016AEB] text-white shadow-glow transition-smooth hover:bg-[#1184f7] hover:shadow-card-hover sm:w-auto',
               searchMutation.isPending && 'opacity-90'
             )}
             disabled={searchMutation.isPending}
@@ -500,20 +520,20 @@ export function ProspectionIA() {
       {results.length > 0 && (
         <section className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#0071DD]">
               <Filter size={16} />
               Résultats ({filtered.length}/{results.length})
             </h2>
             {fromCache ? (
-              <span className="text-xs rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-900">
+              <span className="rounded-full border border-[#BED6F6] bg-[#eef4fc] px-3 py-1 text-xs font-medium text-[#1E72B9]">
                 Liste depuis cache (économie API)
               </span>
             ) : null}
           </div>
 
-          <Card className="border-dashed border-violet-200/80 bg-violet-50/30">
-            <CardContent className="p-4 space-y-3">
-              <p className="text-xs font-medium text-violet-900">Filtres avancés (session courante)</p>
+          <Card className="border-dashed border-brand-soft/60 bg-gradient-to-br from-[#f7faff] to-white shadow-sm">
+            <CardContent className="space-y-3 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#0071DD]">Filtres avancés (session courante)</p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -605,9 +625,9 @@ export function ProspectionIA() {
                 <Card
                   key={p.id}
                   className={cn(
-                    'border-2 bg-card/95 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5',
+                    'group/card border-2 bg-white/95 backdrop-blur-sm transition-smooth hover:-translate-y-0.5',
                     cardHeatClass(p.score),
-                    ignored && 'opacity-50 pointer-events-none'
+                    ignored && 'pointer-events-none opacity-50'
                   )}
                 >
                   <CardContent className="p-5 space-y-4">
@@ -654,12 +674,12 @@ export function ProspectionIA() {
                             </span>
                           ) : null}
                           {p.hasSsl ? (
-                            <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                            <span className="rounded-md border border-[#BED6F6]/60 bg-[#016AEB]/8 px-2 py-0.5 text-[10px] font-semibold text-[#1E72B9]">
                               HTTPS
                             </span>
                           ) : null}
                           {p.hasResponsiveWebsite ? (
-                            <span className="rounded-md bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-900">
+                            <span className="rounded-md border border-brand-soft/50 bg-[#0071DD]/8 px-2 py-0.5 text-[10px] font-semibold text-[#0071DD]">
                               Mobile
                             </span>
                           ) : null}
@@ -719,7 +739,7 @@ export function ProspectionIA() {
                     </div>
 
                     {p.aiSummary ? (
-                      <p className="text-sm leading-relaxed text-foreground border-l-4 border-violet-400/80 pl-3 py-0.5">
+                      <p className="border-l-4 border-[#016AEB]/70 py-0.5 pl-3 text-sm leading-relaxed text-foreground">
                         {p.aiSummary}
                       </p>
                     ) : null}
@@ -731,8 +751,8 @@ export function ProspectionIA() {
                       </div>
                     ) : null}
                     {p.suggestedOffer ? (
-                      <div className="rounded-lg bg-violet-50/80 border border-violet-100 px-3 py-2 text-xs">
-                        <span className="font-semibold text-violet-950">Offre adaptée : </span>
+                      <div className="rounded-xl border border-brand-soft/50 bg-gradient-to-r from-[#eef4fc] to-white px-3 py-2 text-xs">
+                        <span className="font-semibold text-[#0071DD]">Offre adaptée : </span>
                         {p.suggestedOffer}
                       </div>
                     ) : null}

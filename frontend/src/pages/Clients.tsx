@@ -164,15 +164,15 @@ export function Clients() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 border-emerald-200 bg-emerald-50/30">
+        <Card className="border-2 border-sky-200 bg-sky-50/30">
           <CardContent className="p-2">
             <div className="flex items-center gap-1.5">
-              <div className="p-1.5 bg-emerald-100 rounded-lg">
-                <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-emerald-600" />
+              <div className="p-1.5 bg-sky-100 rounded-lg">
+                <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-sky-600" />
               </div>
               <div>
                 <p className="text-[9px] md:text-[10px] text-muted-foreground">{t('clients.totalAffaires')}</p>
-                <p className="text-sm md:text-lg font-bold text-emerald-600">{totalAffairesOnPage}</p>
+                <p className="text-sm md:text-lg font-bold text-sky-600">{totalAffairesOnPage}</p>
               </div>
             </div>
           </CardContent>

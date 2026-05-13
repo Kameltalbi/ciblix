@@ -98,8 +98,8 @@ export function Products() {
             <CardContent className="p-4">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-100">
-                    <Package size={16} className="text-emerald-600" />
+                  <div className="p-2 rounded-lg bg-sky-100">
+                    <Package size={16} className="text-sky-600" />
                   </div>
                   <h3 className="font-semibold">{p.name}</h3>
                 </div>
@@ -108,12 +108,12 @@ export function Products() {
                 </span>
               </div>
               {p.category?.name && (
-                <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2">
+                <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 mb-2">
                   {p.category.name}
                 </span>
               )}
               {p.description && <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{p.description}</p>}
-              <p className="text-lg font-bold text-emerald-600 mb-3">{Number(p.price).toLocaleString('fr-TN')} DT</p>
+              <p className="text-lg font-bold text-sky-600 mb-3">{Number(p.price).toLocaleString('fr-TN')} DT</p>
               <div className="flex gap-1 justify-end">
                 <Button size="sm" variant="outline" onClick={() => openEdit(p)}><Pencil size={12} /></Button>
                 <Button

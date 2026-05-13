@@ -4,26 +4,30 @@
 
 @layer base {
   :root {
-    --background: 145 30% 98%;
-    --foreground: 148 40% 8%;
+    /* Fond blanc bleuté lumineux */
+    --background: 214 52% 98.5%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 148 40% 8%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 148 58% 23%;
+    --popover-foreground: 222 47% 11%;
+    /* #016AEB */
+    --primary: 214 99% 46%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 145 30% 95%;
-    --secondary-foreground: 148 40% 15%;
-    --muted: 145 20% 94%;
-    --muted-foreground: 148 15% 40%;
-    --accent: 145 35% 93%;
-    --accent-foreground: 148 40% 15%;
+    /* Secondaire : blanc cassé + texte structuré */
+    --secondary: 214 40% 97%;
+    --secondary-foreground: 210 100% 35%;
+    --muted: 214 35% 96%;
+    --muted-foreground: 215 16% 42%;
+    /* Hover léger #BED6F6 */
+    --accent: 216 76% 90%;
+    --accent-foreground: 210 100% 35%;
     --destructive: 0 72% 47%;
     --destructive-foreground: 0 0% 100%;
-    --border: 145 20% 88%;
-    --input: 145 20% 88%;
-    --ring: 148 58% 35%;
-    --radius: 0.625rem;
+    --border: 214 32% 91%;
+    --input: 214 28% 91%;
+    --ring: 214 99% 46%;
+    --radius: 0.75rem;
   }
 }
 
@@ -37,55 +41,73 @@
   }
 }
 
-/* Scrollbar custom */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.3); }
+@layer utilities {
+  .text-heading {
+    color: #0071dd;
+  }
+  .bg-kt-sidebar {
+    background-color: #1e72b9;
+  }
+  .transition-smooth {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
+      transform, filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+}
 
-/* Smooth transitions */
+/* Scrollbar discrète, ton bleu */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(214 35% 86%);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(214 45% 78%);
+}
+
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Force dialog background to be white */
 [data-radix-dialog-content] {
   background-color: white !important;
-  color: black !important;
+  color: hsl(222 47% 11%) !important;
 }
 
-/* Alternative selector for Radix UI */
-div[data-state="open"][role="dialog"] {
+div[data-state='open'][role='dialog'] {
   background-color: white !important;
-  color: black !important;
+  color: hsl(222 47% 11%) !important;
 }
 
-/* Force select dropdown to be visible */
 [data-radix-select-content] {
   background-color: #ffffff !important;
-  color: #000000 !important;
+  color: hsl(222 47% 11%) !important;
 }
 
-/* More specific selector for select content */
-[data-radix-select-content][data-state="open"] {
+[data-radix-select-content][data-state='open'] {
   background-color: #ffffff !important;
-  color: #000000 !important;
+  color: hsl(222 47% 11%) !important;
 }
 
-/* Force select items to be visible */
 [data-radix-select-item] {
   background-color: #ffffff !important;
-  color: #000000 !important;
+  color: hsl(222 47% 11%) !important;
 }
 
 [data-radix-select-item]:hover {
-  background-color: #f3f4f6 !important;
+  background-color: #eef4fc !important;
 }
 
-/* Force select viewport */
 [data-radix-select-viewport] {
   background-color: #ffffff !important;
-  color: #000000 !important;
+  color: hsl(222 47% 11%) !important;
 }

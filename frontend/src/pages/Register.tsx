@@ -60,7 +60,7 @@ export function Register() {
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-900/75 via-slate-900/55 to-emerald-950/50"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-900/75 via-slate-900/55 to-sky-950/50"
         aria-hidden
       />
 
@@ -204,7 +204,7 @@ export function Register() {
                   </Link>
                   <span className="text-slate-500">
                     {t('auth.hasAccount')}{' '}
-                    <Link to="/login" className="font-medium text-emerald-700 hover:underline">
+                    <Link to="/login" className="font-medium text-sky-700 hover:underline">
                       {t('auth.signIn')}
                     </Link>
                   </span>

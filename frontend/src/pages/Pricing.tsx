@@ -193,7 +193,7 @@ export function Pricing() {
     <div
       className={`flex flex-col h-full ${standalone ? '' : 'border-0 shadow-none'}`}
     >
-      <div className={`${standalone ? 'rounded-xl border-2 border-emerald-100 bg-white p-6 shadow-sm' : ''} flex flex-col flex-1`}>
+      <div className={`${standalone ? 'rounded-xl border-2 border-sky-100 bg-white p-6 shadow-sm' : ''} flex flex-col flex-1`}>
         <h3 className="text-2xl font-bold text-gray-900 mb-1">{FREE_PLAN.name}</h3>
         <p className="text-sm text-muted-foreground mb-4">
           Pour découvrir le CRM / entreprise sans engagement · facturation : 0 DT
@@ -318,7 +318,7 @@ export function Pricing() {
               </button>
               <span className={`text-lg ${isAnnual ? 'font-semibold text-leaf' : 'text-gray-600'}`}>Annuel</span>
               {isAnnual && (
-                <span className="text-sm bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
+                <span className="text-sm bg-sky-100 text-sky-700 px-3 py-1 rounded-full font-medium">
                   {t('pricingPage.saveTwoMonths', { defaultValue: 'Économisez 2 mois' })}
                 </span>
               )}
@@ -330,7 +330,7 @@ export function Pricing() {
           </div>
 
           {/* Mobile : accordéon offre gratuite */}
-          <div className="lg:hidden max-w-xl mx-auto mb-8 rounded-xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-white shadow-sm overflow-hidden">
+          <div className="lg:hidden max-w-xl mx-auto mb-8 rounded-xl border border-sky-200/80 bg-gradient-to-br from-sky-50 to-white shadow-sm overflow-hidden">
             <button
               type="button"
               onClick={() => setFreeDrawerOpen((o) => !o)}
@@ -338,16 +338,16 @@ export function Pricing() {
               aria-expanded={freeDrawerOpen}
             >
               <div>
-                <p className="font-semibold text-emerald-900">{FREE_PLAN.name}</p>
-                <p className="text-xs text-emerald-800/80">0 DT · cliquez pour voir le détail</p>
+                <p className="font-semibold text-sky-900">{FREE_PLAN.name}</p>
+                <p className="text-xs text-sky-800/80">0 DT · cliquez pour voir le détail</p>
               </div>
-              {freeDrawerOpen ? <ChevronUp className="text-emerald-700 shrink-0" /> : <ChevronDown className="text-emerald-700 shrink-0" />}
+              {freeDrawerOpen ? <ChevronUp className="text-sky-700 shrink-0" /> : <ChevronDown className="text-sky-700 shrink-0" />}
             </button>
             <div
               className={`grid transition-[grid-template-rows] duration-300 ease-out ${freeDrawerOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
             >
               <div className="overflow-hidden">
-                <div className="px-4 pb-4 border-t border-emerald-100/80">{renderFreeCardInner(false)}</div>
+                <div className="px-4 pb-4 border-t border-sky-100/80">{renderFreeCardInner(false)}</div>
               </div>
             </div>
           </div>
@@ -363,7 +363,7 @@ export function Pricing() {
                   }`}
                   aria-hidden={!freeDrawerOpen}
                 >
-                  <div className="w-[min(18rem,calc(100vw-28rem))] rounded-l-2xl border-2 border-r-0 border-emerald-200 bg-white shadow-md h-full p-5 flex flex-col">
+                  <div className="w-[min(18rem,calc(100vw-28rem))] rounded-l-2xl border-2 border-r-0 border-sky-200 bg-white shadow-md h-full p-5 flex flex-col">
                     {renderFreeCardInner(false)}
                   </div>
                 </div>

@@ -197,13 +197,13 @@ export function AffaireDetail() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="border-2 border-emerald-200 bg-emerald-50/30">
+        <Card className="border-2 border-sky-200 bg-sky-50/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-600" />
+              <DollarSign className="w-5 h-5 text-sky-600" />
               <div>
                 <p className="text-xs text-muted-foreground">Montant HT</p>
-                <p className="text-lg font-bold text-emerald-600">{fmtDT(Number(affaire.montantHT))}</p>
+                <p className="text-lg font-bold text-sky-600">{fmtDT(Number(affaire.montantHT))}</p>
               </div>
             </div>
           </CardContent>

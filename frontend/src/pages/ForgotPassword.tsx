@@ -50,7 +50,7 @@ export function ForgotPassword() {
                 required
               />
             </div>
-            {message && <p className="text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded-md">{message}</p>}
+            {message && <p className="text-sm text-sky-700 bg-sky-50 px-3 py-2 rounded-md">{message}</p>}
             {resetUrl && (
               <div className="text-xs bg-muted p-2 rounded-md break-all">
                 <p className="font-medium mb-1">{t('auth.resetLinkGenerated')}</p>

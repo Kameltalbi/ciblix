@@ -299,7 +299,7 @@ export function Expenses() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">{t('expenses.caTotalTTC')} ({filterYear})</p>
-                <p className="text-xl font-bold text-emerald-600 mt-1">{fmtDT(caTotalTTC)} TND</p>
+                <p className="text-xl font-bold text-sky-600 mt-1">{fmtDT(caTotalTTC)} TND</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{t('expenses.htLabel')}: {fmtDT(caTotalHT)} TND</p>
                 <div className="flex gap-2 mt-1 text-[10px] text-muted-foreground">
                   <span>{t('expenses.realised')}: {fmtDT(caRealiseTTC)}</span>
@@ -307,8 +307,8 @@ export function Expenses() {
                   <span>{t('expenses.prospection')}: {fmtDT(caProspectionTTC)}</span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                <TrendingUp size={20} className="text-emerald-600" />
+              <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center">
+                <TrendingUp size={20} className="text-sky-600" />
               </div>
             </div>
           </CardContent>
@@ -329,20 +329,20 @@ export function Expenses() {
           </CardContent>
         </Card>
 
-        <Card className={`shadow-sm border-2 ${solde >= 0 ? 'border-emerald-200' : 'border-red-200'}`}>
+        <Card className={`shadow-sm border-2 ${solde >= 0 ? 'border-sky-200' : 'border-red-200'}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">{t('expenses.balance')}</p>
-                <p className={`text-xl font-bold mt-1 ${solde >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                <p className={`text-xl font-bold mt-1 ${solde >= 0 ? 'text-sky-600' : 'text-red-600'}`}>
                   {solde >= 0 ? '+' : ''}{fmtDT(solde)} TND
                 </p>
-                <p className={`text-[10px] mt-1 ${solde >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                <p className={`text-[10px] mt-1 ${solde >= 0 ? 'text-sky-600' : 'text-red-600'}`}>
                   {solde >= 0 ? t('expenses.balancePositive') : t('expenses.balanceNegative')}
                 </p>
               </div>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${solde >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
-                <Scale size={20} className={solde >= 0 ? 'text-emerald-600' : 'text-red-600'} />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${solde >= 0 ? 'bg-sky-50' : 'bg-red-50'}`}>
+                <Scale size={20} className={solde >= 0 ? 'text-sky-600' : 'text-red-600'} />
               </div>
             </div>
           </CardContent>
@@ -501,7 +501,7 @@ export function Expenses() {
               <span className="text-muted-foreground">{t('expenses.vsPreviousMonth')}</span>
               <span
                 className={`font-semibold ${
-                  monthlyDelta == null ? 'text-muted-foreground' : monthlyDelta <= 0 ? 'text-emerald-600' : 'text-red-600'
+                  monthlyDelta == null ? 'text-muted-foreground' : monthlyDelta <= 0 ? 'text-sky-600' : 'text-red-600'
                 }`}
               >
                 {monthlyDelta == null ? '—' : `${monthlyDelta > 0 ? '+' : ''}${Math.round(monthlyDelta)}%`}

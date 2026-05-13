@@ -20,7 +20,7 @@ function KpiCard({ title, subtitle, value, icon, color, ttcValue }: {
   ttcValue?: string;
 }) {
   const colorClasses: Record<string, { bg: string; text: string; border: string; iconBg: string }> = {
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', iconBg: 'bg-emerald-100' },
+    emerald: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', iconBg: 'bg-sky-100' },
     blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', iconBg: 'bg-blue-100' },
     violet: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', iconBg: 'bg-violet-100' },
     amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', iconBg: 'bg-amber-100' },
@@ -364,7 +364,7 @@ export function Dashboard() {
             <div className="space-y-3 mb-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Réalisé</span>
-                <span className="font-semibold text-emerald-600">{fmtDT(kpis.caRealise)}</span>
+                <span className="font-semibold text-sky-600">{fmtDT(kpis.caRealise)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Pipeline</span>
@@ -528,7 +528,7 @@ function ProfessionalKpiCard({ title, value, subtitle, icon, trend, trendUp, col
   color: string;
 }) {
   const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
+    emerald: { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-200' },
     blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
     violet: { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200' },
     amber: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
@@ -541,7 +541,7 @@ function ProfessionalKpiCard({ title, value, subtitle, icon, trend, trendUp, col
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className={`p-2 rounded-lg ${colors.bg} ${colors.text}`}>{icon}</div>
-          <div className={`flex items-center text-xs font-semibold ${trendUp ? 'text-emerald-600' : 'text-red-600'}`}>
+          <div className={`flex items-center text-xs font-semibold ${trendUp ? 'text-sky-600' : 'text-red-600'}`}>
             {trendUp ? '↑' : '↓'} {trend}
           </div>
         </div>

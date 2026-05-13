@@ -113,11 +113,11 @@ export function CategoriesSettings() {
       </Card>
 
       {/* Catégories Revenus */}
-      <Card className="border-emerald-200 bg-emerald-50/30">
+      <Card className="border-sky-200 bg-sky-50/30">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <ArrowUpCircle className="text-emerald-600" size={20} />
+            <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+              <ArrowUpCircle className="text-sky-600" size={20} />
             </div>
             <div className="flex-1">
               <CardTitle className="text-lg">Catégories Revenus</CardTitle>
@@ -147,9 +147,9 @@ export function CategoriesSettings() {
               <p className="text-xs text-muted-foreground py-2">Aucune catégorie personnalisée</p>
             ) : (
               revenueCategories.map((cat) => (
-                <div key={cat.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-emerald-100/50">
+                <div key={cat.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-sky-100/50">
                   <div className="flex items-center gap-2">
-                    <Tag size={14} className="text-emerald-500" />
+                    <Tag size={14} className="text-sky-500" />
                     <span className="text-sm">{cat.name}</span>
                   </div>
                   <Button

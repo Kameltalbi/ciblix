@@ -96,7 +96,7 @@ function DashboardTab() {
     { label: 'Nouveaux Clients', value: stats?.newClientsThisMonth || 5, icon: Users, color: 'text-green-600', trend: '+2', trendUp: true },
     { label: 'Taux de Churn', value: `${stats?.churnRate || 2.5}%`, icon: TrendingDown, color: 'text-red-600', trend: '-0.5%', trendUp: true },
     { label: 'Paiements en attente', value: stats?.organizations?.pending || 3, icon: Clock, color: 'text-yellow-600', trend: '+1', trendUp: false },
-    { label: 'Utilisateurs Actifs (30j)', value: stats?.activeUsers || 45, icon: Activity, color: 'text-emerald-600', trend: '+8', trendUp: true },
+    { label: 'Utilisateurs Actifs (30j)', value: stats?.activeUsers || 45, icon: Activity, color: 'text-sky-600', trend: '+8', trendUp: true },
   ];
 
   return (
@@ -1074,7 +1074,7 @@ function SupportTicketsTab() {
     if (status === 'OPEN') return 'bg-yellow-100 text-yellow-700';
     if (status === 'IN_PROGRESS') return 'bg-blue-100 text-blue-700';
     if (status === 'WAITING_USER') return 'bg-purple-100 text-purple-700';
-    if (status === 'RESOLVED') return 'bg-emerald-100 text-emerald-700';
+    if (status === 'RESOLVED') return 'bg-sky-100 text-sky-700';
     if (status === 'CLOSED') return 'bg-gray-100 text-gray-700';
     return 'bg-gray-100 text-gray-700';
   };

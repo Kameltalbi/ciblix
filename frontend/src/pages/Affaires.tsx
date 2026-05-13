@@ -74,7 +74,7 @@ const KANBAN_COLUMNS: Array<{
   { key: 'QUALIFIE', status: 'QUALIFIE', label: 'Qualifié', colorClass: 'bg-blue-50/80 border-blue-200', headerAccentClass: 'text-blue-700' },
   { key: 'PROPOSITION', status: 'PROPOSITION', label: 'Proposition', colorClass: 'bg-orange-50/80 border-orange-200', headerAccentClass: 'text-orange-700' },
   { key: 'NEGOCIATION', status: 'NEGOCIATION', label: 'Négociation', colorClass: 'bg-violet-50/80 border-violet-200', headerAccentClass: 'text-violet-700' },
-  { key: 'GAGNE', status: 'GAGNE', label: 'Gagné', colorClass: 'bg-emerald-50/80 border-emerald-200', headerAccentClass: 'text-emerald-700' },
+  { key: 'GAGNE', status: 'GAGNE', label: 'Gagné', colorClass: 'bg-sky-50/80 border-sky-200', headerAccentClass: 'text-sky-700' },
   { key: 'PERDU', status: 'PERDU', label: 'Perdu', colorClass: 'bg-rose-50/80 border-rose-200', headerAccentClass: 'text-rose-700' },
 ];
 
@@ -494,13 +494,13 @@ export function Affaires() {
             <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.filter(a => ['QUALIFIE', 'PROPOSITION', 'NEGOCIATION'].includes(a.statut)).length} opportunités en cours</p>
           </CardContent>
         </Card>
-        <Card className="border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100/70 shadow-sm">
+        <Card className="border border-sky-200 bg-gradient-to-br from-white via-sky-50 to-sky-100/70 shadow-sm">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gagné</p>
-              <Star size={14} className="text-emerald-500" />
+              <Star size={14} className="text-sky-500" />
             </div>
-            <p className="text-lg md:text-2xl font-bold text-emerald-600 mt-1">{fmtDT(realiseCA)}</p>
+            <p className="text-lg md:text-2xl font-bold text-sky-600 mt-1">{fmtDT(realiseCA)}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">{allAffaires.filter(a => a.statut === 'GAGNE').length} gagnées</p>
           </CardContent>
         </Card>

@@ -152,14 +152,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const expensesAccessible = currentPlan === 'ENTERPRISE';
 
   return (
-    <div className={`flex h-screen flex-col bg-gradient-to-br from-background via-background to-muted/50 ${isRTL ? 'rtl' : 'ltr'}`}>
-      {/* Header */}
-      <header className="relative z-[999] flex h-[3.75rem] flex-shrink-0 items-center justify-between border-b border-border/60 bg-white/85 px-4 shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur-md md:px-6">
+    <div
+      className={`flex h-screen flex-col bg-kt-mesh ${isRTL ? 'rtl' : 'ltr'}`}
+    >
+      {/* Topbar structurelle */}
+      <header className="relative z-[999] flex h-[3.75rem] flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#1E72B9] px-4 text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] md:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-white text-foreground shadow-sm transition-colors hover:bg-muted/80 hover:border-border"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white shadow-sm transition-smooth hover:bg-white/18 hover:shadow-glow"
             title={sidebarOpen ? 'Fermer la sidebar' : 'Ouvrir la sidebar'}
           >
             {sidebarOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
@@ -169,30 +171,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <img
                 src={orgLogoSrc}
                 alt={organization.name}
-                className="h-12 max-h-12 w-auto max-w-[min(300px,50vw)] object-contain"
+                className="h-12 max-h-12 w-auto max-w-[min(300px,50vw)] object-contain drop-shadow-sm"
               />
             ) : organization ? (
               <div className="flex min-w-0 items-center gap-2.5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 ring-1 ring-primary/15">
-                  <Building2 size={20} className="text-primary" strokeWidth={2} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
+                  <Building2 size={20} className="text-white" strokeWidth={2} />
                 </div>
-                <span className="truncate font-semibold tracking-tight text-foreground sm:text-lg">{organization.name}</span>
+                <span className="truncate font-semibold tracking-tight text-white sm:text-lg">{organization.name}</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="ktOptima" className="h-9 w-auto sm:h-10" />
-                <span className="text-lg font-bold tracking-tight text-foreground sm:text-xl">CRM</span>
+                <img src="/logo.png" alt="ktOptima" className="h-9 w-auto opacity-95 sm:h-10" />
+                <span className="text-lg font-bold tracking-tight text-white/95 sm:text-xl">KTOptima</span>
               </div>
             )}
           </div>
         </div>
         <div className="hidden flex-1 justify-center px-4 md:flex">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/40 px-4 py-1.5 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">
-            <span className="text-foreground/80">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-medium tabular-nums text-white/90 shadow-sm backdrop-blur-sm">
+            <span className="text-white">
               {currentTime.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
             </span>
-            <span className="h-1 w-1 rounded-full bg-border" aria-hidden />
-            <span>
+            <span className="h-1 w-1 rounded-full bg-white/35" aria-hidden />
+            <span className="text-white/85">
               {currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
           </div>
@@ -201,25 +203,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={cycleAppLanguage}
-            className="flex h-10 items-center gap-1.5 rounded-xl border border-border/60 bg-white px-2.5 text-xs font-semibold text-muted-foreground shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-2.5 text-xs font-semibold text-white/90 shadow-sm transition-smooth hover:bg-white/18"
             title="Langue / Language / اللغة"
             aria-label="Changer la langue de l'interface"
           >
-            <Globe size={16} strokeWidth={2} className="shrink-0 text-primary" />
+            <Globe size={16} strokeWidth={2} className="shrink-0 text-[#BED6F6]" />
             <span className="tabular-nums">{appLangLabel}</span>
           </button>
           <Notifications />
-          <div className="flex items-center gap-2 border-l border-border/60 pl-2 sm:pl-3">
+          <div className="flex items-center gap-2 border-l border-white/15 pl-2 sm:pl-3">
             <div className="hidden text-right sm:block">
-              <div className="max-w-[140px] truncate text-sm font-semibold leading-tight text-foreground md:max-w-[200px]">
+              <div className="max-w-[140px] truncate text-sm font-semibold leading-tight text-white md:max-w-[200px]">
                 {user?.name}
               </div>
-              <div className="max-w-[140px] truncate text-xs text-muted-foreground md:max-w-[220px]">{user?.email}</div>
+              <div className="max-w-[140px] truncate text-xs text-white/70 md:max-w-[220px]">{user?.email}</div>
             </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-white/80 transition-smooth hover:bg-white/12 hover:text-white"
               title="Déconnexion"
             >
               <LogOut size={18} strokeWidth={2} />
@@ -232,14 +234,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b from-primary via-primary to-[hsl(148,58%,17%)] text-white shadow-[4px_0_24px_-4px_rgba(0,0,0,0.12)] transition-[width,transform] duration-300 ease-out',
+            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-white/10 bg-[#1E72B9] bg-gradient-to-b from-[#2288c4] via-[#1E72B9] to-[#185f9e] text-white shadow-[6px_0_32px_-8px_rgba(1,106,235,0.35)] transition-[width,transform] duration-300 ease-out',
             // Mobile : tiroir selon sidebarOpen ; desktop (lg+) : barre toujours visible (éviter lg:w-0 qui masquait tout le menu)
             sidebarOpen
               ? 'w-64 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
               : 'w-64 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-64 lg:flex-shrink-0 lg:translate-x-0'
           )}
         >
-          <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-5">
             {filteredNav.map(({ to, label, icon: Icon, page }) => {
               const isExpenses = page === 'expenses';
               const isDisabled = isExpenses && !expensesAccessible;
@@ -259,22 +261,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   }}
                   className={({ isActive }) =>
                     cn(
-                      'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                      'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
                       isDisabled
-                        ? 'text-white/40 cursor-not-allowed'
+                        ? 'cursor-not-allowed text-white/35'
                         : isActive
-                        ? 'bg-white/18 text-white shadow-sm ring-1 ring-white/25'
-                        : 'text-white/75 hover:bg-white/10 hover:text-white'
+                          ? 'bg-white/16 text-white shadow-nav-active'
+                          : 'text-white/78 hover:bg-white/10 hover:text-white'
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <Icon size={18} className={cn('shrink-0', isDisabled && 'opacity-50')} />
-                      <span className="flex-1">{sidebarNavText(page, label)}</span>
+                      {isActive && !isDisabled ? (
+                        <span
+                          className="pointer-events-none absolute inset-y-1.5 left-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
+                          aria-hidden
+                        />
+                      ) : null}
+                      <Icon
+                        size={18}
+                        className={cn(
+                          'relative z-[1] shrink-0 transition-transform duration-200 group-hover:scale-[1.03]',
+                          isDisabled && 'opacity-50'
+                        )}
+                        strokeWidth={isActive ? 2.25 : 2}
+                      />
+                      <span className="relative z-[1] flex-1">{sidebarNavText(page, label)}</span>
                       {isDisabled && (
-                        <span className="ml-2 rounded-full bg-amber-400/90 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                          Upgrade
+                        <span className="ml-2 rounded-full bg-[#BED6F6]/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E72B9]">
+                          Pro
                         </span>
                       )}
                     </>
@@ -290,24 +305,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   onClick={closeSidebarOnMobile}
                   className={({ isActive }) =>
                     cn(
-                      'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                      'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
                       isActive
-                        ? 'bg-white/18 text-white shadow-sm ring-1 ring-white/25'
-                        : 'text-white/75 hover:bg-white/10 hover:text-white'
+                        ? 'bg-white/16 text-white shadow-nav-active'
+                        : 'text-white/78 hover:bg-white/10 hover:text-white'
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
+                      {isActive ? (
+                        <span
+                          className="pointer-events-none absolute inset-y-1.5 left-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
+                          aria-hidden
+                        />
+                      ) : null}
                       <span
                         className={cn(
-                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
-                          isActive ? 'bg-white/20 text-white' : 'bg-white/0 text-white/80 group-hover:bg-white/10 group-hover:text-white'
+                          'relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth',
+                          isActive ? 'bg-white/20 text-white' : 'bg-transparent text-white/85 group-hover:bg-white/12 group-hover:text-white'
                         )}
                       >
                         <Settings size={18} strokeWidth={2} />
                       </span>
-                      <span className="truncate">Paramètres</span>
+                      <span className="relative z-[1] truncate">Paramètres</span>
                     </>
                   )}
                 </NavLink>
@@ -325,8 +346,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        <main className="min-h-0 flex-1 overflow-auto bg-muted/25">
-          <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 md:px-8 md:py-8">{children}</div>
+        <main className="min-h-0 flex-1 overflow-auto bg-transparent">
+          <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:px-10 md:py-10">{children}</div>
         </main>
       </div>
 

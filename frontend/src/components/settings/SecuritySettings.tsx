@@ -85,7 +85,7 @@ export function SecuritySettings() {
             />
           </div>
           {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>}
-          {success && <p className="text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded-md">{success}</p>}
+          {success && <p className="text-sm text-sky-700 bg-sky-50 px-3 py-2 rounded-md">{success}</p>}
           <Button type="submit" disabled={changePassword.isPending}>
             {changePassword.isPending ? t('common.loading') : t('auth.changePassword')}
           </Button>

@@ -75,7 +75,7 @@ export function Notifications() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTriggerButton asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/15 hover:text-white">
           <Bell size={20} />
           {unreadCount && unreadCount.count > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
