@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import { loadEnvFromFile } from './lib/loadEnv.js';
+loadEnvFromFile();
 // Init Sentry as early as possible so it can capture imports/init errors too.
 import { initSentry, setupExpressErrorHandler } from './lib/sentry.js';
 initSentry();

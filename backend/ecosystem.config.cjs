@@ -1,9 +1,11 @@
 /**
- * PM2 : toujours lancer le backend avec `cwd` = ce dossier (`backend/`)
- * pour que `dist/`, `.env` et Prisma soient les bons.
+ * PM2 : `cwd` = dossier `backend/` (dist + .env ici).
  *
- *   cd /var/www/crm/backend
- *   npm run build
+ * Monorepo npm : installer les deps à la RACINE du repo, sinon des modules
+ * peuvent manquer (workspaces → node_modules au parent).
+ *
+ *   cd /var/www/crm && npm ci
+ *   cd /var/www/crm/backend && npm run build && npx prisma migrate deploy
  *   pm2 start ecosystem.config.cjs
  *   # ou : pm2 restart backend --update-env
  */

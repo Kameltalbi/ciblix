@@ -3,8 +3,10 @@
  * Usage : depuis `backend/` → `npm run test:places`
  * Ne loggue jamais la clé API.
  */
-import 'dotenv/config';
+import { loadEnvFromFile } from '../src/lib/loadEnv.js';
 import { GooglePlacesTextSearchProvider } from '../src/services/prospecting/providers/GooglePlacesTextSearchProvider.js';
+
+loadEnvFromFile();
 
 const key =
   process.env.GOOGLE_PLACES_API_KEY?.trim() ||
