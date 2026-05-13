@@ -585,7 +585,7 @@ export function Landing() {
               <div>
                 <h3 className="text-lg font-bold tracking-tight drop-shadow-sm">Softfacture</h3>
                 <p className="mt-2 text-sm leading-relaxed text-white/95">
-                  Gérez votre facturation facilement avec notre solution Softfacture.
+                  Facturation intelligente et automatisée
                 </p>
               </div>
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#BED6F6] transition-colors group-hover:text-white drop-shadow-sm">
