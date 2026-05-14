@@ -229,74 +229,70 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className={`flex h-screen flex-col bg-kt-mesh ${isRTL ? 'rtl' : 'ltr'}`}
+      className={`flex h-screen flex-col bg-background ${isRTL ? 'rtl' : 'ltr'}`}
     >
-      {/* Topbar structurelle */}
-      <header className="relative z-[999] flex h-[3.75rem] flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#1E72B9] px-4 text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] md:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+      {/* Topbar - white, clean, sticky */}
+      <header className="relative z-[999] flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-4 sticky top-0 md:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white shadow-sm transition-smooth hover:bg-white/18 hover:shadow-glow"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted"
             title={sidebarOpen ? 'Fermer la sidebar' : 'Ouvrir la sidebar'}
           >
             {sidebarOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
           </button>
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             {organization && orgLogoSrc ? (
               <img
                 src={orgLogoSrc}
                 alt={organization.name}
-                className="h-12 max-h-12 w-auto max-w-[min(300px,50vw)] object-contain drop-shadow-sm"
+                className="h-8 max-h-8 w-auto max-w-[200px] object-contain"
               />
             ) : organization ? (
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
-                  <Building2 size={20} className="text-white" strokeWidth={2} />
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Building2 size={18} strokeWidth={2} />
                 </div>
-                <span className="truncate font-semibold tracking-tight text-white sm:text-lg">{organization.name}</span>
+                <span className="truncate font-semibold text-foreground">{organization.name}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <img src="/logo-ciblix.png" alt="CIBLIX" className="h-24 w-auto sm:h-28" />
-              </div>
+              <span className="font-bold text-xl text-foreground">CIBLIX</span>
             )}
           </div>
         </div>
         <div className="hidden flex-1 justify-center px-4 md:flex">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-medium tabular-nums text-white/90 shadow-sm backdrop-blur-sm">
-            <span className="text-white">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-xs font-medium text-muted-foreground">
+            <span>
               {currentTime.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
             </span>
-            <span className="h-1 w-1 rounded-full bg-white/35" aria-hidden />
-            <span className="text-white/85">
-              {currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            <span className="h-1 w-1 rounded-full bg-border" aria-hidden />
+            <span className="text-foreground">
+              {currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
         </div>
-        <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={cycleAppLanguage}
-            className="flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-2.5 text-xs font-semibold text-white/90 shadow-sm transition-smooth hover:bg-white/18"
+            className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
             title="Langue / Language / اللغة"
             aria-label="Changer la langue de l'interface"
           >
-            <Globe size={16} strokeWidth={2} className="shrink-0 text-[#BED6F6]" />
-            <span className="tabular-nums">{appLangLabel}</span>
+            <Globe size={14} strokeWidth={2} />
+            <span>{appLangLabel}</span>
           </button>
           <Notifications />
-          <div className="flex items-center gap-2 border-l border-white/15 pl-2 sm:pl-3">
+          <div className="flex items-center gap-3 border-l border-border pl-3">
             <div className="hidden text-right sm:block">
-              <div className="max-w-[140px] truncate text-sm font-semibold leading-tight text-white md:max-w-[200px]">
-                {user?.name}
-              </div>
-              <div className="max-w-[140px] truncate text-xs text-white/70 md:max-w-[220px]">{user?.email}</div>
+              <div className="max-w-[140px] truncate text-sm font-medium text-foreground">{user?.name}</div>
+              <div className="max-w-[140px] truncate text-xs text-muted-foreground">{user?.email}</div>
             </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-white/80 transition-smooth hover:bg-white/12 hover:text-white"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title="Déconnexion"
             >
               <LogOut size={18} strokeWidth={2} />
@@ -306,17 +302,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Sidebar */}
+        {/* Sidebar - dark navy, minimalist, premium */}
         <aside
           className={cn(
-            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-white/10 bg-[#1E72B9] bg-gradient-to-b from-[#2288c4] via-[#1E72B9] to-[#185f9e] text-white shadow-[6px_0_32px_-8px_rgba(1,106,235,0.35)] transition-[width,transform] duration-300 ease-out',
-            // Mobile : tiroir selon sidebarOpen ; desktop (lg+) : barre toujours visible (éviter lg:w-0 qui masquait tout le menu)
+            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-border bg-sidebar text-sidebar-text shadow-lg transition-[width,transform] duration-300 ease-out',
             sidebarOpen
               ? 'w-64 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
               : 'w-64 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-64 lg:flex-shrink-0 lg:translate-x-0'
           )}
         >
-          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-5">
+          <div className="flex h-14 items-center px-4 border-b border-sidebar-hover">
+            <span className="font-bold text-lg text-white">CIBLIX</span>
+          </div>
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
             {filteredNav.map((entry) => {
               if (entry.type === 'link') {
                 const { to, labelKey, icon: Icon, page } = entry;
@@ -337,34 +335,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     }}
                     className={({ isActive }) =>
                       cn(
-                        'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
+                        'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                         isDisabled
-                          ? 'cursor-not-allowed text-white/35'
+                          ? 'cursor-not-allowed opacity-40'
                           : isActive
-                            ? 'bg-white/16 text-white shadow-nav-active'
-                            : 'text-white/78 hover:bg-white/10 hover:text-white',
+                            ? 'bg-sidebar-active text-white shadow-sidebar-active'
+                            : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
                       )
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        {isActive && !isDisabled ? (
-                          <span
-                            className="pointer-events-none absolute inset-y-1.5 start-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
-                            aria-hidden
-                          />
-                        ) : null}
                         <Icon
                           size={18}
                           className={cn(
-                            'relative z-[1] shrink-0 transition-transform duration-200 group-hover:scale-[1.03]',
+                            'shrink-0 transition-transform duration-200',
                             isDisabled && 'opacity-50',
                           )}
                           strokeWidth={isActive ? 2.25 : 2}
                         />
-                        <span className="relative z-[1] flex-1">{sidebarNavText(page, labelKey)}</span>
+                        <span className="flex-1">{sidebarNavText(page, labelKey)}</span>
                         {isDisabled && (
-                          <span className="ms-2 rounded-full bg-[#BED6F6]/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E72B9]">
+                          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                             Pro
                           </span>
                         )}
@@ -387,31 +379,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     aria-expanded={open}
                     onClick={() => setNavGroupsOpen((s) => ({ ...s, [entry.id]: !open }))}
                     className={cn(
-                      'group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm font-medium transition-smooth',
+                      'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start text-sm font-medium transition-all duration-200',
                       anyChildActive && !open
-                        ? 'bg-white/10 text-white'
-                        : 'text-white/78 hover:bg-white/10 hover:text-white',
+                        ? 'bg-sidebar-hover text-white'
+                        : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
                     )}
                   >
-                    {anyChildActive ? (
-                      <span
-                        className="pointer-events-none absolute inset-y-1.5 start-1 w-1 rounded-full bg-[#BED6F6]/70 shadow-[0_0_10px_rgba(190,214,246,0.6)]"
-                        aria-hidden
-                      />
-                    ) : null}
-                    <GroupIcon size={18} className="relative z-[1] shrink-0" strokeWidth={2} />
-                    <span className="relative z-[1] flex-1">{t(entry.labelKey)}</span>
+                    <GroupIcon size={18} className="shrink-0" strokeWidth={2} />
+                    <span className="flex-1">{t(entry.labelKey)}</span>
                     <ChevronDown
                       size={16}
                       className={cn(
-                        'relative z-[1] shrink-0 text-white/70 transition-transform duration-200',
+                        'shrink-0 text-sidebar-text transition-transform duration-200',
                         open && 'rotate-180',
                       )}
                       aria-hidden
                     />
                   </button>
                   {open ? (
-                    <div className="ms-1 flex flex-col gap-0.5 border-s border-white/15 ps-2">
+                    <div className="ml-3 flex flex-col gap-0.5 border-l border-sidebar-hover pl-3">
                       {entry.children.map((child) => {
                         const isExpenses = child.page === 'expenses';
                         const isDisabled = isExpenses && !expensesAccessible;
@@ -430,34 +416,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
                             }}
                             className={({ isActive }) =>
                               cn(
-                                'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-smooth',
+                                'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                                 isDisabled
-                                  ? 'cursor-not-allowed text-white/35'
+                                  ? 'cursor-not-allowed opacity-40'
                                   : isActive
-                                    ? 'bg-white/16 text-white shadow-nav-active'
-                                    : 'text-white/75 hover:bg-white/10 hover:text-white',
+                                    ? 'bg-sidebar-active text-white shadow-sidebar-active'
+                                    : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
                               )
                             }
                           >
                             {({ isActive }) => (
                               <>
-                                {isActive && !isDisabled ? (
-                                  <span
-                                    className="pointer-events-none absolute inset-y-1 start-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
-                                    aria-hidden
-                                  />
-                                ) : null}
                                 <ChildIcon
                                   size={17}
                                   className={cn(
-                                    'relative z-[1] shrink-0 transition-transform duration-200 group-hover:scale-[1.03]',
+                                    'shrink-0 transition-transform duration-200',
                                     isDisabled && 'opacity-50',
                                   )}
                                   strokeWidth={isActive ? 2.25 : 2}
                                 />
-                                <span className="relative z-[1] flex-1">{sidebarNavText(child.page, child.labelKey)}</span>
+                                <span className="flex-1">{sidebarNavText(child.page, child.labelKey)}</span>
                                 {isDisabled && (
-                                  <span className="ms-1 shrink-0 rounded-full bg-[#BED6F6]/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E72B9]">
+                                  <span className="ml-1 shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                                     Pro
                                   </span>
                                 )}
@@ -473,36 +453,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
             })}
             {user?.role === 'OWNER' && (
               <>
-                <div className="my-3 border-t border-white/15" />
+                <div className="my-3 border-t border-sidebar-hover" />
                 <NavLink
                   to="/settings"
                   onClick={closeSidebarOnMobile}
                   className={({ isActive }) =>
                     cn(
-                      'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-smooth',
+                      'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-white/16 text-white shadow-nav-active'
-                        : 'text-white/78 hover:bg-white/10 hover:text-white',
+                        ? 'bg-sidebar-active text-white shadow-sidebar-active'
+                        : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      {isActive ? (
-                        <span
-                          className="pointer-events-none absolute inset-y-1.5 start-1 w-1 rounded-full bg-[#BED6F6] shadow-[0_0_12px_rgba(190,214,246,0.9)]"
-                          aria-hidden
-                        />
-                      ) : null}
-                      <span
-                        className={cn(
-                          'relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-smooth',
-                          isActive ? 'bg-white/20 text-white' : 'bg-transparent text-white/85 group-hover:bg-white/12 group-hover:text-white',
-                        )}
-                      >
-                        <Settings size={18} strokeWidth={2} />
-                      </span>
-                      <span className="relative z-[1] truncate">{t('nav.settings')}</span>
+                      <Settings size={18} strokeWidth={2} />
+                      <span className="flex-1">{t('nav.settings')}</span>
                     </>
                   )}
                 </NavLink>
@@ -520,8 +487,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        <main className="min-h-0 flex-1 overflow-auto bg-transparent">
-          <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 md:px-10 md:py-10">{children}</div>
+        <main className="min-h-0 flex-1 overflow-auto bg-background">
+          <div className="mx-auto max-w-[1600px] px-6 py-8 md:px-8 md:py-10 lg:px-10">{children}</div>
         </main>
       </div>
 

@@ -463,30 +463,56 @@ export function ProspectionIA() {
 
       {dash && (
         <div className="relative grid grid-cols-2 gap-4 md:grid-cols-4">
-          <Card className="border-brand-soft/50 bg-gradient-to-br from-white to-[#f4f8fd] shadow-card transition-smooth hover:shadow-card-hover">
-            <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trouvés / qualifiés</p>
-              <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-[#0071DD]">{dash.prospectsFound}</p>
+          <Card className="border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Trouvés / qualifiés</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-foreground">{dash.prospectsFound}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Building2 size={20} strokeWidth={2} />
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-[#BED6F6]/70 bg-gradient-to-br from-[#eef4fc] to-white shadow-card transition-smooth hover:shadow-card-hover">
-            <CardContent className="p-5">
-              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <Flame size={14} className="text-[#016AEB]" /> Leads chauds
-              </p>
-              <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-[#016AEB]">{dash.hotLeads}</p>
+          <Card className="border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Leads chauds</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-primary">{dash.hotLeads}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                  <Flame size={20} strokeWidth={2} />
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="shadow-card transition-smooth hover:shadow-card-hover">
-            <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('prospectionIA.inOpportunitiesLabel')}</p>
-              <p className="mt-1 text-3xl font-bold tabular-nums text-foreground">{dash.inPipeline}</p>
+          <Card className="border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('prospectionIA.inOpportunitiesLabel')}</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-foreground">{dash.inPipeline}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
+                  <KanbanSquare size={20} strokeWidth={2} />
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="shadow-card transition-smooth hover:shadow-card-hover">
-            <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Leads source IA</p>
-              <p className="mt-1 text-3xl font-bold tabular-nums text-foreground">{dash.opportunitiesFromAi}</p>
+          <Card className="border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Leads source IA</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-foreground">{dash.opportunitiesFromAi}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <Sparkles size={20} strokeWidth={2} />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -506,49 +532,69 @@ export function ProspectionIA() {
         </div>
       ) : null}
 
-      <Card className="relative overflow-hidden border-brand-soft/40 shadow-card">
-        <div className="h-1 w-full bg-gradient-to-r from-[#BED6F6] via-[#0071DD] to-[#016AEB]" />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg text-[#0071DD]">
-            <Search className="text-[#016AEB]" size={20} />
-            Recherche prospects
+      <Card className="relative overflow-hidden border-border bg-card shadow-card">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" aria-hidden />
+        <CardHeader className="relative">
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <Search className="text-primary" size={22} />
+            Recherche prospects IA
           </CardTitle>
-          <p className="text-xs text-muted-foreground font-normal">
-            Import large immédiat (jusqu&apos;à ~80 fiches), puis scoring IA et enrichissement web par petits lots — même
-            sans site ou email, les entreprises apparaissent. Cache recherche 7 j. (moins d&apos;appels Google).
+          <p className="text-sm text-muted-foreground">
+            Recherche intelligente avec scoring automatique et enrichissement web
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label>Secteur d&apos;activité</Label>
-              <Input value={sector} onChange={(e) => setSector(e.target.value)} placeholder="ex. BTP, agroalimentaire…" />
+        <CardContent className="relative space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Secteur d&apos;activité</Label>
+              <Input
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                placeholder="ex. BTP, agroalimentaire…"
+                className="h-11"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label>Pays</Label>
-              <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Tunisie" />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Pays</Label>
+              <Input
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="Tunisie"
+                className="h-11"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label>Ville</Label>
-              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Tunis, Casablanca…" />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Ville</Label>
+              <Input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Tunis, Casablanca…"
+                className="h-11"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label>Taille entreprise</Label>
-              <Input value={companySize} onChange={(e) => setCompanySize(e.target.value)} placeholder="11-50, 50-200…" />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Taille entreprise</Label>
+              <Input
+                value={companySize}
+                onChange={(e) => setCompanySize(e.target.value)}
+                placeholder="11-50, 50-200…"
+                className="h-11"
+              />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Mots-clés</Label>
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-sm font-medium">Mots-clés</Label>
               <Input
                 value={keywords}
                 onChange={(e) => setKeywords(e.target.value)}
-                placeholder="ex. architecture Tunisie, bureaux d’études, industriels…"
+                placeholder="ex. architecture Tunisie, bureaux d'études, industriels…"
+                className="h-11"
               />
             </div>
           </div>
           <Button
             size="lg"
             className={cn(
-              'w-full min-w-[220px] gap-2 rounded-2xl bg-[#016AEB] text-white shadow-glow transition-smooth hover:bg-[#1184f7] hover:shadow-card-hover sm:w-auto',
+              'w-full min-w-[220px] gap-2 rounded-xl bg-primary text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md sm:w-auto',
               searchMutation.isPending && 'opacity-90'
             )}
             disabled={searchMutation.isPending}
@@ -556,11 +602,11 @@ export function ProspectionIA() {
           >
             {searchMutation.isPending ? (
               <>
-                <Loader2 className="animate-spin" size={20} /> Recherche en cours…
+                <Loader2 className="animate-spin" size={18} /> Recherche en cours…
               </>
             ) : (
               <>
-                <Sparkles size={20} /> Trouver prospects IA
+                <Sparkles size={18} /> Rechercher avec l'IA
               </>
             )}
           </Button>

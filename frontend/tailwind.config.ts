@@ -1,11 +1,11 @@
 import type { Config } from 'tailwindcss';
 
-/** KTOptima — palette officielle (SaaS IA premium, clair) */
+/** CIBLIX — palette premium AI SaaS */
 const brand = {
-  DEFAULT: '#016AEB',
+  DEFAULT: '#2563EB',
   soft: '#BED6F6',
-  nav: '#1E72B9',
-  accent: '#0071DD',
+  nav: '#0F172A',
+  accent: '#7C3AED',
 } as const;
 
 export default {
@@ -15,66 +15,62 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        /** Titres / display — Plus Jakarta Sans (chargé comme "serif" historique du projet) */
         serif: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: '#E2E8F0',
+        input: '#E2E8F0',
+        ring: '#2563EB',
+        background: '#F7F9FC',
+        foreground: '#0F172A',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: '#2563EB',
+          foreground: '#FFFFFF',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: '#64748B',
+          foreground: '#FFFFFF',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: '#EF4444',
+          foreground: '#FFFFFF',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: '#F1F5F9',
+          foreground: '#64748B',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: '#7C3AED',
+          foreground: '#FFFFFF',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: '#FFFFFF',
+          foreground: '#0F172A',
         },
         brand,
-        /** Rétrocompat : ancien vert → identité bleue (éviter vert dominant) */
-        leaf: { DEFAULT: brand.DEFAULT, mid: brand.accent, light: brand.soft },
-        sage: { DEFAULT: '#eef4fc', deep: '#e2ebf8' },
-        amber: { DEFAULT: '#c67c2a', light: '#fdf3e7' },
-        coral: { DEFAULT: '#c0392b', light: '#fdecea' },
-        gold: { DEFAULT: '#b5860d', light: '#fef9e7' },
-        purple: { DEFAULT: '#6c3483', light: '#f4ecf7' },
+        sidebar: '#0F172A',
+        'sidebar-text': '#94A3B8',
+        'sidebar-hover': '#1E293B',
+        'sidebar-active': '#2563EB',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(1, 106, 235, 0.04), 0 8px 24px -8px rgba(30, 114, 185, 0.08)',
-        'card-hover': '0 4px 20px -4px rgba(1, 106, 235, 0.12), 0 0 0 1px rgba(190, 214, 246, 0.5)',
-        glow: '0 0 0 1px rgba(190, 214, 246, 0.6), 0 8px 32px -8px rgba(1, 106, 235, 0.25)',
-        'nav-active': 'inset 0 0 0 1px rgba(255,255,255,0.22), 0 0 24px -4px rgba(190, 214, 246, 0.35)',
+        card: '0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px -8px rgba(0, 0, 0, 0.06)',
+        'card-hover': '0 4px 24px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.5)',
+        glow: '0 0 0 1px rgba(37, 99, 235, 0.1), 0 8px 32px -8px rgba(37, 99, 235, 0.15)',
+        'sidebar-active': 'inset 0 0 0 1px rgba(37, 99, 235, 0.3), 0 0 20px -4px rgba(37, 99, 235, 0.2)',
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-        '2xl': '1rem',
-        '3xl': '1.25rem',
+        lg: '20px',
+        md: '16px',
+        sm: '12px',
+        '2xl': '24px',
+        '3xl': '28px',
       },
       backgroundImage: {
-        'kt-mesh':
-          'radial-gradient(ellipse 120% 80% at 100% -20%, rgba(190, 214, 246, 0.45) 0%, transparent 50%), radial-gradient(ellipse 80% 60% at 0% 100%, rgba(1, 106, 235, 0.06) 0%, transparent 45%)',
-        'kt-hero': 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(238, 244, 252, 0.9) 50%, rgba(190, 214, 246, 0.25) 100%)',
+        'ai-glow':
+          'radial-gradient(ellipse 120% 80% at 100% -20%, rgba(124, 58, 237, 0.15) 0%, transparent 50%), radial-gradient(ellipse 80% 60% at 0% 100%, rgba(37, 99, 235, 0.08) 0%, transparent 45%)',
+        'hero-ai': 'linear-gradient(135deg, rgba(247, 249, 252, 0.98) 0%, rgba(241, 245, 249, 0.95) 50%, rgba(237, 242, 247, 0.9) 100%)',
       },
     },
   },
