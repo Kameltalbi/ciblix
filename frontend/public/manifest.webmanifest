@@ -1,7 +1,7 @@
 {
-  "name": "ktOptima CRM",
-  "short_name": "ktOptima",
-  "description": "CRM de vente pour PME et independants",
+  "name": "CIBLIX CRM",
+  "short_name": "CIBLIX",
+  "description": "Copilote commercial IA pour PME et équipes de vente",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,13 +10,13 @@
   "lang": "fr",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/favicon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/favicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
