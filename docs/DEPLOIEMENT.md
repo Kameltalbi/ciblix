@@ -1,137 +1,184 @@
-# Guide de déploiement — Bilan CRM
+# Guide de déploiement — Bilan CRM (VPS, PM2, sans Docker)
 
-Déploiement sur VPS (Ubuntu) via **Git**, build **Vite** du frontend et **PM2**.  
-Les fichiers `docker-compose*.yml` à la racine servent au **développement local** uniquement ; ce guide ne les utilise pas pour la mise en production.
+Production sur **Ubuntu** avec **Node.js 20**, **PM2** pour l’API, **build Vite** du frontend servi par **Nginx** ou **Caddy**.  
+**Docker** n’est pas utilisé en production ; `docker-compose*.yml` sert au **développement local** uniquement.
 
 ## Prérequis
 
-- VPS avec accès SSH
-- Nom de domaine pointé vers le VPS (ex. `crm.tondomaine.com`)
-- **Node.js** LTS (ex. 20.x), **npm**, **PM2** (`npm i -g pm2`)
-- Repo cloné sur le serveur (exemple ci-dessous : `/var/www/crm`)
-- Variables d’environnement (`.env`) pour le backend et le build frontend si besoin
-- OAuth Gmail configuré si tu l’utilises : [GMAIL.md](GMAIL.md)
+- VPS avec SSH, Ubuntu 22.04 / 24.04 recommandé  
+- Nom de domaine (ex. `crm.example.com`) en **A** vers l’IP du VPS  
+- **PostgreSQL** installé sur le VPS (ou base managée), accès URL + utilisateur  
+- Repo cloné sur le serveur (ex. `/var/www/crm`)
 
 ---
 
 ## 1. Première installation sur le VPS
 
-### Connexion et dépôt
+### Option A — Script système (une fois)
+
+Sur le serveur :
 
 ```bash
-ssh tonuser@ton-ip-vps
+bash scripts/setup-vps.sh
+```
+
+Installe Node 20 (NodeSource), PM2, UFW, fail2ban et crée `/var/www/crm`. Reconnectez-vous si besoin après les paquets.
+
+### Option B — À la main
+
+Installez Node 20 LTS, `npm`, puis `sudo npm i -g pm2`. Ouvrez les ports **22**, **80**, **443** dans le pare-feu.
+
+### Cloner le projet et variables d’environnement
+
+```bash
 sudo mkdir -p /var/www/crm
 sudo chown $USER:$USER /var/www/crm
 cd /var/www/crm
-git clone git@github.com:TON-USER/crm.git .
-# ou adapte l’URL / le dossier à ton organisation
-```
+git clone git@github.com:VOTRE_ORG/crm.git .
 
-### Variables d’environnement
-
-```bash
 cp .env.example .env
 nano .env
 ```
 
-Renseigne au minimum ce qui concerne PostgreSQL, JWT, URLs (`FRONTEND_URL`, domaine API), Softfacture, Google OAuth si applicable (voir [GMAIL.md](GMAIL.md)).
+Renseignez au minimum : PostgreSQL (`DATABASE_URL`), `JWT_SECRET`, `FRONTEND_URL`, URLs API si besoin, Softfacture, Google OAuth ([GMAIL.md](GMAIL.md)).
 
-Générer un secret :
+Secret JWT :
 
 ```bash
 openssl rand -base64 32
 ```
 
-### Backend (Node + Prisma)
+Le backend charge `.env` depuis **`backend/.env`** ou **`.env` à la racine du dépôt** (monorepo).
 
-À adapter selon la façon dont tu lances l’API sur le serveur (PM2, systemd, etc.) :
+### Dépendances et build (monorepo)
+
+À la **racine** du clone :
+
+```bash
+npm ci
+```
+
+### Backend (build + Prisma + PM2)
 
 ```bash
 cd /var/www/crm/backend
-npm ci
-npx prisma migrate deploy
-# pm2 start ecosystem.config.cjs   # si tu utilises PM2 pour le backend
-```
-
-### Frontend (build statique + PM2)
-
-```bash
-cd /var/www/crm/frontend
-npm ci
 npm run build
-# pm2 start …   # une première fois, selon ta config (nom du process : souvent « frontend »)
-```
-
-Configure **Caddy** ou **Nginx** devant le front (fichiers servis depuis `frontend/dist`) et le reverse proxy vers l’API ; obtention du certificat TLS selon ton choix (Let’s Encrypt, etc.).
-
----
-
-## 2. DNS
-
-Chez ton registrar, enregistrement **A** :
-
-```text
-crm.tondomaine.com  →  IP-du-VPS
-```
-
-Vérification :
-
-```bash
-dig crm.tondomaine.com
-```
-
----
-
-## 3. Mises à jour (production)
-
-Après un `git push` sur `main`, sur le VPS :
-
-```bash
-cd /var/www/crm && git pull origin main && cd frontend && npm run build && pm2 restart frontend
-```
-
-Si le backend a changé (dépendances, migrations, code), après le même `git pull` à la racine :
-
-```bash
-cd /var/www/crm/backend
-npm ci
 npx prisma migrate deploy
-pm2 restart backend   # adapte le nom du processus PM2
+pm2 start ecosystem.config.cjs
+pm2 save
+sudo env PATH=$PATH pm2 startup systemd -u $USER --hp $HOME
 ```
+
+Le process PM2 s’appelle **`backend`** (voir `backend/ecosystem.config.cjs`). Le `cwd` est `backend/` ; les `node_modules` du workspace sont à installer depuis la **racine** avec `npm ci` (déjà fait ci-dessus).
+
+### Frontend (build statique)
+
+```bash
+cd /var/www/crm
+npm run build -w bilan-crm-frontend
+```
+
+Les fichiers de prod sont dans **`frontend/dist/`**. Configurez le vhost pour servir ce dossier et proxy `/api` vers l’API Node (port défini dans votre `.env`, souvent **4000** — vérifier `PORT` / `backend`).
+
+### Exemple Nginx (indicatif)
+
+```nginx
+server {
+  listen 443 ssl http2;
+  server_name crm.example.com;
+  root /var/www/crm/frontend/dist;
+  index index.html;
+  location / { try_files $uri $uri/ /index.html; }
+  location /api/ {
+    proxy_pass http://127.0.0.1:4000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+Adaptez le port backend et les certificats TLS (Let’s Encrypt, etc.).
 
 ---
 
-## 4. Commandes utiles (PM2)
+## 2. Mises à jour après un `git push`
+
+Sur le VPS, à la racine du dépôt :
+
+```bash
+cd /var/www/crm && npm run deploy
+```
+
+Équivalent :
+
+```bash
+bash scripts/deploy-pm2.sh
+```
+
+Le script exécute : `git pull`, `npm ci`, build backend + `prisma migrate deploy`, build frontend, `pm2 restart backend`.
+
+---
+
+## 3. Commandes utiles (PM2)
 
 ```bash
 pm2 status
-pm2 logs frontend
-pm2 restart frontend
+pm2 logs backend
+pm2 restart backend
 ```
 
 ---
 
-## 5. Sécurité et sauvegardes
+## 4. Déploiement du frontend seul (optionnel)
 
-- Changer le mot de passe admin après la première connexion.
-- Sauvegardes PostgreSQL : `pg_dump` (cron quotidien vers un répertoire dédié, idéalement hors du serveur).
+Si vous copiez `dist/` vers un autre répertoire servi par Nginx :
+
+```bash
+MODE=static DEPLOY_ROOT=/usr/share/nginx/html bash scripts/deploy-frontend.sh
+```
+
+Pour un build local sans copie :
+
+```bash
+MODE=build bash scripts/deploy-frontend.sh
+```
+
+(`MODE=docker` reste possible uniquement si vous utilisez encore Docker en local ou ailleurs.)
 
 ---
 
-## 6. Dépannage
+## 5. Déploiement Docker (non utilisé pour ce guide)
 
-- **Page blanche / ancien bundle** : revérifier `npm run build` dans `frontend/` et `pm2 restart frontend`.
-- **Erreurs API** : logs PM2 du process backend, variables `.env`, migrations Prisma à jour.
-- **SSL** : vérifier DNS, ports 80/443 ouverts, configuration du reverse proxy.
+Pour un environnement basé sur `docker-compose.prod.yml` :
+
+```bash
+npm run deploy:docker
+```
+
+---
+
+## 6. Sécurité et sauvegardes
+
+- Changer le mot de passe admin après la première connexion.  
+- Sauvegardes PostgreSQL : `pg_dump` (cron quotidien, stockage hors serveur si possible).
+
+---
+
+## 7. Dépannage
+
+- **Page blanche / ancien bundle** : `npm run build -w bilan-crm-frontend`, vider cache navigateur, vérifier que `root` Nginx pointe bien vers `frontend/dist`.  
+- **Erreurs API** : `pm2 logs backend`, `.env`, `npx prisma migrate deploy`.  
+- **SSL** : DNS, ports 80/443, configuration du reverse proxy.
 
 ---
 
 ## Développement local (Docker)
 
-Pour lancer **tout l’environnement en local** sans installer Node/Postgres sur ta machine, tu peux utiliser à la racine du repo :
-
 ```bash
 docker compose up -d
 ```
 
-Voir le [README](../README.md) section Quick start. Ce n’est **pas** le flux de déploiement VPS décrit ci-dessus.
+Voir le [README](../README.md). Ce n’est **pas** le flux de production décrit ci-dessus.

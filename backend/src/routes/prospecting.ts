@@ -5,8 +5,11 @@ import { checkProspectLimit } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 import { searchCompaniesWithCache, enrichHitWebsiteCached } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
+import { emptyWebEnrichment } from '../services/prospecting/websiteEnrichment.js';
 import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
-import type { CompanySearchCriteria, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
+import type { CompanySearchCriteria, CompanySearchHit, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
+
+type LeadQualificationLike = Awaited<ReturnType<typeof qualifyCompanyHit>>;
 
 export const prospectingRoutes = Router();
 
@@ -91,7 +94,59 @@ function hitToProspectData(
   };
 }
 
-type LeadQualificationLike = Awaited<ReturnType<typeof qualifyCompanyHit>>;
+function dedupeProviderKey(providerUsed: string, hit: CompanySearchHit): string {
+  const tail = (hit.externalId || hit.companyName || 'unknown').toString().trim();
+  return `${providerUsed}:${tail}`.slice(0, 450);
+}
+
+/** Persistance « brute » : affichage immédiat, score / IA en second temps. */
+function hitToFoundProspectData(
+  hit: CompanySearchHit,
+  criteria: CompanySearchCriteria,
+  rawProviderDedupe: string,
+  enrichment: WebEnrichmentResult
+) {
+  return {
+    companyName: hit.companyName,
+    website: hit.website || null,
+    linkedin: hit.linkedin || null,
+    phone: hit.phone || null,
+    email: hit.email || null,
+    city: hit.city || null,
+    country: hit.country || null,
+    industry: hit.industry || criteria.sector || null,
+    companySize: hit.companySize || criteria.companySize || null,
+    score: 0,
+    status: 'FOUND' as const,
+    lastSearchQuery: JSON.stringify(criteria),
+    rawProvider: rawProviderDedupe,
+    ...enrichmentPersistFields(enrichment),
+  };
+}
+
+function prismaRowToSearchHit(row: {
+  companyName: string;
+  website: string | null;
+  linkedin: string | null;
+  phone: string | null;
+  email: string | null;
+  city: string | null;
+  country: string | null;
+  industry: string | null;
+  companySize: string | null;
+}): CompanySearchHit {
+  return {
+    companyName: row.companyName,
+    website: row.website,
+    linkedin: row.linkedin,
+    phone: row.phone,
+    email: row.email,
+    city: row.city,
+    country: row.country,
+    industry: row.industry,
+    companySize: row.companySize,
+  };
+}
 
 // ─── Dashboard prospection ─────────────────────────────────────
 prospectingRoutes.get('/dashboard', async (req: AuthRequest, res, next) => {
@@ -222,20 +277,43 @@ prospectingRoutes.get('/prospects/:id/timeline', async (req: AuthRequest, res, n
   }
 });
 
-// ─── Recherche + qualification (POST corps JSON, GET mêmes champs en query) ─
+// ─── Recherche brute (POST / GET) : import massif FOUND, pas d’IA bloquante ───
 async function runProspectingSearch(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const criteria = parseSearchCriteria(req);
     const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(req.organizationId!, criteria);
 
+    const importMax = Math.min(
+      120,
+      Math.max(10, Number(process.env.PROSPECTING_IMPORT_MAX) || 80)
+    );
+    const tagBase = fromCache ? `${providerUsed}|search_cache` : providerUsed;
+    const empty = emptyWebEnrichment();
+
     const created: unknown[] = [];
-    for (const hitBase of hits.slice(0, 10)) {
-      const { hit, enrichment } = await enrichHitWebsiteCached(hitBase);
-      const q = await qualifyCompanyHit(hit, criteria, enrichment);
+    const dedupeKeys = new Set<string>();
+
+    for (const hitBase of hits.slice(0, importMax)) {
+      const dedupeKey = dedupeProviderKey(tagBase, hitBase);
+      if (dedupeKeys.has(dedupeKey)) continue;
+      dedupeKeys.add(dedupeKey);
+
+      const existing = await prisma.aiProspect.findFirst({
+        where: {
+          organizationId: req.organizationId!,
+          deletedAt: null,
+          rawProvider: dedupeKey,
+        },
+      });
+      if (existing) {
+        created.push(existing);
+        continue;
+      }
+
       const row = await prisma.aiProspect.create({
         data: {
           organizationId: req.organizationId!,
-          ...hitToProspectData(hit, q, criteria, fromCache ? `${providerUsed}|search_cache` : providerUsed, enrichment),
+          ...hitToFoundProspectData(hitBase, criteria, dedupeKey, empty),
         },
       });
       created.push(row);
@@ -245,6 +323,7 @@ async function runProspectingSearch(req: AuthRequest, res: Response, next: NextF
       providerUsed,
       fromCache,
       count: created.length,
+      rawHits: hits.length,
       prospects: created,
     });
   } catch (e) {
@@ -254,6 +333,69 @@ async function runProspectingSearch(req: AuthRequest, res: Response, next: NextF
 
 prospectingRoutes.post('/search', runProspectingSearch);
 prospectingRoutes.get('/search', runProspectingSearch);
+
+// ─── Qualification IA + enrichissement par lots (prospects status FOUND) ───
+prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => {
+  try {
+    const body = req.body as { limit?: number; prospectIds?: string[] };
+    const limit = Math.min(8, Math.max(1, Number(body?.limit) || 4));
+    const idFilter =
+      Array.isArray(body?.prospectIds) && body.prospectIds.length > 0
+        ? { id: { in: body.prospectIds.map(String).filter(Boolean).slice(0, 120) } }
+        : {};
+
+    const pending = await prisma.aiProspect.findMany({
+      where: {
+        organizationId: req.organizationId!,
+        deletedAt: null,
+        status: 'FOUND',
+        ...idFilter,
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+    });
+
+    const updated: unknown[] = [];
+    for (const row of pending) {
+      try {
+        const criteria = (row.lastSearchQuery ? JSON.parse(row.lastSearchQuery) : {}) as CompanySearchCriteria;
+        const hit = prismaRowToSearchHit(row);
+        const { hit: merged, enrichment } = await enrichHitWebsiteCached(hit);
+        const q = await qualifyCompanyHit(merged, criteria, enrichment);
+        const u = await prisma.aiProspect.update({
+          where: { id: row.id },
+          data: {
+            ...hitToProspectData(merged, q, criteria, row.rawProvider || 'google_places', enrichment),
+            phone: merged.phone,
+            email: merged.email,
+            linkedin: merged.linkedin,
+            website: merged.website,
+          },
+        });
+        updated.push(u);
+      } catch (err) {
+        console.error('[prospecting] qualify-batch', row.id, err);
+      }
+    }
+
+    const remainingInBatch = await prisma.aiProspect.count({
+      where: {
+        organizationId: req.organizationId!,
+        deletedAt: null,
+        status: 'FOUND',
+        ...idFilter,
+      },
+    });
+
+    res.json({
+      qualified: updated.length,
+      prospects: updated,
+      remainingFound: remainingInBatch,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 
 // ─── Re-qualifier un prospect ───────────────────────────────────
 prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, next) => {

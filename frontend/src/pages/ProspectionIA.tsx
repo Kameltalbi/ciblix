@@ -99,6 +99,7 @@ interface SearchResponse {
   prospects: AiProspectRow[];
   providerUsed: string;
   fromCache?: boolean;
+  rawHits?: number;
 }
 
 interface TimelinePayload {
@@ -156,13 +157,23 @@ function cardHeatClass(score: number) {
   return 'border-border/70 hover:border-brand-soft/50 hover:shadow-sm';
 }
 
-function ScoreRing({ score }: { score: number }) {
+function mergeProspectUpdates(prev: AiProspectRow[], updates: AiProspectRow[]): AiProspectRow[] {
+  const byId = new Map(updates.map((u) => [u.id, u]));
+  return prev.map((p) => byId.get(p.id) ?? p);
+}
+
+function ScoreRing({ score, pending }: { score: number; pending?: boolean }) {
   const r = 34;
   const c = 2 * Math.PI * r;
-  const pct = Math.min(100, Math.max(0, score)) / 100;
+  const pct = pending ? 0 : Math.min(100, Math.max(0, score)) / 100;
   const offset = c * (1 - pct);
-  const stroke =
-    score >= 72 ? 'stroke-[#016AEB]' : score >= 48 ? 'stroke-[#0071DD]' : 'stroke-slate-400';
+  const stroke = pending
+    ? 'stroke-muted'
+    : score >= 72
+      ? 'stroke-[#016AEB]'
+      : score >= 48
+        ? 'stroke-[#0071DD]'
+        : 'stroke-slate-400';
   return (
     <div className="relative shrink-0">
       <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-br from-[#BED6F6]/50 to-transparent blur-md" aria-hidden />
@@ -180,11 +191,18 @@ function ScoreRing({ score }: { score: number }) {
           strokeDashoffset={offset}
           transform="rotate(-90 40 40)"
         />
-        <text x="40" y="44" textAnchor="middle" className="fill-[#0071DD] text-sm font-bold">
-          {score}
+        <text
+          x="40"
+          y="44"
+          textAnchor="middle"
+          className={cn('text-sm font-bold', pending ? 'fill-muted-foreground' : 'fill-[#0071DD]')}
+        >
+          {pending ? '…' : score}
         </text>
       </svg>
-      <span className="sr-only">Score IA {score} sur 100</span>
+      <span className="sr-only">
+        {pending ? 'Qualification IA en cours' : `Score IA ${score} sur 100`}
+      </span>
     </div>
   );
 }
@@ -284,6 +302,7 @@ export function ProspectionIA() {
   const [keywords, setKeywords] = useState('');
   const [results, setResults] = useState<AiProspectRow[]>([]);
   const [fromCache, setFromCache] = useState(false);
+  const [qualifyRunning, setQualifyRunning] = useState(false);
   const [filters, setFilters] = useState<ProspectFilters>(defaultFilters);
   const [timeline, setTimeline] = useState<{ open: boolean; id: string | null; name: string }>({
     open: false,
@@ -305,6 +324,33 @@ export function ProspectionIA() {
     staleTime: 45_000,
   });
 
+  const drainQualifyAfterSearch = async (data: SearchResponse) => {
+    const ids = (data.prospects ?? []).filter((p) => p.status === 'FOUND').map((p) => p.id);
+    if (ids.length === 0) return;
+    setQualifyRunning(true);
+    let noProgress = 0;
+    try {
+      for (let i = 0; i < 50; i++) {
+        const { data: qb } = await api.post<{
+          qualified: number;
+          prospects: AiProspectRow[];
+          remainingFound: number;
+        }>('/prospecting/qualify-batch', { prospectIds: ids, limit: 6 });
+        if (qb.prospects?.length) {
+          setResults((prev) => mergeProspectUpdates(prev, qb.prospects));
+        }
+        if (!qb.remainingFound) break;
+        if (!qb.qualified) {
+          noProgress++;
+          if (noProgress >= 3) break;
+        } else noProgress = 0;
+      }
+    } finally {
+      setQualifyRunning(false);
+      void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
+    }
+  };
+
   const searchMutation = useMutation({
     mutationFn: () =>
       api
@@ -320,6 +366,7 @@ export function ProspectionIA() {
       setResults(data.prospects || []);
       setFromCache(Boolean(data.fromCache));
       void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
+      void drainQualifyAfterSearch(data);
     },
     onError: (e: { response?: { data?: { error?: string } }; message?: string }) => {
       window.alert(e?.response?.data?.error || e?.message || 'Erreur lors de la recherche');
@@ -466,8 +513,8 @@ export function ProspectionIA() {
             Recherche prospects
           </CardTitle>
           <p className="text-xs text-muted-foreground font-normal">
-            Les résultats identiques sont mis en cache 7 jours (moins d&apos;appels Google). Les sites sont analysés
-            automatiquement pour enrichir la fiche.
+            Import large immédiat (jusqu&apos;à ~80 fiches), puis scoring IA et enrichissement web par petits lots — même
+            sans site ou email, les entreprises apparaissent. Cache recherche 7 j. (moins d&apos;appels Google).
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -529,6 +576,12 @@ export function ProspectionIA() {
             {fromCache ? (
               <span className="rounded-full border border-[#BED6F6] bg-[#eef4fc] px-3 py-1 text-xs font-medium text-[#1E72B9]">
                 Liste depuis cache (économie API)
+              </span>
+            ) : null}
+            {qualifyRunning ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#016AEB]/30 bg-[#016AEB]/8 px-3 py-1 text-xs font-medium text-[#016AEB]">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                Qualification IA en cours…
               </span>
             ) : null}
           </div>
@@ -692,7 +745,7 @@ export function ProspectionIA() {
                           ))}
                         </div>
                       </div>
-                      <ScoreRing score={p.score} />
+                      <ScoreRing score={p.score} pending={p.status === 'FOUND'} />
                     </div>
 
                     <div className="flex flex-wrap gap-2">

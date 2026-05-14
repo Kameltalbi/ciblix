@@ -11,6 +11,7 @@ export function loadEnvFromFile(): void {
   const here = dirname(fileURLToPath(import.meta.url));
   const candidates = [
     resolve(here, '../../.env'),
+    resolve(here, '../../../.env'),
     resolve(here, '../.env'),
     resolve(process.cwd(), '.env'),
   ];

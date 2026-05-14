@@ -17,10 +17,9 @@ CRM moderne solo avec intégration Softfacture et Gmail, pour la gestion des aff
 - JWT auth
 - Google APIs (Gmail)
 
-**Déploiement (production type VPS)**
-- Git sur le serveur, build Vite (`frontend`), **PM2** (ex. `git pull` → `npm run build` → `pm2 restart`)
-- Reverse proxy (Caddy / Nginx) + TLS selon ta config  
-*(Docker Compose à la racine = surtout pour le dev local.)*
+**Déploiement production (VPS, sans Docker)**  
+**PM2** pour l’API Node, **build Vite** (`frontend/dist`) derrière **Nginx** ou **Caddy**. Script : `bash scripts/deploy-pm2.sh` ou `npm run deploy` à la racine du clone.  
+**Docker** (`docker compose`) : **uniquement pour le développement local**, pas pour la prod décrite dans [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
 
 ## 🚀 Quick start local
 
@@ -45,9 +44,12 @@ docker compose exec backend npx prisma db seed
 # http://localhost:4000/api (backend)
 ```
 
-## Déploiement sur VPS
+## Déploiement sur VPS (PM2)
 
-Voir [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
+1. Première fois : `bash scripts/setup-vps.sh` puis suivre [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).  
+2. Mises à jour : à la racine du clone, `npm run deploy` (équivalent à `bash scripts/deploy-pm2.sh`).
+
+Pour une stack **Docker** en prod (non décrite par défaut dans ce README) : `npm run deploy:docker`.
 
 ## 📚 Documentation
 

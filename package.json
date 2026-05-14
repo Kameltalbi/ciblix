@@ -15,6 +15,7 @@
     "db:migrate": "docker compose exec backend npx prisma migrate dev",
     "db:seed": "docker compose exec backend npx prisma db seed",
     "db:studio": "docker compose exec backend npx prisma studio",
-    "deploy": "./scripts/deploy.sh"
+    "deploy": "bash scripts/deploy-pm2.sh",
+    "deploy:docker": "bash scripts/deploy.sh"
   }
 }

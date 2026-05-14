@@ -10,7 +10,7 @@ function slug(s: string, max = 32) {
     .slice(0, max);
 }
 
-/** Données de démo déterministes pour PME sans clé API fournisseur. */
+/** Données de démo déterministes pour PME sans clé API fournisseur (~36 lignes pour tester l’import massif). */
 export class MockCompanySearchProvider implements CompanySearchPort {
   readonly id = 'mock' as const;
 
@@ -22,26 +22,24 @@ export class MockCompanySearchProvider implements CompanySearchPort {
     const size = criteria.companySize?.trim() || '11-50';
 
     const base = slug(`${kw}-${city}`, 24);
-    const names = [
-      `${sector} ${city} — ${kw}`.slice(0, 72),
-      `Groupe ${kw} ${country}`.slice(0, 72),
-      `${city} ${sector} Solutions`.slice(0, 72),
-      `Atelier ${kw} & Co`.slice(0, 72),
-      `${sector} Pro ${city}`.slice(0, 72),
-      `Hub ${kw} ${country}`.slice(0, 72),
-    ];
+    const hits: CompanySearchHit[] = [];
 
-    return names.map((companyName, i) => ({
-      companyName,
-      website: `https://www.${base || 'demo'}-${i + 1}.example.com`,
-      linkedin: `https://www.linkedin.com/company/${base || 'demo'}-${i + 1}`,
-      phone: `+216 ${70 + i} ${100 + i * 7} ${200 + i}`,
-      email: i % 2 === 0 ? `contact@${base || 'demo'}${i + 1}.example.com` : null,
-      city,
-      country,
-      industry: sector,
-      companySize: size,
-      externalId: `mock:${base}:${i}`,
-    }));
+    for (let i = 0; i < 36; i++) {
+      const companyName = `${sector} ${kw} — ${city} #${i + 1}`.slice(0, 80);
+      hits.push({
+        companyName,
+        website: `https://www.${base || 'demo'}-${i + 1}.example.com`,
+        linkedin: `https://www.linkedin.com/company/${base || 'demo'}-${i + 1}`,
+        phone: `+216 ${70 + (i % 9)} ${100 + i * 3} ${200 + i}`,
+        email: i % 3 === 0 ? `contact@${(base || 'demo').replace(/-/g, '')}${i + 1}.example.com` : null,
+        city,
+        country,
+        industry: sector,
+        companySize: size,
+        externalId: `mock:${base}:${i}`,
+      });
+    }
+
+    return hits;
   }
 }
