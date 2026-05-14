@@ -36,10 +36,11 @@ export async function searchCompaniesWithFallback(criteria: CompanySearchCriteri
 /** Recherche avec cache Prisma (TTL 7 j. par défaut) — clé par organisation + critères. */
 export async function searchCompaniesWithCache(
   organizationId: string,
-  criteria: CompanySearchCriteria
+  criteria: CompanySearchCriteria,
+  options?: { refresh?: boolean }
 ): Promise<{ hits: CompanySearchHit[]; providerUsed: string; fromCache: boolean }> {
   await pruneProspectingCaches().catch(() => {});
-  const cached = await getCachedSearchHits(organizationId, criteria);
+  const cached = options?.refresh ? null : await getCachedSearchHits(organizationId, criteria);
   if (cached) return { ...cached, fromCache: true };
   const fresh = await searchCompaniesWithFallback(criteria);
   await setCachedSearchHits(organizationId, criteria, fresh.providerUsed, fresh.hits).catch(() => {});
