@@ -338,7 +338,7 @@ prospectingRoutes.get('/search', runProspectingSearch);
 prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => {
   try {
     const body = req.body as { limit?: number; prospectIds?: string[] };
-    const limit = Math.min(8, Math.max(1, Number(body?.limit) || 4));
+    const limit = Math.min(30, Math.max(1, Number(body?.limit) || 20));
     const idFilter =
       Array.isArray(body?.prospectIds) && body.prospectIds.length > 0
         ? { id: { in: body.prospectIds.map(String).filter(Boolean).slice(0, 120) } }
