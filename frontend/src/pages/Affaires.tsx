@@ -786,7 +786,9 @@ export function Affaires() {
               })}
             </div>
 
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto relative">
+              {/* Gradient fade indicator for horizontal scroll */}
+              <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background via-background/80 to-transparent pointer-events-none" />
               <table className="w-full text-xs min-w-[800px]">
                 <thead>
                   <tr className="border-b bg-sage">
@@ -941,7 +943,9 @@ export function Affaires() {
 
       {/* Kanban View */}
       {view === 'kanban' && (
-        <div className="overflow-x-auto pb-2">
+        <div className="overflow-x-auto pb-2 relative">
+          {/* Gradient fade indicator for horizontal scroll */}
+          <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-background via-background/80 to-transparent pointer-events-none" />
           <div className="md:hidden mb-3">
             <Card className="border border-slate-200 bg-white/80">
               <CardContent className="p-3">
