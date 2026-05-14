@@ -25,6 +25,36 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
     return parts.length > 0 ? parts.join(' ') : 'entreprise';
   }
 
+  /**
+   * Génère plusieurs variantes de requête pour maximiser les résultats Google Places.
+   * Ex: "avocat Tunis" → ["avocat Tunis", "cabinet avocat Tunis", "bureau avocat Tunis", ...]
+   */
+  private buildQueryVariants(criteria: CompanySearchCriteria): string[] {
+    const base = this.buildQuery(criteria);
+    const sector = criteria.sector?.trim() || criteria.keywords?.trim() || '';
+    const city = criteria.city?.trim() || '';
+    const country = criteria.country?.trim() || '';
+    const location = [city, country].filter(Boolean).join(' ');
+
+    const variants = new Set<string>();
+    variants.add(base);
+
+    if (sector && location) {
+      variants.add(`${sector} ${location}`);
+      variants.add(`cabinet ${sector} ${location}`);
+      variants.add(`bureau ${sector} ${location}`);
+      variants.add(`société ${sector} ${location}`);
+      variants.add(`entreprise ${sector} ${location}`);
+    }
+    if (sector && city) {
+      variants.add(`${sector} à ${city}`);
+      variants.add(`${sector} près de ${city}`);
+    }
+
+    const maxVariants = Math.min(6, Math.max(2, Number(process.env.PROSPECTING_QUERY_VARIANTS) || 5));
+    return Array.from(variants).slice(0, maxVariants);
+  }
+
   private sleep(ms: number): Promise<void> {
     return new Promise((r) => setTimeout(r, ms));
   }
@@ -99,14 +129,18 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
     };
   }
 
-  async searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]> {
-    const query = this.buildQuery(criteria);
-    const maxPages = Math.min(5, Math.max(1, Number(process.env.PROSPECTING_GOOGLE_MAX_PAGES) || 3));
-    const detailsInSearch =
-      process.env.PROSPECTING_PLACES_DETAILS_IN_SEARCH === '1' ||
-      process.env.PROSPECTING_PLACES_DETAILS_IN_SEARCH === 'true';
-
-    const merged: Array<{
+  /** Pagine une requête unique et renvoie tous les résultats bruts. */
+  private async fetchAllPagesForQuery(query: string, maxPages: number): Promise<Array<{
+    name?: string;
+    place_id?: string;
+    formatted_address?: string;
+    geometry?: { location?: { lat?: number; lng?: number } };
+    types?: string[];
+    formatted_phone_number?: string;
+    international_phone_number?: string;
+    website?: string;
+  }>> {
+    const results: Array<{
       name?: string;
       place_id?: string;
       formatted_address?: string;
@@ -127,15 +161,44 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
 
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
         if (page === 0) {
-          console.warn('[GooglePlaces]', data.status, data.error_message || '');
+          console.warn('[GooglePlaces]', data.status, data.error_message || '', '| query:', query);
         }
         break;
       }
 
       const batch = data.results ?? [];
-      merged.push(...batch);
+      results.push(...batch);
       pagetoken = data.next_page_token;
       if (!pagetoken || batch.length === 0) break;
+    }
+
+    return results;
+  }
+
+  async searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]> {
+    const queryVariants = this.buildQueryVariants(criteria);
+    const maxPages = Math.min(5, Math.max(1, Number(process.env.PROSPECTING_GOOGLE_MAX_PAGES) || 3));
+    const detailsInSearch =
+      process.env.PROSPECTING_PLACES_DETAILS_IN_SEARCH === '1' ||
+      process.env.PROSPECTING_PLACES_DETAILS_IN_SEARCH === 'true';
+
+    const merged: Array<{
+      name?: string;
+      place_id?: string;
+      formatted_address?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+      types?: string[];
+      formatted_phone_number?: string;
+      international_phone_number?: string;
+      website?: string;
+    }> = [];
+
+    console.log(`[GooglePlaces] Running ${queryVariants.length} query variants:`, queryVariants);
+
+    for (const query of queryVariants) {
+      const batch = await this.fetchAllPagesForQuery(query, maxPages);
+      console.log(`[GooglePlaces] "${query}" → ${batch.length} résultats bruts`);
+      merged.push(...batch);
     }
 
     const seen = new Set<string>();
@@ -146,6 +209,8 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
       seen.add(id);
       return true;
     });
+
+    console.log(`[GooglePlaces] Total brut: ${merged.length}, dédupliqués: ${unique.length}`);
 
     const hits: CompanySearchHit[] = [];
     for (const r of unique) {
