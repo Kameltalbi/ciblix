@@ -1,5 +1,31 @@
 import type { CompanySearchCriteria, CompanySearchHit, CompanySearchPort } from '../types.js';
 
+/** Coordonnées GPS de villes courantes pour Nearby Search. */
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  tunis:        { lat: 36.8065, lng: 10.1815 },
+  sfax:         { lat: 34.7406, lng: 10.7603 },
+  sousse:       { lat: 35.8288, lng: 10.6405 },
+  kairouan:     { lat: 35.6781, lng: 10.0963 },
+  bizerte:      { lat: 37.2744, lng: 9.8739 },
+  gabes:        { lat: 33.8815, lng: 10.0982 },
+  ariana:       { lat: 36.8625, lng: 10.1956 },
+  gafsa:        { lat: 34.425,  lng: 8.7842 },
+  monastir:     { lat: 35.7643, lng: 10.8113 },
+  'ben arous':  { lat: 36.7533, lng: 10.2281 },
+  manouba:      { lat: 36.8101, lng: 10.0956 },
+  nabeul:       { lat: 36.4561, lng: 10.7376 },
+  medenine:     { lat: 33.3549, lng: 10.5055 },
+  kasserine:    { lat: 35.1672, lng: 8.8365 },
+  alger:        { lat: 36.7538, lng: 3.0588 },
+  casablanca:   { lat: 33.5731, lng: -7.5898 },
+  paris:        { lat: 48.8566, lng: 2.3522 },
+};
+
+function getCityCoords(city: string): { lat: number; lng: number } | null {
+  const key = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  return CITY_COORDS[key] || null;
+}
+
 /**
  * Google Places — API « classique » (recherche texte) avec pagination `next_page_token`.
  * Variables : `GOOGLE_PLACES_API_KEY` | `GOOGLE_MAPS_API_KEY` | `PLACES_API_KEY`
@@ -175,6 +201,82 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
     return results;
   }
 
+  /**
+   * Nearby Search — cherche par coordonnées GPS + rayon + mot-clé.
+   * Renvoie des résultats différents de Text Search.
+   */
+  private async fetchNearbySearch(
+    keyword: string,
+    lat: number,
+    lng: number,
+    radius: number,
+    maxPages: number
+  ): Promise<Array<{
+    name?: string;
+    place_id?: string;
+    formatted_address?: string;
+    vicinity?: string;
+    geometry?: { location?: { lat?: number; lng?: number } };
+    types?: string[];
+    international_phone_number?: string;
+    website?: string;
+  }>> {
+    const results: Array<{
+      name?: string;
+      place_id?: string;
+      formatted_address?: string;
+      vicinity?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+      types?: string[];
+      international_phone_number?: string;
+      website?: string;
+    }> = [];
+
+    let pagetoken: string | undefined;
+    for (let page = 0; page < maxPages; page++) {
+      if (page > 0) await this.sleep(2100);
+
+      const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
+      url.searchParams.set('key', this.apiKey);
+      if (pagetoken) {
+        url.searchParams.set('pagetoken', pagetoken);
+      } else {
+        url.searchParams.set('keyword', keyword);
+        url.searchParams.set('location', `${lat},${lng}`);
+        url.searchParams.set('radius', String(radius));
+        url.searchParams.set('language', 'fr');
+      }
+
+      try {
+        const res = await fetch(url.toString());
+        if (!res.ok) break;
+        const data = (await res.json()) as {
+          results?: Array<{
+            name?: string;
+            place_id?: string;
+            formatted_address?: string;
+            vicinity?: string;
+            geometry?: { location?: { lat?: number; lng?: number } };
+            types?: string[];
+            international_phone_number?: string;
+            website?: string;
+          }>;
+          status?: string;
+          next_page_token?: string;
+        };
+        if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') break;
+        const batch = data.results ?? [];
+        results.push(...batch);
+        pagetoken = data.next_page_token;
+        if (!pagetoken || batch.length === 0) break;
+      } catch {
+        break;
+      }
+    }
+
+    return results;
+  }
+
   async searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]> {
     const queryVariants = this.buildQueryVariants(criteria);
     const maxPages = Math.min(5, Math.max(1, Number(process.env.PROSPECTING_GOOGLE_MAX_PAGES) || 3));
@@ -182,23 +284,40 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
       process.env.PROSPECTING_PLACES_DETAILS_IN_SEARCH === '1' ||
       process.env.PROSPECTING_PLACES_DETAILS_IN_SEARCH === 'true';
 
-    const merged: Array<{
+    type PlaceResult = {
       name?: string;
       place_id?: string;
       formatted_address?: string;
+      vicinity?: string;
       geometry?: { location?: { lat?: number; lng?: number } };
       types?: string[];
       formatted_phone_number?: string;
       international_phone_number?: string;
       website?: string;
-    }> = [];
+    };
 
-    console.log(`[GooglePlaces] Running ${queryVariants.length} query variants:`, queryVariants);
+    const merged: PlaceResult[] = [];
 
+    // 1) Text Search avec variantes de requête
+    console.log(`[GooglePlaces] Running ${queryVariants.length} text search variants:`, queryVariants);
     for (const query of queryVariants) {
       const batch = await this.fetchAllPagesForQuery(query, maxPages);
-      console.log(`[GooglePlaces] "${query}" → ${batch.length} résultats bruts`);
+      console.log(`[GooglePlaces] TextSearch "${query}" → ${batch.length} résultats`);
       merged.push(...batch);
+    }
+
+    // 2) Nearby Search si on a des coordonnées pour la ville
+    const city = criteria.city?.trim() || '';
+    const coords = city ? getCityCoords(city) : null;
+    const keyword = criteria.sector?.trim() || criteria.keywords?.trim() || '';
+    if (coords && keyword) {
+      const radii = [5000, 15000, 30000];
+      console.log(`[GooglePlaces] Running Nearby Search for "${keyword}" near ${city} (${radii.length} radii)`);
+      for (const radius of radii) {
+        const batch = await this.fetchNearbySearch(keyword, coords.lat, coords.lng, radius, maxPages);
+        console.log(`[GooglePlaces] Nearby r=${radius}m → ${batch.length} résultats`);
+        merged.push(...batch);
+      }
     }
 
     const seen = new Set<string>();
@@ -226,7 +345,7 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
         phone = phone || extra.phone || null;
       }
 
-      const addr = r.formatted_address || '';
+      const addr = r.formatted_address || (r as PlaceResult).vicinity || '';
       const parts = addr.split(',').map((s) => s.trim());
       const cityGuess = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || null;
       const countryGuess = parts.length >= 1 ? parts[parts.length - 1] : null;
