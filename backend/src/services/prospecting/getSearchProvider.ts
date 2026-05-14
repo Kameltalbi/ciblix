@@ -2,12 +2,14 @@ import type { CompanySearchPort, ProspectingSearchProviderId } from './types.js'
 import { MockCompanySearchProvider } from './providers/MockCompanySearchProvider.js';
 import { ExternalSearchStub } from './providers/ExternalSearchStub.js';
 import { GooglePlacesTextSearchProvider } from './providers/GooglePlacesTextSearchProvider.js';
+import { GooglePlacesNewProvider } from './providers/GooglePlacesNewProvider.js';
 import { OutscraperProvider } from './providers/OutscraperProvider.js';
 
 /**
  * Fournisseur de recherche :
  * - `PROSPECTING_SEARCH_PROVIDER` : `google_places` (défaut), `mock`, `apollo`, `hunter`, `clearbit`
- * - Google Places : clé dans `GOOGLE_PLACES_API_KEY` ou `GOOGLE_MAPS_API_KEY` (paramètre `key=` côté Google)
+ * - Google Places (New) prioritaire si clé présente, sinon legacy
+ * - Google Places : clé dans `GOOGLE_PLACES_API_KEY` ou `GOOGLE_MAPS_API_KEY`
  * - Apollo / Hunter : stubs prêts pour branchement ultérieur
  */
 export function resolveProspectingSearchProvider(): CompanySearchPort {
@@ -29,7 +31,7 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
         return new OutscraperProvider(outscraperKey);
       }
       console.warn('[Prospecting] outscraper sans OUTSCRAPER_API_KEY — repli Google Places.');
-      if (placesKey) return new GooglePlacesTextSearchProvider(placesKey);
+      if (placesKey) return new GooglePlacesNewProvider(placesKey);
       return new MockCompanySearchProvider();
     case 'apollo':
       return new ExternalSearchStub('apollo');
@@ -39,7 +41,8 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
       return new ExternalSearchStub('clearbit');
     case 'google_places':
       if (placesKey) {
-        return new GooglePlacesTextSearchProvider(placesKey);
+        // Priorité à Google Places API (New)
+        return new GooglePlacesNewProvider(placesKey);
       }
       console.warn('[Prospecting] google_places sans GOOGLE_PLACES_API_KEY — repli mock.');
       return new MockCompanySearchProvider();
