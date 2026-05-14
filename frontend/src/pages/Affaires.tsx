@@ -788,7 +788,7 @@ export function Affaires() {
 
             <div className="hidden md:block overflow-x-auto relative rounded-lg">
               {/* Gradient fade indicator for horizontal scroll */}
-              <div className="absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-background via-background/90 to-transparent pointer-events-none shadow-[inset_-10px_0_10px_-10px_rgba(0,0,0,0.1)]" />
+              <div className="absolute top-0 right-0 bottom-0 w-24 bg-gradient-to-l from-background via-background/50 to-transparent pointer-events-none shadow-[inset_-20px_0_20px_rgba(0,0,0,0.15)] z-10 border-l border-border/30" />
               <table className="w-full text-xs min-w-[800px]">
                 <thead>
                   <tr className="border-b bg-sage">
@@ -945,7 +945,7 @@ export function Affaires() {
       {view === 'kanban' && (
         <div className="overflow-x-auto pb-2 relative rounded-lg">
           {/* Gradient fade indicator for horizontal scroll */}
-          <div className="absolute top-0 right-0 bottom-0 w-16 bg-gradient-to-l from-background via-background/90 to-transparent pointer-events-none shadow-[inset_-10px_0_10px_-10px_rgba(0,0,0,0.1)]" />
+          <div className="absolute top-0 right-0 bottom-0 w-24 bg-gradient-to-l from-background via-background/50 to-transparent pointer-events-none shadow-[inset_-20px_0_20px_rgba(0,0,0,0.15)] z-10 border-l border-border/30" />
           <div className="md:hidden mb-3">
             <Card className="border border-slate-200 bg-white/80">
               <CardContent className="p-3">
