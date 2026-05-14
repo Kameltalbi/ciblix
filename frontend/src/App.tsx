@@ -50,6 +50,9 @@ const AIAssistant = lazy(() =>
 const ProspectionIA = lazy(() =>
   import('./pages/ProspectionIA').then((m) => ({ default: m.ProspectionIA }))
 );
+const AllProspects = lazy(() =>
+  import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
+);
 const Objectifs = lazy(() => import('./pages/Objectifs').then((m) => ({ default: m.Objectifs })));
 const SupportTickets = lazy(() =>
   import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
@@ -136,6 +139,7 @@ export default function App() {
                         <Route path="/activites" element={<Activites />} />
                         <Route path="/email-templates" element={<EmailTemplates />} />
                         <Route path="/prospection-ia" element={<ProspectionIA />} />
+                        <Route path="/all-prospects" element={<AllProspects />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />
                         <Route path="/objectifs" element={<Objectifs />} />
                         <Route path="/support" element={<SupportTickets />} />

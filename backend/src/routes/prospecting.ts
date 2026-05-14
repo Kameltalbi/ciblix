@@ -21,6 +21,75 @@ prospectingRoutes.get('/ping', (_req, res) => {
 prospectingRoutes.use(auth);
 prospectingRoutes.use(requirePaymentApproved);
 
+/**
+ * GET /api/prospecting/all
+ * Liste tous les prospects IA générés pour l'organisation.
+ */
+prospectingRoutes.get('/all', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const prospects = await prisma.aiProspect.findMany({
+      where: {
+        organizationId: req.organizationId!,
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    res.json({ prospects });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /api/prospecting/:id
+ * Met à jour un prospect (status, notes, etc.).
+ */
+prospectingRoutes.patch('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const idStr = Array.isArray(id) ? id[0] : id;
+    const updateData: Record<string, unknown> = req.body;
+    delete updateData.id;
+    delete updateData.organizationId;
+    delete updateData.createdAt;
+
+    const prospect = await prisma.aiProspect.update({
+      where: {
+        id: idStr,
+        organizationId: req.organizationId!,
+      },
+      data: updateData,
+    });
+    res.json({ prospect });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * DELETE /api/prospecting/:id
+ * Supprime (soft delete) un prospect.
+ */
+prospectingRoutes.delete('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const idStr = Array.isArray(id) ? id[0] : id;
+    await prisma.aiProspect.update({
+      where: {
+        id: idStr,
+        organizationId: req.organizationId!,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 const searchSchema = z.object({
   sector: z.string().optional(),
   country: z.string().optional(),

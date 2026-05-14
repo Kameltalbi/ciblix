@@ -503,6 +503,12 @@
       }
     }
   },
+  "prospecting": {
+    "allProspects": {
+      "title": "Tous les prospects",
+      "subtitle": "prospects générés par l'IA"
+    }
+  },
   "landing": {
     "badge": "Copilote commercial IA pour PME et équipes de vente",
     "heroTitle1": "Prospectez plus intelligemment",
