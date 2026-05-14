@@ -191,10 +191,15 @@ authRoutes.post('/login', async (req, res, next) => {
       data: { failedLoginAttempts: 0, lockedUntil: null },
     });
 
-    const { accessToken, refreshToken } = await createSessionTokens(user.id);
+    const [{ accessToken, refreshToken }, organization] = await Promise.all([
+      createSessionTokens(user.id),
+      prisma.organization.findUnique({
+        where: { id: user.organizationId },
+        select: { paymentStatus: true },
+      }),
+    ]);
 
-    // Log audit
-    await logAudit({
+    void logAudit({
       organizationId: user.organizationId,
       userId: user.id,
       action: AuditAction.LOGIN,
@@ -202,11 +207,6 @@ authRoutes.post('/login', async (req, res, next) => {
       entityId: user.id,
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
-    });
-
-    const organization = await prisma.organization.findUnique({
-      where: { id: user.organizationId },
-      select: { paymentStatus: true },
     });
 
     res.json({

@@ -43,7 +43,13 @@ export function Register() {
         refreshToken: data.refreshToken,
         paymentStatus: ps,
       });
-      navigate('/dashboard');
+      if (data.user.role === 'SUPERADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (ps !== 'APPROVED' && ps !== null) {
+        navigate('/payment-pending', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string } } };
       setError(e.response?.data?.error || "Erreur lors de l'inscription");

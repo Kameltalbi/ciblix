@@ -46,7 +46,14 @@ export function GoogleAuthCallback() {
           navigate('/login?error=google_profile_failed', { replace: true });
           return;
         }
-        navigate(u.role === 'SUPERADMIN' ? '/admin' : '/dashboard', { replace: true });
+        const ps = useAuth.getState().paymentStatus;
+        if (u.role === 'SUPERADMIN') {
+          navigate('/admin', { replace: true });
+        } else if (ps !== 'APPROVED' && ps !== null) {
+          navigate('/payment-pending', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       } catch {
         if (!cancelled) navigate('/login?error=google_profile_failed', { replace: true });
       }

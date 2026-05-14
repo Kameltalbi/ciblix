@@ -49,15 +49,14 @@ export function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      // Wait for user data to be loaded
-      setTimeout(() => {
-        const currentUser = useAuth.getState().user;
-        if (currentUser?.role === 'SUPERADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/ai-assistant');
-        }
-      }, 100);
+      const { user: currentUser, paymentStatus: ps } = useAuth.getState();
+      if (currentUser?.role === 'SUPERADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (ps !== 'APPROVED' && ps !== null) {
+        navigate('/payment-pending', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: unknown) {
       const ax = err as {
         response?: { data?: { error?: string }; status?: number };

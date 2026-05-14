@@ -1,13 +1,27 @@
+import { useEffect } from 'react';
 import { Clock, RefreshCw, Home } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
 
 export function PaymentPending() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  
+  const user = useAuth((s) => s.user);
+  const paymentStatus = useAuth((s) => s.paymentStatus);
+
+  useEffect(() => {
+    if (user?.role === 'SUPERADMIN') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+    if (paymentStatus === 'APPROVED' || paymentStatus === null) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user?.role, paymentStatus, navigate]);
+
   const handleRefresh = () => {
     window.location.reload();
   };

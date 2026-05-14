@@ -120,7 +120,7 @@ export default function App() {
                   <Layout>
                     <Suspense fallback={<PageFallback />}>
                       <Routes>
-                        <Route path="/" element={<Navigate to="/ai-assistant" replace />} />
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/affaires" element={<Affaires />} />
                         <Route path="/affaires/:id" element={<AffaireDetail />} />
@@ -139,7 +139,7 @@ export default function App() {
                         <Route path="/ai-assistant" element={<AIAssistant />} />
                         <Route path="/objectifs" element={<Objectifs />} />
                         <Route path="/support" element={<SupportTickets />} />
-                        <Route path="*" element={<Navigate to="/ai-assistant" replace />} />
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
                       </Routes>
                     </Suspense>
                   </Layout>
