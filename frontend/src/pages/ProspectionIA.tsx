@@ -614,28 +614,28 @@ export function ProspectionIA() {
       </Card>
 
       {results.length > 0 && (
-        <section className="space-y-4">
+        <section className="space-y-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#0071DD]">
-              <Filter size={16} />
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
+              <Filter size={18} />
               Résultats ({filtered.length}/{results.length})
             </h2>
             {fromCache ? (
-              <span className="rounded-full border border-[#BED6F6] bg-[#eef4fc] px-3 py-1 text-xs font-medium text-[#1E72B9]">
-                Liste depuis cache (économie API)
+              <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                Cache API (économie)
               </span>
             ) : null}
             {qualifyRunning ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#016AEB]/30 bg-[#016AEB]/8 px-3 py-1 text-xs font-medium text-[#016AEB]">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                Qualification IA en cours…
+                Qualification IA…
               </span>
             ) : null}
           </div>
 
-          <Card className="border-dashed border-brand-soft/60 bg-gradient-to-br from-[#f7faff] to-white shadow-sm">
-            <CardContent className="space-y-3 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#0071DD]">Filtres avancés (session courante)</p>
+          <Card className="border-border bg-card shadow-card">
+            <CardContent className="space-y-4 p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filtres avancés</p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -692,21 +692,23 @@ export function ProspectionIA() {
                   Présence digitale faible
                 </Button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
-                <div className="space-y-1">
-                  <Label className="text-xs">Filtrer secteur (libre)</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Filtrer secteur</Label>
                   <Input
                     placeholder="ex. BTP"
                     value={filters.sector}
                     onChange={(e) => setFilters((f) => ({ ...f, sector: e.target.value }))}
+                    className="h-10"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Filtrer ville</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Filtrer ville</Label>
                   <Input
                     placeholder="ex. Tunis"
                     value={filters.city}
                     onChange={(e) => setFilters((f) => ({ ...f, city: e.target.value }))}
+                    className="h-10"
                   />
                 </div>
               </div>
@@ -727,28 +729,28 @@ export function ProspectionIA() {
                 <Card
                   key={p.id}
                   className={cn(
-                    'group/card border-2 bg-white/95 backdrop-blur-sm transition-smooth hover:-translate-y-0.5',
-                    cardHeatClass(p.score),
+                    'group/card border-border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5',
+                    p.score >= 72 && 'border-primary/30',
                     ignored && 'pointer-events-none opacity-50'
                   )}
                 >
-                  <CardContent className="p-5 space-y-4">
+                  <CardContent className="p-6 space-y-5">
                     <div className="flex gap-4">
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-muted/40 shadow-inner">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border bg-muted/50">
                         {p.faviconUrl ? (
-                          <img src={p.faviconUrl} alt="" className="h-full w-full object-contain p-1.5" loading="lazy" />
+                          <img src={p.faviconUrl} alt="" className="h-full w-full object-contain p-2" loading="lazy" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                            <Building2 size={26} />
+                            <Building2 size={24} strokeWidth={1.5} />
                           </div>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-semibold text-lg leading-tight">{p.companyName}</p>
+                            <p className="font-semibold text-base leading-tight">{p.companyName}</p>
                             {p.websiteTitle ? (
-                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.websiteTitle}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{p.websiteTitle}</p>
                             ) : null}
                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                               <Building2 size={12} />
@@ -758,35 +760,35 @@ export function ProspectionIA() {
                           <span
                             className={cn(
                               'shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                              pot.cls
+                              p.potentialLevel === 'TRES_FORT' ? 'border-primary/20 bg-primary/5 text-primary' : pot.cls
                             )}
                           >
-                            {pot.emoji} {pot.text}
+                            {p.potentialLevel === 'TRES_FORT' ? <Flame size={12} className="text-primary" /> : pot.emoji} {p.potentialLevel === 'TRES_FORT' ? 'Hot' : pot.text}
                           </span>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {p.digitalPresenceLevel ? (
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                               Digital {p.digitalPresenceLevel}
                             </span>
                           ) : null}
                           {p.seoScore != null ? (
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                            <span className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                               SEO {p.seoScore}/100
                             </span>
                           ) : null}
                           {p.hasSsl ? (
-                            <span className="rounded-md border border-[#BED6F6]/60 bg-[#016AEB]/8 px-2 py-0.5 text-[10px] font-semibold text-[#1E72B9]">
+                            <span className="rounded-lg border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary">
                               HTTPS
                             </span>
                           ) : null}
                           {p.hasResponsiveWebsite ? (
-                            <span className="rounded-md border border-brand-soft/50 bg-[#0071DD]/8 px-2 py-0.5 text-[10px] font-semibold text-[#0071DD]">
+                            <span className="rounded-lg border border-accent/20 bg-accent/5 px-2 py-0.5 text-[10px] font-semibold text-accent">
                               Mobile
                             </span>
                           ) : null}
                           {techs.map((t) => (
-                            <span key={t} className="rounded-md border border-border/60 px-2 py-0.5 text-[10px] text-foreground/80">
+                            <span key={t} className="rounded-lg border border-border/60 bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
                               {t}
                             </span>
                           ))}
@@ -797,42 +799,42 @@ export function ProspectionIA() {
 
                     <div className="flex flex-wrap gap-2">
                       {tel ? (
-                        <Button size="sm" variant="outline" className="gap-1 rounded-full" asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
                           <a href={`tel:${tel}`}>
                             <Phone size={14} /> Appeler
                           </a>
                         </Button>
                       ) : null}
                       {p.website ? (
-                        <Button size="sm" variant="outline" className="gap-1 rounded-full" asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
                           <a href={p.website} target="_blank" rel="noreferrer">
                             <Globe size={14} /> Site web
                           </a>
                         </Button>
                       ) : null}
                       {p.linkedin ? (
-                        <Button size="sm" variant="outline" className="gap-1 rounded-full" asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
                           <a href={p.linkedin} target="_blank" rel="noreferrer">
                             <ExternalLink size={14} /> LinkedIn
                           </a>
                         </Button>
                       ) : null}
                       {p.facebookUrl ? (
-                        <Button size="sm" variant="ghost" className="rounded-full px-2 text-xs" asChild>
+                        <Button size="sm" variant="ghost" className="rounded-lg px-2 text-xs" asChild>
                           <a href={p.facebookUrl} target="_blank" rel="noreferrer">
                             FB
                           </a>
                         </Button>
                       ) : null}
                       {p.instagramUrl ? (
-                        <Button size="sm" variant="ghost" className="rounded-full px-2 text-xs" asChild>
+                        <Button size="sm" variant="ghost" className="rounded-lg px-2 text-xs" asChild>
                           <a href={p.instagramUrl} target="_blank" rel="noreferrer">
                             IG
                           </a>
                         </Button>
                       ) : null}
                       {mainEmail ? (
-                        <Button size="sm" variant="secondary" className="gap-1 rounded-full text-xs font-normal" asChild>
+                        <Button size="sm" variant="secondary" className="gap-1.5 rounded-lg text-xs font-normal" asChild>
                           <a href={`mailto:${mainEmail}`}>
                             <Mail size={14} /> {mainEmail}
                           </a>
@@ -841,20 +843,20 @@ export function ProspectionIA() {
                     </div>
 
                     {p.aiSummary ? (
-                      <p className="border-l-4 border-[#016AEB]/70 py-0.5 pl-3 text-sm leading-relaxed text-foreground">
+                      <p className="border-l-4 border-primary/50 py-0.5 pl-3 text-sm leading-relaxed text-foreground bg-muted/30 rounded-r-lg">
                         {p.aiSummary}
                       </p>
                     ) : null}
 
                     {p.probableBusinessProblem ? (
-                      <div className="rounded-lg bg-amber-50/80 border border-amber-100 px-3 py-2 text-xs">
-                        <span className="font-semibold text-amber-950">Problème probable : </span>
+                      <div className="rounded-lg bg-amber-50/80 border border-amber-200 px-3 py-2 text-xs">
+                        <span className="font-semibold text-amber-900">Problème probable : </span>
                         {p.probableBusinessProblem}
                       </div>
                     ) : null}
                     {p.suggestedOffer ? (
-                      <div className="rounded-xl border border-brand-soft/50 bg-gradient-to-r from-[#eef4fc] to-white px-3 py-2 text-xs">
-                        <span className="font-semibold text-[#0071DD]">Offre adaptée : </span>
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs">
+                        <span className="font-semibold text-primary">Offre adaptée : </span>
                         {p.suggestedOffer}
                       </div>
                     ) : null}
@@ -880,7 +882,7 @@ export function ProspectionIA() {
                         size="sm"
                         disabled={ignored || inPipe || addPipeline.isPending}
                         onClick={() => addPipeline.mutate(p.id)}
-                        className="gap-1 rounded-full"
+                        className="gap-1.5 rounded-lg"
                       >
                         <KanbanSquare size={14} />
                         {inPipe ? t('prospectionIA.inOpportunitiesLabel') : t('prospectionIA.addToOpportunities')}
@@ -889,7 +891,7 @@ export function ProspectionIA() {
                         size="sm"
                         variant="outline"
                         disabled={ignored}
-                        className="rounded-full gap-1"
+                        className="rounded-lg gap-1.5"
                         onClick={() => messageMutation.mutate({ id: p.id, messageType: 'FIRST_CONTACT', tone: 'commercial' })}
                       >
                         <Mail size={14} /> Email IA
@@ -897,7 +899,7 @@ export function ProspectionIA() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-full"
+                        className="rounded-lg"
                         disabled={ignored}
                         onClick={() => messageMutation.mutate({ id: p.id, messageType: 'LINKEDIN', tone: 'doux' })}
                       >
@@ -906,7 +908,7 @@ export function ProspectionIA() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-full gap-1"
+                        className="rounded-lg gap-1.5"
                         disabled={ignored}
                         onClick={() => messageMutation.mutate({ id: p.id, messageType: 'WHATSAPP', tone: 'commercial' })}
                       >
@@ -915,7 +917,7 @@ export function ProspectionIA() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-full gap-1"
+                        className="rounded-lg gap-1.5"
                         disabled={ignored}
                         onClick={() => scheduleMutation.mutate({ id: p.id, dayOffset: 7 })}
                       >
@@ -924,7 +926,7 @@ export function ProspectionIA() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-full gap-1"
+                        className="rounded-lg gap-1.5"
                         disabled={ignored}
                         onClick={() => setTimeline({ open: true, id: p.id, name: p.companyName })}
                       >
@@ -933,7 +935,7 @@ export function ProspectionIA() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-muted-foreground rounded-full"
+                        className="text-muted-foreground rounded-lg"
                         disabled={ignored}
                         onClick={() => ignoreMutation.mutate(p.id)}
                       >
