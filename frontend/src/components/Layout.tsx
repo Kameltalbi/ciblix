@@ -13,18 +13,16 @@ import {
   Calendar as CalendarIcon,
   Receipt,
   Mail,
-  Sparkles,
   Target,
   Globe,
   MessageSquare,
   Radio,
-  ChevronDown,
-  LayoutGrid,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useOrganizationLogoSrc } from '@/hooks/useOrganizationLogoSrc';
 import type { Organization } from '@/types';
@@ -33,39 +31,20 @@ import { useTranslation } from 'react-i18next';
 import { OnboardingChatbot } from './OnboardingChatbot';
 import type { LucideIcon } from 'lucide-react';
 
-type NavChild = { to: string; labelKey: string; icon: LucideIcon; page: string; requiresEnterprise?: boolean };
-type NavGroup = { type: 'group'; id: string; labelKey: string; icon: LucideIcon; children: NavChild[] };
-type NavLinkItem = { type: 'link'; to: string; labelKey: string; icon: LucideIcon; page: string };
-type NavItem = NavLinkItem | NavGroup;
+type NavItem = { to: string; labelKey: string; icon: LucideIcon; page: string; requiresEnterprise?: boolean; section?: string };
 
 const NAV_STRUCTURE: NavItem[] = [
-  { type: 'link', to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard' },
-  { type: 'link', to: '/prospection-ia', labelKey: 'nav.prospection', icon: Radio, page: 'prospection-ia' },
-  { type: 'link', to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires' },
-  {
-    type: 'group',
-    id: 'contacts',
-    labelKey: 'nav.sectionContacts',
-    icon: Users,
-    children: [
-      { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients' },
-      { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads' },
-    ],
-  },
-  {
-    type: 'group',
-    id: 'tools',
-    labelKey: 'nav.sectionTools',
-    icon: LayoutGrid,
-    children: [
-      { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar' },
-      { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites' },
-      { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates' },
-      { to: '/objectifs', labelKey: 'nav.objectives', icon: Target, page: 'objectifs' },
-      { to: '/expenses', labelKey: 'nav.expenses', icon: Receipt, page: 'expenses', requiresEnterprise: true },
-      { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support' },
-    ],
-  },
+  { to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard', section: 'MAIN' },
+  { to: '/prospection-ia', labelKey: 'nav.prospection', icon: Radio, page: 'prospection-ia', section: 'MAIN' },
+  { to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires', section: 'MAIN' },
+  { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients', section: 'MAIN' },
+  { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'MAIN' },
+  { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar', section: 'PRODUCTIVITY' },
+  { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites', section: 'PRODUCTIVITY' },
+  { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates', section: 'PRODUCTIVITY' },
+  { to: '/objectifs', labelKey: 'nav.objectives', icon: Target, page: 'objectifs', section: 'PERFORMANCE' },
+  { to: '/expenses', labelKey: 'nav.expenses', icon: Receipt, page: 'expenses', requiresEnterprise: true, section: 'PERFORMANCE' },
+  { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
 const TOOLS_PATH_PREFIXES = [
@@ -85,9 +64,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { i18n, t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [navGroupsOpen, setNavGroupsOpen] = useState<Record<string, boolean>>({ contacts: false, tools: false });
-  const prevInContactsSection = useRef(false);
-  const prevInToolsSection = useRef(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const isRTL = i18n.language === 'ar';
@@ -194,38 +170,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const expensesAccessible = currentPlan === 'ENTERPRISE';
 
   const filteredNav = useMemo(() => {
-    const out: NavItem[] = [];
-    for (const item of NAV_STRUCTURE) {
-      if (item.type === 'link') {
-        if (canViewPage(item.page)) out.push(item);
-        continue;
-      }
-      const children = item.children.filter(
-        (ch) => (!ch.requiresEnterprise || expensesAccessible) && canViewPage(ch.page),
-      );
-      if (children.length > 0) out.push({ ...item, children });
-    }
-    return out;
+    return NAV_STRUCTURE.filter(
+      (item) => (!item.requiresEnterprise || expensesAccessible) && canViewPage(item.page),
+    );
   }, [canViewPage, expensesAccessible]);
 
   const showAssistantFab = canViewPage('ai-assistant');
-
-  useEffect(() => {
-    const p = location.pathname;
-    const inContacts = p.startsWith('/clients') || p.startsWith('/leads');
-    const inTools = TOOLS_PATH_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
-
-    setNavGroupsOpen((prev) => {
-      const next = { ...prev };
-      if (inContacts && !prevInContactsSection.current) next.contacts = true;
-      if (!inContacts) next.contacts = false;
-      if (inTools && !prevInToolsSection.current) next.tools = true;
-      if (!inTools) next.tools = false;
-      return next;
-    });
-    prevInContactsSection.current = inContacts;
-    prevInToolsSection.current = inTools;
-  }, [location.pathname]);
 
   return (
     <div
@@ -302,172 +252,103 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Sidebar - dark navy, minimalist, premium */}
+        {/* Sidebar - dark navy, minimalist, premium, flat hierarchy */}
         <aside
           className={cn(
             'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-border bg-sidebar text-sidebar-text shadow-lg transition-[width,transform] duration-300 ease-out',
             sidebarOpen
-              ? 'w-64 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
-              : 'w-64 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-64 lg:flex-shrink-0 lg:translate-x-0'
+              ? 'w-56 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
+              : 'w-56 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-56 lg:flex-shrink-0 lg:translate-x-0'
           )}
         >
           <div className="flex h-14 items-center px-4 border-b border-sidebar-hover">
             <span className="font-bold text-lg text-white">CIBLIX</span>
           </div>
-          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-            {filteredNav.map((entry) => {
-              if (entry.type === 'link') {
-                const { to, labelKey, icon: Icon, page } = entry;
-                const isExpenses = page === 'expenses';
-                const isDisabled = isExpenses && !expensesAccessible;
-
-                return (
-                  <NavLink
-                    key={to}
-                    to={isDisabled ? '#' : to}
-                    end={to === '/'}
-                    onClick={(e) => {
-                      if (isDisabled) {
-                        e.preventDefault();
-                        return;
-                      }
-                      closeSidebarOnMobile();
-                    }}
-                    className={({ isActive }) =>
-                      cn(
-                        'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                        isDisabled
-                          ? 'cursor-not-allowed opacity-40'
-                          : isActive
-                            ? 'bg-sidebar-active text-white shadow-sidebar-active'
-                            : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
-                      )
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <Icon
-                          size={18}
-                          className={cn(
-                            'shrink-0 transition-transform duration-200',
-                            isDisabled && 'opacity-50',
-                          )}
-                          strokeWidth={isActive ? 2.25 : 2}
-                        />
-                        <span className="flex-1">{sidebarNavText(page, labelKey)}</span>
-                        {isDisabled && (
-                          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                            Pro
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </NavLink>
-                );
-              }
-
-              const open = navGroupsOpen[entry.id] ?? false;
-              const GroupIcon = entry.icon;
-              const anyChildActive = entry.children.some(
-                (c) => location.pathname === c.to || location.pathname.startsWith(`${c.to}/`),
-              );
+          <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-5">
+            {['MAIN', 'PRODUCTIVITY', 'PERFORMANCE', 'SUPPORT'].map((section) => {
+              const sectionItems = filteredNav.filter((item) => item.section === section);
+              if (sectionItems.length === 0) return null;
 
               return (
-                <div key={entry.id} className="flex flex-col gap-0.5">
-                  <button
-                    type="button"
-                    aria-expanded={open}
-                    onClick={() => setNavGroupsOpen((s) => ({ ...s, [entry.id]: !open }))}
-                    className={cn(
-                      'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start text-sm font-medium transition-all duration-200',
-                      anyChildActive && !open
-                        ? 'bg-sidebar-hover text-white'
-                        : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
-                    )}
-                  >
-                    <GroupIcon size={18} className="shrink-0" strokeWidth={2} />
-                    <span className="flex-1">{t(entry.labelKey)}</span>
-                    <ChevronDown
-                      size={16}
-                      className={cn(
-                        'shrink-0 text-sidebar-text transition-transform duration-200',
-                        open && 'rotate-180',
-                      )}
-                      aria-hidden
-                    />
-                  </button>
-                  {open ? (
-                    <div className="ml-3 flex flex-col gap-0.5 border-l border-sidebar-hover pl-3">
-                      {entry.children.map((child) => {
-                        const isExpenses = child.page === 'expenses';
-                        const isDisabled = isExpenses && !expensesAccessible;
-                        const ChildIcon = child.icon;
+                <div key={section} className="flex flex-col gap-2">
+                  <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-text/60">
+                    {section}
+                  </p>
+                  {sectionItems.map((item) => {
+                    const { to, labelKey, icon: Icon, page } = item;
+                    const isExpenses = page === 'expenses';
+                    const isDisabled = isExpenses && !expensesAccessible;
 
-                        return (
-                          <NavLink
-                            key={child.to}
-                            to={isDisabled ? '#' : child.to}
-                            onClick={(e) => {
-                              if (isDisabled) {
-                                e.preventDefault();
-                                return;
-                              }
-                              closeSidebarOnMobile();
-                            }}
-                            className={({ isActive }) =>
-                              cn(
-                                'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
-                                isDisabled
-                                  ? 'cursor-not-allowed opacity-40'
-                                  : isActive
-                                    ? 'bg-sidebar-active text-white shadow-sidebar-active'
-                                    : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
-                              )
-                            }
-                          >
-                            {({ isActive }) => (
-                              <>
-                                <ChildIcon
-                                  size={17}
-                                  className={cn(
-                                    'shrink-0 transition-transform duration-200',
-                                    isDisabled && 'opacity-50',
-                                  )}
-                                  strokeWidth={isActive ? 2.25 : 2}
-                                />
-                                <span className="flex-1">{sidebarNavText(child.page, child.labelKey)}</span>
-                                {isDisabled && (
-                                  <span className="ml-1 shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                                    Pro
-                                  </span>
-                                )}
-                              </>
+                    return (
+                      <NavLink
+                        key={to}
+                        to={isDisabled ? '#' : to}
+                        end={to === '/'}
+                        onClick={(e) => {
+                          if (isDisabled) {
+                            e.preventDefault();
+                            return;
+                          }
+                          closeSidebarOnMobile();
+                        }}
+                        className={({ isActive }) =>
+                          cn(
+                            'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                            isDisabled
+                              ? 'cursor-not-allowed opacity-40'
+                              : isActive
+                                ? 'bg-sidebar-active text-white'
+                                : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && (
+                              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary shadow-sidebar-active" />
                             )}
-                          </NavLink>
-                        );
-                      })}
-                    </div>
-                  ) : null}
+                            <Icon
+                              size={18}
+                              className={cn(
+                                'shrink-0',
+                                isDisabled && 'opacity-50',
+                              )}
+                              strokeWidth={isActive ? 2.25 : 2}
+                            />
+                            <span className="flex-1">{sidebarNavText(page, labelKey)}</span>
+                            {isDisabled && (
+                              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                                Pro
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    );
+                  })}
                 </div>
               );
             })}
             {user?.role === 'OWNER' && (
               <>
-                <div className="my-3 border-t border-sidebar-hover" />
+                <div className="my-2 border-t border-sidebar-hover" />
                 <NavLink
                   to="/settings"
                   onClick={closeSidebarOnMobile}
                   className={({ isActive }) =>
                     cn(
-                      'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                      'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-sidebar-active text-white shadow-sidebar-active'
+                        ? 'bg-sidebar-active text-white'
                         : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary shadow-sidebar-active" />
+                      )}
                       <Settings size={18} strokeWidth={2} />
                       <span className="flex-1">{t('nav.settings')}</span>
                     </>
@@ -476,6 +357,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </>
             )}
           </nav>
+
+          {/* User profile at bottom */}
+          <div className="border-t border-sidebar-hover p-3">
+            <div className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-hover transition-colors">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-semibold text-sm">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="flex min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+                <p className="truncate text-xs text-sidebar-text">{user?.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-text hover:text-white hover:bg-sidebar-hover transition-colors"
+                title="Déconnexion"
+              >
+                <LogOut size={16} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
         </aside>
 
         {/* Overlay for mobile */}
