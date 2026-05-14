@@ -47,6 +47,7 @@ export type ProspectingSearchProviderId =
   | 'apollo'
   | 'hunter'
   | 'google_places'
+  | 'outscraper'
   | 'clearbit';
 
 /** Port d’abstraction : implémentations par fournisseur. */

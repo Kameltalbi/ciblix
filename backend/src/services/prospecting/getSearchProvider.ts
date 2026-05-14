@@ -2,6 +2,7 @@ import type { CompanySearchPort, ProspectingSearchProviderId } from './types.js'
 import { MockCompanySearchProvider } from './providers/MockCompanySearchProvider.js';
 import { ExternalSearchStub } from './providers/ExternalSearchStub.js';
 import { GooglePlacesTextSearchProvider } from './providers/GooglePlacesTextSearchProvider.js';
+import { OutscraperProvider } from './providers/OutscraperProvider.js';
 
 /**
  * Fournisseur de recherche :
@@ -10,15 +11,26 @@ import { GooglePlacesTextSearchProvider } from './providers/GooglePlacesTextSear
  * - Apollo / Hunter : stubs prêts pour branchement ultérieur
  */
 export function resolveProspectingSearchProvider(): CompanySearchPort {
-  const raw = (process.env.PROSPECTING_SEARCH_PROVIDER || 'google_places').toLowerCase() as ProspectingSearchProviderId;
-
+  const outscraperKey = process.env.OUTSCRAPER_API_KEY?.trim() || '';
   const placesKey =
     process.env.GOOGLE_PLACES_API_KEY?.trim() ||
     process.env.GOOGLE_MAPS_API_KEY?.trim() ||
     process.env.PLACES_API_KEY?.trim() ||
     '';
 
+  // Auto-detect: Outscraper prioritaire si clé présente, sinon provider env
+  const raw = (process.env.PROSPECTING_SEARCH_PROVIDER ||
+    (outscraperKey ? 'outscraper' : 'google_places')
+  ).toLowerCase() as ProspectingSearchProviderId;
+
   switch (raw) {
+    case 'outscraper':
+      if (outscraperKey) {
+        return new OutscraperProvider(outscraperKey);
+      }
+      console.warn('[Prospecting] outscraper sans OUTSCRAPER_API_KEY — repli Google Places.');
+      if (placesKey) return new GooglePlacesTextSearchProvider(placesKey);
+      return new MockCompanySearchProvider();
     case 'apollo':
       return new ExternalSearchStub('apollo');
     case 'hunter':
