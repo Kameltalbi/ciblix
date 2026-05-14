@@ -335,7 +335,7 @@ export function ProspectionIA() {
           qualified: number;
           prospects: AiProspectRow[];
           remainingFound: number;
-        }>('/prospecting/qualify-batch', { prospectIds: ids, limit: 6 });
+        }>('/prospecting/qualify-batch', { prospectIds: ids, limit: 20 });
         if (qb.prospects?.length) {
           setResults((prev) => mergeProspectUpdates(prev, qb.prospects));
         }
@@ -360,6 +360,7 @@ export function ProspectionIA() {
           city: city || undefined,
           companySize: companySize || undefined,
           keywords: keywords || undefined,
+          refresh: true,
         })
         .then((r) => r.data as SearchResponse),
     onSuccess: (data) => {

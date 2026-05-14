@@ -27,11 +27,20 @@ const searchSchema = z.object({
   city: z.string().optional(),
   companySize: z.string().optional(),
   keywords: z.string().optional(),
+  refresh: z.union([z.boolean(), z.string()]).optional(),
 });
 
 function parseSearchCriteria(req: AuthRequest): CompanySearchCriteria {
   const raw = req.method === 'GET' ? req.query : req.body;
-  return searchSchema.parse(raw) as CompanySearchCriteria;
+  const { refresh, ...criteria } = searchSchema.parse(raw);
+  void refresh;
+  return criteria as CompanySearchCriteria;
+}
+
+function parseRefreshSearch(req: AuthRequest): boolean {
+  const raw = req.method === 'GET' ? req.query : req.body;
+  const refresh = searchSchema.parse(raw).refresh;
+  return refresh === true || refresh === 'true' || refresh === '1';
 }
 
 const messageSchema = z.object({
@@ -281,7 +290,8 @@ prospectingRoutes.get('/prospects/:id/timeline', async (req: AuthRequest, res, n
 async function runProspectingSearch(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const criteria = parseSearchCriteria(req);
-    const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(req.organizationId!, criteria);
+    const refresh = parseRefreshSearch(req);
+    const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(req.organizationId!, criteria, { refresh });
 
     const importMax = Math.min(
       120,
