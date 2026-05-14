@@ -11,7 +11,15 @@ interface BeforeInstallPromptEvent extends Event {
 const STORAGE_KEY = 'ciblix_pwa_prompt_dismissed';
 
 function isIosDevice(): boolean {
-  return /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+  const ua = window.navigator.userAgent;
+  // iPadOS 13+ peut se présenter comme Mac avec écran tactile
+  const isIpadOs =
+    window.navigator.platform === 'MacIntel' && (window.navigator.maxTouchPoints ?? 0) > 1;
+  return /iPad|iPhone|iPod/.test(ua) || isIpadOs;
+}
+
+function isAndroidDevice(): boolean {
+  return /Android/i.test(window.navigator.userAgent);
 }
 
 function isStandaloneDisplay(): boolean {
@@ -45,7 +53,12 @@ export function PwaInstallPrompt() {
   }, []);
 
   const canShowIosHint = useMemo(() => isIosDevice() && !isStandaloneDisplay(), []);
-  const shouldShow = !isDismissed && !isInstalled && (deferredPrompt || canShowIosHint);
+  // Sur Android, `beforeinstallprompt` peut arriver tard ou pas du tout (critères Chrome, autre navigateur).
+  // On affiche quand même des instructions, comme sur iOS.
+  const canShowAndroidHint =
+    isAndroidDevice() && !isIosDevice() && !isStandaloneDisplay() && !deferredPrompt;
+  const shouldShow =
+    !isDismissed && !isInstalled && (deferredPrompt || canShowIosHint || canShowAndroidHint);
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, '1');
@@ -78,9 +91,13 @@ export function PwaInstallPrompt() {
             <p className="mt-1 text-sm text-muted-foreground">
               {t('pwa.installDescription')}
             </p>
-          ) : (
+          ) : canShowIosHint ? (
             <p className="mt-1 text-sm text-muted-foreground">
               {t('pwa.iosDescription')}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t('pwa.androidDescription')}
             </p>
           )}
 

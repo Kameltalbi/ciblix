@@ -647,6 +647,7 @@
     "title": "Install CIBLIX",
     "installDescription": "Install the app for quicker access from your home screen.",
     "iosDescription": "On iPhone: open the Share menu, then choose Add to Home Screen.",
+    "androidDescription": "On Android (Chrome): open the menu (three dots), then Install app or Add to Home screen.",
     "install": "Install",
     "later": "Later"
   }

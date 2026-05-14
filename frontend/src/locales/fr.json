@@ -647,6 +647,7 @@
     "title": "Installer CIBLIX",
     "installDescription": "Installez l'application pour un acces plus rapide depuis votre ecran d'accueil.",
     "iosDescription": "Sur iPhone: ouvrez le menu Partager puis choisissez Ajouter a l'ecran d'accueil.",
+    "androidDescription": "Sur Android (Chrome): touchez le menu (trois points) puis Installez l'application ou Ajoutez a l'ecran d'accueil.",
     "install": "Installer",
     "later": "Plus tard"
   }
