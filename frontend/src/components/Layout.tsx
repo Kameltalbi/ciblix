@@ -21,6 +21,7 @@ import {
   Megaphone,
   Headphones,
   PieChart,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -40,16 +41,28 @@ type NavItem = {
   icon: LucideIcon;
   page: string;
   requiresEnterprise?: boolean;
+  /** Ordre d’affichage des blocs sidebar (voir SIDEBAR_SECTION_ORDER). */
   section?: string;
   comingSoon?: boolean;
 };
 
+/**
+ * Sidebar — périmètre par lien (audit produit / droits page=… dans Users → permissions commercial)
+ *
+ * PILOTAGE · Vue IA (/dashboard)
+ * AGENTS IA · Hunt (/prospection-ia), Assistant (/ai-assistant), CommBot, CareBot, CFO (pages /agents/*)
+ * CRM · opportunités, leads, contacts
+ * ORGANISATION · calendrier, activités, modèles email, objectifs
+ * ENTERPRISE · dépenses (plan Enterprise → prolongement CFO)
+ * SUPPORT · tickets (terrain client ; rapprochant futur CareBot)
+ */
 const NAV_STRUCTURE: NavItem[] = [
-  { to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard', section: 'MAIN' },
-  { to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires', section: 'MAIN' },
-  { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients', section: 'MAIN' },
-  { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'MAIN' },
+  /* Pilotage global */
+  { to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
+
+  /* Piliers produit — 4 agents (Hunt actif ; Comm / Care / CFO à venir) */
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
+  { to: '/ai-assistant', labelKey: 'nav.agentAssistant', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   {
     to: '/agents/comm-bot',
     labelKey: 'nav.agentCommBot',
@@ -74,22 +87,39 @@ const NAV_STRUCTURE: NavItem[] = [
     section: 'AGENTS',
     comingSoon: true,
   },
-  { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar', section: 'PRODUCTIVITY' },
-  { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites', section: 'PRODUCTIVITY' },
-  { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates', section: 'PRODUCTIVITY' },
-  { to: '/objectifs', labelKey: 'nav.objectives', icon: Target, page: 'objectifs', section: 'PERFORMANCE' },
-  { to: '/expenses', labelKey: 'nav.expenses', icon: Receipt, page: 'expenses', requiresEnterprise: true, section: 'PERFORMANCE' },
+
+  /* Données commerciales (hors IA) — ordre funnel */
+  { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'CRM' },
+  { to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires', section: 'CRM' },
+  { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients', section: 'CRM' },
+
+  { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar', section: 'WORKSPACE' },
+  { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites', section: 'WORKSPACE' },
+  { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates', section: 'WORKSPACE' },
+  { to: '/objectifs', labelKey: 'nav.objectives', icon: Target, page: 'objectifs', section: 'WORKSPACE' },
+
+  { to: '/expenses', labelKey: 'nav.expenses', icon: Receipt, page: 'expenses', requiresEnterprise: true, section: 'ENTERPRISE' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
-const TOOLS_PATH_PREFIXES = [
-  '/calendar',
-  '/activites',
-  '/email-templates',
-  '/objectifs',
-  '/expenses',
-  '/support',
+/** Ordre d’affichage des sections (anciennement MAIN / PRODUCTIVITY / …). */
+const SIDEBAR_SECTION_ORDER = [
+  'OVERVIEW',
+  'AGENTS',
+  'CRM',
+  'WORKSPACE',
+  'ENTERPRISE',
+  'SUPPORT',
 ] as const;
+
+const SECTION_LABEL_KEYS: Record<string, string> = {
+  OVERVIEW: 'nav.sectionOverview',
+  AGENTS: 'nav.sectionAgents',
+  CRM: 'nav.sectionCrm',
+  WORKSPACE: 'nav.sectionWorkspace',
+  ENTERPRISE: 'nav.sectionEnterprise',
+  SUPPORT: 'nav.sectionSupport',
+};
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const CONSENT_VERSION = 'v1';
@@ -189,17 +219,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (user.role === 'OWNER' || user.role === 'SUPERADMIN' || user.role === 'PARTNER') return true;
       if (user.role === 'COMMERCIAL') {
         if (page === 'support') return true;
+        // Tant que l’API des droits n’a pas encore répondu, ne pas masquer toute la nav (sinon sidebar vide).
+        // Une fois `[]` ou une liste renvoyée, on applique les `canView` normalement — l’API reste authoritative.
+        if (permissionsData === undefined) return true;
         if (
           page === 'prospection-ia' ||
+          page === 'ai-assistant' ||
           page === 'comm-bot' ||
           page === 'care-bot' ||
           page === 'cfo-ai'
         ) {
-          const prospecting = permissionsData?.find((p) => p.page === 'prospection-ia');
-          const assistant = permissionsData?.find((p) => p.page === 'ai-assistant');
+          const prospecting = permissionsData.find((p) => p.page === 'prospection-ia');
+          const assistant = permissionsData.find((p) => p.page === 'ai-assistant');
           return Boolean(prospecting?.canView || assistant?.canView);
         }
-        const permission = permissionsData?.find((p) => p.page === page);
+        const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
       }
       return true;
@@ -305,12 +339,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-lg text-white">CIBLIX</span>
           </div>
           <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-5">
-            {['MAIN', 'AGENTS', 'PRODUCTIVITY', 'PERFORMANCE', 'SUPPORT'].map((section) => {
+            {SIDEBAR_SECTION_ORDER.map((section) => {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
 
-              const sectionHeading =
-                section === 'AGENTS' ? t('nav.sectionAgents') : section === 'MAIN' ? 'MAIN' : section;
+              const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
 
               return (
                 <div key={section} className="flex flex-col gap-2">
