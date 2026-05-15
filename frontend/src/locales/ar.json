@@ -49,7 +49,34 @@
     "commissions": "العمولات",
     "objectives": "الأهداف",
     "notifications": "الإشعارات",
-    "support": "الدعم"
+    "support": "الدعم",
+    "sectionAgents": "وكلاء الذكاء",
+    "agentHunt": "Hunt AI",
+    "agentCommBot": "CommBot",
+    "agentCareBot": "CareBot",
+    "agentCfo": "CFO AI",
+    "comingSoon": "قريبًا"
+  },
+  "agentsComingSoon": {
+    "badge": "قريبًا",
+    "back": "رجوع",
+    "ctaHunt": "فتح Hunt AI (استكشاف العملاء)",
+    "footnote": "سيتم طرح هذه الوحدات تدريجيًا على Ciblix.",
+    "commBot": {
+      "name": "CommBot",
+      "role": "التسويق والتواصل",
+      "description": "تقويم محتوى ومنشورات ورسائل إخبارية من أخباركم وسياق قطاعكم للحفاظ على حضور مهني منتظم."
+    },
+    "careBot": {
+      "name": "CareBot",
+      "role": "الدعم والأسئلة الشائعة",
+      "description": "إجابات سريعة على أسئلة العملاء مبنية على توثيقكم ومعارفكم، مع ربط بـ CRM."
+    },
+    "cfoAi": {
+      "name": "CFO AI",
+      "role": "التحليل والمالية",
+      "description": "قراءة إشارات مالية من الـ CRM: تأخر السداد، تنبيهات السيولة وخطوات مقترحة لصاحب المشروع."
+    }
   },
   "dashboard": {
     "title": "مركز الذكاء",

@@ -18,6 +18,9 @@ import {
   MessageSquare,
   Radio,
   Sparkles,
+  Megaphone,
+  Headphones,
+  PieChart,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -31,14 +34,46 @@ import { useTranslation } from 'react-i18next';
 import { OnboardingChatbot } from './OnboardingChatbot';
 import type { LucideIcon } from 'lucide-react';
 
-type NavItem = { to: string; labelKey: string; icon: LucideIcon; page: string; requiresEnterprise?: boolean; section?: string };
+type NavItem = {
+  to: string;
+  labelKey: string;
+  icon: LucideIcon;
+  page: string;
+  requiresEnterprise?: boolean;
+  section?: string;
+  comingSoon?: boolean;
+};
 
 const NAV_STRUCTURE: NavItem[] = [
   { to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard', section: 'MAIN' },
-  { to: '/prospection-ia', labelKey: 'nav.prospection', icon: Radio, page: 'prospection-ia', section: 'MAIN' },
   { to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires', section: 'MAIN' },
   { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients', section: 'MAIN' },
   { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'MAIN' },
+  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
+  {
+    to: '/agents/comm-bot',
+    labelKey: 'nav.agentCommBot',
+    icon: Megaphone,
+    page: 'comm-bot',
+    section: 'AGENTS',
+    comingSoon: true,
+  },
+  {
+    to: '/agents/care-bot',
+    labelKey: 'nav.agentCareBot',
+    icon: Headphones,
+    page: 'care-bot',
+    section: 'AGENTS',
+    comingSoon: true,
+  },
+  {
+    to: '/agents/cfo-ai',
+    labelKey: 'nav.agentCfo',
+    icon: PieChart,
+    page: 'cfo-ai',
+    section: 'AGENTS',
+    comingSoon: true,
+  },
   { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar', section: 'PRODUCTIVITY' },
   { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites', section: 'PRODUCTIVITY' },
   { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates', section: 'PRODUCTIVITY' },
@@ -154,7 +189,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (user.role === 'OWNER' || user.role === 'SUPERADMIN' || user.role === 'PARTNER') return true;
       if (user.role === 'COMMERCIAL') {
         if (page === 'support') return true;
-        if (page === 'prospection-ia') {
+        if (
+          page === 'prospection-ia' ||
+          page === 'comm-bot' ||
+          page === 'care-bot' ||
+          page === 'cfo-ai'
+        ) {
           const prospecting = permissionsData?.find((p) => p.page === 'prospection-ia');
           const assistant = permissionsData?.find((p) => p.page === 'ai-assistant');
           return Boolean(prospecting?.canView || assistant?.canView);
@@ -265,17 +305,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-lg text-white">CIBLIX</span>
           </div>
           <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-5">
-            {['MAIN', 'PRODUCTIVITY', 'PERFORMANCE', 'SUPPORT'].map((section) => {
+            {['MAIN', 'AGENTS', 'PRODUCTIVITY', 'PERFORMANCE', 'SUPPORT'].map((section) => {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
+
+              const sectionHeading =
+                section === 'AGENTS' ? t('nav.sectionAgents') : section === 'MAIN' ? 'MAIN' : section;
 
               return (
                 <div key={section} className="flex flex-col gap-2">
                   <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-text/60">
-                    {section}
+                    {sectionHeading}
                   </p>
                   {sectionItems.map((item) => {
-                    const { to, labelKey, icon: Icon, page } = item;
+                    const { to, labelKey, icon: Icon, page, comingSoon } = item;
                     const isExpenses = page === 'expenses';
                     const isDisabled = isExpenses && !expensesAccessible;
 
@@ -298,7 +341,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                               ? 'cursor-not-allowed opacity-40'
                               : isActive
                                 ? 'bg-sidebar-active text-white'
-                                : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
+                                : comingSoon
+                                  ? 'text-sidebar-text/90 hover:bg-sidebar-hover hover:text-white'
+                                  : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
                           )
                         }
                       >
@@ -312,10 +357,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                               className={cn(
                                 'shrink-0',
                                 isDisabled && 'opacity-50',
+                                comingSoon && !isActive && 'opacity-80',
                               )}
                               strokeWidth={isActive ? 2.25 : 2}
                             />
-                            <span className="flex-1">{sidebarNavText(page, labelKey)}</span>
+                            <span className={cn('flex-1', comingSoon && !isActive && 'text-sidebar-text/85')}>
+                              {sidebarNavText(page, labelKey)}
+                            </span>
+                            {comingSoon && (
+                              <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sidebar-text ring-1 ring-white/15">
+                                {t('nav.comingSoon')}
+                              </span>
+                            )}
                             {isDisabled && (
                               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                                 Pro

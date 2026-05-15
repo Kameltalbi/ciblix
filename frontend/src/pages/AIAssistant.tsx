@@ -258,7 +258,7 @@ export function AIAssistant() {
         <div className="flex flex-wrap gap-2">
           <Link to="/prospection-ia">
             <Button variant="outline" size="sm" className="gap-1.5">
-              <Radio size={16} /> Prospection IA
+              <Radio size={16} /> {t('nav.agentHunt')}
             </Button>
           </Link>
           <Link to="/dashboard">

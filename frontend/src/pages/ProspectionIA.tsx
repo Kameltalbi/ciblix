@@ -440,7 +440,7 @@ export function ProspectionIA() {
               <Sparkles className="h-5 w-5" strokeWidth={2.2} />
               <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-white/25" aria-hidden />
             </span>
-            Prospection IA
+            {t('nav.agentHunt')}
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
             Recherche ciblée, enrichissement web automatique, scoring et angles commerciaux — copilote premium pour

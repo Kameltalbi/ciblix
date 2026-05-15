@@ -49,7 +49,34 @@
     "commissions": "Commissions",
     "objectives": "Objectives",
     "notifications": "Notifications",
-    "support": "Support"
+    "support": "Support",
+    "sectionAgents": "AI agents",
+    "agentHunt": "Hunt AI",
+    "agentCommBot": "CommBot",
+    "agentCareBot": "CareBot",
+    "agentCfo": "CFO AI",
+    "comingSoon": "Coming soon"
+  },
+  "agentsComingSoon": {
+    "badge": "Coming soon",
+    "back": "Back",
+    "ctaHunt": "Open Hunt AI (prospecting)",
+    "footnote": "These modules will roll out gradually on Ciblix.",
+    "commBot": {
+      "name": "CommBot",
+      "role": "Marketing & communications",
+      "description": "Editorial calendar, social posts, and newsletters from your news and sector context to keep a steady professional presence."
+    },
+    "careBot": {
+      "name": "CareBot",
+      "role": "Support & FAQ",
+      "description": "Fast answers to customer questions grounded in your docs and knowledge base, connected to your CRM."
+    },
+    "cfoAi": {
+      "name": "CFO AI",
+      "role": "Analysis & finance",
+      "description": "Financial signals from your CRM—late payments, cash-flow alerts, and suggested next steps for owners."
+    }
   },
   "dashboard": {
     "title": "AI Hub",

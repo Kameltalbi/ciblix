@@ -49,7 +49,34 @@
     "commissions": "Commissions",
     "objectives": "Objectifs",
     "notifications": "Notifications",
-    "support": "Support"
+    "support": "Support",
+    "sectionAgents": "Agents IA",
+    "agentHunt": "Hunt AI",
+    "agentCommBot": "CommBot",
+    "agentCareBot": "CareBot",
+    "agentCfo": "CFO AI",
+    "comingSoon": "À venir"
+  },
+  "agentsComingSoon": {
+    "badge": "À venir",
+    "back": "Retour",
+    "ctaHunt": "Ouvrir Hunt AI (prospection)",
+    "footnote": "Ces modules seront déployés progressivement sur Ciblix.",
+    "commBot": {
+      "name": "CommBot",
+      "role": "Marketing & communication",
+      "description": "Calendrier éditorial, posts réseaux et newsletters à partir de votre actualité pour maintenir une présence professionnelle constante."
+    },
+    "careBot": {
+      "name": "CareBot",
+      "role": "Support & FAQ",
+      "description": "Réponses rapides aux questions clients à partir de votre documentation et de votre base de connaissances, directement branchée sur le CRM."
+    },
+    "cfoAi": {
+      "name": "CFO AI",
+      "role": "Analyse & finance",
+      "description": "Lecture des signaux financiers issus du CRM : retards de paiement, alertes trésorerie et pistes d’action pour le dirigeant."
+    }
   },
   "dashboard": {
     "title": "Centre IA",
