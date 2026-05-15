@@ -392,7 +392,21 @@
   },
   "prospectionIA": {
     "inOpportunitiesLabel": "Dans vos opportunités",
-    "addToOpportunities": "Ajouter aux opportunités"
+    "addToOpportunities": "Ajouter aux opportunités",
+    "automationTitle": "Prospection automatique (périodique)",
+    "automationSubtitle": "Réutilise les critères du formulaire ci‑dessous selon l’intervalle choisi. Le backend exécute une passe toutes les ~60 s si une échéance est due.",
+    "automationActive": "Activer la recherche planifiée",
+    "automationInterval": "Intervalle",
+    "refreshCache": "Ignorer le cache recherche à chaque passe (API plus coûteux)",
+    "qualifyAfter": "Qualifier avec l’IA après import",
+    "saveAutomation": "Enregistrer la planification",
+    "nextRun": "Prochaine exécution",
+    "lastRun": "Dernière exécution",
+    "lastStats": "Import / qualifiés",
+    "automationSaved": "Planification enregistrée.",
+    "hours": "{{n}} h",
+    "days7": "7 jours",
+    "errorRun": "Erreur dernière passe"
   },
   "usersPage": {
     "title": "Utilisateurs",

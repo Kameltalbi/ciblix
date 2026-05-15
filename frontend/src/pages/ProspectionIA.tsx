@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -30,6 +30,21 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { cn } from '@/lib/utils';
 
 type Potential = 'TRES_FORT' | 'MOYEN' | 'FAIBLE' | string | null;
+
+type ProspectingAutomationDTO = {
+  active: boolean;
+  intervalHours: number;
+  refreshCache: boolean;
+  qualifyAfterSearch: boolean;
+  maxNewPerRun: number;
+  nextRunAt: string;
+  lastRunAt: string | null;
+  lastRunImported: number | null;
+  lastRunQualified: number | null;
+  lastRunError: string | null;
+};
+
+const AUTOMATION_INTERVALS_H = [6, 12, 24, 48, 72, 168];
 
 function parseEmailList(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.filter((x): x is string => typeof x === 'string');
@@ -316,6 +331,11 @@ export function ProspectionIA() {
     disclaimer?: string;
   }>({ open: false, title: '', body: '' });
 
+  const [autoActive, setAutoActive] = useState(false);
+  const [autoInterval, setAutoInterval] = useState(24);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoQualify, setAutoQualify] = useState(true);
+
   const filtered = useMemo(() => applyFilters(results, filters), [results, filters]);
 
   const { data: dash } = useQuery<DashboardPayload>({
@@ -323,6 +343,21 @@ export function ProspectionIA() {
     queryFn: () => api.get('/prospecting/dashboard').then((r) => r.data),
     staleTime: 45_000,
   });
+
+  const { data: automationRes } = useQuery<{ automation: ProspectingAutomationDTO | null }>({
+    queryKey: ['prospecting-automation'],
+    queryFn: () => api.get('/prospecting/automation').then((r) => r.data),
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    const row = automationRes?.automation;
+    if (!row) return;
+    setAutoActive(row.active);
+    setAutoInterval(row.intervalHours);
+    setAutoRefresh(row.refreshCache);
+    setAutoQualify(row.qualifyAfterSearch);
+  }, [automationRes?.automation]);
 
   const drainQualifyAfterSearch = async (data: SearchResponse) => {
     const ids = (data.prospects ?? []).filter((p) => p.status === 'FOUND').map((p) => p.id);
@@ -394,6 +429,18 @@ export function ProspectionIA() {
     mutationFn: ({ id, dayOffset }: { id: string; dayOffset: 3 | 7 | 15 }) =>
       api.post(`/prospecting/prospects/${id}/schedule-followup`, { dayOffset }).then((r) => r.data),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['calendar'] }),
+  });
+
+  const saveAutomationMutation = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.put('/prospecting/automation', body).then((r) => r.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['prospecting-automation'] });
+      void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
+      window.alert(t('prospectionIA.automationSaved'));
+    },
+    onError: (e: { response?: { data?: { error?: string } }; message?: string }) => {
+      window.alert(e?.response?.data?.error || e?.message || 'Erreur');
+    },
   });
 
   const messageMutation = useMutation({
@@ -531,6 +578,107 @@ export function ProspectionIA() {
           ))}
         </div>
       ) : null}
+
+      <Card className="border-border bg-card shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <Clock className="text-primary" size={22} />
+            {t('prospectionIA.automationTitle')}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">{t('prospectionIA.automationSubtitle')}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-border"
+              checked={autoActive}
+              onChange={(e) => setAutoActive(e.target.checked)}
+            />
+            <span className="text-sm font-medium">{t('prospectionIA.automationActive')}</span>
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>{t('prospectionIA.automationInterval')}</Label>
+              <select
+                className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={autoInterval}
+                onChange={(e) => setAutoInterval(Number(e.target.value))}
+              >
+                {AUTOMATION_INTERVALS_H.map((h) => (
+                  <option key={h} value={h}>
+                    {h === 168 ? t('prospectionIA.days7') : t('prospectionIA.hours', { n: h })}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-3 sm:pt-7">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border"
+                  checked={autoQualify}
+                  onChange={(e) => setAutoQualify(e.target.checked)}
+                />
+                {t('prospectionIA.qualifyAfter')}
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                />
+                {t('prospectionIA.refreshCache')}
+              </label>
+            </div>
+          </div>
+          {automationRes?.automation ? (
+            <div className="rounded-lg border border-border/60 bg-muted/10 p-3 text-xs text-muted-foreground space-y-1">
+              <p>
+                <span className="font-semibold text-foreground">{t('prospectionIA.nextRun')} : </span>
+                {new Date(automationRes.automation.nextRunAt).toLocaleString()}
+              </p>
+              {automationRes.automation.lastRunAt ? (
+                <p>
+                  <span className="font-semibold text-foreground">{t('prospectionIA.lastRun')} : </span>
+                  {new Date(automationRes.automation.lastRunAt).toLocaleString()} — {t('prospectionIA.lastStats')}:{' '}
+                  {automationRes.automation.lastRunImported ?? '—'} / {automationRes.automation.lastRunQualified ?? '—'}
+                </p>
+              ) : null}
+              {automationRes.automation.lastRunError ? (
+                <p className="text-destructive">
+                  {t('prospectionIA.errorRun')} : {automationRes.automation.lastRunError.slice(0, 200)}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-2"
+            disabled={saveAutomationMutation.isPending}
+            onClick={() =>
+              saveAutomationMutation.mutate({
+                active: autoActive,
+                criteria: {
+                  sector: sector || undefined,
+                  country: country || undefined,
+                  city: city || undefined,
+                  companySize: companySize || undefined,
+                  keywords: keywords || undefined,
+                },
+                intervalHours: autoInterval,
+                refreshCache: autoRefresh,
+                qualifyAfterSearch: autoQualify,
+              })
+            }
+          >
+            {saveAutomationMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {t('prospectionIA.saveAutomation')}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="relative overflow-hidden border-border bg-card shadow-card">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" aria-hidden />

@@ -392,7 +392,21 @@
   },
   "prospectionIA": {
     "inOpportunitiesLabel": "In your opportunities",
-    "addToOpportunities": "Add to opportunities"
+    "addToOpportunities": "Add to opportunities",
+    "automationTitle": "Automated prospecting",
+    "automationSubtitle": "Re-runs the criteria from the form below on a schedule. The server checks every ~60s for jobs that are due.",
+    "automationActive": "Enable scheduled search",
+    "automationInterval": "Interval",
+    "refreshCache": "Bypass search cache on each run (more API usage)",
+    "qualifyAfter": "Run AI qualification after each import",
+    "saveAutomation": "Save schedule",
+    "nextRun": "Next run",
+    "lastRun": "Last run",
+    "lastStats": "Imported / qualified",
+    "automationSaved": "Schedule saved.",
+    "hours": "{{n}} h",
+    "days7": "7 days",
+    "errorRun": "Last run error"
   },
   "usersPage": {
     "title": "Users",

@@ -3,10 +3,10 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
-import { searchCompaniesWithCache, enrichHitWebsiteCached } from '../services/prospecting/index.js';
+import { enrichHitWebsiteCached } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
-import { emptyWebEnrichment } from '../services/prospecting/websiteEnrichment.js';
 import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
+import { importProspectsFromSearch } from '../services/prospecting/importProspectsFromSearch.js';
 import type { CompanySearchCriteria, CompanySearchHit, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
 
 type LeadQualificationLike = Awaited<ReturnType<typeof qualifyCompanyHit>>;
@@ -119,6 +119,19 @@ const messageSchema = z.object({
 
 const scheduleSchema = z.object({
   dayOffset: z.union([z.literal(3), z.literal(7), z.literal(15)]),
+});
+
+const FAR_FUTURE = new Date('2099-01-01T00:00:00.000Z');
+const INTERVAL_ALLOWED = new Set([6, 12, 24, 48, 72, 168]);
+
+const automationUpsertSchema = z.object({
+  active: z.boolean(),
+  name: z.string().max(120).optional(),
+  criteria: searchSchema.omit({ refresh: true }),
+  intervalHours: z.number().refine((n) => INTERVAL_ALLOWED.has(Math.floor(Number(n))), 'intervalHours invalide'),
+  refreshCache: z.boolean().optional().default(false),
+  qualifyAfterSearch: z.boolean().optional().default(true),
+  maxNewPerRun: z.number().min(10).max(120).optional().default(40),
 });
 
 function enrichmentPersistFields(e: WebEnrichmentResult) {
@@ -275,6 +288,57 @@ prospectingRoutes.get('/dashboard', async (req: AuthRequest, res, next) => {
   }
 });
 
+// ─── Prospection automatique périodique (scheduler : automationScheduler) ───
+
+prospectingRoutes.get('/automation', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const row = await prisma.prospectingAutomation.findUnique({
+      where: { organizationId: req.organizationId! },
+    });
+    res.json({ automation: row });
+  } catch (e) {
+    next(e);
+  }
+});
+
+prospectingRoutes.put('/automation', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const body = automationUpsertSchema.parse(req.body);
+    const criteria = body.criteria as CompanySearchCriteria;
+    const nextRunAt = body.active ? new Date() : FAR_FUTURE;
+
+    const row = await prisma.prospectingAutomation.upsert({
+      where: { organizationId: req.organizationId! },
+      create: {
+        organizationId: req.organizationId!,
+        createdByUserId: req.userId,
+        active: body.active,
+        name: body.name ?? 'Prospection planifiée',
+        criteria: criteria as object,
+        intervalHours: Math.floor(body.intervalHours),
+        refreshCache: body.refreshCache,
+        qualifyAfterSearch: body.qualifyAfterSearch,
+        maxNewPerRun: body.maxNewPerRun,
+        nextRunAt,
+      },
+      update: {
+        active: body.active,
+        ...(body.name != null ? { name: body.name } : {}),
+        criteria: criteria as object,
+        intervalHours: Math.floor(body.intervalHours),
+        refreshCache: body.refreshCache,
+        qualifyAfterSearch: body.qualifyAfterSearch,
+        maxNewPerRun: body.maxNewPerRun,
+        nextRunAt,
+      },
+    });
+
+    res.json({ automation: row });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ─── Liste récents ──────────────────────────────────────────────
 prospectingRoutes.get('/prospects', async (req: AuthRequest, res, next) => {
   try {
@@ -360,50 +424,17 @@ async function runProspectingSearch(req: AuthRequest, res: Response, next: NextF
   try {
     const criteria = parseSearchCriteria(req);
     const refresh = parseRefreshSearch(req);
-    const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(req.organizationId!, criteria, { refresh });
-
     const importMax = Math.min(
       120,
       Math.max(10, Number(process.env.PROSPECTING_IMPORT_MAX) || 80)
     );
-    const tagBase = fromCache ? `${providerUsed}|search_cache` : providerUsed;
-    const empty = emptyWebEnrichment();
-
-    const created: unknown[] = [];
-    const dedupeKeys = new Set<string>();
-
-    for (const hitBase of hits.slice(0, importMax)) {
-      const dedupeKey = dedupeProviderKey(tagBase, hitBase);
-      if (dedupeKeys.has(dedupeKey)) continue;
-      dedupeKeys.add(dedupeKey);
-
-      const existing = await prisma.aiProspect.findFirst({
-        where: {
-          organizationId: req.organizationId!,
-          deletedAt: null,
-          rawProvider: dedupeKey,
-        },
-      });
-      if (existing) {
-        created.push(existing);
-        continue;
-      }
-
-      const row = await prisma.aiProspect.create({
-        data: {
-          organizationId: req.organizationId!,
-          ...hitToFoundProspectData(hitBase, criteria, dedupeKey, empty),
-        },
-      });
-      created.push(row);
-    }
-
+    const result = await importProspectsFromSearch(req.organizationId!, criteria, { refresh, importMax });
     res.json({
-      providerUsed,
-      fromCache,
-      count: created.length,
-      rawHits: hits.length,
-      prospects: created,
+      providerUsed: result.providerUsed,
+      fromCache: result.fromCache,
+      count: result.count,
+      rawHits: result.rawHits,
+      prospects: result.prospects,
     });
   } catch (e) {
     next(e);

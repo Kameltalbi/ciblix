@@ -392,7 +392,21 @@
   },
   "prospectionIA": {
     "inOpportunitiesLabel": "ضمن فرصك",
-    "addToOpportunities": "إضافة إلى الفرص"
+    "addToOpportunities": "إضافة إلى الفرص",
+    "automationTitle": "استكشاف تلقائي (دوري)",
+    "automationSubtitle": "يعيد استخدام معايير النموذج أدناه حسب الفترة. الخادم يتحقق كل ~60 ثانية من المهام المستحقة.",
+    "automationActive": "تفعيل البحث المجدول",
+    "automationInterval": "الفترة",
+    "refreshCache": "تجاهل ذاكرة التخزين المؤقت لكل مرة (استهلاك API أعلى)",
+    "qualifyAfter": "تأهيل بالذكاء بعد كل استيراد",
+    "saveAutomation": "حفظ الجدولة",
+    "nextRun": "التشغيل التالي",
+    "lastRun": "آخر تشغيل",
+    "lastStats": "مستورد / مؤهل",
+    "automationSaved": "تم حفظ الجدولة.",
+    "hours": "{{n}} س",
+    "days7": "7 أيام",
+    "errorRun": "خطأ آخر تشغيل"
   },
   "usersPage": {
     "title": "المستخدمون",

@@ -179,4 +179,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(
     '[bootstrap] IA routes actives: GET /api/prospecting/ping, /api/prospecting/*, GET /api/ai-assistant/operational-briefing'
   );
+  void import('./services/prospecting/automationScheduler.js').then(({ startProspectingAutomationScheduler }) => {
+    startProspectingAutomationScheduler();
+  });
 });
