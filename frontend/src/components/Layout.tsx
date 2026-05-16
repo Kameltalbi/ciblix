@@ -22,6 +22,8 @@ import {
   Headphones,
   PieChart,
   Bot,
+  ChevronDown,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -49,7 +51,7 @@ type NavItem = {
 /**
  * Sidebar — périmètre par lien (audit produit / droits page=… dans Users → permissions commercial)
  *
- * PILOTAGE · Vue IA (/dashboard)
+ * PILOTAGE · Accueil / dashboard (/dashboard)
  * AGENTS IA · Hunt (/prospection-ia), Assistant (/ai-assistant), CommBot, CareBot, CFO (pages /agents/*)
  * CRM · opportunités, leads, contacts
  * ORGANISATION · calendrier, activités, modèles email, objectifs
@@ -58,7 +60,7 @@ type NavItem = {
  */
 const NAV_STRUCTURE: NavItem[] = [
   /* Pilotage global */
-  { to: '/dashboard', labelKey: 'nav.viewIA', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
 
   /* Piliers produit — 4 agents (Hunt actif ; Comm / Care / CFO à venir) */
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
@@ -329,14 +331,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Sidebar - dark navy, minimalist, premium, flat hierarchy */}
         <aside
           className={cn(
-            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-border bg-sidebar text-sidebar-text shadow-lg transition-[width,transform] duration-300 ease-out',
+            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-neutral-200 bg-white text-neutral-700 shadow-sm transition-[width,transform] duration-300 ease-out',
             sidebarOpen
               ? 'w-56 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
               : 'w-56 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-56 lg:flex-shrink-0 lg:translate-x-0'
           )}
         >
-          <div className="flex h-14 items-center px-4 border-b border-sidebar-hover">
-            <span className="font-bold text-lg text-white">CIBLIX</span>
+          <div className="flex items-center gap-1 border-b border-neutral-200 px-2 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (user?.role === 'OWNER') navigate('/settings');
+              }}
+              className={cn(
+                'flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-neutral-100',
+                user?.role !== 'OWNER' && 'cursor-default hover:bg-transparent',
+              )}
+              aria-label={organization?.name ?? 'Workspace'}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
+                <Building2 size={16} strokeWidth={2} />
+              </div>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">
+                {organization?.name ?? 'CIBLIX'}
+              </span>
+              <ChevronDown size={16} className="shrink-0 text-neutral-400" aria-hidden />
+            </button>
+            <Link
+              to="/affaires"
+              onClick={closeSidebarOnMobile}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100"
+              title={t('nav.affaires')}
+              aria-label={t('nav.affaires')}
+            >
+              <Plus size={18} strokeWidth={2} />
+            </Link>
           </div>
           <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-5">
             {SIDEBAR_SECTION_ORDER.map((section) => {
@@ -347,7 +376,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
               return (
                 <div key={section} className="flex flex-col gap-2">
-                  <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-text/60">
+                  <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
                     {sectionHeading}
                   </p>
                   {sectionItems.map((item) => {
@@ -369,21 +398,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         }}
                         className={({ isActive }) =>
                           cn(
-                            'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                            'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200',
                             isDisabled
                               ? 'cursor-not-allowed opacity-40'
                               : isActive
-                                ? 'bg-sidebar-active text-white'
+                                ? 'bg-neutral-100 text-neutral-900'
                                 : comingSoon
-                                  ? 'text-sidebar-text/90 hover:bg-sidebar-hover hover:text-white'
-                                  : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
+                                  ? 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                                  : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
                           )
                         }
                       >
                         {({ isActive }) => (
                           <>
                             {isActive && (
-                              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary shadow-sidebar-active" />
+                              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary/90" />
                             )}
                             <Icon
                               size={18}
@@ -394,11 +423,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                               )}
                               strokeWidth={isActive ? 2.25 : 2}
                             />
-                            <span className={cn('flex-1', comingSoon && !isActive && 'text-sidebar-text/85')}>
+                            <span className={cn('flex-1', comingSoon && !isActive && 'text-neutral-500')}>
                               {sidebarNavText(page, labelKey)}
                             </span>
                             {comingSoon && (
-                              <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sidebar-text ring-1 ring-white/15">
+                              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-neutral-500 ring-1 ring-neutral-200/80">
                                 {t('nav.comingSoon')}
                               </span>
                             )}
@@ -417,23 +446,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
             })}
             {user?.role === 'OWNER' && (
               <>
-                <div className="my-2 border-t border-sidebar-hover" />
+                <div className="my-2 border-t border-neutral-200" />
                 <NavLink
                   to="/settings"
                   onClick={closeSidebarOnMobile}
                   className={({ isActive }) =>
                     cn(
-                      'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                      'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200',
                       isActive
-                        ? 'bg-sidebar-active text-white'
-                        : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
+                        ? 'bg-neutral-100 text-neutral-900'
+                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary shadow-sidebar-active" />
+                        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary/90" />
                       )}
                       <Settings size={18} strokeWidth={2} />
                       <span className="flex-1">{t('nav.settings')}</span>
@@ -445,19 +474,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* User profile at bottom */}
-          <div className="border-t border-sidebar-hover p-3">
-            <div className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-hover transition-colors">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-semibold text-sm">
+          <div className="border-t border-neutral-200 p-3">
+            <div className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-neutral-50">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-neutral-800">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
-              <div className="flex min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{user?.name}</p>
-                <p className="truncate text-xs text-sidebar-text">{user?.email}</p>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <p className="truncate text-sm font-medium text-neutral-900">{user?.name}</p>
+                <p className="truncate text-xs text-neutral-500">{user?.email}</p>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-text hover:text-white hover:bg-sidebar-hover transition-colors"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
                 title="Déconnexion"
               >
                 <LogOut size={16} strokeWidth={2} />

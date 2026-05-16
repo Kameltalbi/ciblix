@@ -26,8 +26,8 @@
     "no": "لا"
   },
   "nav": {
-    "viewIA": "عرض الذكاء",
-    "dashboard": "عرض الذكاء",
+    "viewIA": "الرئيسية",
+    "dashboard": "الرئيسية",
     "prospection": "الاستكشاف",
     "sectionContacts": "جهات الاتصال",
     "sectionTools": "أدوات",
@@ -85,6 +85,18 @@
     }
   },
   "dashboard": {
+    "hubTitle": "مساعدي",
+    "hubTabAssistants": "مساعدي",
+    "hubTabPilotage": "لوحة التوجيه التجاري",
+    "hubTabHistory": "سجل المحادثات",
+    "hubHistoryLead": "تابع محادثاتك مع مساعد الذكاء الاصطناعي حول الفرص والنشاط.",
+    "hubHistoryCta": "فتح مساعد الذكاء الاصطناعي",
+    "hubChatWith": "حديث مع {{name}}",
+    "hubOpen": "فتح {{name}}",
+    "hubHuntRole": "استكشاف ذكي",
+    "hubHuntDesc": "إشارات وإثراء ومتابعات لتغذية مسار مبيعاتك.",
+    "hubCopilotRole": "مساعد قيادة المبيعات",
+    "hubCopilotDesc": "ملخص يومي وأولويات وإجابات سياقية عن فرصك وCRM.",
     "title": "مركز الذكاء",
     "overview": "لوحة ذكاء مبيعاتك: الإشارات والأولويات والفرص.",
     "briefingTitle": "توصيات الذكاء الاصطناعي",

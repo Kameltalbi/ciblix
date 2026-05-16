@@ -26,8 +26,8 @@
     "no": "No"
   },
   "nav": {
-    "viewIA": "AI view",
-    "dashboard": "AI view",
+    "viewIA": "Dashboard",
+    "dashboard": "Dashboard",
     "prospection": "Prospecting",
     "sectionContacts": "Contacts",
     "sectionTools": "Tools",
@@ -85,6 +85,18 @@
     }
   },
   "dashboard": {
+    "hubTitle": "My assistants",
+    "hubTabAssistants": "My assistants",
+    "hubTabPilotage": "Commercial dashboard",
+    "hubTabHistory": "Conversation history",
+    "hubHistoryLead": "Continue your exchanges with the AI copilot on opportunities and activity.",
+    "hubHistoryCta": "Open AI copilot",
+    "hubChatWith": "Chat with {{name}}",
+    "hubOpen": "Open {{name}}",
+    "hubHuntRole": "AI prospecting",
+    "hubHuntDesc": "Signals, enrichment, and follow-ups to keep your sales pipeline flowing.",
+    "hubCopilotRole": "Sales leadership assistant",
+    "hubCopilotDesc": "Daily briefs, priorities, and contextual answers on your CRM and deals.",
     "title": "AI Hub",
     "overview": "Your sales intelligence cockpit: signals, priorities, and opportunities.",
     "briefingTitle": "AI recommendations",

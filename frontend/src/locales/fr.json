@@ -26,8 +26,8 @@
     "no": "Non"
   },
   "nav": {
-    "viewIA": "Vue IA",
-    "dashboard": "Vue IA",
+    "viewIA": "Accueil",
+    "dashboard": "Accueil",
     "prospection": "Prospection",
     "sectionContacts": "Contacts",
     "sectionTools": "Outils",
@@ -85,6 +85,18 @@
     }
   },
   "dashboard": {
+    "hubTitle": "Mes assistants",
+    "hubTabAssistants": "Mes assistants",
+    "hubTabPilotage": "Pilotage commercial",
+    "hubTabHistory": "Historique des conversations",
+    "hubHistoryLead": "Retrouvez vos échanges avec le Copilot IA sur vos opportunités et votre activité.",
+    "hubHistoryCta": "Ouvrir le Copilot IA",
+    "hubChatWith": "Discuter avec {{name}}",
+    "hubOpen": "Ouvrir {{name}}",
+    "hubHuntRole": "Prospection IA",
+    "hubHuntDesc": "Repérage de signaux, enrichissement et relances pour alimenter votre pipeline commercial.",
+    "hubCopilotRole": "Assistant de direction commerciale",
+    "hubCopilotDesc": "Briefing du jour, priorités, réponses contextualisées sur vos opportunités et votre base CRM.",
     "title": "Centre IA",
     "overview": "Votre cockpit d'intelligence commerciale : signaux, priorités et opportunités.",
     "briefingTitle": "Recommandations IA",

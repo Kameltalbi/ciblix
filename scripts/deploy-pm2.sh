@@ -42,13 +42,16 @@ echo "🔨 Frontend (Vite build → dist/)…"
 npm run build -w bilan-crm-frontend
 
 echo ""
-echo "♻️  PM2 backend…"
-if pm2 describe backend >/dev/null 2>&1; then
-  pm2 restart backend --update-env
-else
-  echo "   Process « backend » absent : démarrage depuis backend/ecosystem.config.cjs"
-  (cd "$ROOT/backend" && pm2 start ecosystem.config.cjs)
-fi
+echo "♻️  PM2 backend (ecosystem : node dist/bootstrap.js — évite double npm / EADDRINUSE)…"
+(
+  cd "$ROOT/backend"
+  if pm2 describe backend >/dev/null 2>&1; then
+    pm2 startOrReload ecosystem.config.cjs --update-env
+  else
+    pm2 start ecosystem.config.cjs
+  fi
+)
+pm2 save
 
 echo ""
 echo "✅ Terminé."
