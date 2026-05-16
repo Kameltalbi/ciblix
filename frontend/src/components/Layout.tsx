@@ -23,12 +23,13 @@ import {
   PieChart,
   Bot,
   ChevronDown,
+  ChevronRight,
   Plus,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useOrganizationLogoSrc } from '@/hooks/useOrganizationLogoSrc';
 import type { Organization } from '@/types';
@@ -51,18 +52,18 @@ type NavItem = {
 /**
  * Sidebar — périmètre par lien (audit produit / droits page=… dans Users → permissions commercial)
  *
- * PILOTAGE · Accueil / dashboard (/dashboard)
- * AGENTS IA · Hunt (/prospection-ia), Assistant (/ai-assistant), CommBot, CareBot, CFO (pages /agents/*)
- * CRM · opportunités, leads, contacts
- * ORGANISATION · calendrier, activités, modèles email, objectifs
- * ENTERPRISE · dépenses (plan Enterprise → prolongement CFO)
- * SUPPORT · tickets (terrain client ; rapprochant futur CareBot)
+ * Accueil · tableau de bord (/dashboard)
+ * Agents IA · Hunt, Copilot, CommBot, CareBot, CFO (/agents/*)
+ * CRM & pipeline · leads, opportunités, contacts
+ * Espace de travail · calendrier, activités, emails, objectifs
+ * Performance & finance · dépenses (Enterprise)
+ * Aide · support
  */
 const NAV_STRUCTURE: NavItem[] = [
-  /* Pilotage global */
+  /* Accueil */
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
 
-  /* Piliers produit — 4 agents (Hunt actif ; Comm / Care / CFO à venir) */
+  /* Agents IA (automatisations) */
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentAssistant', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   {
@@ -90,7 +91,7 @@ const NAV_STRUCTURE: NavItem[] = [
     comingSoon: true,
   },
 
-  /* Données commerciales (hors IA) — ordre funnel */
+  /* CRM & pipeline — ordre funnel */
   { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'CRM' },
   { to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires', section: 'CRM' },
   { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients', section: 'CRM' },
@@ -104,7 +105,7 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
-/** Ordre d’affichage des sections (anciennement MAIN / PRODUCTIVITY / …). */
+/** Ordre d’affichage des blocs sidebar (libellés i18n : nav.section*). */
 const SIDEBAR_SECTION_ORDER = [
   'OVERVIEW',
   'AGENTS',
@@ -122,6 +123,12 @@ const SECTION_LABEL_KEYS: Record<string, string> = {
   ENTERPRISE: 'nav.sectionEnterprise',
   SUPPORT: 'nav.sectionSupport',
 };
+
+/** Route courante correspond au lien sidebar (sous-routes incluses sauf `/`). */
+function pathMatchesNav(to: string, pathname: string): boolean {
+  if (to === '/') return pathname === '/';
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const CONSENT_VERSION = 'v1';
@@ -253,6 +260,58 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const showAssistantFab = canViewPage('ai-assistant');
 
+  const [sidebarHoveredSection, setSidebarHoveredSection] = useState<string | null>(null);
+  const [sidebarPinnedSection, setSidebarPinnedSection] = useState<string | null>(null);
+  const sidebarSectionLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const toggleSidebarSectionPin = useCallback((section: string) => {
+    setSidebarPinnedSection((prev) => (prev === section ? null : section));
+  }, []);
+
+  const clearSidebarSectionLeaveTimer = useCallback(() => {
+    if (sidebarSectionLeaveTimerRef.current) {
+      clearTimeout(sidebarSectionLeaveTimerRef.current);
+      sidebarSectionLeaveTimerRef.current = null;
+    }
+  }, []);
+
+  const onSidebarSectionEnter = useCallback(
+    (section: string) => {
+      clearSidebarSectionLeaveTimer();
+      setSidebarHoveredSection(section);
+    },
+    [clearSidebarSectionLeaveTimer],
+  );
+
+  const onSidebarSectionLeave = useCallback(() => {
+    clearSidebarSectionLeaveTimer();
+    sidebarSectionLeaveTimerRef.current = setTimeout(() => {
+      setSidebarHoveredSection(null);
+    }, 240);
+  }, [clearSidebarSectionLeaveTimer]);
+
+  useEffect(() => () => clearSidebarSectionLeaveTimer(), [clearSidebarSectionLeaveTimer]);
+
+  const [sidebarExpandAllSections, setSidebarExpandAllSections] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: none)');
+    const sync = () => setSidebarExpandAllSections(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  const sidebarSectionsWithActiveLink = useMemo(() => {
+    const active = new Set<string>();
+    for (const item of filteredNav) {
+      if (!item.section) continue;
+      if (pathMatchesNav(item.to, location.pathname)) {
+        active.add(item.section);
+      }
+    }
+    return active;
+  }, [filteredNav, location.pathname]);
+
   return (
     <div
       className={`flex h-screen flex-col bg-background ${isRTL ? 'rtl' : 'ltr'}`}
@@ -328,7 +387,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Sidebar - dark navy, minimalist, premium, flat hierarchy */}
+        {/* Sidebar — sections Accueil / Agents IA / CRM / Workspace / Finance / Aide */}
         <aside
           className={cn(
             'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-neutral-200 bg-white text-neutral-700 shadow-sm transition-[width,transform] duration-300 ease-out',
@@ -367,80 +426,125 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Plus size={18} strokeWidth={2} />
             </Link>
           </div>
-          <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-5">
+          <nav className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
             {SIDEBAR_SECTION_ORDER.map((section) => {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
 
               const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
+              const hideSectionHeading = section === 'OVERVIEW' && sectionItems.length <= 1;
+              const collapsible = !hideSectionHeading && !sidebarExpandAllSections;
+              const expanded =
+                !collapsible ||
+                hideSectionHeading ||
+                sidebarHoveredSection === section ||
+                sidebarSectionsWithActiveLink.has(section) ||
+                sidebarPinnedSection === section;
 
               return (
-                <div key={section} className="flex flex-col gap-2">
-                  <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-                    {sectionHeading}
-                  </p>
-                  {sectionItems.map((item) => {
-                    const { to, labelKey, icon: Icon, page, comingSoon } = item;
-                    const isExpenses = page === 'expenses';
-                    const isDisabled = isExpenses && !expensesAccessible;
-
-                    return (
-                      <NavLink
-                        key={to}
-                        to={isDisabled ? '#' : to}
-                        end={to === '/'}
-                        onClick={(e) => {
-                          if (isDisabled) {
-                            e.preventDefault();
-                            return;
-                          }
-                          closeSidebarOnMobile();
-                        }}
-                        className={({ isActive }) =>
-                          cn(
-                            'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200',
-                            isDisabled
-                              ? 'cursor-not-allowed opacity-40'
-                              : isActive
-                                ? 'bg-neutral-100 text-neutral-900'
-                                : comingSoon
-                                  ? 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-                                  : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
-                          )
-                        }
+                <div
+                  key={section}
+                  role={collapsible ? 'group' : undefined}
+                  aria-label={collapsible ? sectionHeading : undefined}
+                  className="flex flex-col gap-2 rounded-xl"
+                  onMouseEnter={() => collapsible && onSidebarSectionEnter(section)}
+                  onMouseLeave={() => collapsible && onSidebarSectionLeave()}
+                >
+                  {!hideSectionHeading &&
+                    (collapsible ? (
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                        aria-expanded={expanded}
+                        onClick={() => toggleSidebarSectionPin(section)}
                       >
-                        {({ isActive }) => (
-                          <>
-                            {isActive && (
-                              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary/90" />
-                            )}
-                            <Icon
-                              size={18}
-                              className={cn(
-                                'shrink-0',
-                                isDisabled && 'opacity-50',
-                                comingSoon && !isActive && 'opacity-80',
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                          {sectionHeading}
+                        </span>
+                        <ChevronRight
+                          size={16}
+                          strokeWidth={2}
+                          className={cn(
+                            'shrink-0 text-neutral-400 transition-transform duration-200',
+                            expanded && 'rotate-90',
+                          )}
+                          aria-hidden
+                        />
+                      </button>
+                    ) : (
+                      <div className="flex w-full items-center justify-between px-3 py-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                          {sectionHeading}
+                        </span>
+                      </div>
+                    ))}
+                  <div
+                    className={cn('flex flex-col gap-2', collapsible && !expanded && 'hidden')}
+                    aria-hidden={collapsible ? !expanded : undefined}
+                  >
+                    {sectionItems.map((item) => {
+                      const { to, labelKey, icon: Icon, page, comingSoon } = item;
+                      const isExpenses = page === 'expenses';
+                      const isDisabled = isExpenses && !expensesAccessible;
+
+                      return (
+                        <NavLink
+                          key={to}
+                          to={isDisabled ? '#' : to}
+                          end={to === '/'}
+                          onClick={(e) => {
+                            if (isDisabled) {
+                              e.preventDefault();
+                              return;
+                            }
+                            closeSidebarOnMobile();
+                          }}
+                          className={({ isActive }) =>
+                            cn(
+                              'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200',
+                              isDisabled
+                                ? 'cursor-not-allowed opacity-40'
+                                : isActive
+                                  ? 'bg-neutral-100 text-neutral-900'
+                                  : comingSoon
+                                    ? 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
+                            )
+                          }
+                        >
+                          {({ isActive }) => (
+                            <>
+                              {isActive && (
+                                <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary/90" />
                               )}
-                              strokeWidth={isActive ? 2.25 : 2}
-                            />
-                            <span className={cn('flex-1', comingSoon && !isActive && 'text-neutral-500')}>
-                              {sidebarNavText(page, labelKey)}
-                            </span>
-                            {comingSoon && (
-                              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-neutral-500 ring-1 ring-neutral-200/80">
-                                {t('nav.comingSoon')}
+                              <Icon
+                                size={18}
+                                className={cn(
+                                  'shrink-0',
+                                  isDisabled && 'opacity-50',
+                                  comingSoon && !isActive && 'opacity-80',
+                                )}
+                                strokeWidth={isActive ? 2.25 : 2}
+                              />
+                              <span className={cn('flex-1', comingSoon && !isActive && 'text-neutral-500')}>
+                                {sidebarNavText(page, labelKey)}
                               </span>
-                            )}
-                            {isDisabled && (
-                              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                                Pro
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </NavLink>
-                    );
-                  })}
+                              {comingSoon && (
+                                <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-neutral-500 ring-1 ring-neutral-200/80">
+                                  {t('nav.comingSoon')}
+                                </span>
+                              )}
+                              {isDisabled && (
+                                <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                                  Pro
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
