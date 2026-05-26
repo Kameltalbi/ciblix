@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '../lib/prismaInterop.js';
+import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { checkPlanFeature } from '../middleware/planRestrictions.js';
 
 export const expensesRoutes = Router();
-const prisma = new PrismaClient();
 
 // Apply auth and plan feature middleware to all routes
 expensesRoutes.use(auth);

@@ -29,8 +29,8 @@ export function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const login = useAuth((s) => s.login);
-  const [email, setEmail] = useState('admin@bilan-crm.tn');
-  const [password, setPassword] = useState('changeme123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

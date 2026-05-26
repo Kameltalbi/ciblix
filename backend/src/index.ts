@@ -77,7 +77,7 @@ app.use(helmet({
 
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
-app.use(morgan('dev'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Stricter rate limit for auth routes (20 req/min)
 const authLimiter = rateLimit({
@@ -161,6 +161,7 @@ app.use('/api/user-permissions', userPermissionsRoutes);
 app.use('/api/commissions', commissionsRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/support-tickets', supportTicketsRoutes);
+app.use('/api/onboarding-chatbot', onboardingChatbotRoutes);
 app.use('/api/prospecting', prospectingRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);

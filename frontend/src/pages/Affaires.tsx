@@ -34,10 +34,11 @@ import { cn, fmtDT, MOIS } from '@/lib/utils';
 import { labelToFrench } from '@/lib/commercialIntel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, DropdownMenu, DropdownMenuTrigger, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItemStyled } from '@/components/ui/form-controls';
+import { Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, DropdownMenu, DropdownMenuTrigger, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItemStyled } from '@/components/ui/form-controls';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ClientFormDialog } from '@/components/clients/ClientFormDialog';
-import { StatutBadge } from './Dashboard';
+import { StatutBadge } from '@/components/StatutBadge';
 import type { Affaire, Client, Product, AffaireType, StatutAffaire, User } from '@/types';
 
 type FormData = {

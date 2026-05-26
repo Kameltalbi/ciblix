@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { StatutBadge } from './Dashboard';
+import { StatutBadge } from '@/components/StatutBadge';
 import type { Activite, Affaire, Client } from '@/types';
 
 type ClientDetailData = Client & {

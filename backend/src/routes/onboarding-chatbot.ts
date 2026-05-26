@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import auth from '../middleware/auth.js';
 
 export const onboardingChatbotRoutes = Router();
+onboardingChatbotRoutes.use(auth);
 
 const querySchema = z.object({
   message: z.string().min(1).max(1000),

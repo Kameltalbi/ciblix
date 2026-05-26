@@ -700,7 +700,7 @@ function PilotageDashboardBody({
 
 export function Dashboard() {
   const { t } = useTranslation();
-  const [hubTab, setHubTab] = useState<DashboardHubTab>('assistants');
+  const [hubTab, setHubTab] = useState<DashboardHubTab>('pilotage');
   const [selectedYear, setSelectedYear] = useState<string>('2026');
 
   const { data: kpis, isPending: kpisPending } = useQuery<KPIs>({
@@ -737,19 +737,33 @@ export function Dashboard() {
       ? t('dashboard.hubTitle')
       : hubTab === 'history'
         ? t('dashboard.hubTabHistory')
-        : t('dashboard.title');
+        : t('dashboard.hubTabPilotage');
 
   const hubTabs: { id: DashboardHubTab; label: string }[] = [
+    { id: 'pilotage', label: t('dashboard.hubTabPilotage') },
     { id: 'assistants', label: t('dashboard.hubTabAssistants') },
     { id: 'history', label: t('dashboard.hubTabHistory') },
-    { id: 'pilotage', label: t('dashboard.hubTabPilotage') },
   ];
 
   return (
     <div className="space-y-8">
       <div className="space-y-5">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">{hubTitle}</h1>
-        <div className="flex flex-wrap gap-6 border-b border-neutral-200">
+        {/* Mobile: dropdown */}
+        <div className="md:hidden">
+          <Select value={hubTab} onValueChange={(v) => setHubTab(v as DashboardHubTab)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {hubTabs.map((tab) => (
+                <SelectItem key={tab.id} value={tab.id}>{tab.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Desktop: tabs */}
+        <div className="hidden md:flex gap-6 border-b border-neutral-200">
           {hubTabs.map((tab) => (
             <button
               key={tab.id}
@@ -789,62 +803,4 @@ export function Dashboard() {
   );
 }
 
-function ProfessionalKpiCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  trend,
-  trendUp,
-  color,
-}: {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  trend: string;
-  trendUp: boolean;
-  color: string;
-}) {
-  const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
-    emerald: { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-200' },
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
-    violet: { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-200' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
-  };
-
-  const colors = colorClasses[color] || colorClasses.emerald;
-
-  return (
-    <Card className={`border-2 ${colors.border} hover:shadow-md transition-shadow`}>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className={`rounded-lg p-2 ${colors.bg} ${colors.text}`}>{icon}</div>
-          <div className={`flex items-center text-xs font-semibold ${trendUp ? 'text-sky-600' : 'text-red-600'}`}>
-            {trendUp ? '↑' : '↓'} {trend}
-          </div>
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          <p className="mt-1 text-sm font-medium text-gray-600">{title}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function StatutBadge({ statut }: { statut: string }) {
-  const map: Record<string, { cls: string; label: string }> = {
-    GAGNE: { cls: 'bg-green-50 text-green-700', label: '✅ Gagné' },
-    QUALIFIE: { cls: 'bg-blue-50 text-blue-700', label: '🔵 Qualifié' },
-    PROPOSITION: { cls: 'bg-orange-50 text-orange-700', label: '🟠 Proposition' },
-    NEGOCIATION: { cls: 'bg-purple-50 text-purple-700', label: '🟣 Négociation' },
-    PROSPECT: { cls: 'bg-yellow-50 text-yellow-700', label: '🟡 Prospect' },
-    PERDU: { cls: 'bg-red-50 text-red-700', label: '❌ Perdu' },
-  };
-  const { cls, label } = map[statut] || map.PROSPECT;
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${cls}`}>{label}</span>
-  );
-}
+export { StatutBadge } from '@/components/StatutBadge';

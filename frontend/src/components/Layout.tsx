@@ -156,7 +156,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const sidebarNavText = (_page: string, labelKey: string) => t(labelKey);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
 

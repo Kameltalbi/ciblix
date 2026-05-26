@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { StatutBadge } from './Dashboard';
+import { StatutBadge } from '@/components/StatutBadge';
 import type { Affaire, Activite, ActiviteType } from '@/types';
 
 const ACTIVITY_ICONS: Record<ActiviteType, any> = {

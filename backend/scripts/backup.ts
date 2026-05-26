@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const prisma = new PrismaClient();
 
 const BACKUP_DIR = process.env.BACKUP_DIR || '/var/backups/crm';
@@ -36,15 +36,16 @@ async function createBackup() {
     const user = url.username;
     const password = url.password;
 
-    // Create PostgreSQL dump
-    const command = `PGPASSWORD="${password}" pg_dump -h ${host} -p ${port} -U ${user} -d ${database} -F c -f ${backupPath}`;
-    await execAsync(command);
+    // Create PostgreSQL dump (using execFile to avoid shell injection)
+    await execFileAsync('pg_dump', ['-h', host, '-p', port, '-U', user, '-d', database, '-F', 'c', '-f', backupPath], {
+      env: { ...process.env, PGPASSWORD: password },
+    });
 
     console.log(`Backup completed: ${backupPath}`);
 
     // Compress backup
     const compressedPath = `${backupPath}.gz`;
-    await execAsync(`gzip ${backupPath}`);
+    await execFileAsync('gzip', [backupPath]);
     console.log(`Backup compressed: ${compressedPath}`);
 
     // Clean old backups

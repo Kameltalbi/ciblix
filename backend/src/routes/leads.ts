@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '../lib/prismaInterop.js';
+import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
 
 export const leadsRoutes = Router();
-const prisma = new PrismaClient();
 
 // Apply auth middleware to all routes
 leadsRoutes.use(auth);

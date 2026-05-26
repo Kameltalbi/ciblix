@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '../lib/prismaInterop.js';
+import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { checkPlanFeature } from '../middleware/planRestrictions.js';
 import {
@@ -11,7 +11,6 @@ import {
 } from '../lib/commercialIntel.js';
 
 export const aiAssistantRoutes = Router();
-const prisma = new PrismaClient();
 
 // Apply auth middleware to all routes
 aiAssistantRoutes.use(auth);

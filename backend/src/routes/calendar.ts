@@ -1,12 +1,25 @@
 import { Router } from 'express';
-import { PrismaClient } from '../lib/prismaInterop.js';
-import auth from '../middleware/auth.js';
+import { z } from 'zod';
+import { prisma } from '../db/prisma.js';
+import auth, { AuthRequest } from '../middleware/auth.js';
 
 export const calendarRoutes = Router();
-const prisma = new PrismaClient();
 
-// Apply auth middleware to all routes
 calendarRoutes.use(auth);
+
+const calendarEventSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+  allDay: z.union([z.boolean(), z.literal('true'), z.literal('false')]).optional(),
+  eventType: z.string().optional().default('MEETING'),
+  location: z.string().nullable().optional(),
+  relatedAffaireId: z.string().nullable().optional(),
+  relatedLeadId: z.string().nullable().optional(),
+  status: z.string().optional().default('SCHEDULED'),
+  reminderMinutes: z.union([z.number(), z.string()]).nullable().optional(),
+});
 
 async function validateRelatedRecords(
   organizationId: string,
@@ -32,8 +45,7 @@ async function validateRelatedRecords(
   return null;
 }
 
-// GET /calendar - Get all calendar events for the organization
-calendarRoutes.get('/', async (req: any, res) => {
+calendarRoutes.get('/', async (req: AuthRequest, res, next) => {
   try {
     const organizationId = req.organizationId;
     const { startDate, endDate, eventType, page = 1, limit = 50 } = req.query;
@@ -68,18 +80,13 @@ calendarRoutes.get('/', async (req: any, res) => {
         total,
       },
     });
-  } catch (error) {
-    console.error('Error fetching calendar events:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar events' });
-  }
+  } catch (e) { next(e); }
 });
 
-// GET /calendar/:id - Get a single calendar event
-calendarRoutes.get('/:id', async (req: any, res) => {
+calendarRoutes.get('/:id', async (req: AuthRequest, res, next) => {
   try {
-    const organizationId = req.organizationId;
     const event = await prisma.calendarEvent.findFirst({
-      where: { id: req.params.id, organizationId, deletedAt: null },
+      where: { id: req.params.id, organizationId: req.organizationId, deletedAt: null },
       include: {
         relatedAffaire: { include: { client: true } },
         relatedLead: true,
@@ -87,54 +94,35 @@ calendarRoutes.get('/:id', async (req: any, res) => {
       },
     });
 
-    if (!event) {
-      return res.status(404).json({ error: 'Calendar event not found' });
-    }
-
+    if (!event) return res.status(404).json({ error: 'Événement introuvable' });
     res.json(event);
-  } catch (error) {
-    console.error('Error fetching calendar event:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar event' });
-  }
+  } catch (e) { next(e); }
 });
 
-// POST /calendar - Create a new calendar event
-calendarRoutes.post('/', async (req: any, res) => {
+calendarRoutes.post('/', async (req: AuthRequest, res, next) => {
   try {
-    const organizationId = req.organizationId;
-    const userId = req.userId;
-    const {
-      title,
-      description,
-      startDate,
-      endDate,
-      allDay,
-      eventType,
-      location,
-      relatedAffaireId,
-      relatedLeadId,
-      status,
-      reminderMinutes,
-    } = req.body;
+    const data = calendarEventSchema.parse(req.body);
+    const organizationId = req.organizationId!;
+    const userId = req.userId!;
 
-    const relationError = await validateRelatedRecords(organizationId, relatedAffaireId, relatedLeadId);
+    const relationError = await validateRelatedRecords(organizationId, data.relatedAffaireId, data.relatedLeadId);
     if (relationError) return res.status(404).json({ error: relationError });
 
     const event = await prisma.calendarEvent.create({
       data: {
         organizationId,
         createdById: userId,
-        title,
-        description: description || null,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        allDay: allDay === true || allDay === 'true',
-        eventType: eventType || 'MEETING',
-        location: location || null,
-        relatedAffaireId: relatedAffaireId && relatedAffaireId !== 'none' ? relatedAffaireId : null,
-        relatedLeadId: relatedLeadId && relatedLeadId !== 'none' ? relatedLeadId : null,
-        status: status || 'SCHEDULED',
-        reminderMinutes: reminderMinutes ? Number(reminderMinutes) : null,
+        title: data.title,
+        description: data.description || null,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        allDay: data.allDay === true || data.allDay === 'true',
+        eventType: data.eventType,
+        location: data.location || null,
+        relatedAffaireId: data.relatedAffaireId && data.relatedAffaireId !== 'none' ? data.relatedAffaireId : null,
+        relatedLeadId: data.relatedLeadId && data.relatedLeadId !== 'none' ? data.relatedLeadId : null,
+        status: data.status,
+        reminderMinutes: data.reminderMinutes ? Number(data.reminderMinutes) : null,
       },
       include: {
         relatedAffaire: { include: { client: true } },
@@ -144,55 +132,36 @@ calendarRoutes.post('/', async (req: any, res) => {
     });
 
     res.status(201).json(event);
-  } catch (error) {
-    console.error('Error creating calendar event:', error);
-    res.status(500).json({ error: 'Failed to create calendar event' });
-  }
+  } catch (e) { next(e); }
 });
 
-// PUT /calendar/:id - Update a calendar event
-calendarRoutes.put('/:id', async (req: any, res) => {
+calendarRoutes.put('/:id', async (req: AuthRequest, res, next) => {
   try {
-    const organizationId = req.organizationId;
-    const {
-      title,
-      description,
-      startDate,
-      endDate,
-      allDay,
-      eventType,
-      location,
-      relatedAffaireId,
-      relatedLeadId,
-      status,
-      reminderMinutes,
-    } = req.body;
+    const data = calendarEventSchema.partial().parse(req.body);
+    const organizationId = req.organizationId!;
 
     const existingEvent = await prisma.calendarEvent.findFirst({
       where: { id: req.params.id, organizationId, deletedAt: null },
     });
+    if (!existingEvent) return res.status(404).json({ error: 'Événement introuvable' });
 
-    if (!existingEvent) {
-      return res.status(404).json({ error: 'Calendar event not found' });
-    }
-
-    const relationError = await validateRelatedRecords(organizationId, relatedAffaireId, relatedLeadId);
+    const relationError = await validateRelatedRecords(organizationId, data.relatedAffaireId, data.relatedLeadId);
     if (relationError) return res.status(404).json({ error: relationError });
 
     const event = await prisma.calendarEvent.update({
       where: { id: req.params.id },
       data: {
-        ...(title !== undefined && { title }),
-        ...(description !== undefined && { description: description || null }),
-        ...(startDate !== undefined && { startDate: new Date(startDate) }),
-        ...(endDate !== undefined && { endDate: new Date(endDate) }),
-        ...(allDay !== undefined && { allDay: allDay === true || allDay === 'true' }),
-        ...(eventType !== undefined && { eventType: eventType || 'MEETING' }),
-        ...(location !== undefined && { location: location || null }),
-        ...(relatedAffaireId !== undefined && { relatedAffaireId: relatedAffaireId && relatedAffaireId !== 'none' ? relatedAffaireId : null }),
-        ...(relatedLeadId !== undefined && { relatedLeadId: relatedLeadId && relatedLeadId !== 'none' ? relatedLeadId : null }),
-        ...(status !== undefined && { status: status || 'SCHEDULED' }),
-        ...(reminderMinutes !== undefined && { reminderMinutes: reminderMinutes ? Number(reminderMinutes) : null }),
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.description !== undefined && { description: data.description || null }),
+        ...(data.startDate !== undefined && { startDate: new Date(data.startDate) }),
+        ...(data.endDate !== undefined && { endDate: new Date(data.endDate) }),
+        ...(data.allDay !== undefined && { allDay: data.allDay === true || data.allDay === 'true' }),
+        ...(data.eventType !== undefined && { eventType: data.eventType }),
+        ...(data.location !== undefined && { location: data.location || null }),
+        ...(data.relatedAffaireId !== undefined && { relatedAffaireId: data.relatedAffaireId && data.relatedAffaireId !== 'none' ? data.relatedAffaireId : null }),
+        ...(data.relatedLeadId !== undefined && { relatedLeadId: data.relatedLeadId && data.relatedLeadId !== 'none' ? data.relatedLeadId : null }),
+        ...(data.status !== undefined && { status: data.status }),
+        ...(data.reminderMinutes !== undefined && { reminderMinutes: data.reminderMinutes ? Number(data.reminderMinutes) : null }),
       },
       include: {
         relatedAffaire: { include: { client: true } },
@@ -202,24 +171,15 @@ calendarRoutes.put('/:id', async (req: any, res) => {
     });
 
     res.json(event);
-  } catch (error) {
-    console.error('Error updating calendar event:', error);
-    res.status(500).json({ error: 'Failed to update calendar event' });
-  }
+  } catch (e) { next(e); }
 });
 
-// DELETE /calendar/:id - Soft delete a calendar event
-calendarRoutes.delete('/:id', async (req: any, res) => {
+calendarRoutes.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
-    const organizationId = req.organizationId;
-
     const existingEvent = await prisma.calendarEvent.findFirst({
-      where: { id: req.params.id, organizationId, deletedAt: null },
+      where: { id: req.params.id, organizationId: req.organizationId, deletedAt: null },
     });
-
-    if (!existingEvent) {
-      return res.status(404).json({ error: 'Calendar event not found' });
-    }
+    if (!existingEvent) return res.status(404).json({ error: 'Événement introuvable' });
 
     await prisma.calendarEvent.update({
       where: { id: req.params.id },
@@ -227,8 +187,5 @@ calendarRoutes.delete('/:id', async (req: any, res) => {
     });
 
     res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting calendar event:', error);
-    res.status(500).json({ error: 'Failed to delete calendar event' });
-  }
+  } catch (e) { next(e); }
 });

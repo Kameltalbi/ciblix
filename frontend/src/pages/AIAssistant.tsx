@@ -263,7 +263,7 @@ export function AIAssistant() {
           </Link>
           <Link to="/dashboard">
             <Button variant="outline" size="sm" className="gap-1.5">
-              <BarChart3 size={16} /> Centre IA
+              <BarChart3 size={16} /> Tableau de bord
             </Button>
           </Link>
           <Link to="/affaires">
