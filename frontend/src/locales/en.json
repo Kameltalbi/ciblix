@@ -58,24 +58,31 @@
     "sectionSupport": "Help",
     "agentHunt": "Hunt AI",
     "agentAssistant": "AI copilot",
-    "agentCareBot": "CareBot",
-    "agentCfo": "CFO AI",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "agentCopilot": "Copilot AI",
+    "agentScout": "Scout AI",
+    "agentOffre": "OffreBot",
+    "agentFactCheck": "FactCheck AI"
   },
   "agentsComingSoon": {
     "badge": "Coming soon",
     "back": "Back",
     "ctaHunt": "Open Hunt AI (prospecting)",
     "footnote": "These modules will roll out gradually on Ciblix.",
-    "careBot": {
-      "name": "CareBot",
-      "role": "Support & FAQ",
-      "description": "Fast answers to customer questions grounded in your docs and knowledge base, connected to your CRM."
+    "scoutAi": {
+      "name": "Scout AI",
+      "role": "Monitoring & opportunity detection",
+      "description": "Monitors tenders, detects upcoming events (trade shows, conferences, forums) and alerts you when an opportunity matches your services."
     },
-    "cfoAi": {
-      "name": "CFO AI",
-      "role": "Analysis & finance",
-      "description": "Financial signals from your CRM—late payments, cash-flow alerts, and suggested next steps for owners."
+    "offreBot": {
+      "name": "OffreBot",
+      "role": "Commercial offer preparation",
+      "description": "Generates personalized commercial proposals from client and deal data, with tailored pricing and conditions."
+    },
+    "factCheckAi": {
+      "name": "FactCheck AI",
+      "role": "Online information verification",
+      "description": "Verifies the reliability of information published online by cross-referencing multiple sources. Detects fake news and misleading content."
     }
   },
   "dashboard": {

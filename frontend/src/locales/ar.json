@@ -58,24 +58,31 @@
     "sectionSupport": "المساعدة",
     "agentHunt": "Hunt AI",
     "agentAssistant": "مساعد الذكاء الاصطناعي",
-    "agentCareBot": "CareBot",
-    "agentCfo": "CFO AI",
-    "comingSoon": "قريبًا"
+    "comingSoon": "قريبًا",
+    "agentCopilot": "Copilot IA",
+    "agentScout": "Scout AI",
+    "agentOffre": "OffreBot",
+    "agentFactCheck": "FactCheck AI"
   },
   "agentsComingSoon": {
     "badge": "قريبًا",
     "back": "رجوع",
     "ctaHunt": "فتح Hunt AI (استكشاف العملاء)",
     "footnote": "سيتم طرح هذه الوحدات تدريجيًا على Ciblix.",
-    "careBot": {
-      "name": "CareBot",
-      "role": "الدعم والأسئلة الشائعة",
-      "description": "إجابات سريعة على أسئلة العملاء مبنية على توثيقكم ومعارفكم، مع ربط بـ CRM."
+    "scoutAi": {
+      "name": "Scout AI",
+      "role": "رصد واكتشاف الفرص",
+      "description": "يراقب المناقصات ويكتشف الأحداث القادمة (معارض، مؤتمرات، منتديات) وينبهك عند ظهور فرصة تتوافق مع خدماتك."
     },
-    "cfoAi": {
-      "name": "CFO AI",
-      "role": "التحليل والمالية",
-      "description": "قراءة إشارات مالية من الـ CRM: تأخر السداد، تنبيهات السيولة وخطوات مقترحة لصاحب المشروع."
+    "offreBot": {
+      "name": "OffreBot",
+      "role": "إعداد العروض التجارية",
+      "description": "ينشئ عروضاً تجارية مخصصة من بيانات العميل والصفقة، مع تسعير وشروط مناسبة."
+    },
+    "factCheckAi": {
+      "name": "FactCheck AI",
+      "role": "التحقق من المعلومات على الإنترنت",
+      "description": "يتحقق من مصداقية المعلومات المنشورة على الويب بمقارنة عدة مصادر. يكشف الأخبار الزائفة والمحتوى المضلل."
     }
   },
   "dashboard": {

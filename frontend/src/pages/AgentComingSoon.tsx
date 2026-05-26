@@ -1,20 +1,26 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { Headphones, PieChart, ArrowLeft } from 'lucide-react';
+import { Radar, FileSignature, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
 
 const AGENT_META: Record<string, { icon: LucideIcon; titleKey: string; roleKey: string; descKey: string }> = {
-  'care-bot': {
-    icon: Headphones,
-    titleKey: 'agentsComingSoon.careBot.name',
-    roleKey: 'agentsComingSoon.careBot.role',
-    descKey: 'agentsComingSoon.careBot.description',
+  'scout-ai': {
+    icon: Radar,
+    titleKey: 'agentsComingSoon.scoutAi.name',
+    roleKey: 'agentsComingSoon.scoutAi.role',
+    descKey: 'agentsComingSoon.scoutAi.description',
   },
-  'cfo-ai': {
-    icon: PieChart,
-    titleKey: 'agentsComingSoon.cfoAi.name',
-    roleKey: 'agentsComingSoon.cfoAi.role',
-    descKey: 'agentsComingSoon.cfoAi.description',
+  'offre-bot': {
+    icon: FileSignature,
+    titleKey: 'agentsComingSoon.offreBot.name',
+    roleKey: 'agentsComingSoon.offreBot.role',
+    descKey: 'agentsComingSoon.offreBot.description',
+  },
+  'factcheck-ai': {
+    icon: ShieldCheck,
+    titleKey: 'agentsComingSoon.factCheckAi.name',
+    roleKey: 'agentsComingSoon.factCheckAi.role',
+    descKey: 'agentsComingSoon.factCheckAi.description',
   },
 };
 

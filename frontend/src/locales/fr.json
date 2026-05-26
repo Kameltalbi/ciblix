@@ -58,24 +58,31 @@
     "sectionSupport": "Aide",
     "agentHunt": "Hunt AI",
     "agentAssistant": "Copilot IA",
-    "agentCareBot": "CareBot",
-    "agentCfo": "CFO AI",
-    "comingSoon": "À venir"
+    "comingSoon": "À venir",
+    "agentCopilot": "Copilot IA",
+    "agentScout": "Scout AI",
+    "agentOffre": "OffreBot",
+    "agentFactCheck": "FactCheck AI"
   },
   "agentsComingSoon": {
     "badge": "À venir",
     "back": "Retour",
     "ctaHunt": "Ouvrir Hunt AI (prospection)",
     "footnote": "Ces modules seront déployés progressivement sur Ciblix.",
-    "careBot": {
-      "name": "CareBot",
-      "role": "Support & FAQ",
-      "description": "Réponses rapides aux questions clients à partir de votre documentation et de votre base de connaissances, directement branchée sur le CRM."
+    "scoutAi": {
+      "name": "Scout AI",
+      "role": "Veille & détection d'opportunités",
+      "description": "Surveille les appels d'offres, détecte les événements à venir (salons, conférences, forums) et alerte quand une opportunité correspond à vos services."
     },
-    "cfoAi": {
-      "name": "CFO AI",
-      "role": "Analyse & finance",
-      "description": "Lecture des signaux financiers issus du CRM : retards de paiement, alertes trésorerie et pistes d’action pour le dirigeant."
+    "offreBot": {
+      "name": "OffreBot",
+      "role": "Préparation d'offres commerciales",
+      "description": "Génère des propositions commerciales personnalisées à partir des données client et affaire, avec chiffrage et conditions adaptés."
+    },
+    "factCheckAi": {
+      "name": "FactCheck AI",
+      "role": "Vérification d'informations en ligne",
+      "description": "Vérifie la fiabilité des informations publiées sur le web en croisant plusieurs sources. Détecte les fake news et les contenus trompeurs."
     }
   },
   "dashboard": {

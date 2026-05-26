@@ -19,8 +19,9 @@ import {
   Radio,
   Sparkles,
 
-  Headphones,
-  PieChart,
+  Radar,
+  FileSignature,
+  ShieldCheck,
   Bot,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -62,20 +63,28 @@ const NAV_STRUCTURE: NavItem[] = [
 
   /* Agents IA (automatisations) */
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
-  { to: '/ai-assistant', labelKey: 'nav.agentAssistant', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
+  { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   {
-    to: '/agents/care-bot',
-    labelKey: 'nav.agentCareBot',
-    icon: Headphones,
-    page: 'care-bot',
+    to: '/agents/scout-ai',
+    labelKey: 'nav.agentScout',
+    icon: Radar,
+    page: 'scout-ai',
     section: 'AGENTS',
     comingSoon: true,
   },
   {
-    to: '/agents/cfo-ai',
-    labelKey: 'nav.agentCfo',
-    icon: PieChart,
-    page: 'cfo-ai',
+    to: '/agents/offre-bot',
+    labelKey: 'nav.agentOffre',
+    icon: FileSignature,
+    page: 'offre-bot',
+    section: 'AGENTS',
+    comingSoon: true,
+  },
+  {
+    to: '/agents/factcheck-ai',
+    labelKey: 'nav.agentFactCheck',
+    icon: ShieldCheck,
+    page: 'factcheck-ai',
     section: 'AGENTS',
     comingSoon: true,
   },
@@ -224,9 +233,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         if (
           page === 'prospection-ia' ||
           page === 'ai-assistant' ||
-          page === 'comm-bot' ||
-          page === 'care-bot' ||
-          page === 'cfo-ai'
+          page === 'scout-ai' ||
+          page === 'offre-bot' ||
+          page === 'factcheck-ai'
         ) {
           const prospecting = permissionsData.find((p) => p.page === 'prospection-ia');
           const assistant = permissionsData.find((p) => p.page === 'ai-assistant');
