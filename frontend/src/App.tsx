@@ -68,6 +68,13 @@ const AgentsMarketplace = lazy(() =>
 const AllProspects = lazy(() =>
   import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
 );
+
+// Public agent pages (marketing / pre-login)
+const HuntAIPage = lazy(() => import('./pages/public/HuntAIPage').then((m) => ({ default: m.HuntAIPage })));
+const CopilotIAPage = lazy(() => import('./pages/public/CopilotIAPage').then((m) => ({ default: m.CopilotIAPage })));
+const ScoutAIPage = lazy(() => import('./pages/public/ScoutAIPage').then((m) => ({ default: m.ScoutAIPage })));
+const OffreBotPage = lazy(() => import('./pages/public/OffreBotPage').then((m) => ({ default: m.OffreBotPage })));
+const FactCheckAIPage = lazy(() => import('./pages/public/FactCheckAIPage').then((m) => ({ default: m.FactCheckAIPage })));
 const Objectifs = lazy(() => import('./pages/Objectifs').then((m) => ({ default: m.Objectifs })));
 const SupportTickets = lazy(() =>
   import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
@@ -122,6 +129,11 @@ export default function App() {
           <Route path="/legal/:type" element={<Legal />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/agent/hunt-ai" element={<HuntAIPage />} />
+          <Route path="/agent/copilot-ia" element={<CopilotIAPage />} />
+          <Route path="/agent/scout-ai" element={<ScoutAIPage />} />
+          <Route path="/agent/offre-bot" element={<OffreBotPage />} />
+          <Route path="/agent/factcheck-ai" element={<FactCheckAIPage />} />
           <Route
             path="/payment-pending"
             element={

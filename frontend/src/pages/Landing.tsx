@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe } from 'lucide-react';
+import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Sparkles, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { OnboardingChatbot } from '@/components/OnboardingChatbot';
@@ -11,6 +11,7 @@ const SOFTFACTURE_BANNER_SLIDE_MS = 500;
 export function Landing() {
   const { i18n, t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [agentsDropdownOpen, setAgentsDropdownOpen] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupEntered, setPopupEntered] = useState(false);
   const [popupExiting, setPopupExiting] = useState(false);
@@ -95,17 +96,68 @@ export function Landing() {
                 className="h-[3.35rem] w-auto max-w-[min(14rem,58vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
               />
             </Link>
-            <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
-              <a href="#features" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
+            <nav className="hidden md:flex items-center gap-5 flex-1 justify-center">
+              <a href="#features" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navFeatures')}
               </a>
-              <a href="#why" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
+              <div
+                className="relative"
+                onMouseEnter={() => setAgentsDropdownOpen(true)}
+                onMouseLeave={() => setAgentsDropdownOpen(false)}
+              >
+                <a
+                  href="#agents"
+                  className="flex items-center gap-1 text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]"
+                >
+                  <Sparkles size={15} className="text-[#016AEB]" />
+                  Agents IA
+                  <ChevronDown size={14} className={cn('transition-transform', agentsDropdownOpen && 'rotate-180')} />
+                </a>
+                {agentsDropdownOpen && (
+                  <div className="absolute left-1/2 top-full z-50 w-[340px] -translate-x-1/2 pt-2">
+                    <div className="rounded-2xl border border-[#BED6F6]/40 bg-white p-3 shadow-xl">
+                    {[
+                      { icon: Radio, name: 'Hunt AI', desc: 'Prospection intelligente par IA', color: 'text-orange-600', bg: 'bg-orange-50', to: '/agent/hunt-ai' },
+                      { icon: Bot, name: 'Copilot IA', desc: 'Assistant conversationnel commercial', color: 'text-blue-600', bg: 'bg-blue-50', to: '/agent/copilot-ia' },
+                      { icon: Radar, name: 'Scout AI', desc: "Veille & détection d'opportunités", color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
+                      { icon: FileSignature, name: 'OffreBot', desc: 'Génération automatique de propositions', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
+                      { icon: ShieldCheck, name: 'FactCheck AI', desc: 'Vérification et fiabilité des informations', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
+                    ].map((agent) => (
+                        <Link
+                          key={agent.name}
+                          to={agent.to}
+                          onClick={() => setAgentsDropdownOpen(false)}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#f4f8fd]"
+                        >
+                          <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', agent.bg)}>
+                            <agent.icon size={18} className={agent.color} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{agent.name}</p>
+                            <p className="text-xs text-muted-foreground">{agent.desc}</p>
+                          </div>
+                        </Link>
+                      ))}
+                      <div className="mt-2 border-t border-gray-100 pt-2">
+                        <Link
+                          to="/register"
+                          onClick={() => setAgentsDropdownOpen(false)}
+                          className="flex items-center justify-center gap-2 rounded-xl bg-[#0071DD] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#016AEB]"
+                        >
+                          Essayer gratuitement <ArrowRight size={14} />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <a href="#why" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navWhy')}
               </a>
-              <Link to="/pricing" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
+              <Link to="/pricing" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navPricing')}
               </Link>
-              <a href="#contact" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
+              <a href="#contact" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navContact')}
               </a>
             </nav>
@@ -156,6 +208,23 @@ export function Landing() {
               <a href="#features" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navFeatures')}
               </a>
+              <a href="#agents" className="flex items-center gap-2 text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
+                <Sparkles size={16} className="text-[#016AEB]" /> Agents IA
+              </a>
+              <div className="ml-6 space-y-2">
+                {[
+                  { icon: Radio, name: 'Hunt AI', color: 'text-orange-600', to: '/agent/hunt-ai' },
+                  { icon: Bot, name: 'Copilot IA', color: 'text-blue-600', to: '/agent/copilot-ia' },
+                  { icon: Radar, name: 'Scout AI', color: 'text-indigo-600', to: '/agent/scout-ai' },
+                  { icon: FileSignature, name: 'OffreBot', color: 'text-violet-600', to: '/agent/offre-bot' },
+                  { icon: ShieldCheck, name: 'FactCheck AI', color: 'text-emerald-600', to: '/agent/factcheck-ai' },
+                ].map((agent) => (
+                  <Link key={agent.name} to={agent.to} onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0071DD]">
+                    <agent.icon size={14} className={agent.color} /> {agent.name}
+                  </Link>
+                ))}
+              </div>
               <a href="#why" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navWhy')}
               </a>
@@ -281,6 +350,102 @@ export function Landing() {
                 />
                 <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Agents IA Section */}
+      <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,113,221,0.25),transparent_70%)]" aria-hidden />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-[#BED6F6] backdrop-blur-sm">
+              <Sparkles size={16} /> 5 Agents IA spécialisés
+            </div>
+            <h2 className="mb-4 text-4xl font-serif font-bold tracking-tight md:text-5xl">
+              Vos collaborateurs IA,{' '}
+              <span className="bg-gradient-to-r from-[#BED6F6] to-white bg-clip-text text-transparent">
+                disponibles 24/7
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-lg text-white/70">
+              Chaque agent est un expert spécialisé dans une tâche métier. Ils travaillent ensemble pour booster votre activité commerciale.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: Radio, name: 'Hunt AI', subtitle: 'Prospection intelligente', to: '/agent/hunt-ai',
+                color: 'from-orange-500 to-amber-500', iconBg: 'bg-orange-500/20',
+                desc: 'Identifie automatiquement les meilleurs prospects en analysant les données publiques, le web et les réseaux sociaux. Score de pertinence, enrichissement automatique.',
+                features: ['Recherche multi-sources', 'Lead scoring IA', 'Enrichissement automatique'],
+              },
+              {
+                icon: Bot, name: 'Copilot IA', subtitle: 'Assistant commercial', to: '/agent/copilot-ia',
+                color: 'from-blue-500 to-cyan-500', iconBg: 'bg-blue-500/20',
+                desc: 'Posez vos questions en langage naturel : CA du mois, top clients, analyse pipeline. Votre assistant commercial répond instantanément.',
+                features: ['Questions en langage naturel', 'Analyse temps réel', 'Recommandations actions'],
+              },
+              {
+                icon: Radar, name: 'Scout AI', subtitle: 'Veille & opportunités', to: '/agent/scout-ai',
+                color: 'from-indigo-500 to-violet-500', iconBg: 'bg-indigo-500/20',
+                desc: "Surveille en continu les appels d'offres, événements et actualités. Détecte les opportunités pertinentes selon votre profil et votre secteur.",
+                features: ["Appels d'offres TUNEPS", 'Événements sectoriels', 'Signaux faibles & news'],
+              },
+              {
+                icon: FileSignature, name: 'OffreBot', subtitle: "Préparation d'offres", to: '/agent/offre-bot',
+                color: 'from-violet-500 to-purple-500', iconBg: 'bg-violet-500/20',
+                desc: "Génère automatiquement des propositions commerciales personnalisées à partir de vos données CRM. Ton, structure et contenu adaptés.",
+                features: ['Génération automatique', 'Personnalisation client', 'Export professionnel'],
+              },
+              {
+                icon: ShieldCheck, name: 'FactCheck AI', subtitle: 'Vérification info', to: '/agent/factcheck-ai',
+                color: 'from-emerald-500 to-teal-500', iconBg: 'bg-emerald-500/20',
+                desc: "Vérifie la fiabilité des informations, articles et sources web. Croise les données pour vous donner un verdict clair et documenté.",
+                features: ['Vérification multi-sources', 'Score de fiabilité', 'Analyse de pages web'],
+              },
+            ].map((agent) => (
+              <Link
+                key={agent.name}
+                to={agent.to}
+                className="group relative rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
+              >
+                <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-xl', agent.iconBg)}>
+                  <agent.icon size={24} className="text-white" />
+                </div>
+                <div className="mb-1 flex items-center gap-2">
+                  <h3 className="text-xl font-bold">{agent.name}</h3>
+                  <span className={cn('rounded-full bg-gradient-to-r px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white', agent.color)}>
+                    {agent.subtitle}
+                  </span>
+                </div>
+                <p className="mb-4 text-sm leading-relaxed text-white/65">{agent.desc}</p>
+                <ul className="mb-4 space-y-1.5">
+                  {agent.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-xs text-white/50">
+                      <CheckCircle2 size={12} className="shrink-0 text-[#BED6F6]" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#BED6F6] transition-colors group-hover:text-white">
+                  En savoir plus <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+            {/* CTA card */}
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 p-6 text-center">
+              <Sparkles size={32} className="mb-3 text-[#BED6F6]" />
+              <h3 className="mb-2 text-lg font-bold">Activez vos agents</h3>
+              <p className="mb-5 text-sm text-white/60">
+                Choisissez les agents adaptés à votre métier depuis le marketplace intégré.
+              </p>
+              <Link to="/register">
+                <Button size="lg" className="bg-white text-[#016AEB] hover:bg-white/90 shadow-glow">
+                  Démarrer gratuitement <ArrowRight size={16} className="ml-2" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
