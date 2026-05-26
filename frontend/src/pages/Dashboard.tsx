@@ -25,8 +25,6 @@ import {
   Legend,
 } from 'recharts';
 
-type DashboardHubTab = 'assistants' | 'history' | 'pilotage';
-
 function KpiCard({
   title,
   subtitle,
@@ -61,124 +59,6 @@ function KpiCard({
           <p className="text-sm font-semibold text-gray-700 mt-1">{title}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DashboardAssistantsHub() {
-  const { t } = useTranslation();
-
-  const cards = [
-    {
-      id: 'hunt',
-      initial: 'H',
-      accent: 'bg-sky-100 text-sky-900',
-      name: t('nav.agentHunt'),
-      role: t('dashboard.hubHuntRole'),
-      desc: t('dashboard.hubHuntDesc'),
-      to: '/prospection-ia',
-      comingSoon: false,
-      ctaChat: false,
-    },
-    {
-      id: 'copilot',
-      initial: 'C',
-      accent: 'bg-violet-100 text-violet-900',
-      name: t('nav.agentAssistant'),
-      role: t('dashboard.hubCopilotRole'),
-      desc: t('dashboard.hubCopilotDesc'),
-      to: '/ai-assistant',
-      comingSoon: false,
-      ctaChat: true,
-    },
-    {
-      id: 'comm',
-      initial: 'M',
-      accent: 'bg-amber-100 text-amber-900',
-      name: t('agentsComingSoon.commBot.name'),
-      role: t('agentsComingSoon.commBot.role'),
-      desc: t('agentsComingSoon.commBot.description'),
-      to: '/agents/comm-bot',
-      comingSoon: true,
-      ctaChat: false,
-    },
-    {
-      id: 'care',
-      initial: 'S',
-      accent: 'bg-emerald-100 text-emerald-900',
-      name: t('agentsComingSoon.careBot.name'),
-      role: t('agentsComingSoon.careBot.role'),
-      desc: t('agentsComingSoon.careBot.description'),
-      to: '/agents/care-bot',
-      comingSoon: true,
-      ctaChat: false,
-    },
-    {
-      id: 'cfo',
-      initial: 'F',
-      accent: 'bg-indigo-100 text-indigo-900',
-      name: t('agentsComingSoon.cfoAi.name'),
-      role: t('agentsComingSoon.cfoAi.role'),
-      desc: t('agentsComingSoon.cfoAi.description'),
-      to: '/agents/cfo-ai',
-      comingSoon: true,
-      ctaChat: false,
-    },
-  ];
-
-  return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      {cards.map((card) => (
-        <Card
-          key={card.id}
-          className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
-        >
-          <CardContent className="flex flex-1 flex-col p-0">
-            <div className="flex gap-3 p-5 pb-3">
-              <div
-                className={cn(
-                  'flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-                  card.accent,
-                )}
-              >
-                {card.initial}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-foreground">{card.name}</p>
-                <p className="truncate text-sm text-muted-foreground">{card.role}</p>
-              </div>
-            </div>
-            <p className="flex-1 px-5 pb-4 text-sm leading-relaxed text-muted-foreground">{card.desc}</p>
-            <Link
-              to={card.to}
-              className={cn(
-                'mt-auto flex w-full items-center justify-center rounded-b-2xl border-t border-neutral-100 bg-neutral-50 px-5 py-3.5 text-center text-sm font-medium text-foreground transition-colors hover:bg-neutral-100',
-              )}
-            >
-              {card.comingSoon
-                ? t('nav.comingSoon')
-                : card.ctaChat
-                  ? t('dashboard.hubChatWith', { name: card.name })
-                  : t('dashboard.hubOpen', { name: card.name })}
-            </Link>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function DashboardHistoryHub() {
-  const { t } = useTranslation();
-
-  return (
-    <Card className="max-w-lg rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
-      <CardContent className="space-y-4 p-8">
-        <p className="text-muted-foreground">{t('dashboard.hubHistoryLead')}</p>
-        <Link to="/ai-assistant" className="block">
-          <Button className="w-full rounded-xl">{t('dashboard.hubHistoryCta')}</Button>
-        </Link>
       </CardContent>
     </Card>
   );
@@ -700,7 +580,6 @@ function PilotageDashboardBody({
 
 export function Dashboard() {
   const { t } = useTranslation();
-  const [hubTab, setHubTab] = useState<DashboardHubTab>('pilotage');
   const [selectedYear, setSelectedYear] = useState<string>('2026');
 
   const { data: kpis, isPending: kpisPending } = useQuery<KPIs>({
@@ -732,73 +611,24 @@ export function Dashboard() {
 
   const pilotageReady = !kpisPending && kpis;
 
-  const hubTitle =
-    hubTab === 'assistants'
-      ? t('dashboard.hubTitle')
-      : hubTab === 'history'
-        ? t('dashboard.hubTabHistory')
-        : t('dashboard.hubTabPilotage');
-
-  const hubTabs: { id: DashboardHubTab; label: string }[] = [
-    { id: 'pilotage', label: t('dashboard.hubTabPilotage') },
-    { id: 'assistants', label: t('dashboard.hubTabAssistants') },
-    { id: 'history', label: t('dashboard.hubTabHistory') },
-  ];
-
   return (
     <div className="space-y-8">
-      <div className="space-y-5">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">{hubTitle}</h1>
-        {/* Mobile: dropdown */}
-        <div className="md:hidden">
-          <Select value={hubTab} onValueChange={(v) => setHubTab(v as DashboardHubTab)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {hubTabs.map((tab) => (
-                <SelectItem key={tab.id} value={tab.id}>{tab.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {/* Desktop: tabs */}
-        <div className="hidden md:flex gap-6 border-b border-neutral-200">
-          {hubTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={hubTab === tab.id}
-              className={cn(
-                '-mb-px border-b-2 pb-3 text-sm font-medium transition-colors',
-                hubTab === tab.id
-                  ? 'border-foreground text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-              onClick={() => setHubTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+        {t('dashboard.hubTabPilotage')}
+      </h1>
 
-      {hubTab === 'assistants' && <DashboardAssistantsHub />}
-      {hubTab === 'history' && <DashboardHistoryHub />}
-      {hubTab === 'pilotage' &&
-        (pilotageReady ? (
-          <PilotageDashboardBody
-            kpis={kpis}
-            selectedYear={selectedYear}
-            setSelectedYear={setSelectedYear}
-            revenueCategories={revenueCategories}
-            expenses={expenses}
-            briefing={briefing}
-          />
-        ) : (
-          <div className="py-20 text-center text-muted-foreground">{t('common.loading')}</div>
-        ))}
+      {pilotageReady ? (
+        <PilotageDashboardBody
+          kpis={kpis}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          revenueCategories={revenueCategories}
+          expenses={expenses}
+          briefing={briefing}
+        />
+      ) : (
+        <div className="py-20 text-center text-muted-foreground">{t('common.loading')}</div>
+      )}
     </div>
   );
 }
