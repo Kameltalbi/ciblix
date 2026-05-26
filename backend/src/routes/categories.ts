@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
-import auth, { AuthRequest } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 
 export const categoriesRoutes = Router();
 
@@ -12,7 +12,7 @@ const categorySchema = z.object({
   type: z.string().min(1, 'Le type est requis'),
 });
 
-categoriesRoutes.get('/', async (req: AuthRequest, res, next) => {
+categoriesRoutes.get('/', async (req: any, res, next) => {
   try {
     const organizationId = req.organizationId;
     const type = req.query.type as string;
@@ -29,9 +29,9 @@ categoriesRoutes.get('/', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
-categoriesRoutes.post('/', async (req: AuthRequest, res, next) => {
+categoriesRoutes.post('/', async (req: any, res, next) => {
   try {
-    const organizationId = req.organizationId as string;
+    const organizationId = req.organizationId;
     const { name, type } = categorySchema.parse(req.body);
 
     const category = await prisma.customCategory.create({
@@ -42,10 +42,10 @@ categoriesRoutes.post('/', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
-categoriesRoutes.delete('/:id', async (req: AuthRequest, res, next) => {
+categoriesRoutes.delete('/:id', async (req: any, res, next) => {
   try {
     const existing = await prisma.customCategory.findFirst({
-      where: { id: req.params.id, organizationId: req.organizationId as string },
+      where: { id: req.params.id, organizationId: req.organizationId },
     });
 
     if (!existing) return res.status(404).json({ error: 'Catégorie non trouvée' });

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
-import auth, { AuthRequest } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 
 export const calendarRoutes = Router();
 
@@ -45,9 +45,9 @@ async function validateRelatedRecords(
   return null;
 }
 
-calendarRoutes.get('/', async (req: AuthRequest, res, next) => {
+calendarRoutes.get('/', async (req: any, res, next) => {
   try {
-    const organizationId = req.organizationId as string;
+    const organizationId = req.organizationId;
     const { startDate, endDate, eventType, page = 1, limit = 50 } = req.query;
 
     const where: any = { organizationId, deletedAt: null };
@@ -83,10 +83,10 @@ calendarRoutes.get('/', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
-calendarRoutes.get('/:id', async (req: AuthRequest, res, next) => {
+calendarRoutes.get('/:id', async (req: any, res, next) => {
   try {
     const event = await prisma.calendarEvent.findFirst({
-      where: { id: req.params.id, organizationId: req.organizationId as string, deletedAt: null },
+      where: { id: req.params.id, organizationId: req.organizationId, deletedAt: null },
       include: {
         relatedAffaire: { include: { client: true } },
         relatedLead: true,
@@ -99,11 +99,11 @@ calendarRoutes.get('/:id', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
-calendarRoutes.post('/', async (req: AuthRequest, res, next) => {
+calendarRoutes.post('/', async (req: any, res, next) => {
   try {
     const data = calendarEventSchema.parse(req.body);
-    const organizationId = req.organizationId as string;
-    const userId = req.userId as string;
+    const organizationId = req.organizationId;
+    const userId = req.userId;
 
     const relationError = await validateRelatedRecords(organizationId, data.relatedAffaireId, data.relatedLeadId);
     if (relationError) return res.status(404).json({ error: relationError });
@@ -135,10 +135,10 @@ calendarRoutes.post('/', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
-calendarRoutes.put('/:id', async (req: AuthRequest, res, next) => {
+calendarRoutes.put('/:id', async (req: any, res, next) => {
   try {
     const data = calendarEventSchema.partial().parse(req.body);
-    const organizationId = req.organizationId as string;
+    const organizationId = req.organizationId;
 
     const existingEvent = await prisma.calendarEvent.findFirst({
       where: { id: req.params.id, organizationId, deletedAt: null },
@@ -174,10 +174,10 @@ calendarRoutes.put('/:id', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
-calendarRoutes.delete('/:id', async (req: AuthRequest, res, next) => {
+calendarRoutes.delete('/:id', async (req: any, res, next) => {
   try {
     const existingEvent = await prisma.calendarEvent.findFirst({
-      where: { id: req.params.id, organizationId: req.organizationId as string, deletedAt: null },
+      where: { id: req.params.id, organizationId: req.organizationId, deletedAt: null },
     });
     if (!existingEvent) return res.status(404).json({ error: 'Événement introuvable' });
 
