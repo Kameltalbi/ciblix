@@ -55,8 +55,11 @@ function LandingHeader() {
             />
           </Link>
           <nav className="hidden md:flex items-center gap-5 flex-1 justify-center">
-            <Link to="/#features" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+            <Link to="/#features" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
               {t('landing.navFeatures')}
+            </Link>
+            <Link to="/#why" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
+              {t('landing.navWhy')}
             </Link>
             <div
               className="relative"
@@ -65,7 +68,7 @@ function LandingHeader() {
             >
               <Link
                 to="/#agents"
-                className="flex items-center gap-1 text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]"
+                className="flex items-center gap-1 text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]"
               >
                 <Sparkles size={15} className="text-[#016AEB]" />
                 Agents IA
@@ -103,13 +106,10 @@ function LandingHeader() {
                 </div>
               )}
             </div>
-            <Link to="/#why" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
-              {t('landing.navWhy')}
-            </Link>
-            <Link to="/pricing" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+            <Link to="/pricing" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
               {t('landing.navPricing')}
             </Link>
-            <Link to="/#contact" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+            <Link to="/#contact" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
               {t('landing.navContact')}
             </Link>
           </nav>

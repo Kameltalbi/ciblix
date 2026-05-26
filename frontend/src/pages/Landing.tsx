@@ -97,8 +97,11 @@ export function Landing() {
               />
             </Link>
             <nav className="hidden md:flex items-center gap-5 flex-1 justify-center">
-              <a href="#features" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              <a href="#features" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
                 {t('landing.navFeatures')}
+              </a>
+              <a href="#why" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
+                {t('landing.navWhy')}
               </a>
               <div
                 className="relative"
@@ -107,7 +110,7 @@ export function Landing() {
               >
                 <a
                   href="#agents"
-                  className="flex items-center gap-1 text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]"
+                  className="flex items-center gap-1 text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]"
                 >
                   <Sparkles size={15} className="text-[#016AEB]" />
                   Agents IA
@@ -151,13 +154,10 @@ export function Landing() {
                   </div>
                 )}
               </div>
-              <a href="#why" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
-                {t('landing.navWhy')}
-              </a>
-              <Link to="/pricing" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              <Link to="/pricing" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
                 {t('landing.navPricing')}
               </Link>
-              <a href="#contact" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              <a href="#contact" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
                 {t('landing.navContact')}
               </a>
             </nav>
