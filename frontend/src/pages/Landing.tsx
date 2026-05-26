@@ -305,56 +305,6 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Hero Section 2 */}
-      <section className="bg-white py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-            <div className="flex h-full min-h-[420px] flex-col justify-between rounded-3xl border border-[#BED6F6]/40 bg-gradient-to-br from-white to-[#eef4fc] p-8 md:p-10 shadow-card">
-              <div>
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#BED6F6]/60 bg-white/80 px-3 py-1.5 text-sm font-medium text-[#1E72B9]">
-                  <BarChart3 size={16} className="text-[#016AEB]" />
-                  {t('landing.heroSection2Badge', { defaultValue: 'Pilotage visuel' })}
-                </div>
-                <h2 className="mb-4 text-3xl font-serif font-bold tracking-tight text-[#0071DD] md:text-4xl">
-                  {t('landing.heroSection2Title', { defaultValue: 'Suivez vos indicateurs en un coup d’œil' })}
-                </h2>
-                <p className="mb-6 text-lg text-muted-foreground">
-                  {t('landing.heroSection2Subtitle', {
-                    defaultValue:
-                      'Une vue claire du CA, du pipeline et de la conversion pour décider vite et garder le contrôle.',
-                  })}
-                </p>
-              </div>
-              <div className="space-y-3 text-sm text-muted-foreground md:text-base">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                  {t('landing.heroSection2Point1', { defaultValue: 'KPIs mis à jour en temps réel' })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                  {t('landing.heroSection2Point2', { defaultValue: 'Graphiques mensuels simples à lire' })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                  {t('landing.heroSection2Point3', { defaultValue: 'Répartition CA réalisée, pipeline, prospection' })}
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden md:flex rounded-3xl border bg-card p-4 md:p-6 min-h-[420px] h-full flex-col">
-              <div className="relative flex-1 rounded-2xl overflow-hidden border bg-white">
-                <img
-                  src="/image.png"
-                  alt="Aperçu du Centre IA CIBLIX"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Agents IA Section */}
       <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,113,221,0.25),transparent_70%)]" aria-hidden />
