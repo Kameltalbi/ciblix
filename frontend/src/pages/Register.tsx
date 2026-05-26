@@ -54,11 +54,11 @@ export function Register() {
   };
 
   const agents = [
-    { icon: Radio, name: 'Hunt AI', desc: 'Prospection IA' },
-    { icon: Bot, name: 'Copilot IA', desc: 'Assistant commercial' },
-    { icon: Radar, name: 'Scout AI', desc: "Veille d'opportunités" },
-    { icon: FileSignature, name: 'OffreBot', desc: "Génération d'offres" },
-    { icon: ShieldCheck, name: 'FactCheck AI', desc: 'Vérification info' },
+    { icon: Radio, nameKey: 'agents.huntAi.name', descKey: 'agents.huntAi.desc' },
+    { icon: Bot, nameKey: 'agents.copilotIa.name', descKey: 'agents.copilotIa.desc' },
+    { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc' },
+    { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc' },
+    { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc' },
   ];
 
   return (
@@ -94,13 +94,13 @@ export function Register() {
             </div>
             <div className="grid grid-cols-1 gap-2.5">
               {agents.map((agent) => (
-                <div key={agent.name} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                <div key={agent.nameKey} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3 backdrop-blur-sm">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
                     <agent.icon size={18} className="text-[#BED6F6]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">{agent.name}</p>
-                    <p className="text-xs text-white/45">{agent.desc}</p>
+                    <p className="text-sm font-semibold text-white">{t(agent.nameKey)}</p>
+                    <p className="text-xs text-white/45">{t(agent.descKey)}</p>
                   </div>
                 </div>
               ))}

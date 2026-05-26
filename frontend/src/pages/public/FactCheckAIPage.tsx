@@ -4,9 +4,9 @@ import { AgentPublicPage } from '../AgentPublicPage';
 export function FactCheckAIPage() {
   return (
     <AgentPublicPage
-      name="FactCheck AI"
+      name="Vérificateur IA"
       subtitle="Vérification et fiabilité des informations"
-      heroDescription="FactCheck AI vérifie la fiabilité des informations, articles et sources web en croisant plusieurs sources. Protégez vos décisions commerciales avec des données vérifiées."
+      heroDescription="Le Vérificateur IA vérifie la fiabilité des informations, articles et sources web en croisant plusieurs sources. Protégez vos décisions commerciales avec des données vérifiées."
       icon={ShieldCheck}
       gradient="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700"
       iconBg="bg-white/20"

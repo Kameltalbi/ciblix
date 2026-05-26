@@ -56,14 +56,14 @@
     "sectionWorkspace": "Workspace",
     "sectionEnterprise": "Performance & finance",
     "sectionSupport": "Help",
-    "agentHunt": "Hunt AI",
-    "agentAssistant": "AI copilot",
+    "agentHunt": "AI Hunter",
+    "agentAssistant": "AI Assistant",
     "comingSoon": "Coming soon",
-    "agentCopilot": "Copilot AI",
-    "agentScout": "Scout AI",
-    "agentOffre": "OffreBot",
-    "agentFactCheck": "FactCheck AI",
-    "agentsMarketplace": "Agents marketplace"
+    "agentCopilot": "AI Assistant",
+    "agentScout": "AI Scout",
+    "agentOffre": "Offer Writer",
+    "agentFactCheck": "AI Fact-Checker",
+    "agentsMarketplace": "Marketplace"
   },
   "agentsComingSoon": {
     "badge": "Coming soon",
@@ -71,17 +71,17 @@
     "ctaHunt": "Open Hunt AI (prospecting)",
     "footnote": "These modules will roll out gradually on Ciblix.",
     "scoutAi": {
-      "name": "Scout AI",
+      "name": "AI Scout",
       "role": "Monitoring & opportunity detection",
       "description": "Monitors tenders, detects upcoming events (trade shows, conferences, forums) and alerts you when an opportunity matches your services."
     },
     "offreBot": {
-      "name": "OffreBot",
+      "name": "Offer Writer",
       "role": "Commercial offer preparation",
       "description": "Generates personalized commercial proposals from client and deal data, with tailored pricing and conditions."
     },
     "factCheckAi": {
-      "name": "FactCheck AI",
+      "name": "AI Fact-Checker",
       "role": "Online information verification",
       "description": "Verifies the reliability of information published online by cross-referencing multiple sources. Detects fake news and misleading content."
     }
@@ -711,5 +711,27 @@
     "androidDescription": "On Android (Chrome): open the menu (three dots), then Install app or Add to Home screen.",
     "install": "Install",
     "later": "Later"
+  },
+  "agents": {
+    "huntAi": {
+      "name": "AI Hunter",
+      "desc": "Smart prospecting"
+    },
+    "copilotIa": {
+      "name": "AI Assistant",
+      "desc": "Commercial assistant"
+    },
+    "scoutAi": {
+      "name": "AI Scout",
+      "desc": "Opportunity monitoring"
+    },
+    "offreBot": {
+      "name": "Offer Writer",
+      "desc": "Proposal generation"
+    },
+    "factCheckAi": {
+      "name": "AI Fact-Checker",
+      "desc": "Information verification"
+    }
   }
 }

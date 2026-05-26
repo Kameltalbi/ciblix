@@ -4,9 +4,9 @@ import { AgentPublicPage } from '../AgentPublicPage';
 export function ScoutAIPage() {
   return (
     <AgentPublicPage
-      name="Scout AI"
+      name="Veilleur IA"
       subtitle="Veille & détection d'opportunités"
-      heroDescription="Scout AI surveille en continu les appels d'offres, événements sectoriels et actualités pour détecter automatiquement les opportunités pertinentes. Ne ratez plus jamais une opportunité."
+      heroDescription="Le Veilleur IA surveille en continu les appels d'offres, événements sectoriels et actualités pour détecter automatiquement les opportunités pertinentes. Ne ratez plus jamais une opportunité."
       icon={Radar}
       gradient="bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-700"
       iconBg="bg-white/20"

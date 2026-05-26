@@ -56,13 +56,13 @@
     "sectionWorkspace": "مساحة العمل",
     "sectionEnterprise": "الأداء والمالية",
     "sectionSupport": "المساعدة",
-    "agentHunt": "Hunt AI",
-    "agentAssistant": "مساعد الذكاء الاصطناعي",
+    "agentHunt": "الصيّاد الذكي",
+    "agentAssistant": "المساعد الذكي",
     "comingSoon": "قريبًا",
-    "agentCopilot": "Copilot IA",
-    "agentScout": "Scout AI",
-    "agentOffre": "OffreBot",
-    "agentFactCheck": "FactCheck AI",
+    "agentCopilot": "المساعد الذكي",
+    "agentScout": "الراصد الذكي",
+    "agentOffre": "كاتب العروض",
+    "agentFactCheck": "المدقّق الذكي",
     "agentsMarketplace": "سوق الوكلاء"
   },
   "agentsComingSoon": {
@@ -71,17 +71,17 @@
     "ctaHunt": "فتح Hunt AI (استكشاف العملاء)",
     "footnote": "سيتم طرح هذه الوحدات تدريجيًا على Ciblix.",
     "scoutAi": {
-      "name": "Scout AI",
+      "name": "الراصد الذكي",
       "role": "رصد واكتشاف الفرص",
       "description": "يراقب المناقصات ويكتشف الأحداث القادمة (معارض، مؤتمرات، منتديات) وينبهك عند ظهور فرصة تتوافق مع خدماتك."
     },
     "offreBot": {
-      "name": "OffreBot",
+      "name": "كاتب العروض",
       "role": "إعداد العروض التجارية",
       "description": "ينشئ عروضاً تجارية مخصصة من بيانات العميل والصفقة، مع تسعير وشروط مناسبة."
     },
     "factCheckAi": {
-      "name": "FactCheck AI",
+      "name": "المدقّق الذكي",
       "role": "التحقق من المعلومات على الإنترنت",
       "description": "يتحقق من مصداقية المعلومات المنشورة على الويب بمقارنة عدة مصادر. يكشف الأخبار الزائفة والمحتوى المضلل."
     }
@@ -711,5 +711,27 @@
     "androidDescription": "على Android (Chrome): افتح القائمة (ثلاث نقاط) ثم تثبيت التطبيق او اضافة الى الشاشة الرئيسية.",
     "install": "تثبيت",
     "later": "لاحقا"
+  },
+  "agents": {
+    "huntAi": {
+      "name": "الصيّاد الذكي",
+      "desc": "استكشاف ذكي للعملاء"
+    },
+    "copilotIa": {
+      "name": "المساعد الذكي",
+      "desc": "مساعد تجاري"
+    },
+    "scoutAi": {
+      "name": "الراصد الذكي",
+      "desc": "رصد الفرص"
+    },
+    "offreBot": {
+      "name": "كاتب العروض",
+      "desc": "إنشاء العروض التجارية"
+    },
+    "factCheckAi": {
+      "name": "المدقّق الذكي",
+      "desc": "التحقق من المعلومات"
+    }
   }
 }

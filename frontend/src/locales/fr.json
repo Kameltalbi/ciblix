@@ -56,14 +56,14 @@
     "sectionWorkspace": "Espace de travail",
     "sectionEnterprise": "Performance & finance",
     "sectionSupport": "Aide",
-    "agentHunt": "Hunt AI",
-    "agentAssistant": "Copilot IA",
+    "agentHunt": "Chasseur IA",
+    "agentAssistant": "Assistant IA",
     "comingSoon": "À venir",
-    "agentCopilot": "Copilot IA",
-    "agentScout": "Scout AI",
-    "agentOffre": "OffreBot",
-    "agentFactCheck": "FactCheck AI",
-    "agentsMarketplace": "Marketplace agents"
+    "agentCopilot": "Assistant IA",
+    "agentScout": "Veilleur IA",
+    "agentOffre": "Rédacteur d'offres",
+    "agentFactCheck": "Vérificateur IA",
+    "agentsMarketplace": "Marketplace"
   },
   "agentsComingSoon": {
     "badge": "À venir",
@@ -71,17 +71,17 @@
     "ctaHunt": "Ouvrir Hunt AI (prospection)",
     "footnote": "Ces modules seront déployés progressivement sur Ciblix.",
     "scoutAi": {
-      "name": "Scout AI",
+      "name": "Veilleur IA",
       "role": "Veille & détection d'opportunités",
       "description": "Surveille les appels d'offres, détecte les événements à venir (salons, conférences, forums) et alerte quand une opportunité correspond à vos services."
     },
     "offreBot": {
-      "name": "OffreBot",
+      "name": "Rédacteur d'offres",
       "role": "Préparation d'offres commerciales",
       "description": "Génère des propositions commerciales personnalisées à partir des données client et affaire, avec chiffrage et conditions adaptés."
     },
     "factCheckAi": {
-      "name": "FactCheck AI",
+      "name": "Vérificateur IA",
       "role": "Vérification d'informations en ligne",
       "description": "Vérifie la fiabilité des informations publiées sur le web en croisant plusieurs sources. Détecte les fake news et les contenus trompeurs."
     }
@@ -717,5 +717,27 @@
     "androidDescription": "Sur Android (Chrome): touchez le menu (trois points) puis Installez l'application ou Ajoutez a l'ecran d'accueil.",
     "install": "Installer",
     "later": "Plus tard"
+  },
+  "agents": {
+    "huntAi": {
+      "name": "Chasseur IA",
+      "desc": "Prospection intelligente"
+    },
+    "copilotIa": {
+      "name": "Assistant IA",
+      "desc": "Assistant commercial"
+    },
+    "scoutAi": {
+      "name": "Veilleur IA",
+      "desc": "Veille d'opportunités"
+    },
+    "offreBot": {
+      "name": "Rédacteur d'offres",
+      "desc": "Génération de propositions"
+    },
+    "factCheckAi": {
+      "name": "Vérificateur IA",
+      "desc": "Vérification des informations"
+    }
   }
 }

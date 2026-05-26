@@ -4,9 +4,9 @@ import { AgentPublicPage } from '../AgentPublicPage';
 export function OffreBotPage() {
   return (
     <AgentPublicPage
-      name="OffreBot"
+      name="Rédacteur d'offres"
       subtitle="Génération automatique de propositions commerciales"
-      heroDescription="OffreBot crée des propositions commerciales professionnelles en quelques secondes à partir de vos données CRM. Personnalisées, structurées et prêtes à envoyer."
+      heroDescription="Le Rédacteur d'offres crée des propositions commerciales professionnelles en quelques secondes à partir de vos données CRM. Personnalisées, structurées et prêtes à envoyer."
       icon={FileSignature}
       gradient="bg-gradient-to-br from-violet-600 via-purple-600 to-violet-700"
       iconBg="bg-white/20"

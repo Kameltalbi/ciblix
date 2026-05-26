@@ -117,11 +117,11 @@ export function Landing() {
                   <div className="absolute left-1/2 top-full z-50 w-[340px] -translate-x-1/2 pt-2">
                     <div className="rounded-2xl border border-[#BED6F6]/40 bg-white p-3 shadow-xl">
                     {[
-                      { icon: Radio, name: 'Hunt AI', desc: 'Prospection intelligente par IA', color: 'text-orange-600', bg: 'bg-orange-50', to: '/agent/hunt-ai' },
-                      { icon: Bot, name: 'Copilot IA', desc: 'Assistant conversationnel commercial', color: 'text-blue-600', bg: 'bg-blue-50', to: '/agent/copilot-ia' },
-                      { icon: Radar, name: 'Scout AI', desc: "Veille & détection d'opportunités", color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
-                      { icon: FileSignature, name: 'OffreBot', desc: 'Génération automatique de propositions', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
-                      { icon: ShieldCheck, name: 'FactCheck AI', desc: 'Vérification et fiabilité des informations', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
+                      { icon: Radio, nameKey: 'agents.huntAi.name', descKey: 'agents.huntAi.desc', color: 'text-orange-600', bg: 'bg-orange-50', to: '/agent/hunt-ai' },
+                      { icon: Bot, nameKey: 'agents.copilotIa.name', descKey: 'agents.copilotIa.desc', color: 'text-blue-600', bg: 'bg-blue-50', to: '/agent/copilot-ia' },
+                      { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
+                      { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
+                      { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
                     ].map((agent) => (
                         <Link
                           key={agent.name}
@@ -133,8 +133,8 @@ export function Landing() {
                             <agent.icon size={18} className={agent.color} />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-foreground">{agent.name}</p>
-                            <p className="text-xs text-muted-foreground">{agent.desc}</p>
+                            <p className="text-sm font-semibold text-foreground">{t(agent.nameKey)}</p>
+                            <p className="text-xs text-muted-foreground">{t(agent.descKey)}</p>
                           </div>
                         </Link>
                       ))}
@@ -213,15 +213,15 @@ export function Landing() {
               </a>
               <div className="ml-6 space-y-2">
                 {[
-                  { icon: Radio, name: 'Hunt AI', color: 'text-orange-600', to: '/agent/hunt-ai' },
-                  { icon: Bot, name: 'Copilot IA', color: 'text-blue-600', to: '/agent/copilot-ia' },
-                  { icon: Radar, name: 'Scout AI', color: 'text-indigo-600', to: '/agent/scout-ai' },
-                  { icon: FileSignature, name: 'OffreBot', color: 'text-violet-600', to: '/agent/offre-bot' },
-                  { icon: ShieldCheck, name: 'FactCheck AI', color: 'text-emerald-600', to: '/agent/factcheck-ai' },
+                  { icon: Radio, nameKey: 'agents.huntAi.name', color: 'text-orange-600', to: '/agent/hunt-ai' },
+                  { icon: Bot, nameKey: 'agents.copilotIa.name', color: 'text-blue-600', to: '/agent/copilot-ia' },
+                  { icon: Radar, nameKey: 'agents.scoutAi.name', color: 'text-indigo-600', to: '/agent/scout-ai' },
+                  { icon: FileSignature, nameKey: 'agents.offreBot.name', color: 'text-violet-600', to: '/agent/offre-bot' },
+                  { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', color: 'text-emerald-600', to: '/agent/factcheck-ai' },
                 ].map((agent) => (
-                  <Link key={agent.name} to={agent.to} onClick={() => setMobileMenuOpen(false)}
+                  <Link key={agent.nameKey} to={agent.to} onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0071DD]">
-                    <agent.icon size={14} className={agent.color} /> {agent.name}
+                    <agent.icon size={14} className={agent.color} /> {t(agent.nameKey)}
                   </Link>
                 ))}
               </div>
@@ -377,38 +377,33 @@ export function Landing() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                icon: Radio, name: 'Hunt AI', subtitle: 'Prospection intelligente', to: '/agent/hunt-ai',
+                icon: Radio, nameKey: 'agents.huntAi.name', descKey: 'agents.huntAi.desc', to: '/agent/hunt-ai',
                 color: 'from-orange-500 to-amber-500', iconBg: 'bg-orange-500/20',
-                desc: 'Identifie automatiquement les meilleurs prospects en analysant les données publiques, le web et les réseaux sociaux. Score de pertinence, enrichissement automatique.',
                 features: ['Recherche multi-sources', 'Lead scoring IA', 'Enrichissement automatique'],
               },
               {
-                icon: Bot, name: 'Copilot IA', subtitle: 'Assistant commercial', to: '/agent/copilot-ia',
+                icon: Bot, nameKey: 'agents.copilotIa.name', descKey: 'agents.copilotIa.desc', to: '/agent/copilot-ia',
                 color: 'from-blue-500 to-cyan-500', iconBg: 'bg-blue-500/20',
-                desc: 'Posez vos questions en langage naturel : CA du mois, top clients, analyse pipeline. Votre assistant commercial répond instantanément.',
                 features: ['Questions en langage naturel', 'Analyse temps réel', 'Recommandations actions'],
               },
               {
-                icon: Radar, name: 'Scout AI', subtitle: 'Veille & opportunités', to: '/agent/scout-ai',
+                icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', to: '/agent/scout-ai',
                 color: 'from-indigo-500 to-violet-500', iconBg: 'bg-indigo-500/20',
-                desc: "Surveille en continu les appels d'offres, événements et actualités. Détecte les opportunités pertinentes selon votre profil et votre secteur.",
                 features: ["Appels d'offres TUNEPS", 'Événements sectoriels', 'Signaux faibles & news'],
               },
               {
-                icon: FileSignature, name: 'OffreBot', subtitle: "Préparation d'offres", to: '/agent/offre-bot',
+                icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', to: '/agent/offre-bot',
                 color: 'from-violet-500 to-purple-500', iconBg: 'bg-violet-500/20',
-                desc: "Génère automatiquement des propositions commerciales personnalisées à partir de vos données CRM. Ton, structure et contenu adaptés.",
                 features: ['Génération automatique', 'Personnalisation client', 'Export professionnel'],
               },
               {
-                icon: ShieldCheck, name: 'FactCheck AI', subtitle: 'Vérification info', to: '/agent/factcheck-ai',
+                icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', to: '/agent/factcheck-ai',
                 color: 'from-emerald-500 to-teal-500', iconBg: 'bg-emerald-500/20',
-                desc: "Vérifie la fiabilité des informations, articles et sources web. Croise les données pour vous donner un verdict clair et documenté.",
                 features: ['Vérification multi-sources', 'Score de fiabilité', 'Analyse de pages web'],
               },
             ].map((agent) => (
               <Link
-                key={agent.name}
+                key={agent.nameKey}
                 to={agent.to}
                 className="group relative rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
               >
@@ -416,12 +411,9 @@ export function Landing() {
                   <agent.icon size={24} className="text-white" />
                 </div>
                 <div className="mb-1 flex items-center gap-2">
-                  <h3 className="text-xl font-bold">{agent.name}</h3>
-                  <span className={cn('rounded-full bg-gradient-to-r px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white', agent.color)}>
-                    {agent.subtitle}
-                  </span>
+                  <h3 className="text-xl font-bold">{t(agent.nameKey)}</h3>
                 </div>
-                <p className="mb-4 text-sm leading-relaxed text-white/65">{agent.desc}</p>
+                <p className="mb-4 text-sm leading-relaxed text-white/65">{t(agent.descKey)}</p>
                 <ul className="mb-4 space-y-1.5">
                   {agent.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-white/50">

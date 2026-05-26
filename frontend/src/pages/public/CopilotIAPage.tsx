@@ -4,9 +4,9 @@ import { AgentPublicPage } from '../AgentPublicPage';
 export function CopilotIAPage() {
   return (
     <AgentPublicPage
-      name="Copilot IA"
+      name="Assistant IA"
       subtitle="Votre assistant commercial conversationnel"
-      heroDescription="Posez vos questions en langage naturel et obtenez des réponses instantanées. CA du mois, top clients, analyse pipeline, prévisions — Copilot IA transforme vos données CRM en insights actionnables."
+      heroDescription="Posez vos questions en langage naturel et obtenez des réponses instantanées. CA du mois, top clients, analyse pipeline, prévisions — l'Assistant IA transforme vos données CRM en insights actionnables."
       icon={Bot}
       gradient="bg-gradient-to-br from-blue-600 via-cyan-600 to-blue-700"
       iconBg="bg-white/20"

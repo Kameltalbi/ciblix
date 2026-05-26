@@ -4,9 +4,9 @@ import { AgentPublicPage } from '../AgentPublicPage';
 export function HuntAIPage() {
   return (
     <AgentPublicPage
-      name="Hunt AI"
+      name="Chasseur IA"
       subtitle="Prospection commerciale intelligente"
-      heroDescription="Hunt AI identifie automatiquement vos meilleurs prospects en analysant le web, les réseaux sociaux et les données publiques. Fini les heures perdues à chercher des contacts — l'IA fait le travail pour vous."
+      heroDescription="Le Chasseur IA identifie automatiquement vos meilleurs prospects en analysant le web, les réseaux sociaux et les données publiques. Fini les heures perdues à chercher des contacts — l'IA fait le travail pour vous."
       icon={Radio}
       gradient="bg-gradient-to-br from-orange-600 via-amber-600 to-orange-700"
       iconBg="bg-white/20"
