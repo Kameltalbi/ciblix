@@ -7,7 +7,6 @@ import { fmtDT } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Badge,
   Label,
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/form-controls';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { StatutBadge } from '@/components/StatutBadge';
 import type { Activite, Affaire, Client } from '@/types';
