@@ -31,7 +31,7 @@ categoriesRoutes.get('/', async (req: AuthRequest, res, next) => {
 
 categoriesRoutes.post('/', async (req: AuthRequest, res, next) => {
   try {
-    const organizationId = req.organizationId!;
+    const organizationId = req.organizationId as string;
     const { name, type } = categorySchema.parse(req.body);
 
     const category = await prisma.customCategory.create({
@@ -45,7 +45,7 @@ categoriesRoutes.post('/', async (req: AuthRequest, res, next) => {
 categoriesRoutes.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
     const existing = await prisma.customCategory.findFirst({
-      where: { id: req.params.id, organizationId: req.organizationId },
+      where: { id: req.params.id, organizationId: req.organizationId as string },
     });
 
     if (!existing) return res.status(404).json({ error: 'Catégorie non trouvée' });
