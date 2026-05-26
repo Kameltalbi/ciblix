@@ -8,7 +8,7 @@ export function OffreBotPage() {
       subtitle="Génération automatique de propositions commerciales"
       heroDescription="Le Rédacteur d'offres crée des propositions commerciales professionnelles en quelques secondes à partir de vos données CRM. Personnalisées, structurées et prêtes à envoyer."
       icon={FileSignature}
-      gradient="bg-gradient-to-br from-violet-600 via-purple-600 to-violet-700"
+      gradient="bg-gradient-to-br from-[#0071DD] via-[#016AEB] to-[#0a2540]"
       iconBg="bg-white/20"
       stats={[
         { value: '30s', label: 'Pour générer une offre' },

@@ -8,7 +8,7 @@ export function FactCheckAIPage() {
       subtitle="Vérification et fiabilité des informations"
       heroDescription="Le Vérificateur IA vérifie la fiabilité des informations, articles et sources web en croisant plusieurs sources. Protégez vos décisions commerciales avec des données vérifiées."
       icon={ShieldCheck}
-      gradient="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700"
+      gradient="bg-gradient-to-br from-[#016AEB] via-[#0071DD] to-[#0a2540]"
       iconBg="bg-white/20"
       stats={[
         { value: '10+', label: 'Sources croisées par vérification' },

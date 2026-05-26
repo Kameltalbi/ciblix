@@ -8,7 +8,7 @@ export function ScoutAIPage() {
       subtitle="Veille & détection d'opportunités"
       heroDescription="Le Veilleur IA surveille en continu les appels d'offres, événements sectoriels et actualités pour détecter automatiquement les opportunités pertinentes. Ne ratez plus jamais une opportunité."
       icon={Radar}
-      gradient="bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-700"
+      gradient="bg-gradient-to-br from-[#016AEB] via-[#1E72B9] to-[#0a2540]"
       iconBg="bg-white/20"
       stats={[
         { value: '3', label: 'Piliers de veille (AO, Events, News)' },

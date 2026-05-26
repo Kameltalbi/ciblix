@@ -8,7 +8,7 @@ export function CopilotIAPage() {
       subtitle="Votre assistant commercial conversationnel"
       heroDescription="Posez vos questions en langage naturel et obtenez des réponses instantanées. CA du mois, top clients, analyse pipeline, prévisions — l'Assistant IA transforme vos données CRM en insights actionnables."
       icon={Bot}
-      gradient="bg-gradient-to-br from-blue-600 via-cyan-600 to-blue-700"
+      gradient="bg-gradient-to-br from-[#0071DD] via-[#016AEB] to-[#0a2540]"
       iconBg="bg-white/20"
       stats={[
         { value: '< 3s', label: 'Temps de réponse moyen' },

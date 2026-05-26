@@ -8,7 +8,7 @@ export function HuntAIPage() {
       subtitle="Prospection commerciale intelligente"
       heroDescription="Le Chasseur IA identifie automatiquement vos meilleurs prospects en analysant le web, les réseaux sociaux et les données publiques. Fini les heures perdues à chercher des contacts — l'IA fait le travail pour vous."
       icon={Radio}
-      gradient="bg-gradient-to-br from-orange-600 via-amber-600 to-orange-700"
+      gradient="bg-gradient-to-br from-[#016AEB] via-[#0071DD] to-[#0a2540]"
       iconBg="bg-white/20"
       stats={[
         { value: '10x', label: 'Plus rapide que la recherche manuelle' },
