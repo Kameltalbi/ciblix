@@ -6,7 +6,7 @@ export function HuntAIPage() {
     <AgentPublicPage
       name="Chasseur IA"
       subtitle="Prospection commerciale intelligente"
-      heroDescription="Le Chasseur IA identifie automatiquement vos meilleurs prospects en analysant le web, les réseaux sociaux et les données publiques. Fini les heures perdues à chercher des contacts — l'IA fait le travail pour vous."
+      heroDescription="Le Chasseur IA recherche automatiquement des entreprises cibles en fonction de vos critères : secteur, zone géographique, type d'activité. Fini les heures perdues à chercher des contacts — l'IA trouve les bons prospects pour vous."
       icon={Radio}
       gradient="bg-gradient-to-br from-[#016AEB] via-[#0071DD] to-[#0a2540]"
       iconBg="bg-white/20"
@@ -20,7 +20,7 @@ export function HuntAIPage() {
         {
           icon: Search,
           title: 'Recherche multi-sources',
-          description: "Scanne Google, LinkedIn, annuaires professionnels et registres publics pour trouver des prospects qualifiés dans votre secteur et zone géographique.",
+          description: "Recherche dans des milliers de sources professionnelles pour trouver des prospects qualifiés dans votre secteur et zone géographique.",
         },
         {
           icon: BarChart3,
