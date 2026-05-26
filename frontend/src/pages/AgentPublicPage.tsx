@@ -215,7 +215,7 @@ export function AgentPublicPage({
               </Button>
             </Link>
             <Link to="/pricing">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 text-lg">
+              <Button size="lg" className="border-2 border-white bg-transparent px-8 text-lg text-white hover:bg-white hover:text-[#016AEB]">
                 Voir les tarifs
               </Button>
             </Link>
@@ -326,7 +326,7 @@ export function AgentPublicPage({
               </Button>
             </Link>
             <Link to="/pricing">
-              <Button size="lg" className="border-2 border-white/40 bg-transparent px-8 text-lg text-white hover:bg-white/15">
+              <Button size="lg" className="border-2 border-white bg-transparent px-8 text-lg text-white hover:bg-white hover:text-[#016AEB]">
                 Comparer les plans
               </Button>
             </Link>
