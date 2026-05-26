@@ -448,119 +448,65 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="mb-4 text-4xl font-serif font-bold tracking-tight text-[#0071DD] md:text-5xl">
-              {t('landing.featuresTitle')}
+              Vendez plus, vendez mieux
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('landing.featuresSubtitle')}
+              L'IA travaille pour vous à chaque étape du cycle de vente — de la prospection à la signature.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <BarChart3 size={24} className="text-[#016AEB]" />
+                <Radio size={24} className="text-[#016AEB]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureDashboard')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Trouvez vos prospects automatiquement</h3>
               <p className="text-base text-muted-foreground">
-                {t('landing.featureDashboardDesc')}
+                Le Chasseur IA recherche des entreprises cibles selon vos critères : secteur, zone, activité. Des prospects qualifiés sans effort.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <Users size={24} className="text-[#1E72B9]" />
+                <Radar size={24} className="text-[#1E72B9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureClients')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Ne ratez aucune opportunité</h3>
               <p className="text-base text-muted-foreground">
-                {t('landing.featureClientsDesc')}
+                Le Veilleur IA surveille les appels d'offres, événements et actualités pour détecter les opportunités qui correspondent à votre activité.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f1fc] ring-1 ring-[#016AEB]/20">
-                <Zap size={24} className="text-[#0071DD]" />
+                <FileSignature size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureAI')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Rédigez vos offres en 30 secondes</h3>
               <p className="text-base text-muted-foreground">
-                {t('landing.featureAIDesc')}
+                Le Rédacteur d'offres génère des propositions commerciales personnalisées à partir de vos données CRM. Prêtes à envoyer.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <Shield size={24} className="text-[#1E72B9]" />
+                <Bot size={24} className="text-[#1E72B9]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureSecurity')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Pilotez votre activité en une question</h3>
               <p className="text-base text-muted-foreground">
-                {t('landing.featureSecurityDesc')}
+                L'Assistant IA répond instantanément à vos questions : CA du mois, top clients, pipeline, prévisions. Pas de tableaux à lire, que de l'utile.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <TrendingUp size={24} className="text-[#016AEB]" />
+                <ShieldCheck size={24} className="text-[#016AEB]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureAnalytics')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Vérifiez avant de décider</h3>
               <p className="text-base text-muted-foreground">
-                {t('landing.featureAnalyticsDesc')}
+                Le Vérificateur IA croise les sources pour valider la fiabilité des informations. Prenez des décisions commerciales basées sur des données vérifiées.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <Users size={24} className="text-[#0071DD]" />
+                <BarChart3 size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureCollaboration')}</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Un CRM conçu pour conclure</h3>
               <p className="text-base text-muted-foreground">
-                {t('landing.featureCollaborationDesc')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <Target size={24} className="text-[#016AEB]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureObjectives')}</h3>
-              <p className="text-base text-muted-foreground">
-                {t('landing.featureObjectivesDesc')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <Lock size={24} className="text-[#1E72B9]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featurePermissions')}</h3>
-              <p className="text-base text-muted-foreground">
-                {t('landing.featurePermissionsDesc')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <DollarSign size={24} className="text-[#0071DD]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureExpenses')}</h3>
-              <p className="text-base text-muted-foreground">
-                {t('landing.featureExpensesDesc')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <PieChart size={24} className="text-[#016AEB]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureCoverage')}</h3>
-              <p className="text-base text-muted-foreground">
-                {t('landing.featureCoverageDesc')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f1fc] ring-1 ring-[#016AEB]/20">
-                <Award size={24} className="text-[#1E72B9]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureBonuses')}</h3>
-              <p className="text-base text-muted-foreground">
-                {t('landing.featureBonusesDesc')}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <Target size={24} className="text-[#0071DD]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">{t('landing.featureBonusCustomization')}</h3>
-              <p className="text-base text-muted-foreground">
-                {t('landing.featureBonusCustomizationDesc')}
+                Pipeline visuel, suivi des affaires, gestion des contacts, objectifs de vente et calendrier — tout ce qu'il faut pour transformer vos prospects en clients.
               </p>
             </div>
           </div>
