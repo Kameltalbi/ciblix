@@ -42,6 +42,8 @@ import { supportTicketsRoutes } from './routes/support-tickets.js';
 import { onboardingChatbotRoutes } from './routes/onboarding-chatbot.js';
 import { prospectingRoutes } from './routes/prospecting.js';
 import { scoutAiRoutes } from './routes/scout-ai.js';
+import { offreBotRoutes } from './routes/offre-bot.js';
+import { factcheckAiRoutes } from './routes/factcheck-ai.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 
@@ -165,6 +167,8 @@ app.use('/api/support-tickets', supportTicketsRoutes);
 app.use('/api/onboarding-chatbot', onboardingChatbotRoutes);
 app.use('/api/prospecting', prospectingRoutes);
 app.use('/api/scout-ai', scoutAiRoutes);
+app.use('/api/offre-bot', offreBotRoutes);
+app.use('/api/factcheck-ai', factcheckAiRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
 

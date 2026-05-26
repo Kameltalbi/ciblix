@@ -65,22 +65,8 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
-  {
-    to: '/agents/offre-bot',
-    labelKey: 'nav.agentOffre',
-    icon: FileSignature,
-    page: 'offre-bot',
-    section: 'AGENTS',
-    comingSoon: true,
-  },
-  {
-    to: '/agents/factcheck-ai',
-    labelKey: 'nav.agentFactCheck',
-    icon: ShieldCheck,
-    page: 'factcheck-ai',
-    section: 'AGENTS',
-    comingSoon: true,
-  },
+  { to: '/agents/offre-bot', labelKey: 'nav.agentOffre', icon: FileSignature, page: 'offre-bot', section: 'AGENTS' },
+  { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'AGENTS' },
 
   /* CRM & pipeline — ordre funnel */
   { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'CRM' },
