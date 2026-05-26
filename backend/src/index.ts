@@ -41,6 +41,7 @@ import { superadminRoutes } from './routes/superadmin.js';
 import { supportTicketsRoutes } from './routes/support-tickets.js';
 import { onboardingChatbotRoutes } from './routes/onboarding-chatbot.js';
 import { prospectingRoutes } from './routes/prospecting.js';
+import { scoutAiRoutes } from './routes/scout-ai.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 
@@ -163,6 +164,7 @@ app.use('/api/superadmin', superadminRoutes);
 app.use('/api/support-tickets', supportTicketsRoutes);
 app.use('/api/onboarding-chatbot', onboardingChatbotRoutes);
 app.use('/api/prospecting', prospectingRoutes);
+app.use('/api/scout-ai', scoutAiRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
 

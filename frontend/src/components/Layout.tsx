@@ -64,14 +64,7 @@ const NAV_STRUCTURE: NavItem[] = [
   /* Agents IA (automatisations) */
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
-  {
-    to: '/agents/scout-ai',
-    labelKey: 'nav.agentScout',
-    icon: Radar,
-    page: 'scout-ai',
-    section: 'AGENTS',
-    comingSoon: true,
-  },
+  { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   {
     to: '/agents/offre-bot',
     labelKey: 'nav.agentOffre',
