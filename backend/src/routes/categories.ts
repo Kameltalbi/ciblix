@@ -9,7 +9,7 @@ categoriesRoutes.use(auth);
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
-  type: z.string().min(1, 'Le type est requis'),
+  type: z.enum(['EXPENSE', 'REVENUE']),
 });
 
 categoriesRoutes.get('/', async (req: any, res, next) => {
