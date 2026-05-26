@@ -1,9 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Sparkles, Globe, Menu, X, ChevronDown } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Sparkles, Globe, Menu, X, ChevronDown, Radio, Bot, Radar, FileSignature, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 interface Feature {
@@ -30,58 +30,159 @@ interface AgentPageProps {
   stats: { value: string; label: string }[];
 }
 
-function PublicHeader() {
+const AGENT_NAV = [
+  { icon: Radio, nameKey: 'agents.huntAi.name', descKey: 'agents.huntAi.desc', color: 'text-orange-600', bg: 'bg-orange-50', to: '/agent/hunt-ai' },
+  { icon: Bot, nameKey: 'agents.copilotIa.name', descKey: 'agents.copilotIa.desc', color: 'text-blue-600', bg: 'bg-blue-50', to: '/agent/copilot-ia' },
+  { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
+  { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
+  { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
+];
+
+function LandingHeader() {
   const { i18n, t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [agentsDropdownOpen, setAgentsDropdownOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/90 shadow-sm backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="transition-opacity hover:opacity-80">
-            <img src="/logo-ciblix.png" alt="CIBLIX" className="h-10 w-auto sm:h-12" />
+        <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20 sm:py-0">
+          <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+            <img
+              src="/logo-ciblix.png"
+              alt="CIBLIX"
+              className="h-[3.35rem] w-auto max-w-[min(14rem,58vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
+            />
           </Link>
-          <nav className="hidden md:flex items-center gap-5">
-            <Link to="/" className="text-sm text-muted-foreground hover:text-[#0071DD]">Accueil</Link>
-            <Link to="/#agents" className="text-sm text-muted-foreground hover:text-[#0071DD]">Agents IA</Link>
-            <Link to="/pricing" className="text-sm text-muted-foreground hover:text-[#0071DD]">{t('landing.navPricing')}</Link>
+          <nav className="hidden md:flex items-center gap-5 flex-1 justify-center">
+            <Link to="/#features" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              {t('landing.navFeatures')}
+            </Link>
+            <div
+              className="relative"
+              onMouseEnter={() => setAgentsDropdownOpen(true)}
+              onMouseLeave={() => setAgentsDropdownOpen(false)}
+            >
+              <Link
+                to="/#agents"
+                className="flex items-center gap-1 text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]"
+              >
+                <Sparkles size={15} className="text-[#016AEB]" />
+                Agents IA
+                <ChevronDown size={14} className={cn('transition-transform', agentsDropdownOpen && 'rotate-180')} />
+              </Link>
+              {agentsDropdownOpen && (
+                <div className="absolute left-1/2 top-full z-50 w-[340px] -translate-x-1/2 pt-2">
+                  <div className="rounded-2xl border border-[#BED6F6]/40 bg-white p-3 shadow-xl">
+                    {AGENT_NAV.map((agent) => (
+                      <Link
+                        key={agent.nameKey}
+                        to={agent.to}
+                        onClick={() => setAgentsDropdownOpen(false)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#f4f8fd]"
+                      >
+                        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', agent.bg)}>
+                          <agent.icon size={18} className={agent.color} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{t(agent.nameKey)}</p>
+                          <p className="text-xs text-muted-foreground">{t(agent.descKey)}</p>
+                        </div>
+                      </Link>
+                    ))}
+                    <div className="mt-2 border-t border-gray-100 pt-2">
+                      <Link
+                        to="/register"
+                        onClick={() => setAgentsDropdownOpen(false)}
+                        className="flex items-center justify-center gap-2 rounded-xl bg-[#0071DD] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#016AEB]"
+                      >
+                        Essayer gratuitement <ArrowRight size={14} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <Link to="/#why" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              {t('landing.navWhy')}
+            </Link>
+            <Link to="/pricing" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              {t('landing.navPricing')}
+            </Link>
+            <Link to="/#contact" className="text-[15px] text-muted-foreground transition-colors hover:text-[#0071DD]">
+              {t('landing.navContact')}
+            </Link>
           </nav>
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                const langs = ['fr', 'en', 'ar'];
-                const idx = langs.indexOf(i18n.language);
-                i18n.changeLanguage(langs[(idx + 1) % langs.length]);
+                const languages = ['fr', 'en', 'ar'];
+                const currentIndex = languages.indexOf(i18n.language);
+                const nextIndex = (currentIndex + 1) % languages.length;
+                i18n.changeLanguage(languages[nextIndex]);
               }}
-              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#eef4fc] hover:text-[#1E72B9]"
+              title="Change language"
             >
-              <Globe size={14} className="text-[#016AEB]" />
-              {i18n.language.toUpperCase()}
+              <Globe size={18} className="text-[#016AEB]" />
+              <span className="font-semibold text-[#0071DD]">{i18n.language.toUpperCase()}</span>
             </button>
-            <button className="md:hidden p-2 text-[#1E72B9]" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden rounded-xl p-2 text-[#1E72B9] transition-colors hover:bg-[#eef4fc]"
+            >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-3">
               <Link to="/login">
-                <Button variant="outline" size="sm" className="border-[#BED6F6] text-[#0071DD]">
+                <Button variant="outline" size="lg" className="border-[#BED6F6] bg-white text-[#0071DD] hover:bg-[#e8f1fc]">
                   {t('auth.signIn')}
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm">{t('auth.signUp')}</Button>
+                <Button size="lg" className="shadow-glow">{t('auth.signUp')}</Button>
               </Link>
             </div>
           </div>
         </div>
       </div>
+
       {mobileOpen && (
-        <div className="md:hidden border-t bg-white px-4 py-4 space-y-3">
-          <Link to="/" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Accueil</Link>
-          <Link to="/#agents" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Agents IA</Link>
-          <Link to="/pricing" className="block text-sm text-muted-foreground" onClick={() => setMobileOpen(false)}>Tarifs</Link>
-          <div className="pt-3 space-y-2">
-            <Link to="/login" onClick={() => setMobileOpen(false)}><Button variant="outline" className="w-full">{t('auth.signIn')}</Button></Link>
-            <Link to="/register" onClick={() => setMobileOpen(false)}><Button className="w-full">{t('auth.signUp')}</Button></Link>
+        <div className="md:hidden border-t bg-white">
+          <div className="px-4 py-4 space-y-3">
+            <Link to="/#features" className="block text-lg text-muted-foreground hover:text-[#0071DD]" onClick={() => setMobileOpen(false)}>
+              {t('landing.navFeatures')}
+            </Link>
+            <Link to="/#agents" className="flex items-center gap-2 text-lg text-muted-foreground hover:text-[#0071DD]" onClick={() => setMobileOpen(false)}>
+              <Sparkles size={16} className="text-[#016AEB]" /> Agents IA
+            </Link>
+            <div className="ml-6 space-y-2">
+              {AGENT_NAV.map((agent) => (
+                <Link key={agent.nameKey} to={agent.to} onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0071DD]">
+                  <agent.icon size={14} className={agent.color} /> {t(agent.nameKey)}
+                </Link>
+              ))}
+            </div>
+            <Link to="/#why" className="block text-lg text-muted-foreground hover:text-[#0071DD]" onClick={() => setMobileOpen(false)}>
+              {t('landing.navWhy')}
+            </Link>
+            <Link to="/pricing" className="block text-lg text-muted-foreground hover:text-[#0071DD]" onClick={() => setMobileOpen(false)}>
+              {t('landing.navPricing')}
+            </Link>
+            <Link to="/#contact" className="block text-lg text-muted-foreground hover:text-[#0071DD]" onClick={() => setMobileOpen(false)}>
+              {t('landing.navContact')}
+            </Link>
+            <div className="pt-4 space-y-2">
+              <Link to="/login" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" size="lg" className="w-full border-[#BED6F6] bg-white text-[#0071DD] hover:bg-[#e8f1fc]">
+                  {t('auth.signIn')}
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setMobileOpen(false)}>
+                <Button size="lg" className="w-full shadow-glow">{t('auth.signUp')}</Button>
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -95,7 +196,7 @@ export function AgentPublicPage({
 }: AgentPageProps) {
   return (
     <div className="min-h-screen bg-white">
-      <PublicHeader />
+      <LandingHeader />
 
       {/* Hero */}
       <section className={cn('relative overflow-hidden py-20 md:py-28', gradient)}>
@@ -225,7 +326,7 @@ export function AgentPublicPage({
               </Button>
             </Link>
             <Link to="/pricing">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 text-lg">
+              <Button size="lg" className="border-2 border-white/40 bg-transparent px-8 text-lg text-white hover:bg-white/15">
                 Comparer les plans
               </Button>
             </Link>
