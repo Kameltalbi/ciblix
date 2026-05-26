@@ -53,6 +53,8 @@ model Organization {
   aiProspects     AiProspect[]
   prospectingAutomation ProspectingAutomation?
   agents          OrganizationAgent[]
+  scoutProfile    ScoutProfile?
+  scoutOpportunities ScoutOpportunity[]
 
   @@map("organizations")
 }
@@ -1048,4 +1050,55 @@ model OrganizationAgent {
   @@unique([organizationId, agentSlug])
   @@index([organizationId])
   @@map("organization_agents")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SCOUT AI — Profil de veille + opportunités détectées
+// ═══════════════════════════════════════════════════════════════
+model ScoutProfile {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  keywords       Json     // string[] — mots-clés métier
+  sectors        Json     // string[] — secteurs d'activité
+  geoZones       Json     // string[] — zones géographiques
+  tenderEnabled  Boolean  @default(true)
+  eventEnabled   Boolean  @default(true)
+  newsEnabled    Boolean  @default(true)
+  autoScanEnabled Boolean @default(false)
+  scanIntervalH  Int      @default(24) // intervalle en heures
+  lastScanAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("scout_profiles")
+}
+
+model ScoutOpportunity {
+  id             String   @id @default(cuid())
+  organizationId String
+  category       String   // TENDER, EVENT, NEWS
+  title          String
+  url            String
+  source         String
+  snippet        String?  @db.Text
+  aiSummary      String?  @db.Text
+  relevanceScore Int      @default(50) // 0-100
+  deadline       String?
+  location       String?
+  budget         String?
+  publishedAt    DateTime?
+  status         String   @default("NEW") // NEW, SAVED, DISMISSED, APPLIED
+  searchQuery    String?
+  rawData        Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, category])
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@map("scout_opportunities")
 }
