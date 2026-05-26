@@ -22,14 +22,11 @@ import {
   Headphones,
   PieChart,
   Bot,
-  ChevronDown,
-  ChevronRight,
-  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useOrganizationLogoSrc } from '@/hooks/useOrganizationLogoSrc';
 import type { Organization } from '@/types';
@@ -261,57 +258,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const showAssistantFab = canViewPage('ai-assistant');
 
-  const [sidebarHoveredSection, setSidebarHoveredSection] = useState<string | null>(null);
-  const [sidebarPinnedSection, setSidebarPinnedSection] = useState<string | null>(null);
-  const sidebarSectionLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const toggleSidebarSectionPin = useCallback((section: string) => {
-    setSidebarPinnedSection((prev) => (prev === section ? null : section));
-  }, []);
-
-  const clearSidebarSectionLeaveTimer = useCallback(() => {
-    if (sidebarSectionLeaveTimerRef.current) {
-      clearTimeout(sidebarSectionLeaveTimerRef.current);
-      sidebarSectionLeaveTimerRef.current = null;
-    }
-  }, []);
-
-  const onSidebarSectionEnter = useCallback(
-    (section: string) => {
-      clearSidebarSectionLeaveTimer();
-      setSidebarHoveredSection(section);
-    },
-    [clearSidebarSectionLeaveTimer],
-  );
-
-  const onSidebarSectionLeave = useCallback(() => {
-    clearSidebarSectionLeaveTimer();
-    sidebarSectionLeaveTimerRef.current = setTimeout(() => {
-      setSidebarHoveredSection(null);
-    }, 240);
-  }, [clearSidebarSectionLeaveTimer]);
-
-  useEffect(() => () => clearSidebarSectionLeaveTimer(), [clearSidebarSectionLeaveTimer]);
-
-  const [sidebarExpandAllSections, setSidebarExpandAllSections] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(hover: none)');
-    const sync = () => setSidebarExpandAllSections(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
-
-  const sidebarSectionsWithActiveLink = useMemo(() => {
-    const active = new Set<string>();
-    for (const item of filteredNav) {
-      if (!item.section) continue;
-      if (pathMatchesNav(item.to, location.pathname)) {
-        active.add(item.section);
-      }
-    }
-    return active;
-  }, [filteredNav, location.pathname]);
 
   return (
     <div
@@ -388,189 +334,125 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Sidebar — sections Accueil / Agents IA / CRM / Workspace / Finance / Aide */}
+        {/* Sidebar — bleu profond, fermée par défaut (icônes), ouvre au hover */}
         <aside
+          onMouseEnter={() => setSidebarExpanded(true)}
+          onMouseLeave={() => setSidebarExpanded(false)}
           className={cn(
-            'fixed z-40 flex h-screen flex-col overflow-hidden border-r border-neutral-200 bg-white text-neutral-700 shadow-sm transition-[width,transform] duration-300 ease-out',
-            sidebarOpen
-              ? 'w-56 translate-x-0 lg:relative lg:z-0 lg:h-auto lg:flex-shrink-0'
-              : 'w-56 -translate-x-full lg:relative lg:z-0 lg:h-auto lg:w-56 lg:flex-shrink-0 lg:translate-x-0'
+            'hidden lg:relative lg:z-0 lg:flex lg:flex-shrink-0 lg:flex-col lg:overflow-hidden',
+            'bg-[#0f1b2d] text-slate-300 transition-[width] duration-300 ease-in-out',
+            sidebarExpanded ? 'lg:w-60' : 'lg:w-[68px]',
           )}
         >
-          <div className="flex items-center gap-1 border-b border-neutral-200 px-2 py-3">
+          {/* Org header */}
+          <div className={cn('flex items-center border-b border-white/10 px-3 py-3', sidebarExpanded ? 'gap-2' : 'justify-center')}>
             <button
               type="button"
-              onClick={() => {
-                if (user?.role === 'OWNER') navigate('/settings');
-              }}
-              className={cn(
-                'flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-neutral-100',
-                user?.role !== 'OWNER' && 'cursor-default hover:bg-transparent',
-              )}
+              onClick={() => { if (user?.role === 'OWNER') navigate('/settings'); }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white"
               aria-label={organization?.name ?? 'Workspace'}
+              title={organization?.name ?? 'CIBLIX'}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
-                <Building2 size={16} strokeWidth={2} />
-              </div>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">
+              <Building2 size={18} strokeWidth={2} />
+            </button>
+            {sidebarExpanded && (
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
                 {organization?.name ?? 'CIBLIX'}
               </span>
-              <ChevronDown size={16} className="shrink-0 text-neutral-400" aria-hidden />
-            </button>
-            <Link
-              to="/affaires"
-              onClick={closeSidebarOnMobile}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-neutral-100"
-              title={t('nav.affaires')}
-              aria-label={t('nav.affaires')}
-            >
-              <Plus size={18} strokeWidth={2} />
-            </Link>
+            )}
           </div>
-          <nav className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
+
+          {/* Nav links */}
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 py-3">
             {SIDEBAR_SECTION_ORDER.map((section) => {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
-
               const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
               const hideSectionHeading = section === 'OVERVIEW' && sectionItems.length <= 1;
-              const collapsible = !hideSectionHeading && !sidebarExpandAllSections;
-              const expanded =
-                !collapsible ||
-                hideSectionHeading ||
-                sidebarHoveredSection === section ||
-                sidebarSectionsWithActiveLink.has(section) ||
-                sidebarPinnedSection === section;
 
               return (
-                <div
-                  key={section}
-                  role={collapsible ? 'group' : undefined}
-                  aria-label={collapsible ? sectionHeading : undefined}
-                  className="flex flex-col gap-2 rounded-xl"
-                  onMouseEnter={() => collapsible && onSidebarSectionEnter(section)}
-                  onMouseLeave={() => collapsible && onSidebarSectionLeave()}
-                >
-                  {!hideSectionHeading &&
-                    (collapsible ? (
-                      <button
-                        type="button"
-                        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-                        aria-expanded={expanded}
-                        onClick={() => toggleSidebarSectionPin(section)}
-                      >
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-                          {sectionHeading}
-                        </span>
-                        <ChevronRight
-                          size={16}
-                          strokeWidth={2}
-                          className={cn(
-                            'shrink-0 text-neutral-400 transition-transform duration-200',
-                            expanded && 'rotate-90',
-                          )}
-                          aria-hidden
-                        />
-                      </button>
-                    ) : (
-                      <div className="flex w-full items-center justify-between px-3 py-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-                          {sectionHeading}
-                        </span>
-                      </div>
-                    ))}
-                  <div
-                    className={cn('flex flex-col gap-2', collapsible && !expanded && 'hidden')}
-                    aria-hidden={collapsible ? !expanded : undefined}
-                  >
-                    {sectionItems.map((item) => {
-                      const { to, labelKey, icon: Icon, page, comingSoon } = item;
-                      const isExpenses = page === 'expenses';
-                      const isDisabled = isExpenses && !expensesAccessible;
+                <div key={section} className="flex flex-col gap-0.5">
+                  {!hideSectionHeading && sidebarExpanded && (
+                    <div className="px-2 pb-1 pt-3">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        {sectionHeading}
+                      </span>
+                    </div>
+                  )}
+                  {!hideSectionHeading && !sidebarExpanded && section !== 'OVERVIEW' && (
+                    <div className="my-1.5 mx-2 border-t border-white/10" />
+                  )}
+                  {sectionItems.map((item) => {
+                    const { to, labelKey, icon: Icon, page, comingSoon } = item;
+                    const isExpenses = page === 'expenses';
+                    const isDisabled = isExpenses && !expensesAccessible;
 
-                      return (
-                        <NavLink
-                          key={to}
-                          to={isDisabled ? '#' : to}
-                          end={to === '/'}
-                          onClick={(e) => {
-                            if (isDisabled) {
-                              e.preventDefault();
-                              return;
-                            }
-                            closeSidebarOnMobile();
-                          }}
-                          className={({ isActive }) =>
-                            cn(
-                              'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200',
-                              isDisabled
-                                ? 'cursor-not-allowed opacity-40'
-                                : isActive
-                                  ? 'bg-neutral-100 text-neutral-900'
-                                  : comingSoon
-                                    ? 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-                                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
-                            )
-                          }
-                        >
-                          {({ isActive }) => (
-                            <>
-                              {isActive && (
-                                <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary/90" />
-                              )}
-                              <Icon
-                                size={18}
-                                className={cn(
-                                  'shrink-0',
-                                  isDisabled && 'opacity-50',
-                                  comingSoon && !isActive && 'opacity-80',
-                                )}
-                                strokeWidth={isActive ? 2.25 : 2}
-                              />
-                              <span className={cn('flex-1', comingSoon && !isActive && 'text-neutral-500')}>
+                    return (
+                      <NavLink
+                        key={to}
+                        to={isDisabled ? '#' : to}
+                        end={to === '/'}
+                        onClick={(e) => { if (isDisabled) { e.preventDefault(); return; } }}
+                        title={!sidebarExpanded ? t(labelKey) : undefined}
+                        className={({ isActive }) =>
+                          cn(
+                            'group relative flex items-center rounded-lg transition-colors duration-150',
+                            sidebarExpanded ? 'gap-3 px-3 py-2' : 'justify-center px-0 py-2',
+                            isDisabled
+                              ? 'cursor-not-allowed opacity-30'
+                              : isActive
+                                ? 'bg-white/15 text-white'
+                                : 'text-slate-400 hover:bg-white/10 hover:text-white',
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && (
+                              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-400" />
+                            )}
+                            <Icon
+                              size={20}
+                              className="shrink-0"
+                              strokeWidth={isActive ? 2.25 : 1.75}
+                            />
+                            {sidebarExpanded && (
+                              <span className={cn('flex-1 truncate text-sm font-medium', comingSoon && !isActive && 'text-slate-500')}>
                                 {sidebarNavText(page, labelKey)}
                               </span>
-                              {comingSoon && (
-                                <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-neutral-500 ring-1 ring-neutral-200/80">
-                                  {t('nav.comingSoon')}
-                                </span>
-                              )}
-                              {isDisabled && (
-                                <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                                  Pro
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </NavLink>
-                      );
-                    })}
-                  </div>
+                            )}
+                            {sidebarExpanded && comingSoon && (
+                              <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">
+                                {t('nav.comingSoon')}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    );
+                  })}
                 </div>
               );
             })}
             {user?.role === 'OWNER' && (
               <>
-                <div className="my-2 border-t border-neutral-200" />
+                <div className="my-1.5 mx-2 border-t border-white/10" />
                 <NavLink
                   to="/settings"
-                  onClick={closeSidebarOnMobile}
+                  title={!sidebarExpanded ? t('nav.settings') : undefined}
                   className={({ isActive }) =>
                     cn(
-                      'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200',
-                      isActive
-                        ? 'bg-neutral-100 text-neutral-900'
-                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
+                      'group relative flex items-center rounded-lg transition-colors duration-150',
+                      sidebarExpanded ? 'gap-3 px-3 py-2' : 'justify-center px-0 py-2',
+                      isActive ? 'bg-white/15 text-white' : 'text-slate-400 hover:bg-white/10 hover:text-white',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      {isActive && (
-                        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary/90" />
-                      )}
-                      <Settings size={18} strokeWidth={2} />
-                      <span className="flex-1">{t('nav.settings')}</span>
+                      {isActive && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-400" />}
+                      <Settings size={20} strokeWidth={isActive ? 2.25 : 1.75} />
+                      {sidebarExpanded && <span className="flex-1 text-sm font-medium">{t('nav.settings')}</span>}
                     </>
                   )}
                 </NavLink>
@@ -579,21 +461,136 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* User profile at bottom */}
-          <div className="border-t border-neutral-200 p-3">
-            <div className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-neutral-50">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-neutral-800">
+          <div className="border-t border-white/10 p-2">
+            <div className={cn('flex items-center rounded-lg px-2 py-2 transition-colors hover:bg-white/10', sidebarExpanded ? 'gap-3' : 'justify-center')}>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              {sidebarExpanded && (
+                <>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+                    <p className="truncate text-xs text-slate-500">{user?.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                    title="Déconnexion"
+                  >
+                    <LogOut size={16} strokeWidth={2} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile sidebar — overlay plein */}
+        <aside
+          className={cn(
+            'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-[#0f1b2d] text-slate-300 transition-transform duration-300 ease-in-out lg:hidden',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
+        >
+          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
+              <Building2 size={18} strokeWidth={2} />
+            </div>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+              {organization?.name ?? 'CIBLIX'}
+            </span>
+            <button type="button" onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white">
+              <X size={20} />
+            </button>
+          </div>
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-3">
+            {SIDEBAR_SECTION_ORDER.map((section) => {
+              const sectionItems = filteredNav.filter((item) => item.section === section);
+              if (sectionItems.length === 0) return null;
+              const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
+              const hideSectionHeading = section === 'OVERVIEW' && sectionItems.length <= 1;
+
+              return (
+                <div key={section} className="flex flex-col gap-0.5">
+                  {!hideSectionHeading && (
+                    <div className="px-2 pb-1 pt-3">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{sectionHeading}</span>
+                    </div>
+                  )}
+                  {sectionItems.map((item) => {
+                    const { to, labelKey, icon: Icon, page, comingSoon } = item;
+                    const isExpenses = page === 'expenses';
+                    const isDisabled = isExpenses && !expensesAccessible;
+                    return (
+                      <NavLink
+                        key={to}
+                        to={isDisabled ? '#' : to}
+                        end={to === '/'}
+                        onClick={(e) => { if (isDisabled) { e.preventDefault(); return; } closeSidebarOnMobile(); }}
+                        className={({ isActive }) =>
+                          cn(
+                            'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
+                            isDisabled ? 'cursor-not-allowed opacity-30'
+                              : isActive ? 'bg-white/15 text-white'
+                              : 'text-slate-400 hover:bg-white/10 hover:text-white',
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-400" />}
+                            <Icon size={20} strokeWidth={isActive ? 2.25 : 1.75} />
+                            <span className={cn('flex-1 truncate', comingSoon && !isActive && 'text-slate-500')}>
+                              {sidebarNavText(page, labelKey)}
+                            </span>
+                            {comingSoon && (
+                              <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-500">
+                                {t('nav.comingSoon')}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {user?.role === 'OWNER' && (
+              <>
+                <div className="my-1.5 mx-2 border-t border-white/10" />
+                <NavLink
+                  to="/settings"
+                  onClick={closeSidebarOnMobile}
+                  className={({ isActive }) =>
+                    cn(
+                      'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
+                      isActive ? 'bg-white/15 text-white' : 'text-slate-400 hover:bg-white/10 hover:text-white',
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-400" />}
+                      <Settings size={20} strokeWidth={isActive ? 2.25 : 1.75} />
+                      <span className="flex-1">{t('nav.settings')}</span>
+                    </>
+                  )}
+                </NavLink>
+              </>
+            )}
+          </nav>
+          <div className="border-t border-white/10 p-3">
+            <div className="flex items-center gap-3 rounded-lg px-2 py-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="flex min-w-0 flex-1 flex-col">
-                <p className="truncate text-sm font-medium text-neutral-900">{user?.name}</p>
-                <p className="truncate text-xs text-neutral-500">{user?.email}</p>
+                <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+                <p className="truncate text-xs text-slate-500">{user?.email}</p>
               </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-                title="Déconnexion"
-              >
+              <button type="button" onClick={handleLogout} className="text-slate-400 hover:text-white" title="Déconnexion">
                 <LogOut size={16} strokeWidth={2} />
               </button>
             </div>
@@ -603,13 +600,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-30 bg-black/45 backdrop-blur-[2px] lg:hidden"
+            className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-hidden
           />
         )}
 
-        <main className="min-h-0 flex-1 overflow-auto bg-background">
+        <main className="min-h-0 flex-1 overflow-auto bg-slate-50">
           <div className="mx-auto max-w-[1600px] px-6 py-8 md:px-8 md:py-10 lg:px-10">{children}</div>
         </main>
       </div>
