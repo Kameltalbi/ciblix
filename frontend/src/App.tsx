@@ -62,6 +62,9 @@ const OffreBot = lazy(() =>
 const FactCheckAI = lazy(() =>
   import('./pages/FactCheckAI').then((m) => ({ default: m.FactCheckAI }))
 );
+const AgentsMarketplace = lazy(() =>
+  import('./pages/AgentsMarketplace').then((m) => ({ default: m.AgentsMarketplace }))
+);
 const AllProspects = lazy(() =>
   import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
 );
@@ -151,6 +154,7 @@ export default function App() {
                         <Route path="/activites" element={<Activites />} />
                         <Route path="/email-templates" element={<EmailTemplates />} />
                         <Route path="/prospection-ia" element={<ProspectionIA />} />
+                        <Route path="/agents" element={<AgentsMarketplace />} />
                         <Route path="/agents/scout-ai" element={<ScoutAI />} />
                         <Route path="/agents/offre-bot" element={<OffreBot />} />
                         <Route path="/agents/factcheck-ai" element={<FactCheckAI />} />

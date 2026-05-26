@@ -23,6 +23,7 @@ import {
   FileSignature,
   ShieldCheck,
   Bot,
+  Store,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -62,6 +63,7 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
 
   /* Agents IA (automatisations) */
+  { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'AGENTS' },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
@@ -162,6 +164,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     queryFn: () => api.get('/subscriptions/current').then(r => r.data),
   });
 
+  const { data: activeSlugsData } = useQuery<{ activeSlugs: string[] }>({
+    queryKey: ['agents-active-slugs'],
+    queryFn: () => api.get('/agents/active-slugs').then((r) => r.data),
+    staleTime: 60_000,
+  });
+
   const { data: permissionsData } = useQuery<any[]>({
     queryKey: ['user-permissions'],
     queryFn: () => api.get('/user-permissions/me').then((r) => r.data),
@@ -230,11 +238,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const expensesAccessible = currentPlan === 'ENTERPRISE';
 
+  const activeSlugs = activeSlugsData?.activeSlugs;
+
+  const PAGE_TO_SLUG: Record<string, string> = {
+    'prospection-ia': 'hunt-ai',
+    'ai-assistant': 'copilot-ia',
+    'scout-ai': 'scout-ai',
+    'offre-bot': 'offre-bot',
+    'factcheck-ai': 'factcheck-ai',
+  };
+
   const filteredNav = useMemo(() => {
-    return NAV_STRUCTURE.filter(
-      (item) => (!item.requiresEnterprise || expensesAccessible) && canViewPage(item.page),
-    );
-  }, [canViewPage, expensesAccessible]);
+    return NAV_STRUCTURE.filter((item) => {
+      if (item.requiresEnterprise && !expensesAccessible) return false;
+      if (!canViewPage(item.page)) return false;
+      const slug = PAGE_TO_SLUG[item.page];
+      if (slug && activeSlugs && !activeSlugs.includes(slug)) return false;
+      return true;
+    });
+  }, [canViewPage, expensesAccessible, activeSlugs]);
 
   const showAssistantFab = canViewPage('ai-assistant');
 

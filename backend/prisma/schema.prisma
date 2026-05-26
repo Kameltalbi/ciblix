@@ -52,6 +52,7 @@ model Organization {
   commissionConfigs CommissionConfig[]
   aiProspects     AiProspect[]
   prospectingAutomation ProspectingAutomation?
+  agents          OrganizationAgent[]
 
   @@map("organizations")
 }
@@ -1027,4 +1028,24 @@ enum CommissionPeriodicity {
   QUARTERLY    // Trimestriel
   SEMI_ANNUAL  // Semestriel
   ANNUAL       // Annuel
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ORGANIZATION AGENT — Agents IA activés par tenant
+// ═══════════════════════════════════════════════════════════════
+model OrganizationAgent {
+  id             String   @id @default(cuid())
+  organizationId String
+  agentSlug      String   // hunt-ai, copilot-ia, scout-ai, offre-bot, factcheck-ai
+  active         Boolean  @default(true)
+  activatedAt    DateTime @default(now())
+  deactivatedAt  DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, agentSlug])
+  @@index([organizationId])
+  @@map("organization_agents")
 }

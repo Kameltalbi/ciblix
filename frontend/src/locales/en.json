@@ -62,7 +62,8 @@
     "agentCopilot": "Copilot AI",
     "agentScout": "Scout AI",
     "agentOffre": "OffreBot",
-    "agentFactCheck": "FactCheck AI"
+    "agentFactCheck": "FactCheck AI",
+    "agentsMarketplace": "Agents marketplace"
   },
   "agentsComingSoon": {
     "badge": "Coming soon",
