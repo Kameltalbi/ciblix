@@ -266,7 +266,7 @@ export function LandingSales() {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-gray-400">
-              <li className="flex items-center gap-2"><Mail size={16} /> contact@ciblix.tn</li>
+              <li className="flex items-center gap-2"><Mail size={16} /> contact@ciblix.com</li>
               <li className="flex items-center gap-2"><Phone size={16} /> +216 XX XXX XXX</li>
               <li className="flex items-center gap-2"><MapPin size={16} /> Tunis, Tunisie</li>
             </ul>

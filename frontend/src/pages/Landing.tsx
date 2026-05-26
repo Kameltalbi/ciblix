@@ -593,7 +593,7 @@ export function Landing() {
               <ul className="space-y-2 text-base text-white/80">
                 <li className="flex items-center gap-2">
                   <Mail size={16} />
-                  contact@ciblix.tn
+                  contact@ciblix.com
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone size={16} />

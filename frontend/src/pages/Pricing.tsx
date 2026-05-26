@@ -462,7 +462,7 @@ export function Pricing() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail size={16} />
-                  <span>contact@ciblix.tn</span>
+                  <span>contact@ciblix.com</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin size={16} />
