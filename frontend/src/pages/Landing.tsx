@@ -88,13 +88,13 @@ export function Landing() {
       <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/90 shadow-sm backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20 sm:py-0">
-            <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
               <img
                 src="/logo-ciblix.png"
                 alt="CIBLIX"
                 className="h-[3.35rem] w-auto max-w-[min(14rem,58vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
               />
-            </div>
+            </Link>
             <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
               <a href="#features" className="text-lg text-muted-foreground transition-colors hover:text-[#0071DD]">
                 {t('landing.navFeatures')}
