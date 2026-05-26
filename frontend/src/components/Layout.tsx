@@ -267,7 +267,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     >
       {/* Topbar - white, clean, sticky */}
       <header className="relative z-[999] flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-4 sticky top-0 md:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -276,7 +276,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             {sidebarOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
           </button>
-          <div className="flex min-w-0 items-center gap-3">
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80">
             {organization && orgLogoSrc ? (
               <img
                 src={orgLogoSrc}
@@ -288,25 +288,43 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Building2 size={18} strokeWidth={2} />
                 </div>
-                <span className="truncate font-semibold text-foreground">{organization.name}</span>
+                <span className="hidden truncate font-semibold text-foreground sm:inline">{organization.name}</span>
               </div>
             ) : (
               <span className="font-bold text-xl text-foreground">CIBLIX</span>
             )}
-          </div>
+          </Link>
         </div>
-        <div className="hidden flex-1 justify-center px-4 md:flex">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-            <span>
-              {currentTime.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
-            </span>
-            <span className="h-1 w-1 rounded-full bg-border" aria-hidden />
-            <span className="text-foreground">
-              {currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-        </div>
+        {/* Agent quick-nav — desktop only */}
+        <nav className="hidden flex-1 items-center justify-center gap-1 px-4 md:flex">
+          {filteredNav
+            .filter((item) => item.section === 'AGENTS' && item.page !== 'agents-marketplace')
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = pathMatchesNav(item.to, location.pathname);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <Icon size={14} strokeWidth={2} />
+                  <span className="hidden lg:inline">{t(item.labelKey)}</span>
+                </NavLink>
+              );
+            })}
+        </nav>
         <div className="flex flex-shrink-0 items-center gap-2">
+          <div className="hidden items-center gap-1 rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] font-medium text-muted-foreground md:inline-flex">
+            <span>{currentTime.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
+            <span className="mx-1 h-1 w-1 rounded-full bg-border" aria-hidden />
+            <span className="text-foreground">{currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
           <button
             type="button"
             onClick={cycleAppLanguage}
