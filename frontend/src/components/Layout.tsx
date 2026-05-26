@@ -18,7 +18,7 @@ import {
   MessageSquare,
   Radio,
   Sparkles,
-  Megaphone,
+
   Headphones,
   PieChart,
   Bot,
@@ -63,14 +63,6 @@ const NAV_STRUCTURE: NavItem[] = [
   /* Agents IA (automatisations) */
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentAssistant', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
-  {
-    to: '/agents/comm-bot',
-    labelKey: 'nav.agentCommBot',
-    icon: Megaphone,
-    page: 'comm-bot',
-    section: 'AGENTS',
-    comingSoon: true,
-  },
   {
     to: '/agents/care-bot',
     labelKey: 'nav.agentCareBot',

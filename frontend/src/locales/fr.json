@@ -58,7 +58,6 @@
     "sectionSupport": "Aide",
     "agentHunt": "Hunt AI",
     "agentAssistant": "Copilot IA",
-    "agentCommBot": "CommBot",
     "agentCareBot": "CareBot",
     "agentCfo": "CFO AI",
     "comingSoon": "À venir"
@@ -68,11 +67,6 @@
     "back": "Retour",
     "ctaHunt": "Ouvrir Hunt AI (prospection)",
     "footnote": "Ces modules seront déployés progressivement sur Ciblix.",
-    "commBot": {
-      "name": "CommBot",
-      "role": "Marketing & communication",
-      "description": "Calendrier éditorial, posts réseaux et newsletters à partir de votre actualité pour maintenir une présence professionnelle constante."
-    },
     "careBot": {
       "name": "CareBot",
       "role": "Support & FAQ",

@@ -58,7 +58,6 @@
     "sectionSupport": "المساعدة",
     "agentHunt": "Hunt AI",
     "agentAssistant": "مساعد الذكاء الاصطناعي",
-    "agentCommBot": "CommBot",
     "agentCareBot": "CareBot",
     "agentCfo": "CFO AI",
     "comingSoon": "قريبًا"
@@ -68,11 +67,6 @@
     "back": "رجوع",
     "ctaHunt": "فتح Hunt AI (استكشاف العملاء)",
     "footnote": "سيتم طرح هذه الوحدات تدريجيًا على Ciblix.",
-    "commBot": {
-      "name": "CommBot",
-      "role": "التسويق والتواصل",
-      "description": "تقويم محتوى ومنشورات ورسائل إخبارية من أخباركم وسياق قطاعكم للحفاظ على حضور مهني منتظم."
-    },
     "careBot": {
       "name": "CareBot",
       "role": "الدعم والأسئلة الشائعة",

@@ -1,15 +1,9 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { Megaphone, Headphones, PieChart, ArrowLeft } from 'lucide-react';
+import { Headphones, PieChart, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
 
 const AGENT_META: Record<string, { icon: LucideIcon; titleKey: string; roleKey: string; descKey: string }> = {
-  'comm-bot': {
-    icon: Megaphone,
-    titleKey: 'agentsComingSoon.commBot.name',
-    roleKey: 'agentsComingSoon.commBot.role',
-    descKey: 'agentsComingSoon.commBot.description',
-  },
   'care-bot': {
     icon: Headphones,
     titleKey: 'agentsComingSoon.careBot.name',
