@@ -733,5 +733,23 @@
       "name": "AI Fact-Checker",
       "desc": "Information verification"
     }
+  },
+  "pricingPage": {
+    "title": "Choose your plan",
+    "heroTrial": "14-day free trial on all paid plans",
+    "subtitle": "No commitment · no credit card · support included",
+    "trialNote": "Try all features for 14 days. Pay only if you continue.",
+    "trialBadge": "14-day free trial",
+    "billingNote": "Excl. VAT · 0 DT for 14 days",
+    "perYearAfterTrial": "per year after trial",
+    "perMonthAfterTrial": "per month after trial",
+    "ctaTrial": "Start free trial",
+    "perYear": "per year",
+    "perMonth": "per month",
+    "saveTwoMonths": "Save 2 months",
+    "acceptedPayments": "Accepted payment methods",
+    "bankTransfer": "Bank transfer",
+    "cash": "Cash",
+    "requestSent": "Subscription request sent! We will contact you to confirm payment."
   }
 }

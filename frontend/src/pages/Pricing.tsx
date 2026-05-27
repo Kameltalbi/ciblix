@@ -14,6 +14,7 @@ import {
   ChevronUp,
   ChevronsLeft,
   ChevronsRight,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,7 +60,7 @@ const PAID_PLANS: PricingPlanRow[] = [
       'Objectifs de vente',
       'Reporting de base',
     ],
-    cta: 'Choisir Basic',
+    cta: 'Démarrer l\'essai gratuit',
   },
   {
     slug: 'BUSINESS',
@@ -72,7 +73,7 @@ const PAID_PLANS: PricingPlanRow[] = [
       'Reporting avancé',
       'Support prioritaire',
     ],
-    cta: 'Choisir Business',
+    cta: 'Démarrer l\'essai gratuit',
     popular: true,
   },
   {
@@ -87,7 +88,7 @@ const PAID_PLANS: PricingPlanRow[] = [
       'Assistant IA & scoring leads',
       'Commissions & Softfacture',
     ],
-    cta: 'Choisir Professionnel',
+    cta: 'Démarrer l\'essai gratuit',
   },
 ];
 
@@ -123,8 +124,7 @@ export function Pricing() {
       navigate('/register');
       return;
     }
-    setSelectedPlanSlug(plan.slug);
-    setDialogOpen(true);
+    navigate(`/register?plan=${plan.slug.toLowerCase()}&trial=14`);
   };
 
   const handleConfirmSubscribe = () => {
@@ -143,8 +143,14 @@ export function Pricing() {
         </div>
       )}
       <CardHeader className="pt-8">
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+          <Sparkles size={12} />
+          {t('pricingPage.trialBadge', { defaultValue: '14 jours d\'essai gratuit' })}
+        </div>
         <CardTitle className="text-2xl font-bold text-sky-700">{plan.name}</CardTitle>
-        <p className="text-xs text-muted-foreground mt-1">Facturation hors TVA</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {t('pricingPage.billingNote', { defaultValue: 'Facturation hors TVA · 0 DT pendant 14 jours' })}
+        </p>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
@@ -153,8 +159,8 @@ export function Pricing() {
           </p>
           <p className="text-sm text-gray-500">
             {isAnnual
-              ? t('pricingPage.perYear', { defaultValue: 'par an' })
-              : t('pricingPage.perMonth', { defaultValue: 'par mois' })}
+              ? t('pricingPage.perYearAfterTrial', { defaultValue: 'par an après l\'essai' })
+              : t('pricingPage.perMonthAfterTrial', { defaultValue: 'par mois après l\'essai' })}
           </p>
           {plan.annualPrice > 0 && (
             <p className="text-xs text-gray-400">
@@ -183,7 +189,7 @@ export function Pricing() {
           onClick={() => handleSubscribe(plan)}
           size="lg"
         >
-          {plan.cta}
+          {t('pricingPage.ctaTrial', { defaultValue: plan.cta })}
         </Button>
       </CardContent>
     </Card>
@@ -304,8 +310,12 @@ export function Pricing() {
       <div className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+              <Sparkles size={16} />
+              {t('pricingPage.heroTrial', { defaultValue: '14 jours d\'essai gratuit sur tous les plans payants' })}
+            </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Choisissez votre plan
+              {t('pricingPage.title', { defaultValue: 'Choisissez votre plan' })}
             </h1>
             
             {/* Toggle Monthly/Annual */}
@@ -328,7 +338,10 @@ export function Pricing() {
             </div>
             
             <p className="text-sm text-gray-500">
-              Sans engagement – support inclus – mise en place rapide
+              {t('pricingPage.subtitle', { defaultValue: 'Sans engagement · sans carte bancaire · support inclus' })}
+            </p>
+            <p className="mt-2 text-xs text-gray-400">
+              {t('pricingPage.trialNote', { defaultValue: 'Testez toutes les fonctionnalités pendant 14 jours. Paiement uniquement si vous continuez.' })}
             </p>
           </div>
 
