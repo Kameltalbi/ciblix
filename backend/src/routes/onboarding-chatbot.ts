@@ -10,10 +10,205 @@ const querySchema = z.object({
   language: z.enum(['fr', 'en', 'ar']).optional().default('fr'),
 });
 
-async function callOpenAIForOnboarding(prompt: string, language: 'fr' | 'en' | 'ar') {
-  const apiKey = process.env.OPENAI_API_KEY;
+type Lang = 'fr' | 'en' | 'ar';
+
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+const ONBOARDING_GUIDE: Record<Lang, string> = {
+  fr:
+    `Guide rapide CIBLIX\n\n` +
+    `1) Prospects — ajoutez et qualifiez vos leads (Chasseur IA sur les offres concernées).\n` +
+    `2) Conversion — transformez un lead en client + opportunité.\n` +
+    `3) Affaires — suivez le pipeline en Kanban, prochaines actions et relances.\n` +
+    `4) Exécution — calendrier, activités, modèles d’e-mails.\n` +
+    `5) Pilotage — tableau de bord, KPI et Assistant IA pour prioriser.\n\n` +
+    `Workflow conseillé : Prospect → Conversion → Affaire → Relance → Clôture.`,
+  en:
+    `CIBLIX quick start\n\n` +
+    `1) Prospects — add and qualify leads.\n` +
+    `2) Convert hot leads into client + deal.\n` +
+    `3) Deals — Kanban pipeline, next actions, follow-ups.\n` +
+    `4) Execution — calendar, activities, email templates.\n` +
+    `5) Insights — dashboard, KPIs, AI Assistant for priorities.\n\n` +
+    `Recommended flow: Lead → Convert → Deal → Follow-up → Won.`,
+  ar:
+    `دليل البدء السريع في CIBLIX\n\n` +
+    `1) العملاء المحتملون — إضافة وتأهيل.\n` +
+    `2) التحويل — عميل + فرصة.\n` +
+    `3) الفرص — لوحة Kanban والمتابعات.\n` +
+    `4) التنفيذ — التقويم والأنشطة.\n` +
+    `5) المتابعة — لوحة التحكم والمساعد الذكي.`,
+};
+
+function getRuleBasedAnswer(message: string, language: Lang): string | null {
+  const m = normalizeForMatch(message);
+
+  const match = (patterns: string[]) => patterns.some((p) => m.includes(p));
+
+  if (
+    match([
+      'demarrer',
+      'commencer',
+      'debut',
+      'start',
+      'onboarding',
+      'prise en main',
+      'comment utiliser',
+      'كيف أبدأ',
+      'البداية',
+    ])
+  ) {
+    return ONBOARDING_GUIDE[language];
+  }
+
+  if (
+    match([
+      'prospect',
+      'lead',
+      'chasseur',
+      'trouver client',
+      'premiers prospects',
+      'عملاء محتمل',
+    ])
+  ) {
+    const t: Record<Lang, string> = {
+      fr:
+        'Pour vos premiers prospects :\n' +
+        '• Créez des leads dans Prospects (manuel ou import).\n' +
+        '• Qualifiez-les (source, score, notes).\n' +
+        '• Avec Chasseur IA (selon votre offre), lancez une recherche ciblée par secteur/zone.\n' +
+        '• Convertissez les leads chauds en client + opportunité.',
+      en:
+        'For your first prospects:\n' +
+        '• Create leads in Prospects (manual or import).\n' +
+        '• Qualify them (source, score, notes).\n' +
+        '• Use Hunt AI (on eligible plans) for targeted search.\n' +
+        '• Convert hot leads to client + deal.',
+      ar:
+        'لإيجاد أول العملاء المحتملين:\n' +
+        '• أضف العملاء في قسم Prospects.\n' +
+        '• قيّمهم (مصدر، درجة، ملاحظات).\n' +
+        '• حوّل الأفضل إلى عميل + فرصة.',
+    };
+    return t[language];
+  }
+
+  if (
+    match([
+      'difference',
+      'différence',
+      'lead et',
+      'contact et',
+      'opportunite',
+      'affaire',
+      'الفرق',
+    ])
+  ) {
+    const t: Record<Lang, string> = {
+      fr:
+        '• Lead (prospect) : contact pas encore qualifié ou en cours de qualification.\n' +
+        '• Client : compte validé dans votre portefeuille.\n' +
+        '• Affaire (opportunité) : vente en cours avec montant, étape Kanban et prochaine action.',
+      en:
+        '• Lead: contact being qualified.\n' +
+        '• Client: validated account in your portfolio.\n' +
+        '• Deal (opportunity): active sale with amount, Kanban stage, and next action.',
+      ar:
+        '• Lead: جهة اتصال قيد التأهيل.\n' +
+        '• Client: حساب مؤكد.\n' +
+        '• Deal: صفقة جارية مع مرحلة ومبلغ.',
+    };
+    return t[language];
+  }
+
+  if (match(['convertir', 'transformer', 'conversion', 'convert', 'تحويل'])) {
+    const t: Record<Lang, string> = {
+      fr:
+        'Pour convertir un lead :\n' +
+        '1) Ouvrez la fiche lead qualifiée.\n' +
+        '2) Utilisez l’action de conversion.\n' +
+        '3) CIBLIX crée le client et l’affaire associée.\n' +
+        '4) Placez l’affaire sur le Kanban et planifiez la prochaine action.',
+      en:
+        'To convert a lead:\n' +
+        '1) Open the qualified lead.\n' +
+        '2) Run the conversion action.\n' +
+        '3) CIBLIX creates client + deal.\n' +
+        '4) Move the deal on Kanban and set the next action.',
+      ar:
+        'لتحويل lead:\n' +
+        '1) افتح السجل المؤهل.\n' +
+        '2) نفّذ التحويل.\n' +
+        '3) يُنشأ العميل والفرصة.\n' +
+        '4) ضع الفرصة على Kanban.',
+    };
+    return t[language];
+  }
+
+  if (match(['kanban', 'tableau', 'pipeline', 'étape', 'etape', 'لوحة'])) {
+    const t: Record<Lang, string> = {
+      fr:
+        'Suivi Kanban des affaires :\n' +
+        '• Menu Affaires → vue colonnes par étape.\n' +
+        '• Glissez-déposez pour faire avancer une opportunité.\n' +
+        '• Renseignez montant, probabilité et date de prochaine action.\n' +
+        '• L’Assistant IA peut suggérer les relances prioritaires.',
+      en:
+        'Kanban deal tracking:\n' +
+        '• Deals menu → column view by stage.\n' +
+        '• Drag & drop to advance opportunities.\n' +
+        '• Set amount, probability, and next action date.\n' +
+        '• AI Assistant can suggest priority follow-ups.',
+      ar:
+        'متابعة Kanban:\n' +
+        '• قسم Affaires → أعمدة حسب المرحلة.\n' +
+        '• اسحب الفرص بين المراحل.\n' +
+        '• حدّد المبلغ والإجراء التالي.',
+    };
+    return t[language];
+  }
+
+  if (match(['tarif', 'prix', 'offre', 'plan', 'pricing', 'سعر'])) {
+    const t: Record<Lang, string> = {
+      fr:
+        'Les offres CIBLIX (Essentiel, Business, Professionnel) incluent des agents IA selon le pack.\n' +
+        'Consultez la page Tarifs pour comparer Chasseur IA, Assistant IA, Veilleur, etc.\n' +
+        'Après inscription, un essai ou validation permet d’activer votre espace.',
+      en:
+        'CIBLIX plans (Essential, Business, Professional) include different AI agents.\n' +
+        'See the Pricing page to compare Hunt AI, Assistant, Scout, etc.\n' +
+        'After signup, trial or approval activates your workspace.',
+      ar:
+        'باقات CIBLIX تتضمن وكلاء ذكاء اصطناعي حسب العرض.\n' +
+        'راجع صفحة الأسعار للمقارنة.',
+    };
+    return t[language];
+  }
+
+  return null;
+}
+
+const FALLBACK_GENERIC: Record<Lang, string> = {
+  fr:
+    'Je peux vous guider sur : démarrage, prospects, conversion lead → affaire, Kanban et offres CIBLIX.\n' +
+    'Exemple : « Comment démarrer ? » ou « Comment transformer un lead ? »',
+  en:
+    'I can help with: getting started, prospects, lead conversion, Kanban, and CIBLIX plans.\n' +
+    'Try: "How do I get started?" or "How do I convert a lead?"',
+  ar:
+    'يمكنني مساعدتك في: البدء، العملاء المحتملين، التحويل، Kanban، والعروض.\n' +
+    'مثال: « كيف أبدأ؟ »',
+};
+
+async function callOpenAIForOnboarding(prompt: string, language: Lang): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
-    throw new Error('OpenAI API key not configured');
+    throw new Error('OPENAI_API_KEY not configured');
   }
 
   const languageInstruction = {
@@ -61,11 +256,19 @@ async function callOpenAIForOnboarding(prompt: string, language: 'fr' | 'en' | '
 onboardingChatbotRoutes.post('/query', async (req, res, next) => {
   try {
     const { message, language } = querySchema.parse(req.body ?? {});
-    const answer = await callOpenAIForOnboarding(message, language);
-    res.json({
-      type: 'onboarding_openai',
-      answer,
-    });
+
+    let answer: string;
+    let source: 'onboarding_openai' | 'onboarding_rules' = 'onboarding_openai';
+
+    try {
+      answer = await callOpenAIForOnboarding(message, language);
+    } catch (openAiErr) {
+      console.warn('[onboarding-chatbot] OpenAI indisponible, fallback local:', openAiErr);
+      answer = getRuleBasedAnswer(message, language) ?? FALLBACK_GENERIC[language];
+      source = 'onboarding_rules';
+    }
+
+    res.json({ type: source, answer });
   } catch (error) {
     next(error);
   }
