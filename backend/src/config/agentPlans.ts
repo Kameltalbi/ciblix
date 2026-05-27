@@ -8,6 +8,7 @@ export const ALL_AGENT_SLUGS = [
   'scout-ai',
   'offre-bot',
   'factcheck-ai',
+  'comm-bot',
 ] as const;
 
 export type AgentSlug = (typeof ALL_AGENT_SLUGS)[number];
@@ -19,6 +20,7 @@ export const AGENT_MIN_PLAN: Record<AgentSlug, PlanType> = {
   'scout-ai': 'BUSINESS',
   'offre-bot': 'BUSINESS',
   'factcheck-ai': 'ENTERPRISE',
+  'comm-bot': 'ENTERPRISE',
 };
 
 const PLAN_ORDER: PlanType[] = ['FREE', 'BASIC', 'BUSINESS', 'ENTERPRISE'];

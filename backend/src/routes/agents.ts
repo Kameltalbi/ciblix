@@ -9,6 +9,7 @@ import {
   syncAgentsForPlan,
 } from '../config/agentPlans.js';
 import { resolveOrganizationPlan } from '../middleware/planRestrictions.js';
+import { getOrganizationAgentUsageSummary } from '../services/agentUsage.js';
 
 export const agentsRoutes = Router();
 
@@ -66,6 +67,17 @@ const AVAILABLE_AGENTS = [
     color: 'emerald',
     features: ['Vérification d\'affirmations', 'Croisement multi-sources', 'Verdict avec confiance', 'Analyse fiabilité URL', 'Sources citées'],
     route: '/agents/factcheck-ai',
+    defaultActive: false,
+  },
+  {
+    slug: 'comm-bot',
+    name: 'CommBot',
+    role: 'Marketing & contenu B2B',
+    description: 'Produit des contenus SEO, posts LinkedIn, newsletters, fiches produits et pages services pour améliorer votre visibilité.',
+    icon: 'Megaphone',
+    color: 'rose',
+    features: ['Articles SEO', 'Posts LinkedIn', 'Newsletters B2B', 'Fiches produits', 'Pages services'],
+    route: '/agents/comm-bot',
     defaultActive: false,
   },
 ];
@@ -137,6 +149,21 @@ agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: 
       .map((a) => a.slug);
 
     res.json({ activeSlugs });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/agents/usage
+ * Consommation mensuelle des quotas IA par agent.
+ */
+agentsRoutes.get('/usage', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.organizationId!;
+    const plan = await resolveOrganizationPlan(orgId);
+    const usage = await getOrganizationAgentUsageSummary(orgId, plan);
+    res.json({ plan, planLabel: PLAN_AGENT_LABELS[plan], usage });
   } catch (err) {
     next(err);
   }

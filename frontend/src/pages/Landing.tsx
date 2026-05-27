@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Sparkles, ChevronDown } from 'lucide-react';
+import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Megaphone, Sparkles, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { OnboardingChatbot } from '@/components/OnboardingChatbot';
@@ -125,9 +125,10 @@ export function Landing() {
                       { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
                       { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
                       { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
+                      { icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc', color: 'text-rose-600', bg: 'bg-rose-50', to: '/agent/comm-bot' },
                     ].map((agent) => (
                         <Link
-                          key={agent.name}
+                          key={agent.nameKey}
                           to={agent.to}
                           onClick={() => setAgentsDropdownOpen(false)}
                           className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#f4f8fd]"
@@ -218,6 +219,7 @@ export function Landing() {
                   { icon: Radar, nameKey: 'agents.scoutAi.name', color: 'text-indigo-600', to: '/agent/scout-ai' },
                   { icon: FileSignature, nameKey: 'agents.offreBot.name', color: 'text-violet-600', to: '/agent/offre-bot' },
                   { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', color: 'text-emerald-600', to: '/agent/factcheck-ai' },
+                  { icon: Megaphone, nameKey: 'agents.commBot.name', color: 'text-rose-600', to: '/agent/comm-bot' },
                 ].map((agent) => (
                   <Link key={agent.nameKey} to={agent.to} onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0071DD]">
@@ -350,6 +352,11 @@ export function Landing() {
                 icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', to: '/agent/factcheck-ai',
                 color: 'from-emerald-500 to-teal-500', iconBg: 'bg-emerald-500/20',
                 features: ['Vérification multi-sources', 'Score de fiabilité', 'Analyse de pages web'],
+              },
+              {
+                icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc', to: '/agent/comm-bot',
+                color: 'from-rose-500 to-pink-600', iconBg: 'bg-rose-500/20',
+                features: ['Articles SEO', 'Posts LinkedIn', 'Newsletters B2B'],
               },
             ].map((agent) => (
               <Link

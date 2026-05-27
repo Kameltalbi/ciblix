@@ -63,6 +63,7 @@
     "agentScout": "الراصد الذكي",
     "agentOffre": "كاتب العروض",
     "agentFactCheck": "المدقّق الذكي",
+    "agentCommBot": "CommBot",
     "agentsMarketplace": "سوق الوكلاء"
   },
   "agentsComingSoon": {
@@ -732,6 +733,10 @@
     "factCheckAi": {
       "name": "المدقّق الذكي",
       "desc": "التحقق من المعلومات"
+    },
+    "commBot": {
+      "name": "CommBot",
+      "desc": "التسويق والمحتوى B2B"
     }
   },
   "pricingPage": {
@@ -750,6 +755,34 @@
     "acceptedPayments": "طرق الدفع المقبولة",
     "bankTransfer": "تحويل بنكي",
     "cash": "نقدًا",
-    "requestSent": "تم إرسال طلب الاشتراك! سنتواصل معك لتأكيد الدفع."
+    "requestSent": "تم إرسال طلب الاشتراك! سنتواصل معك لتأكيد الدفع.",
+    "packsTitle": "3 حزم مصممة لمبيعات B2B",
+    "packsSubtitle": "وكلاء IA مشمولون — بدون فوترة منفصلة",
+    "packEssentiel": "Sales Starter",
+    "packEssentielDesc": "عملاء محتملون مؤهلون أكثر بدون توظيف SDR",
+    "packBusiness": "Sales Automation",
+    "packBusinessDesc": "من اكتشاف الفرص إلى توقيع العرض",
+    "packPro": "Sales Intelligence",
+    "packProDesc": "البيع، الظهور، وتعزيز المصداقية",
+    "agentsTitle": "مقارنة وكلاء IA",
+    "agentsSubtitle": "كل خطة تفتح وكلاء إضافيين — مشمولون في الاشتراك",
+    "agentColumn": "الوكيل",
+    "planBasic": "أساسي",
+    "planBusiness": "Business",
+    "planPro": "احترافي",
+    "included": "مشمول",
+    "notIncluded": "—",
+    "quotasTitle": "حصص شهرية مشمولة",
+    "quotasSubtitle": "استخدام PME قياسي — كافٍ لمعظم فرق المبيعات",
+    "quotasNote": "تحتاج المزيد؟ رقِّ خطتك أو تواصل معنا.",
+    "addonsTitle": "إضافات قريبًا",
+    "addonsSubtitle": "وحدات premium اختيارية — فوق حزمتك",
+    "addonEnricher": "Enrichisseur IA",
+    "addonEnricherDesc": "يكمل الشركة، القطاع، الموقع والحجم",
+    "addonEnricherPrice": "+29 د.ت/شهر",
+    "addonNba": "Next-Best-Action",
+    "addonNbaDesc": "يوصي بأفضل إجراء تجاري تالي",
+    "addonNbaPrice": "+19 د.ت/شهر · مشمول Pro",
+    "comingSoon": "قريبًا"
   }
 }

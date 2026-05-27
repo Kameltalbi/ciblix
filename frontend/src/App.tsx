@@ -62,6 +62,9 @@ const OffreBot = lazy(() =>
 const FactCheckAI = lazy(() =>
   import('./pages/FactCheckAI').then((m) => ({ default: m.FactCheckAI }))
 );
+const CommBot = lazy(() =>
+  import('./pages/CommBot').then((m) => ({ default: m.CommBot }))
+);
 const AgentsMarketplace = lazy(() =>
   import('./pages/AgentsMarketplace').then((m) => ({ default: m.AgentsMarketplace }))
 );
@@ -75,6 +78,7 @@ const CopilotIAPage = lazy(() => import('./pages/public/CopilotIAPage').then((m)
 const ScoutAIPage = lazy(() => import('./pages/public/ScoutAIPage').then((m) => ({ default: m.ScoutAIPage })));
 const OffreBotPage = lazy(() => import('./pages/public/OffreBotPage').then((m) => ({ default: m.OffreBotPage })));
 const FactCheckAIPage = lazy(() => import('./pages/public/FactCheckAIPage').then((m) => ({ default: m.FactCheckAIPage })));
+const CommBotPage = lazy(() => import('./pages/public/CommBotPage').then((m) => ({ default: m.CommBotPage })));
 const Objectifs = lazy(() => import('./pages/Objectifs').then((m) => ({ default: m.Objectifs })));
 const SupportTickets = lazy(() =>
   import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
@@ -134,6 +138,7 @@ export default function App() {
           <Route path="/agent/scout-ai" element={<ScoutAIPage />} />
           <Route path="/agent/offre-bot" element={<OffreBotPage />} />
           <Route path="/agent/factcheck-ai" element={<FactCheckAIPage />} />
+          <Route path="/agent/comm-bot" element={<CommBotPage />} />
           <Route
             path="/payment-pending"
             element={
@@ -170,6 +175,7 @@ export default function App() {
                         <Route path="/agents/scout-ai" element={<ScoutAI />} />
                         <Route path="/agents/offre-bot" element={<OffreBot />} />
                         <Route path="/agents/factcheck-ai" element={<FactCheckAI />} />
+                        <Route path="/agents/comm-bot" element={<CommBot />} />
                         <Route path="/agents/:agentId" element={<AgentComingSoon />} />
                         <Route path="/all-prospects" element={<AllProspects />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />

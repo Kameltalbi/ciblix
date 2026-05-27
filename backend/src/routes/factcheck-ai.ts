@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Response } from 'express';
 import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
+import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 
 export const factcheckAiRoutes = Router();
 
@@ -105,6 +106,8 @@ const checkClaimSchema = z.object({
  */
 factcheckAiRoutes.post('/check', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'factcheck-ai', res))) return;
+
     const { claim, language } = checkClaimSchema.parse(req.body);
 
     const searchQueries = [
@@ -235,6 +238,8 @@ const checkUrlSchema = z.object({
  */
 factcheckAiRoutes.post('/check-url', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'factcheck-ai', res))) return;
+
     const { url, language } = checkUrlSchema.parse(req.body);
 
     const content = await fetchPageContent(url);

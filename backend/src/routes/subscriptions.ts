@@ -48,10 +48,11 @@ export const PLAN_CATALOG = {
     annualPrice: 2100,
     maxUsers: 50,
     label: 'Professionnel',
-    agents: ['Chasseur IA', 'Assistant IA', 'Veilleur IA', 'Rédacteur d\'offres', 'Vérificateur IA'],
+    agents: ['Chasseur IA', 'Assistant IA', 'Veilleur IA', 'Rédacteur d\'offres', 'CommBot', 'Vérificateur IA'],
     features: [
       'Tout le plan Business',
       "Jusqu'à 50 utilisateurs",
+      'CommBot — SEO, LinkedIn, newsletters, fiches produits',
       'Vérificateur IA — contrôle des informations',
       'Dépenses, commissions & Softfacture',
     ],

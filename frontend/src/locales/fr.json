@@ -63,6 +63,7 @@
     "agentScout": "Veilleur IA",
     "agentOffre": "Rédacteur d'offres",
     "agentFactCheck": "Vérificateur IA",
+    "agentCommBot": "CommBot",
     "agentsMarketplace": "Marketplace"
   },
   "agentsComingSoon": {
@@ -738,6 +739,10 @@
     "factCheckAi": {
       "name": "Vérificateur IA",
       "desc": "Vérification des informations"
+    },
+    "commBot": {
+      "name": "CommBot",
+      "desc": "Marketing & contenu B2B"
     }
   },
   "pricingPage": {
@@ -756,6 +761,34 @@
     "acceptedPayments": "Modes de paiement acceptés",
     "bankTransfer": "Virement bancaire",
     "cash": "Espèces",
-    "requestSent": "Demande d'abonnement envoyée ! Nous vous contacterons pour confirmer le paiement."
+    "requestSent": "Demande d'abonnement envoyée ! Nous vous contacterons pour confirmer le paiement.",
+    "packsTitle": "3 packs pensés pour la vente B2B",
+    "packsSubtitle": "Agents IA inclus — pas de facturation à la carte",
+    "packEssentiel": "Sales Starter",
+    "packEssentielDesc": "Plus de leads qualifiés sans recruter un SDR",
+    "packBusiness": "Sales Automation",
+    "packBusinessDesc": "De la détection d'opportunité à l'offre signée",
+    "packPro": "Sales Intelligence",
+    "packProDesc": "Vendre, se faire connaître et sécuriser votre crédibilité",
+    "agentsTitle": "Comparatif des agents IA",
+    "agentsSubtitle": "Chaque plan débloque des agents supplémentaires — inclus dans l'abonnement",
+    "agentColumn": "Agent",
+    "planBasic": "Essentiel",
+    "planBusiness": "Business",
+    "planPro": "Professionnel",
+    "included": "Inclus",
+    "notIncluded": "—",
+    "quotasTitle": "Quotas mensuels inclus",
+    "quotasSubtitle": "Usage standard PME — suffisant pour la majorité des équipes commerciales",
+    "quotasNote": "Besoin de plus ? Passez au plan supérieur ou contactez-nous pour un add-on.",
+    "addonsTitle": "Add-ons bientôt disponibles",
+    "addonsSubtitle": "Modules premium en option — sans remplacer vos packs",
+    "addonEnricher": "Enrichisseur IA",
+    "addonEnricherDesc": "Complète société, secteur, site et taille des contacts",
+    "addonEnricherPrice": "+29 DT/mois",
+    "addonNba": "Next-Best-Action",
+    "addonNbaDesc": "Recommande la meilleure action commerciale suivante",
+    "addonNbaPrice": "+19 DT/mois · inclus Pro",
+    "comingSoon": "Bientôt"
   }
 }

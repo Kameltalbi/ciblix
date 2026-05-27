@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, CheckCircle2, Radio, Bot, Radar, FileSignature, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Radio, Bot, Radar, FileSignature, ShieldCheck, Megaphone, ArrowRight, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -66,6 +66,7 @@ export function Register() {
     { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc' },
     { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc' },
     { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc' },
+    { icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc' },
   ];
 
   return (
@@ -90,14 +91,14 @@ export function Register() {
               </span>
             </h1>
             <p className="mt-4 max-w-lg text-lg leading-relaxed text-white/60">
-              Créez votre compte en 30 secondes et accédez à 5 agents IA spécialisés pour votre prospection, veille et gestion commerciale.
+              Créez votre compte en 30 secondes et accédez à 6 agents IA spécialisés pour votre prospection, veille, marketing et gestion commerciale.
             </p>
           </div>
 
           {/* Agent pills */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#BED6F6]/70">
-              <Sparkles size={14} /> 5 agents IA inclus
+              <Sparkles size={14} /> 6 agents IA inclus
             </div>
             <div className="grid grid-cols-1 gap-2.5">
               {agents.map((agent) => (

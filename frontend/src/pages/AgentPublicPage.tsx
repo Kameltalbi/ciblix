@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Sparkles, Globe, Menu, X, ChevronDown, Radio, Bot, Radar, FileSignature, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Sparkles, Globe, Menu, X, ChevronDown, Radio, Bot, Radar, FileSignature, ShieldCheck, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,7 @@ const AGENT_NAV = [
   { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
   { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
   { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
+  { icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc', color: 'text-rose-600', bg: 'bg-rose-50', to: '/agent/comm-bot' },
 ];
 
 function LandingHeader() {

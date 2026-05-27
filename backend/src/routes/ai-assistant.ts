@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
+import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import {
   buildFollowUpTemplates,
   computeCommercialInsight,
@@ -207,6 +208,8 @@ const followUpDraftSchema = z.object({
 
 aiAssistantRoutes.post('/follow-up-draft', async (req: AuthRequest, res, next) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'copilot-ia', res))) return;
+
     const body = followUpDraftSchema.parse(req.body);
     const affaire = await prisma.affaire.findFirst({
       where: { id: body.affaireId, organizationId: req.organizationId!, deletedAt: null },
@@ -1068,6 +1071,8 @@ async function executeQuery(intent: string, organizationId: string) {
 // POST /api/ai-assistant/query
 aiAssistantRoutes.post('/query', async (req: AuthRequest, res, next) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'copilot-ia', res))) return;
+
     const { message, language = 'fr' } = querySchema.parse(req.body);
     const organizationId = req.organizationId!;
     const lowerMessage = message.toLowerCase();
@@ -1269,6 +1274,8 @@ ${languageInstructions[language as keyof typeof languageInstructions] || languag
 // POST /api/ai-assistant/draft-email - Draft personalized email with AI
 aiAssistantRoutes.post('/draft-email', async (req: AuthRequest, res, next) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'copilot-ia', res))) return;
+
     const { clientId, affaireId, type, language = 'fr' } = req.body;
 
     let client, affaire;
@@ -1320,6 +1327,8 @@ ${languageInstructions[language as keyof typeof languageInstructions] || languag
 // POST /api/ai-assistant/score-lead - Score lead with AI
 aiAssistantRoutes.post('/score-lead', async (req: AuthRequest, res, next) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'copilot-ia', res))) return;
+
     const { affaireId } = req.body;
 
     const affaire = await prisma.affaire.findFirst({

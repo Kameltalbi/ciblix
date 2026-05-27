@@ -55,6 +55,7 @@ model Organization {
   agents          OrganizationAgent[]
   scoutProfile    ScoutProfile?
   scoutOpportunities ScoutOpportunity[]
+  agentUsageMonthly AgentUsageMonthly[]
 
   @@map("organizations")
 }
@@ -1050,6 +1051,22 @@ model OrganizationAgent {
   @@unique([organizationId, agentSlug])
   @@index([organizationId])
   @@map("organization_agents")
+}
+
+model AgentUsageMonthly {
+  id             String   @id @default(cuid())
+  organizationId String
+  monthKey       String   // YYYY-MM
+  agentSlug      String
+  usageCount     Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, monthKey, agentSlug])
+  @@index([organizationId])
+  @@map("agent_usage_monthly")
 }
 
 // ═══════════════════════════════════════════════════════════════

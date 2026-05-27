@@ -13,6 +13,7 @@ import {
   Sparkles,
   CheckCircle2,
   Lock,
+  Megaphone,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +45,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Radar,
   FileSignature,
   ShieldCheck,
+  Megaphone,
 };
 
 const COLOR_MAP: Record<string, { bg: string; text: string; border: string; accent: string; ring: string }> = {
@@ -52,6 +54,7 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string; acce
   blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', accent: 'bg-blue-100', ring: 'ring-blue-300' },
   amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', accent: 'bg-amber-100', ring: 'ring-amber-300' },
   emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', accent: 'bg-emerald-100', ring: 'ring-emerald-300' },
+  rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', accent: 'bg-rose-100', ring: 'ring-rose-300' },
 };
 
 function AgentCard({ agent, onToggle, isToggling }: { agent: Agent; onToggle: () => void; isToggling: boolean }) {

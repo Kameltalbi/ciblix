@@ -63,6 +63,7 @@
     "agentScout": "AI Scout",
     "agentOffre": "Offer Writer",
     "agentFactCheck": "AI Fact-Checker",
+    "agentCommBot": "CommBot",
     "agentsMarketplace": "Marketplace"
   },
   "agentsComingSoon": {
@@ -732,6 +733,10 @@
     "factCheckAi": {
       "name": "AI Fact-Checker",
       "desc": "Information verification"
+    },
+    "commBot": {
+      "name": "CommBot",
+      "desc": "B2B marketing & content"
     }
   },
   "pricingPage": {
@@ -750,6 +755,34 @@
     "acceptedPayments": "Accepted payment methods",
     "bankTransfer": "Bank transfer",
     "cash": "Cash",
-    "requestSent": "Subscription request sent! We will contact you to confirm payment."
+    "requestSent": "Subscription request sent! We will contact you to confirm payment.",
+    "packsTitle": "3 packs built for B2B sales",
+    "packsSubtitle": "AI agents included — no à la carte billing",
+    "packEssentiel": "Sales Starter",
+    "packEssentielDesc": "More qualified leads without hiring an SDR",
+    "packBusiness": "Sales Automation",
+    "packBusinessDesc": "From opportunity detection to signed proposals",
+    "packPro": "Sales Intelligence",
+    "packProDesc": "Sell, get visible, and protect your credibility",
+    "agentsTitle": "AI agents comparison",
+    "agentsSubtitle": "Each plan unlocks more agents — included in your subscription",
+    "agentColumn": "Agent",
+    "planBasic": "Essential",
+    "planBusiness": "Business",
+    "planPro": "Professional",
+    "included": "Included",
+    "notIncluded": "—",
+    "quotasTitle": "Included monthly quotas",
+    "quotasSubtitle": "Standard SME usage — enough for most sales teams",
+    "quotasNote": "Need more? Upgrade your plan or contact us for an add-on.",
+    "addonsTitle": "Add-ons coming soon",
+    "addonsSubtitle": "Optional premium modules — on top of your pack",
+    "addonEnricher": "AI Enricher",
+    "addonEnricherDesc": "Completes company, sector, website and company size",
+    "addonEnricherPrice": "+29 DT/month",
+    "addonNba": "Next-Best-Action",
+    "addonNbaDesc": "Recommends the best next commercial action",
+    "addonNbaPrice": "+19 DT/month · included in Pro",
+    "comingSoon": "Soon"
   }
 }

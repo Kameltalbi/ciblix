@@ -44,6 +44,7 @@ import { prospectingRoutes } from './routes/prospecting.js';
 import { scoutAiRoutes } from './routes/scout-ai.js';
 import { offreBotRoutes } from './routes/offre-bot.js';
 import { factcheckAiRoutes } from './routes/factcheck-ai.js';
+import { commBotRoutes } from './routes/comm-bot.js';
 import { agentsRoutes } from './routes/agents.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
@@ -170,6 +171,7 @@ app.use('/api/prospecting', prospectingRoutes);
 app.use('/api/scout-ai', scoutAiRoutes);
 app.use('/api/offre-bot', offreBotRoutes);
 app.use('/api/factcheck-ai', factcheckAiRoutes);
+app.use('/api/comm-bot', commBotRoutes);
 app.use('/api/agents', agentsRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);

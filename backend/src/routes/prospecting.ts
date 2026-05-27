@@ -3,6 +3,7 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
+import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { prisma } from '../db/prisma.js';
 import { enrichHitWebsiteCached } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
@@ -467,6 +468,10 @@ prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => 
       take: limit,
     });
 
+    if (pending.length > 0) {
+      if (!(await tryConsumeAgentQuota(req.organizationId!, 'hunt-ai', res, pending.length))) return;
+    }
+
     const updated: unknown[] = [];
     for (const row of pending) {
       try {
@@ -512,6 +517,8 @@ prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => 
 // ─── Re-qualifier un prospect ───────────────────────────────────
 prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, next) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'hunt-ai', res))) return;
+
     const id = req.params.id as string;
     const row = await prisma.aiProspect.findFirst({
       where: { id, organizationId: req.organizationId!, deletedAt: null },
@@ -562,6 +569,8 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
 // ─── Génération message (aperçu — validation humaine côté UI) ───
 prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthRequest, res, next) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'hunt-ai', res))) return;
+
     const id = req.params.id as string;
     const { messageType, tone } = messageSchema.parse(req.body);
 

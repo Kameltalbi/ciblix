@@ -11,6 +11,8 @@ import {
   MapPin,
   Menu,
   Sparkles,
+  Minus,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +23,8 @@ import { Link } from 'react-router-dom';
 type PricingPlanRow = {
   slug: string;
   name: string;
+  packKey: string;
+  packDescKey: string;
   monthlyPrice: number;
   annualPrice: number;
   features: string[];
@@ -28,10 +32,57 @@ type PricingPlanRow = {
   popular?: boolean;
 };
 
+const AGENT_MATRIX = [
+  { nameKey: 'agents.huntAi.name', basic: true, business: true, pro: true },
+  { nameKey: 'agents.copilotIa.name', basic: true, business: true, pro: true },
+  { nameKey: 'agents.scoutAi.name', basic: false, business: true, pro: true },
+  { nameKey: 'agents.offreBot.name', basic: false, business: true, pro: true },
+  { nameKey: 'agents.commBot.name', basic: false, business: false, pro: true },
+  { nameKey: 'agents.factCheckAi.name', basic: false, business: false, pro: true },
+] as const;
+
+const QUOTA_ROWS = [
+  {
+    planKey: 'pricingPage.planBasic',
+    hunt: 150,
+    copilot: 80,
+    scout: null,
+    offre: null,
+    comm: null,
+    fact: null,
+  },
+  {
+    planKey: 'pricingPage.planBusiness',
+    hunt: 400,
+    copilot: 200,
+    scout: 30,
+    offre: 25,
+    comm: null,
+    fact: null,
+  },
+  {
+    planKey: 'pricingPage.planPro',
+    hunt: 800,
+    copilot: 400,
+    scout: 60,
+    offre: 50,
+    comm: 40,
+    fact: 25,
+  },
+] as const;
+
+const PACK_CARDS = [
+  { titleKey: 'pricingPage.packEssentiel', descKey: 'pricingPage.packEssentielDesc', slug: 'BASIC', color: 'border-sky-200 bg-sky-50' },
+  { titleKey: 'pricingPage.packBusiness', descKey: 'pricingPage.packBusinessDesc', slug: 'BUSINESS', color: 'border-emerald-200 bg-emerald-50 ring-2 ring-emerald-100' },
+  { titleKey: 'pricingPage.packPro', descKey: 'pricingPage.packProDesc', slug: 'ENTERPRISE', color: 'border-violet-200 bg-violet-50' },
+] as const;
+
 const PAID_PLANS: PricingPlanRow[] = [
   {
     slug: 'BASIC',
     name: 'Basic',
+    packKey: 'pricingPage.packEssentiel',
+    packDescKey: 'pricingPage.packEssentielDesc',
     monthlyPrice: 40,
     annualPrice: 480,
     features: [
@@ -46,6 +97,8 @@ const PAID_PLANS: PricingPlanRow[] = [
   {
     slug: 'BUSINESS',
     name: 'Business',
+    packKey: 'pricingPage.packBusiness',
+    packDescKey: 'pricingPage.packBusinessDesc',
     monthlyPrice: 98,
     annualPrice: 980,
     features: [
@@ -61,11 +114,14 @@ const PAID_PLANS: PricingPlanRow[] = [
   {
     slug: 'ENTERPRISE',
     name: 'Professionnel',
+    packKey: 'pricingPage.packPro',
+    packDescKey: 'pricingPage.packProDesc',
     monthlyPrice: 175,
     annualPrice: 2100,
     features: [
       'Tout le plan Business',
       'Jusqu\'à 50 utilisateurs',
+      'CommBot — marketing & contenu B2B',
       'Vérificateur IA — contrôle des informations',
       'Dépenses, commissions & Softfacture',
     ],
@@ -123,6 +179,8 @@ export function Pricing() {
           {t('pricingPage.trialBadge', { defaultValue: '14 jours d\'essai gratuit' })}
         </div>
         <CardTitle className="text-2xl font-bold text-sky-700">{plan.name}</CardTitle>
+        <p className="text-sm font-medium text-sky-600">{t(plan.packKey)}</p>
+        <p className="text-xs text-muted-foreground">{t(plan.packDescKey)}</p>
         <p className="text-xs text-muted-foreground mt-1">
           {t('pricingPage.billingNote', { defaultValue: 'Facturation hors TVA · 0 DT pendant 14 jours' })}
         </p>
@@ -318,6 +376,131 @@ export function Pricing() {
                 {renderPaidPlanCard(plan, { wrapClass: 'rounded-2xl h-full' })}
               </div>
             ))}
+          </div>
+
+          {/* Packs commerciaux */}
+          <div className="mt-16 mb-10 text-center">
+            <h2 className="text-2xl font-bold text-gray-900">{t('pricingPage.packsTitle')}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t('pricingPage.packsSubtitle')}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto mb-16">
+            {PACK_CARDS.map((pack) => (
+              <div key={pack.slug} className={`rounded-2xl border p-5 text-left ${pack.color}`}>
+                <p className="font-bold text-gray-900">{t(pack.titleKey)}</p>
+                <p className="mt-1 text-sm text-gray-600">{t(pack.descKey)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Comparatif agents */}
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">{t('pricingPage.agentsTitle')}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t('pricingPage.agentsSubtitle')}</p>
+            </div>
+            <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">{t('pricingPage.agentColumn')}</th>
+                    <th className="px-4 py-3 text-center font-semibold text-gray-700">{t('pricingPage.planBasic')}</th>
+                    <th className="px-4 py-3 text-center font-semibold text-gray-700">{t('pricingPage.planBusiness')}</th>
+                    <th className="px-4 py-3 text-center font-semibold text-gray-700">{t('pricingPage.planPro')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {AGENT_MATRIX.map((row) => (
+                    <tr key={row.nameKey} className="border-b last:border-0">
+                      <td className="px-4 py-3 font-medium text-gray-800">{t(row.nameKey)}</td>
+                      {[row.basic, row.business, row.pro].map((included, i) => (
+                        <td key={i} className="px-4 py-3 text-center">
+                          {included ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-700">
+                              <Check size={16} className="text-leaf" />
+                              <span className="sr-only">{t('pricingPage.included')}</span>
+                            </span>
+                          ) : (
+                            <Minus size={16} className="mx-auto text-gray-300" />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Quotas mensuels */}
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">{t('pricingPage.quotasTitle')}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t('pricingPage.quotasSubtitle')}</p>
+            </div>
+            <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Plan</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.huntAi.name')}</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.copilotIa.name')}</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.scoutAi.name')}</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.offreBot.name')}</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.commBot.name')}</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.factCheckAi.name')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {QUOTA_ROWS.map((row) => (
+                    <tr key={row.planKey} className="border-b last:border-0">
+                      <td className="px-4 py-3 font-medium">{t(row.planKey)}</td>
+                      {[row.hunt, row.copilot, row.scout, row.offre, row.comm, row.fact].map((val, i) => (
+                        <td key={i} className="px-3 py-3 text-center text-gray-600">
+                          {val ?? '—'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-center text-xs text-muted-foreground">{t('pricingPage.quotasNote')}</p>
+          </div>
+
+          {/* Add-ons bientôt */}
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">{t('pricingPage.addonsTitle')}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t('pricingPage.addonsSubtitle')}</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 max-w-3xl mx-auto">
+              <Card className="relative overflow-hidden">
+                <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 ring-1 ring-amber-200">
+                  <Clock size={10} />
+                  {t('pricingPage.comingSoon')}
+                </span>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t('pricingPage.addonEnricher')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{t('pricingPage.addonEnricherDesc')}</p>
+                  <p className="mt-3 font-semibold text-sky-700">{t('pricingPage.addonEnricherPrice')}</p>
+                </CardContent>
+              </Card>
+              <Card className="relative overflow-hidden">
+                <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 ring-1 ring-amber-200">
+                  <Clock size={10} />
+                  {t('pricingPage.comingSoon')}
+                </span>
+                <CardHeader>
+                  <CardTitle className="text-lg">{t('pricingPage.addonNba')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{t('pricingPage.addonNbaDesc')}</p>
+                  <p className="mt-3 font-semibold text-sky-700">{t('pricingPage.addonNbaPrice')}</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <div className="mt-12 max-w-2xl mx-auto">

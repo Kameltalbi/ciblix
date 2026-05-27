@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Bot,
   Store,
+  Megaphone,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -69,6 +70,7 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   { to: '/agents/offre-bot', labelKey: 'nav.agentOffre', icon: FileSignature, page: 'offre-bot', section: 'AGENTS' },
   { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'AGENTS' },
+  { to: '/agents/comm-bot', labelKey: 'nav.agentCommBot', icon: Megaphone, page: 'comm-bot', section: 'AGENTS' },
 
   /* CRM & pipeline — ordre funnel */
   { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'CRM' },
@@ -222,7 +224,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           page === 'ai-assistant' ||
           page === 'scout-ai' ||
           page === 'offre-bot' ||
-          page === 'factcheck-ai'
+          page === 'factcheck-ai' ||
+          page === 'comm-bot'
         ) {
           const prospecting = permissionsData.find((p) => p.page === 'prospection-ia');
           const assistant = permissionsData.find((p) => p.page === 'ai-assistant');
@@ -246,6 +249,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     'scout-ai': 'scout-ai',
     'offre-bot': 'offre-bot',
     'factcheck-ai': 'factcheck-ai',
+    'comm-bot': 'comm-bot',
   };
 
   const filteredNav = useMemo(() => {

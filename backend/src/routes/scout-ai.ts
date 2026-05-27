@@ -3,6 +3,7 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
+import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 
 export const scoutAiRoutes = Router();
 
@@ -184,8 +185,10 @@ const scanSchema = z.object({
 
 scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { category } = scanSchema.parse(req.body);
     const orgId = req.organizationId!;
+    if (!(await tryConsumeAgentQuota(orgId, 'scout-ai', res))) return;
+
+    const { category } = scanSchema.parse(req.body);
 
     const profile = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
     if (!profile) {
@@ -408,6 +411,8 @@ const analyzeUrlSchema = z.object({ url: z.string().url(), context: z.string().o
 
 scoutAiRoutes.post('/analyze-url', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'scout-ai', res))) return;
+
     const { url, context } = analyzeUrlSchema.parse(req.body);
     let pageContent = '';
     try {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
+import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 
 export const offreBotRoutes = Router();
 
@@ -103,6 +104,8 @@ const generateSchema = z.object({
  */
 offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'offre-bot', res))) return;
+
     const { affaireId, tone, includeConditions, customNotes, language } = generateSchema.parse(req.body);
 
     const affaire = await prisma.affaire.findFirst({
@@ -261,6 +264,8 @@ const regenerateSchema = z.object({
 
 offreBotRoutes.post('/regenerate-section', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'offre-bot', res))) return;
+
     const { section, currentContent, instruction, context } = regenerateSchema.parse(req.body);
 
     const systemPrompt = `Tu es OffreBot. On te demande de réécrire une section d'une proposition commerciale.
