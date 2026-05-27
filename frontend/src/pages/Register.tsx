@@ -128,7 +128,7 @@ export function Register() {
           {/* Mobile logo */}
           <div className="mb-6 flex justify-center lg:hidden">
             <Link to="/">
-              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-10 w-auto brightness-0 invert" />
+              <img src="/logo-ciblix.png" alt="CIBLIX" className="h-12 w-auto brightness-0 invert" />
             </Link>
           </div>
 

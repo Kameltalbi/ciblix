@@ -263,7 +263,7 @@ export function Pricing() {
               <img
                 src="/logo-ciblix.png"
                 alt="CIBLIX"
-                className="h-[3.35rem] w-auto max-w-[min(14rem,58vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
+                className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
               />
             </Link>
             <nav className="hidden md:flex items-center gap-6">
