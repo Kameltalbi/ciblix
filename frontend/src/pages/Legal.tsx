@@ -90,7 +90,7 @@ export function Legal() {
         },
         {
           title: '2. Contact',
-          content: 'Email : contact@crmtunisie.tn - Téléphone : +216 XX XXX XXX',
+          content: 'Email : contact@crmtunisie.tn - Téléphone : +216 55 053 505',
         },
         {
           title: '3. Hébergement',

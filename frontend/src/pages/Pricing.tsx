@@ -367,7 +367,7 @@ export function Pricing() {
               <div className="space-y-2 text-sm text-gray-400">
                 <div className="flex items-center gap-2">
                   <Phone size={16} />
-                  <span>+216 XX XXX XXX</span>
+                  <span>+216 55 053 505</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail size={16} />

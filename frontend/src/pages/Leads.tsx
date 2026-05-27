@@ -415,7 +415,7 @@ export function Leads() {
               </div>
               <div className="space-y-1.5">
                 <Label>{t('organizations.fields.phone')}</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+216 XX XXX XXX" />
+                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+216 55 053 505" />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('leads.source')}</Label>

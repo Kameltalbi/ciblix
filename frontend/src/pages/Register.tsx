@@ -173,7 +173,7 @@ export function Register() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+216 XX XXX XXX"
+                    placeholder="+216 55 053 505"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/25 focus-visible:ring-[#0071DD]"
