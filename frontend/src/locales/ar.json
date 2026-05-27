@@ -783,6 +783,14 @@
     "addonNba": "Next-Best-Action",
     "addonNbaDesc": "يوصي بأفضل إجراء تجاري تالي",
     "addonNbaPrice": "+19 د.ت/شهر · مشمول Pro",
-    "comingSoon": "قريبًا"
+    "comingSoon": "قريبًا",
+    "agentsActiveCount": "6 وكلاء IA نشطون",
+    "agentsComingCount": "2 إضافات قريبًا",
+    "agentsTotalCount": "8 وكلاء IA في المجموع",
+    "addonBadge": "إضافة",
+    "addonAvailableSoon": "متاح قريبًا كخيار على جميع الخطط",
+    "addonsAnnouncement": "إعلان — وكلاء IA جدد قيد التطوير",
+    "addonNotify": "سجّل الآن — سنبلغك عند الإطلاق.",
+    "addonsPackNote": "حزمة IA Power: الإضافتان بـ +39 د.ت/شهر (عند التوفر)"
   }
 }

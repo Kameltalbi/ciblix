@@ -783,6 +783,14 @@
     "addonNba": "Next-Best-Action",
     "addonNbaDesc": "Recommends the best next commercial action",
     "addonNbaPrice": "+19 DT/month · included in Pro",
-    "comingSoon": "Soon"
+    "comingSoon": "Soon",
+    "agentsActiveCount": "6 active AI agents",
+    "agentsComingCount": "2 add-ons coming soon",
+    "agentsTotalCount": "8 AI agents in total",
+    "addonBadge": "Add-on",
+    "addonAvailableSoon": "Available soon as an option on all plans",
+    "addonsAnnouncement": "Announcement — 2 new AI agents in development",
+    "addonNotify": "Sign up now — we'll notify you at launch.",
+    "addonsPackNote": "IA Power Pack: both add-ons for +39 DT/month (when available)"
   }
 }

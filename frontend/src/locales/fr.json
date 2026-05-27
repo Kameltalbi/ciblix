@@ -789,6 +789,14 @@
     "addonNba": "Next-Best-Action",
     "addonNbaDesc": "Recommande la meilleure action commerciale suivante",
     "addonNbaPrice": "+19 DT/mois · inclus Pro",
-    "comingSoon": "Bientôt"
+    "comingSoon": "Bientôt",
+    "agentsActiveCount": "6 agents IA actifs",
+    "agentsComingCount": "2 add-ons bientôt",
+    "agentsTotalCount": "8 agents IA au total",
+    "addonBadge": "Add-on",
+    "addonAvailableSoon": "Disponible prochainement en option sur tous les plans",
+    "addonsAnnouncement": "Annonce — 2 nouveaux agents IA en préparation",
+    "addonNotify": "Inscrivez-vous maintenant — vous serez informé dès le lancement.",
+    "addonsPackNote": "Pack IA Power : les 2 add-ons pour +39 DT/mois (dès disponibilité)"
   }
 }

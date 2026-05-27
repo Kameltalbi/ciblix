@@ -13,6 +13,10 @@ import {
   Sparkles,
   Minus,
   Clock,
+  Bot,
+  Users,
+  Zap,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,12 +37,33 @@ type PricingPlanRow = {
 };
 
 const AGENT_MATRIX = [
-  { nameKey: 'agents.huntAi.name', basic: true, business: true, pro: true },
-  { nameKey: 'agents.copilotIa.name', basic: true, business: true, pro: true },
-  { nameKey: 'agents.scoutAi.name', basic: false, business: true, pro: true },
-  { nameKey: 'agents.offreBot.name', basic: false, business: true, pro: true },
-  { nameKey: 'agents.commBot.name', basic: false, business: false, pro: true },
-  { nameKey: 'agents.factCheckAi.name', basic: false, business: false, pro: true },
+  { nameKey: 'agents.huntAi.name', basic: true, business: true, pro: true, comingSoon: false },
+  { nameKey: 'agents.copilotIa.name', basic: true, business: true, pro: true, comingSoon: false },
+  { nameKey: 'agents.scoutAi.name', basic: false, business: true, pro: true, comingSoon: false },
+  { nameKey: 'agents.offreBot.name', basic: false, business: true, pro: true, comingSoon: false },
+  { nameKey: 'agents.commBot.name', basic: false, business: false, pro: true, comingSoon: false },
+  { nameKey: 'agents.factCheckAi.name', basic: false, business: false, pro: true, comingSoon: false },
+  { nameKey: 'pricingPage.addonEnricher', basic: false, business: false, pro: false, comingSoon: true, addon: true },
+  { nameKey: 'pricingPage.addonNba', basic: false, business: false, pro: false, comingSoon: true, addon: true },
+] as const;
+
+const ADDON_CARDS = [
+  {
+    titleKey: 'pricingPage.addonEnricher',
+    descKey: 'pricingPage.addonEnricherDesc',
+    priceKey: 'pricingPage.addonEnricherPrice',
+    icon: Users,
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+  },
+  {
+    titleKey: 'pricingPage.addonNba',
+    descKey: 'pricingPage.addonNbaDesc',
+    priceKey: 'pricingPage.addonNbaPrice',
+    icon: Zap,
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+  },
 ] as const;
 
 const QUOTA_ROWS = [
@@ -365,6 +390,22 @@ export function Pricing() {
             <p className="mt-2 text-xs text-gray-400">
               {t('pricingPage.trialNote', { defaultValue: 'Testez toutes les fonctionnalités pendant 14 jours. Paiement uniquement si vous continuez.' })}
             </p>
+
+            {/* Bandeau agents IA */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800">
+                <Bot size={16} />
+                {t('pricingPage.agentsActiveCount', { defaultValue: '6 agents IA actifs' })}
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
+                <Clock size={16} />
+                {t('pricingPage.agentsComingCount', { defaultValue: '2 add-ons bientôt' })}
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-800">
+                <Sparkles size={16} />
+                {t('pricingPage.agentsTotalCount', { defaultValue: '8 agents IA au total' })}
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-[1280px] mx-auto">
@@ -410,20 +451,41 @@ export function Pricing() {
                 </thead>
                 <tbody>
                   {AGENT_MATRIX.map((row) => (
-                    <tr key={row.nameKey} className="border-b last:border-0">
-                      <td className="px-4 py-3 font-medium text-gray-800">{t(row.nameKey)}</td>
-                      {[row.basic, row.business, row.pro].map((included, i) => (
-                        <td key={i} className="px-4 py-3 text-center">
-                          {included ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-700">
-                              <Check size={16} className="text-leaf" />
-                              <span className="sr-only">{t('pricingPage.included')}</span>
+                    <tr key={row.nameKey} className={`border-b last:border-0 ${row.comingSoon ? 'bg-amber-50/40' : ''}`}>
+                      <td className="px-4 py-3 font-medium text-gray-800">
+                        <div className="flex items-center gap-2">
+                          {t(row.nameKey)}
+                          {row.comingSoon && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                              <Clock size={10} />
+                              {t('pricingPage.comingSoon')}
                             </span>
-                          ) : (
-                            <Minus size={16} className="mx-auto text-gray-300" />
                           )}
+                          {'addon' in row && row.addon && (
+                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase text-indigo-700">
+                              {t('pricingPage.addonBadge', { defaultValue: 'Add-on' })}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      {row.comingSoon ? (
+                        <td colSpan={3} className="px-4 py-3 text-center text-xs font-medium text-amber-700">
+                          {t('pricingPage.addonAvailableSoon', { defaultValue: 'Disponible prochainement en option sur tous les plans' })}
                         </td>
-                      ))}
+                      ) : (
+                        [row.basic, row.business, row.pro].map((included, i) => (
+                          <td key={i} className="px-4 py-3 text-center">
+                            {included ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-700">
+                                <Check size={16} className="text-leaf" />
+                                <span className="sr-only">{t('pricingPage.included')}</span>
+                              </span>
+                            ) : (
+                              <Minus size={16} className="mx-auto text-gray-300" />
+                            )}
+                          </td>
+                        ))
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -470,37 +532,40 @@ export function Pricing() {
           {/* Add-ons bientôt */}
           <div className="mb-16">
             <div className="text-center mb-8">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-800">
+                <Bell size={14} />
+                {t('pricingPage.addonsAnnouncement', { defaultValue: 'Annonce — 2 nouveaux agents IA en préparation' })}
+              </div>
               <h2 className="text-2xl font-bold text-gray-900">{t('pricingPage.addonsTitle')}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{t('pricingPage.addonsSubtitle')}</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 max-w-3xl mx-auto">
-              <Card className="relative overflow-hidden">
-                <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 ring-1 ring-amber-200">
-                  <Clock size={10} />
-                  {t('pricingPage.comingSoon')}
-                </span>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('pricingPage.addonEnricher')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{t('pricingPage.addonEnricherDesc')}</p>
-                  <p className="mt-3 font-semibold text-sky-700">{t('pricingPage.addonEnricherPrice')}</p>
-                </CardContent>
-              </Card>
-              <Card className="relative overflow-hidden">
-                <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 ring-1 ring-amber-200">
-                  <Clock size={10} />
-                  {t('pricingPage.comingSoon')}
-                </span>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('pricingPage.addonNba')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{t('pricingPage.addonNbaDesc')}</p>
-                  <p className="mt-3 font-semibold text-sky-700">{t('pricingPage.addonNbaPrice')}</p>
-                </CardContent>
-              </Card>
+              {ADDON_CARDS.map((addon) => {
+                const Icon = addon.icon;
+                return (
+                  <Card key={addon.titleKey} className="relative overflow-hidden border-amber-100">
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 ring-1 ring-amber-200">
+                      <Clock size={10} />
+                      {t('pricingPage.comingSoon')}
+                    </span>
+                    <CardHeader>
+                      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${addon.bg}`}>
+                        <Icon size={20} className={addon.color} />
+                      </div>
+                      <CardTitle className="text-lg">{t(addon.titleKey)}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{t(addon.descKey)}</p>
+                      <p className="mt-3 font-semibold text-sky-700">{t(addon.priceKey)}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">{t('pricingPage.addonNotify', { defaultValue: 'Inscrivez-vous maintenant — vous serez informé dès le lancement.' })}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              {t('pricingPage.addonsPackNote', { defaultValue: 'Pack IA Power : les 2 add-ons pour +39 DT/mois (dès disponibilité)' })}
+            </p>
           </div>
 
           <div className="mt-12 max-w-2xl mx-auto">
