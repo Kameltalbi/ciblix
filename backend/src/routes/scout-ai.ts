@@ -390,7 +390,7 @@ const statusSchema = z.object({
 
 scoutAiRoutes.patch('/opportunities/:id/status', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status } = statusSchema.parse(req.body);
 
     const opp = await prisma.scoutOpportunity.updateMany({
