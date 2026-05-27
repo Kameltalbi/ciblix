@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Megaphone, Sparkles, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { OnboardingChatbot } from '@/components/OnboardingChatbot';
 import { cn } from '@/lib/utils';
 
 const SOFTFACTURE_BANNER_SLIDE_MS = 500;
@@ -676,8 +675,6 @@ export function Landing() {
           </div>
         </div>
       )}
-
-      <OnboardingChatbot />
     </div>
   );
 }

@@ -35,7 +35,6 @@ import { useOrganizationLogoSrc } from '@/hooks/useOrganizationLogoSrc';
 import type { Organization } from '@/types';
 import { Notifications } from './Notifications';
 import { useTranslation } from 'react-i18next';
-import { OnboardingChatbot } from './OnboardingChatbot';
 import type { LucideIcon } from 'lucide-react';
 
 type NavItem = {
@@ -649,8 +648,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Sparkles size={24} strokeWidth={2} className="text-[#0071DD]" />
         </button>
       ) : null}
-
-      <OnboardingChatbot />
 
       {/* Privacy consent (RGPD + Tunisian law) */}
       {consentOpen && (
