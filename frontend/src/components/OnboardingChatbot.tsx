@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { api, type ApiRequestConfig } from '@/lib/api';
+import {
+  getLocalOnboardingAnswer,
+  getLocalOnboardingFallback,
+  resolveOnboardingLang,
+} from '@/lib/onboardingChatbotLocal';
 import { useTranslation } from 'react-i18next';
 
 type ChatMessage = {
@@ -9,9 +14,12 @@ type ChatMessage = {
   content: string;
 };
 
+const API_TIMEOUT_MS = 12_000;
+
 export function OnboardingChatbot() {
   const { t, i18n } = useTranslation();
   const isLoggedIn = Boolean(useAuth((s) => s.accessToken));
+  const lang = resolveOnboardingLang(i18n.language);
   const [isVisible, setIsVisible] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -26,7 +34,7 @@ export function OnboardingChatbot() {
   const canSend = input.trim().length > 0;
   const title = useMemo(
     () => (isLoggedIn ? t('onboardingChatbot.titleLoggedIn') : t('onboardingChatbot.titlePublic')),
-    [isLoggedIn, t]
+    [isLoggedIn, t],
   );
   const quickQuestions = useMemo(
     () => [
@@ -35,7 +43,7 @@ export function OnboardingChatbot() {
       t('onboardingChatbot.quickQuestions.convert'),
       t('onboardingChatbot.quickQuestions.kanban'),
     ],
-    [t]
+    [t],
   );
 
   useEffect(() => {
@@ -61,6 +69,10 @@ export function OnboardingChatbot() {
     });
   }, [i18n.language, t]);
 
+  const reply = (content: string) => {
+    setMessages((prev) => [...prev, { role: 'assistant', content }]);
+  };
+
   const sendQuestion = async (question: string) => {
     const userQuestion = question.trim();
     if (!userQuestion) return;
@@ -68,27 +80,25 @@ export function OnboardingChatbot() {
     setInput('');
     setIsLoading(true);
 
+    const localAnswer = getLocalOnboardingAnswer(userQuestion, lang);
+    if (localAnswer) {
+      reply(localAnswer);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data } = await api.post(
         '/onboarding-chatbot/query',
+        { message: userQuestion, language: lang },
         {
-          message: userQuestion,
-          language: i18n.language === 'ar' ? 'ar' : i18n.language === 'en' ? 'en' : 'fr',
-        },
-        { skipAuth: true } as ApiRequestConfig,
+          skipAuth: true,
+          timeout: API_TIMEOUT_MS,
+        } as ApiRequestConfig,
       );
-      const answer = data?.answer || t('onboardingChatbot.noAnswerFallback');
-      setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      let content = t('onboardingChatbot.errorFallback');
-      if (status === 401) {
-        content =
-          'Votre session a expiré. Reconnectez-vous pour un accès complet, ou posez une question simple (ex. « Comment démarrer ? »).';
-      } else if (status === 429) {
-        content = 'Limite de messages atteinte. Réessayez dans quelques minutes.';
-      }
-      setMessages((prev) => [...prev, { role: 'assistant', content }]);
+      reply(data?.answer || getLocalOnboardingFallback(lang));
+    } catch {
+      reply(getLocalOnboardingAnswer(userQuestion, lang) ?? getLocalOnboardingFallback(lang));
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +153,7 @@ export function OnboardingChatbot() {
                   <Bot size={12} className="text-primary" />
                 </div>
                 <div className="max-w-[82%] rounded-xl bg-muted px-2.5 py-2 text-xs text-muted-foreground">
-                  L'assistant onboarding réfléchit...
+                  {t('onboardingChatbot.thinking', { defaultValue: "L'assistant réfléchit..." })}
                 </div>
               </div>
             )}
@@ -156,7 +166,8 @@ export function OnboardingChatbot() {
                   key={q}
                   type="button"
                   onClick={() => sendQuestion(q)}
-                  className="rounded-full border border-border bg-white px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                  disabled={isLoading}
+                  className="rounded-full border border-border bg-white px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-muted disabled:opacity-50"
                 >
                   {q}
                 </button>
@@ -167,7 +178,7 @@ export function OnboardingChatbot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isLoading) sendQuestion(input);
+                  if (e.key === 'Enter' && !isLoading) void sendQuestion(input);
                 }}
                 placeholder={t('onboardingChatbot.inputPlaceholder')}
                 className="h-9 flex-1 rounded-lg border border-border px-3 text-xs outline-none focus:border-primary"
@@ -175,7 +186,7 @@ export function OnboardingChatbot() {
               <button
                 type="button"
                 disabled={!canSend || isLoading}
-                onClick={() => sendQuestion(input)}
+                onClick={() => void sendQuestion(input)}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
               >
                 <Send size={14} />

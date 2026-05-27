@@ -253,22 +253,36 @@ async function callOpenAIForOnboarding(prompt: string, language: Lang): Promise<
   return data.choices?.[0]?.message?.content?.trim() || 'Je n’ai pas pu générer une réponse pour le moment.';
 }
 
+onboardingChatbotRoutes.get('/ping', (_req, res) => {
+  res.json({
+    ok: true,
+    hasOpenAi: Boolean(process.env.OPENAI_API_KEY?.trim()),
+  });
+});
+
 onboardingChatbotRoutes.post('/query', async (req, res, next) => {
   try {
     const { message, language } = querySchema.parse(req.body ?? {});
 
-    let answer: string;
-    let source: 'onboarding_openai' | 'onboarding_rules' = 'onboarding_openai';
-
-    try {
-      answer = await callOpenAIForOnboarding(message, language);
-    } catch (openAiErr) {
-      console.warn('[onboarding-chatbot] OpenAI indisponible, fallback local:', openAiErr);
-      answer = getRuleBasedAnswer(message, language) ?? FALLBACK_GENERIC[language];
-      source = 'onboarding_rules';
+    const ruleAnswer = getRuleBasedAnswer(message, language);
+    if (ruleAnswer) {
+      res.json({ type: 'onboarding_rules', answer: ruleAnswer });
+      return;
     }
 
-    res.json({ type: source, answer });
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!apiKey) {
+      res.json({ type: 'onboarding_rules', answer: FALLBACK_GENERIC[language] });
+      return;
+    }
+
+    try {
+      const answer = await callOpenAIForOnboarding(message, language);
+      res.json({ type: 'onboarding_openai', answer });
+    } catch (openAiErr) {
+      console.warn('[onboarding-chatbot] OpenAI indisponible:', openAiErr);
+      res.json({ type: 'onboarding_rules', answer: FALLBACK_GENERIC[language] });
+    }
   } catch (error) {
     next(error);
   }
