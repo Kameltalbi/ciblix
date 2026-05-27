@@ -273,8 +273,11 @@ export function Landing() {
                 {t('landing.heroTitle2')}
               </span>
             </h1>
-            <p className="mb-10 max-w-2xl mx-auto text-xl text-muted-foreground md:text-2xl">
+            <p className="mb-6 max-w-2xl mx-auto text-xl text-muted-foreground md:text-2xl">
               {t('landing.heroSubtitle')}
+            </p>
+            <p className="mb-10 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-[#BED6F6]/60 bg-white/80 px-4 py-2 text-sm font-medium text-[#1E72B9] shadow-sm">
+              {t('landing.heroHighlights', { defaultValue: 'CRM · 6 agents IA · Pipeline · Offres · Veille TUNEPS' })}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
@@ -313,7 +316,7 @@ export function Landing() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-[#BED6F6] backdrop-blur-sm">
-              <Sparkles size={16} /> 5 Agents IA spécialisés
+              <Sparkles size={16} /> {t('landing.agentsBadge', { defaultValue: '6 agents IA spécialisés' })}
             </div>
             <h2 className="mb-4 text-4xl font-serif font-bold tracking-tight md:text-5xl">
               Vos collaborateurs IA,{' '}
@@ -458,6 +461,15 @@ export function Landing() {
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 ring-1 ring-rose-200/60">
+                <Megaphone size={24} className="text-rose-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Publiez sans agence marketing</h3>
+              <p className="text-base text-muted-foreground">
+                CommBot produit vos contenus SEO, posts LinkedIn, newsletters et fiches produits — pour améliorer votre visibilité B2B sans recruter une équipe dédiée.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover md:col-span-2 lg:col-span-1">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
                 <BarChart3 size={24} className="text-[#0071DD]" />
               </div>
