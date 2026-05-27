@@ -19,8 +19,8 @@ export function LandingSales() {
       features: [
         'Prospects illimités',
         'Jusqu\'à 5 utilisateurs',
-        'Opportunités IA & objectifs de vente',
-        'Reporting de base',
+        'Chasseur IA & Assistant IA',
+        'Pipeline & objectifs de vente',
       ],
       cta: 'Voir les tarifs',
       popular: false,
@@ -33,8 +33,8 @@ export function LandingSales() {
       features: [
         'Tout Basic',
         'Jusqu\'à 20 utilisateurs',
+        'Veilleur IA & Rédacteur d\'offres',
         'Reporting avancé',
-        'Support prioritaire',
       ],
       cta: 'Voir les tarifs',
       popular: true,
@@ -47,7 +47,8 @@ export function LandingSales() {
       features: [
         'Tout Business',
         'Jusqu\'à 50 utilisateurs',
-        'Dépenses, IA, primes, Softfacture',
+        'Vérificateur IA inclus',
+        'Dépenses, commissions, Softfacture',
       ],
       cta: 'Voir les tarifs',
       popular: false,

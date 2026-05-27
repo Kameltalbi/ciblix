@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Response } from 'express';
 import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
+import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 import { enrichHitWebsiteCached } from '../services/prospecting/index.js';
@@ -20,6 +21,7 @@ prospectingRoutes.get('/ping', (_req, res) => {
 
 prospectingRoutes.use(auth);
 prospectingRoutes.use(requirePaymentApproved);
+prospectingRoutes.use(checkAgentAccess('hunt-ai'));
 
 /**
  * GET /api/prospecting/all

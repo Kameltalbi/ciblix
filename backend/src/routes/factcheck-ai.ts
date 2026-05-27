@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Response } from 'express';
 import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
+import { checkAgentAccess } from '../middleware/planRestrictions.js';
 
 export const factcheckAiRoutes = Router();
 
@@ -10,6 +11,7 @@ factcheckAiRoutes.get('/ping', (_req, res) => {
 
 factcheckAiRoutes.use(auth);
 factcheckAiRoutes.use(requirePaymentApproved);
+factcheckAiRoutes.use(checkAgentAccess('factcheck-ai'));
 
 // ─── Helpers ────────────────────────────────────────────────
 

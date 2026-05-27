@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest, requireSuperAdmin } from '../middleware/auth.js';
+import { normalizePlan, syncAgentsForPlan } from '../config/agentPlans.js';
 
 export const subscriptionsRoutes = Router();
 subscriptionsRoutes.use(auth);
@@ -18,12 +19,13 @@ export const PLAN_CATALOG = {
     annualPrice: 480,
     maxUsers: 5,
     label: 'Basic',
+    agents: ['Chasseur IA', 'Assistant IA'],
     features: [
       'Prospects illimités',
       "Jusqu'à 5 utilisateurs",
-      'Pipeline Kanban',
-      'Objectifs de vente',
-      'Clients & activités',
+      'Pipeline Kanban & objectifs',
+      'Chasseur IA — prospection intelligente',
+      'Assistant IA — copilote commercial',
     ],
   },
   BUSINESS: {
@@ -31,11 +33,13 @@ export const PLAN_CATALOG = {
     annualPrice: 980,
     maxUsers: 20,
     label: 'Business',
+    agents: ['Chasseur IA', 'Assistant IA', 'Veilleur IA', 'Rédacteur d\'offres'],
     features: [
       'Tout le plan Basic',
       "Jusqu'à 20 utilisateurs",
-      'Reporting avancé',
-      'Support prioritaire',
+      'Reporting avancé & support prioritaire',
+      'Veilleur IA — veille d\'opportunités',
+      'Rédacteur d\'offres — propositions commerciales',
     ],
   },
   ENTERPRISE: {
@@ -44,10 +48,12 @@ export const PLAN_CATALOG = {
     annualPrice: 2100,
     maxUsers: 50,
     label: 'Professionnel',
+    agents: ['Chasseur IA', 'Assistant IA', 'Veilleur IA', 'Rédacteur d\'offres', 'Vérificateur IA'],
     features: [
       'Tout le plan Business',
       "Jusqu'à 50 utilisateurs",
-      'Dépenses, IA, commissions, Softfacture',
+      'Vérificateur IA — contrôle des informations',
+      'Dépenses, commissions & Softfacture',
     ],
   },
 } as const;
@@ -134,6 +140,13 @@ subscriptionsRoutes.post('/:id/confirm', requireSuperAdmin, async (req: AuthRequ
       where: { id: req.params.id as string },
       data: { paymentStatus: 'PAID' },
     });
+
+    const orgPlan = normalizePlan(updated.plan);
+    await prisma.organization.update({
+      where: { id: updated.organizationId },
+      data: { plan: orgPlan, paymentStatus: 'APPROVED' },
+    });
+    await syncAgentsForPlan(updated.organizationId, orgPlan);
 
     res.json(updated);
   } catch (e) {

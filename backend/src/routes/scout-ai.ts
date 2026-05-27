@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Response } from 'express';
 import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
+import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 
 export const scoutAiRoutes = Router();
@@ -11,6 +12,7 @@ scoutAiRoutes.get('/ping', (_req, res) => {
 
 scoutAiRoutes.use(auth);
 scoutAiRoutes.use(requirePaymentApproved);
+scoutAiRoutes.use(checkAgentAccess('scout-ai'));
 
 // ─── Helpers ────────────────────────────────────────────────
 

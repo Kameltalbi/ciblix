@@ -12,6 +12,7 @@ import {
   Loader2,
   Sparkles,
   CheckCircle2,
+  Lock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +32,10 @@ interface Agent {
   defaultActive: boolean;
   active: boolean;
   activatedAt: string | null;
+  includedInPlan: boolean;
+  canActivate: boolean;
+  requiredPlan: string | null;
+  requiredPlanLabel: string | null;
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -52,15 +57,22 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string; acce
 function AgentCard({ agent, onToggle, isToggling }: { agent: Agent; onToggle: () => void; isToggling: boolean }) {
   const Icon = ICON_MAP[agent.icon] || Bot;
   const colors = COLOR_MAP[agent.color] || COLOR_MAP.blue;
+  const locked = !agent.includedInPlan;
 
   return (
     <Card className={cn(
       'group relative overflow-hidden transition-all duration-200 hover:shadow-lg',
       agent.active ? `border-2 ${colors.border}` : 'border border-gray-200 opacity-80 hover:opacity-100',
+      locked && 'opacity-70',
     )}>
       {agent.active && (
         <div className={cn('absolute right-3 top-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase', colors.accent, colors.text)}>
           <CheckCircle2 size={10} /> Actif
+        </div>
+      )}
+      {locked && (
+        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-600">
+          <Lock size={10} /> Plan {agent.requiredPlanLabel}
         </div>
       )}
 
@@ -86,23 +98,31 @@ function AgentCard({ agent, onToggle, isToggling }: { agent: Agent; onToggle: ()
           </div>
 
           <div className="mt-auto flex items-center gap-2 pt-5">
-            <Button
-              variant={agent.active ? 'outline' : 'default'}
-              size="sm"
-              onClick={onToggle}
-              disabled={isToggling}
-              className={cn('flex-1 gap-1.5', agent.active && 'border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700')}
-            >
-              {isToggling ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : agent.active ? (
-                <><PowerOff size={14} /> Désactiver</>
-              ) : (
-                <><Power size={14} /> Activer</>
-              )}
-            </Button>
+            {locked ? (
+              <Link to="/pricing" className="flex-1">
+                <Button variant="outline" size="sm" className="w-full gap-1.5">
+                  Passer au plan {agent.requiredPlanLabel}
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant={agent.active ? 'outline' : 'default'}
+                size="sm"
+                onClick={onToggle}
+                disabled={isToggling}
+                className={cn('flex-1 gap-1.5', agent.active && 'border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700')}
+              >
+                {isToggling ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : agent.active ? (
+                  <><PowerOff size={14} /> Désactiver</>
+                ) : (
+                  <><Power size={14} /> Activer</>
+                )}
+              </Button>
+            )}
 
-            {agent.active && (
+            {agent.active && !locked && (
               <Link to={agent.route}>
                 <Button variant="outline" size="sm" className="gap-1.5">
                   Ouvrir <ArrowRight size={14} />
@@ -119,7 +139,7 @@ function AgentCard({ agent, onToggle, isToggling }: { agent: Agent; onToggle: ()
 export function AgentsMarketplace() {
   const queryClient = useQueryClient();
 
-  const { data, isPending } = useQuery<{ agents: Agent[] }>({
+  const { data, isPending } = useQuery<{ agents: Agent[]; plan: string; planLabel: string }>({
     queryKey: ['agents-marketplace'],
     queryFn: () => api.get('/agents').then((r) => r.data),
   });
@@ -135,6 +155,7 @@ export function AgentsMarketplace() {
 
   const agents = data?.agents || [];
   const activeCount = agents.filter((a) => a.active).length;
+  const includedCount = agents.filter((a) => a.includedInPlan).length;
 
   return (
     <div className="space-y-8">
@@ -146,7 +167,7 @@ export function AgentsMarketplace() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agents IA</h1>
             <p className="text-sm text-muted-foreground">
-              {activeCount} agent{activeCount > 1 ? 's' : ''} actif{activeCount > 1 ? 's' : ''} sur {agents.length} disponibles
+              Plan {data?.planLabel ?? '…'} · {activeCount} actif{activeCount > 1 ? 's' : ''} sur {includedCount} inclus
             </p>
           </div>
         </div>

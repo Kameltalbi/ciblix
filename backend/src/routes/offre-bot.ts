@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Response } from 'express';
 import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
+import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 
 export const offreBotRoutes = Router();
@@ -11,6 +12,7 @@ offreBotRoutes.get('/ping', (_req, res) => {
 
 offreBotRoutes.use(auth);
 offreBotRoutes.use(requirePaymentApproved);
+offreBotRoutes.use(checkAgentAccess('offre-bot'));
 
 // ─── Helpers ────────────────────────────────────────────────
 

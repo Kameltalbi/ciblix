@@ -1,7 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../db/prisma.js';
+import {
+  getMinimumPlanForAgent,
+  isAgentIncludedInPlan,
+  normalizePlan,
+  PLAN_AGENT_LABELS,
+  type PlanType,
+} from '../config/agentPlans.js';
 
-export type PlanType = 'FREE' | 'BASIC' | 'BUSINESS' | 'ENTERPRISE';
+export type { PlanType };
+
+export async function resolveOrganizationPlan(organizationId: string): Promise<PlanType> {
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true },
+  });
+  return normalizePlan(organization?.plan);
+}
 
 export const PLAN_LIMITS = {
   FREE: {
@@ -76,10 +91,7 @@ export function checkPlanFeature(feature: keyof typeof PLAN_LIMITS.FREE.features
         return res.status(404).json({ error: 'Organization not found' });
       }
 
-      const rawPlan = organization.plan as string;
-      const plan = (PLAN_LIMITS as Record<string, unknown>)[rawPlan]
-        ? (rawPlan as PlanType)
-        : ('FREE' as PlanType);
+      const plan = normalizePlan(organization.plan);
       const hasFeature = PLAN_LIMITS[plan].features[feature];
 
       if (!hasFeature) {
@@ -114,10 +126,7 @@ export async function checkProspectLimit(req: AuthRequest, res: Response, next: 
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    const rawPlan = organization.plan as string;
-    const plan = (PLAN_LIMITS as Record<string, unknown>)[rawPlan]
-      ? (rawPlan as PlanType)
-      : ('FREE' as PlanType);
+    const plan = normalizePlan(organization.plan);
     const maxProspects = PLAN_LIMITS[plan].maxProspects;
 
     if (maxProspects === Infinity) {
@@ -158,10 +167,7 @@ export async function checkUserLimit(req: AuthRequest, res: Response, next: Next
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    const rawPlan = organization.plan as string;
-    const plan = (PLAN_LIMITS as Record<string, unknown>)[rawPlan]
-      ? (rawPlan as PlanType)
-      : ('FREE' as PlanType);
+    const plan = normalizePlan(organization.plan);
     const maxUsers = PLAN_LIMITS[plan].maxUsers;
 
     if (maxUsers === Infinity) {
@@ -185,4 +191,31 @@ export async function checkUserLimit(req: AuthRequest, res: Response, next: Next
   } catch (error) {
     next(error);
   }
+}
+
+export function checkAgentAccess(agentSlug: string) {
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      if (!req.organizationId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const plan = await resolveOrganizationPlan(req.organizationId);
+
+      if (!isAgentIncludedInPlan(plan, agentSlug)) {
+        const requiredPlan = getMinimumPlanForAgent(agentSlug) ?? 'ENTERPRISE';
+        return res.status(403).json({
+          error: 'Agent not available in your plan',
+          agentSlug,
+          currentPlan: plan,
+          requiredPlan,
+          requiredPlanLabel: PLAN_AGENT_LABELS[requiredPlan],
+        });
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
 }

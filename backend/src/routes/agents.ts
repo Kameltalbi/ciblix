@@ -1,35 +1,43 @@
 import { Router, type NextFunction, type Response } from 'express';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/prisma.js';
+import {
+  getMinimumPlanForAgent,
+  isAgentIncludedInPlan,
+  normalizePlan,
+  PLAN_AGENT_LABELS,
+  syncAgentsForPlan,
+} from '../config/agentPlans.js';
+import { resolveOrganizationPlan } from '../middleware/planRestrictions.js';
 
 export const agentsRoutes = Router();
 
 const AVAILABLE_AGENTS = [
   {
     slug: 'hunt-ai',
-    name: 'Hunt AI',
+    name: 'Chasseur IA',
     role: 'Prospection & qualification',
-    description: 'Recherche d\'entreprises, enrichissement web, scoring IA et génération de messages de prospection.',
+    description: 'Recherche d\'entreprises ciblées par secteur et zone, scoring IA et messages de prospection personnalisés.',
     icon: 'Radio',
     color: 'sky',
-    features: ['Recherche Google Places / Outscraper', 'Enrichissement site web', 'Scoring IA (GPT-4o-mini)', 'Messages de prospection', 'Automatisation périodique'],
+    features: ['Recherche par critères métier', 'Qualification automatique', 'Scoring IA', 'Messages de prospection', 'Automatisation périodique'],
     route: '/prospection-ia',
-    defaultActive: true,
+    defaultActive: false,
   },
   {
     slug: 'copilot-ia',
-    name: 'Copilot IA',
-    role: 'Assistant de direction commerciale',
+    name: 'Assistant IA',
+    role: 'Assistant commercial',
     description: 'Briefing opérationnel, chat conversationnel, prédictions CA et recommandations commerciales.',
     icon: 'Bot',
     color: 'violet',
     features: ['Briefing du jour', 'Chat IA conversationnel', 'Prédiction CA fin d\'année', 'Brouillons relances/emails', 'Scoring leads'],
     route: '/ai-assistant',
-    defaultActive: true,
+    defaultActive: false,
   },
   {
     slug: 'scout-ai',
-    name: 'Scout AI',
+    name: 'Veilleur IA',
     role: 'Veille & détection d\'opportunités',
     description: 'Surveille les appels d\'offres, détecte les événements et alerte sur les opportunités pertinentes.',
     icon: 'Radar',
@@ -40,7 +48,7 @@ const AVAILABLE_AGENTS = [
   },
   {
     slug: 'offre-bot',
-    name: 'OffreBot',
+    name: 'Rédacteur d\'offres',
     role: 'Préparation d\'offres commerciales',
     description: 'Génère des propositions commerciales personnalisées à partir des données client et affaire.',
     icon: 'FileSignature',
@@ -51,8 +59,8 @@ const AVAILABLE_AGENTS = [
   },
   {
     slug: 'factcheck-ai',
-    name: 'FactCheck AI',
-    role: 'Vérification d\'informations en ligne',
+    name: 'Vérificateur IA',
+    role: 'Vérification d\'informations',
     description: 'Vérifie la fiabilité des informations en croisant plusieurs sources web.',
     icon: 'ShieldCheck',
     color: 'emerald',
@@ -64,6 +72,26 @@ const AVAILABLE_AGENTS = [
 
 agentsRoutes.use(auth);
 
+function buildAgentResponse(
+  agent: (typeof AVAILABLE_AGENTS)[number],
+  orgAgent: { active: boolean; activatedAt: Date | null } | undefined,
+  plan: ReturnType<typeof normalizePlan>,
+) {
+  const includedInPlan = isAgentIncludedInPlan(plan, agent.slug);
+  const requiredPlan = getMinimumPlanForAgent(agent.slug);
+  const isActive = includedInPlan && (orgAgent ? orgAgent.active : true);
+
+  return {
+    ...agent,
+    active: isActive,
+    activatedAt: orgAgent?.activatedAt || null,
+    includedInPlan,
+    canActivate: includedInPlan,
+    requiredPlan,
+    requiredPlanLabel: requiredPlan ? PLAN_AGENT_LABELS[requiredPlan] : null,
+  };
+}
+
 /**
  * GET /api/agents
  * Liste tous les agents avec leur statut d'activation pour le tenant.
@@ -71,6 +99,7 @@ agentsRoutes.use(auth);
 agentsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const orgId = req.organizationId!;
+    const plan = await resolveOrganizationPlan(orgId);
 
     const orgAgents = await prisma.organizationAgent.findMany({
       where: { organizationId: orgId },
@@ -78,18 +107,11 @@ agentsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction
 
     const agentMap = new Map(orgAgents.map((a) => [a.agentSlug, a]));
 
-    const agents = AVAILABLE_AGENTS.map((agent) => {
-      const orgAgent = agentMap.get(agent.slug);
-      const isActive = orgAgent ? orgAgent.active : agent.defaultActive;
+    const agents = AVAILABLE_AGENTS.map((agent) =>
+      buildAgentResponse(agent, agentMap.get(agent.slug), plan),
+    );
 
-      return {
-        ...agent,
-        active: isActive,
-        activatedAt: orgAgent?.activatedAt || null,
-      };
-    });
-
-    res.json({ agents });
+    res.json({ agents, plan, planLabel: PLAN_AGENT_LABELS[plan] });
   } catch (err) {
     next(err);
   }
@@ -102,6 +124,7 @@ agentsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction
 agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const orgId = req.organizationId!;
+    const plan = await resolveOrganizationPlan(orgId);
 
     const orgAgents = await prisma.organizationAgent.findMany({
       where: { organizationId: orgId },
@@ -110,10 +133,7 @@ agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: 
     const agentMap = new Map(orgAgents.map((a) => [a.agentSlug, a]));
 
     const activeSlugs = AVAILABLE_AGENTS
-      .filter((agent) => {
-        const orgAgent = agentMap.get(agent.slug);
-        return orgAgent ? orgAgent.active : agent.defaultActive;
-      })
+      .filter((agent) => buildAgentResponse(agent, agentMap.get(agent.slug), plan).active)
       .map((a) => a.slug);
 
     res.json({ activeSlugs });
@@ -128,11 +148,24 @@ agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: 
  */
 agentsRoutes.post('/:slug/activate', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { slug } = req.params;
+    const slug = req.params.slug as string;
     const orgId = req.organizationId!;
 
     if (!AVAILABLE_AGENTS.find((a) => a.slug === slug)) {
       res.status(404).json({ error: 'Agent not found' });
+      return;
+    }
+
+    const plan = await resolveOrganizationPlan(orgId);
+    if (!isAgentIncludedInPlan(plan, slug)) {
+      const requiredPlan = getMinimumPlanForAgent(slug) ?? 'ENTERPRISE';
+      res.status(403).json({
+        error: 'Agent not available in your plan',
+        agentSlug: slug,
+        currentPlan: plan,
+        requiredPlan,
+        requiredPlanLabel: PLAN_AGENT_LABELS[requiredPlan],
+      });
       return;
     }
 
@@ -154,7 +187,7 @@ agentsRoutes.post('/:slug/activate', async (req: AuthRequest, res: Response, nex
  */
 agentsRoutes.post('/:slug/deactivate', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { slug } = req.params;
+    const slug = req.params.slug as string;
     const orgId = req.organizationId!;
 
     if (!AVAILABLE_AGENTS.find((a) => a.slug === slug)) {

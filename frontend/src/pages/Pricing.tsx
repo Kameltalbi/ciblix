@@ -42,6 +42,7 @@ const FREE_PLAN: PricingPlanRow = {
     '1 utilisateur',
     'Pipeline Kanban',
     'Gestion des clients',
+    'Agents IA non inclus',
     'Support inclus',
   ],
   cta: 'Commencer gratuitement',
@@ -56,9 +57,9 @@ const PAID_PLANS: PricingPlanRow[] = [
     features: [
       'Prospects illimités',
       'Jusqu\'à 5 utilisateurs',
-      'Pipeline Kanban',
-      'Objectifs de vente',
-      'Reporting de base',
+      'Pipeline Kanban & objectifs',
+      'Chasseur IA — prospection intelligente',
+      'Assistant IA — copilote commercial',
     ],
     cta: 'Démarrer l\'essai gratuit',
   },
@@ -70,8 +71,9 @@ const PAID_PLANS: PricingPlanRow[] = [
     features: [
       'Tout le plan Basic',
       'Jusqu\'à 20 utilisateurs',
-      'Reporting avancé',
-      'Support prioritaire',
+      'Reporting avancé & support prioritaire',
+      'Veilleur IA — veille d\'opportunités',
+      'Rédacteur d\'offres — propositions commerciales',
     ],
     cta: 'Démarrer l\'essai gratuit',
     popular: true,
@@ -84,9 +86,8 @@ const PAID_PLANS: PricingPlanRow[] = [
     features: [
       'Tout le plan Business',
       'Jusqu\'à 50 utilisateurs',
-      'Gestion des dépenses',
-      'Assistant IA & scoring leads',
-      'Commissions & Softfacture',
+      'Vérificateur IA — contrôle des informations',
+      'Dépenses, commissions & Softfacture',
     ],
     cta: 'Démarrer l\'essai gratuit',
   },
@@ -318,18 +319,36 @@ export function Pricing() {
               {t('pricingPage.title', { defaultValue: 'Choisissez votre plan' })}
             </h1>
             
-            {/* Toggle Monthly/Annual */}
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <span className={`text-lg ${!isAnnual ? 'font-semibold text-leaf' : 'text-gray-600'}`}>Mensuel</span>
-              <button
-                onClick={() => setIsAnnual(!isAnnual)}
-                className={`relative w-16 h-8 rounded-full transition-colors ${isAnnual ? 'bg-leaf' : 'bg-gray-300'}`}
+            {/* Toggle Monthly/Annual — segmented control (contraste garanti) */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+              <div
+                className="inline-flex rounded-full border-2 border-slate-300 bg-slate-100 p-1 shadow-sm"
+                role="group"
+                aria-label="Période de facturation"
               >
-                <div
-                  className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white transition-transform ${isAnnual ? 'translate-x-8' : 'translate-x-0'}`}
-                />
-              </button>
-              <span className={`text-lg ${isAnnual ? 'font-semibold text-leaf' : 'text-gray-600'}`}>Annuel</span>
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual(false)}
+                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                    !isAnnual
+                      ? 'bg-white text-slate-900 shadow-md ring-1 ring-slate-200'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Mensuel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual(true)}
+                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                    isAnnual
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Annuel
+                </button>
+              </div>
               {isAnnual && (
                 <span className="text-sm bg-sky-100 text-sky-700 px-3 py-1 rounded-full font-medium">
                   {t('pricingPage.saveTwoMonths', { defaultValue: 'Économisez 2 mois' })}

@@ -10,9 +10,11 @@ import type { AuthRequest } from '../middleware/planRestrictions.js';
 import auth from '../middleware/auth.js';
 import { sendPasswordResetEmail } from '../services/passwordResetMailer.js';
 import {
+  bootstrapOrganizationAgents,
   seedDefaultEmailTemplates,
   seedTrialSubscriptionForOrganization,
 } from '../services/organizationBootstrap.js';
+import { normalizePlan, type PlanType } from '../config/agentPlans.js';
 import {
   assertValidGoogleOAuthState,
   buildGoogleAuthorizeUrl,
@@ -70,6 +72,7 @@ const registerSchema = z.object({
   name: z.string().min(1),
   organizationName: z.string().min(1),
   phone: z.string().optional(),
+  plan: z.enum(['FREE', 'BASIC', 'BUSINESS', 'ENTERPRISE']).optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -88,7 +91,7 @@ const changePasswordSchema = z.object({
 
 authRoutes.post('/register', async (req, res, next) => {
   try {
-    const { email, password, name, organizationName, phone } = registerSchema.parse(req.body);
+    const { email, password, name, organizationName, phone, plan: requestedPlan } = registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -96,6 +99,7 @@ authRoutes.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const plan: PlanType = requestedPlan ? normalizePlan(requestedPlan) : 'FREE';
 
     // Create organization first
     const organization = await prisma.organization.create({
@@ -103,11 +107,13 @@ authRoutes.post('/register', async (req, res, next) => {
         name: organizationName,
         email: email,
         paymentStatus: 'PENDING',
+        plan,
       },
     });
 
     await seedDefaultEmailTemplates(organization.id);
     await seedTrialSubscriptionForOrganization(organization);
+    await bootstrapOrganizationAgents(organization);
 
     // Create user with organization
     const user = await prisma.user.create({
@@ -538,6 +544,7 @@ authRoutes.get('/google/callback', async (req, res, next) => {
 
       await seedDefaultEmailTemplates(organization.id);
       await seedTrialSubscriptionForOrganization(organization);
+      await bootstrapOrganizationAgents(organization);
 
       user = await prisma.user.create({
         data: {

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
+import { normalizePlan, syncAgentsForPlan } from '../config/agentPlans.js';
 import auth, { requireSuperAdmin, AuthRequest } from '../middleware/auth.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -318,6 +319,8 @@ superadminRoutes.put('/organizations/:id/plan', async (req: AuthRequest, res, ne
 
       return updated;
     });
+
+    await syncAgentsForPlan(organizationId, normalizePlan(plan));
 
     res.json(organization);
   } catch (e) { next(e); }

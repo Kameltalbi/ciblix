@@ -49,6 +49,11 @@ export default {
           foreground: '#0F172A',
         },
         brand,
+        /** Vert CIBLIX (boutons, accents landing/tarifs) */
+        leaf: {
+          DEFAULT: '#16A34A',
+          foreground: '#FFFFFF',
+        },
         sidebar: '#0F172A',
         'sidebar-text': '#94A3B8',
         'sidebar-hover': '#1E293B',

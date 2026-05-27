@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
-import { checkPlanFeature } from '../middleware/planRestrictions.js';
+import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import {
   buildFollowUpTemplates,
   computeCommercialInsight,
@@ -14,6 +14,7 @@ export const aiAssistantRoutes = Router();
 
 // Apply auth middleware to all routes
 aiAssistantRoutes.use(auth);
+aiAssistantRoutes.use(checkAgentAccess('copilot-ia'));
 
 const OPEN_PIPELINE = ['PROSPECT', 'QUALIFIE', 'PROPOSITION', 'NEGOCIATION'] as const;
 
@@ -1065,7 +1066,7 @@ async function executeQuery(intent: string, organizationId: string) {
 }
 
 // POST /api/ai-assistant/query
-aiAssistantRoutes.post('/query', checkPlanFeature('ai'), async (req: AuthRequest, res, next) => {
+aiAssistantRoutes.post('/query', async (req: AuthRequest, res, next) => {
   try {
     const { message, language = 'fr' } = querySchema.parse(req.body);
     const organizationId = req.organizationId!;
@@ -1266,7 +1267,7 @@ ${languageInstructions[language as keyof typeof languageInstructions] || languag
 });
 
 // POST /api/ai-assistant/draft-email - Draft personalized email with AI
-aiAssistantRoutes.post('/draft-email', checkPlanFeature('ai'), async (req: AuthRequest, res, next) => {
+aiAssistantRoutes.post('/draft-email', async (req: AuthRequest, res, next) => {
   try {
     const { clientId, affaireId, type, language = 'fr' } = req.body;
 
@@ -1317,7 +1318,7 @@ ${languageInstructions[language as keyof typeof languageInstructions] || languag
 });
 
 // POST /api/ai-assistant/score-lead - Score lead with AI
-aiAssistantRoutes.post('/score-lead', checkPlanFeature('ai'), async (req: AuthRequest, res, next) => {
+aiAssistantRoutes.post('/score-lead', async (req: AuthRequest, res, next) => {
   try {
     const { affaireId } = req.body;
 

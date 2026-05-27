@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, CheckCircle2, Radio, Bot, Radar, FileSignature, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
@@ -11,6 +11,9 @@ import { getGoogleAuthHref, isGoogleAuthUiEnabled } from '@/lib/googleAuthUrl';
 export function Register() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedPlan = (searchParams.get('plan') || '').toUpperCase();
+  const trialDays = searchParams.get('trial');
   const dir = i18n.dir();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +29,11 @@ export function Register() {
     setError('');
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/register', { email, password, name, organizationName, phone });
+      const payload: Record<string, string> = { email, password, name, organizationName, phone };
+      if (['BASIC', 'BUSINESS', 'ENTERPRISE'].includes(selectedPlan)) {
+        payload.plan = selectedPlan;
+      }
+      const { data } = await api.post('/auth/register', payload);
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -129,7 +136,9 @@ export function Register() {
               {t('auth.registerCardTitle')}
             </h2>
             <p className="mb-6 text-sm text-white/50">
-              Commencez gratuitement, activez vos agents en un clic
+              {['BASIC', 'BUSINESS', 'ENTERPRISE'].includes(selectedPlan)
+                ? `Essai gratuit${trialDays ? ` ${trialDays} jours` : ''} — plan ${selectedPlan === 'ENTERPRISE' ? 'Professionnel' : selectedPlan.charAt(0) + selectedPlan.slice(1).toLowerCase()}`
+                : 'Commencez gratuitement, activez vos agents selon votre plan'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,5 +1,6 @@
 import type { Organization } from '@prisma/client';
 import { prisma } from '../db/prisma.js';
+import { normalizePlan, syncAgentsForPlan } from '../config/agentPlans.js';
 
 /**
  * Templates e-mail initiaux + abonnement d’essai : inchangés par rapport au flux `/auth/register`.
@@ -72,7 +73,7 @@ export async function seedTrialSubscriptionForOrganization(organization: Organiz
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const tier = organization.plan || 'FREE';
+  const tier = normalizePlan(organization.plan);
   const trialPrice =
     tier === 'ENTERPRISE'
       ? 2100
@@ -94,5 +95,9 @@ export async function seedTrialSubscriptionForOrganization(organization: Organiz
       endDate,
     },
   });
+}
+
+export async function bootstrapOrganizationAgents(organization: Organization): Promise<void> {
+  await syncAgentsForPlan(organization.id, normalizePlan(organization.plan));
 }
 
