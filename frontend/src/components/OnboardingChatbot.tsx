@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bot, MessageCircle, Send, Sparkles, User, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { api, type ApiRequestConfig } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 
 type ChatMessage = {
@@ -69,20 +69,26 @@ export function OnboardingChatbot() {
     setIsLoading(true);
 
     try {
-      const { data } = await api.post('/onboarding-chatbot/query', {
-        message: userQuestion,
-        language: i18n.language === 'ar' ? 'ar' : i18n.language === 'en' ? 'en' : 'fr',
-      });
+      const { data } = await api.post(
+        '/onboarding-chatbot/query',
+        {
+          message: userQuestion,
+          language: i18n.language === 'ar' ? 'ar' : i18n.language === 'en' ? 'en' : 'fr',
+        },
+        { skipAuth: true } as ApiRequestConfig,
+      );
       const answer = data?.answer || t('onboardingChatbot.noAnswerFallback');
       setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: t('onboardingChatbot.errorFallback'),
-        },
-      ]);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      let content = t('onboardingChatbot.errorFallback');
+      if (status === 401) {
+        content =
+          'Votre session a expiré. Reconnectez-vous pour un accès complet, ou posez une question simple (ex. « Comment démarrer ? »).';
+      } else if (status === 429) {
+        content = 'Limite de messages atteinte. Réessayez dans quelques minutes.';
+      }
+      setMessages((prev) => [...prev, { role: 'assistant', content }]);
     } finally {
       setIsLoading(false);
     }

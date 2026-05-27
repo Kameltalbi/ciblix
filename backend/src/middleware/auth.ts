@@ -42,6 +42,29 @@ const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 };
 
+/** Auth optionnelle : enrichit la requête si le JWT est valide, sinon continue sans utilisateur. */
+export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return next();
+  }
+  const token = authHeader.substring(7);
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, email: true, name: true, role: true, organizationId: true },
+    });
+    if (!user) return next();
+    req.userId = user.id;
+    req.organizationId = user.organizationId;
+    req.user = user;
+  } catch {
+    // Jeton expiré ou invalide : route publique, on ignore.
+  }
+  next();
+};
+
 // Middleware to check if user is SUPERADMIN
 export const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.user || req.user.role !== 'SUPERADMIN') {

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import auth from '../middleware/auth.js';
+import { optionalAuth } from '../middleware/auth.js';
 
 export const onboardingChatbotRoutes = Router();
-onboardingChatbotRoutes.use(auth);
+onboardingChatbotRoutes.use(optionalAuth);
 
 const querySchema = z.object({
   message: z.string().min(1).max(1000),
@@ -23,7 +23,7 @@ async function callOpenAIForOnboarding(prompt: string, language: 'fr' | 'en' | '
   }[language];
 
   const systemPrompt = [
-    'You are an onboarding chatbot for KTOptima CRM.',
+    'You are an onboarding chatbot for CIBLIX CRM.',
     'You are independent from the in-app AI assistant.',
     'Your job is to explain product onboarding and app usage only.',
     'Focus on: prospects, conversion, clients, affaires pipeline, activities, calendar, support tickets, and first-week setup.',

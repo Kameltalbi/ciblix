@@ -1,5 +1,8 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useAuth } from './auth';
+import { isPublicAnonymousApi, isPublicMarketingPath } from './publicPaths';
+
+export type ApiRequestConfig = InternalAxiosRequestConfig & { skipAuth?: boolean };
 
 /** Base API : relatif `/api` (même origine) ou URL absolue / chemin au build (`VITE_API_URL`, idéalement se terminer par `/api`). */
 function resolveApiBaseUrl(): string {
@@ -28,7 +31,11 @@ const isAuthEndpointWithoutBearer = (url?: string) =>
   ].some((path) => url.startsWith(path));
 
 // Injection du token JWT à chaque requête
-api.interceptors.request.use(config => {
+api.interceptors.request.use((config: ApiRequestConfig) => {
+  if (config.skipAuth) {
+    delete config.headers.Authorization;
+    return config;
+  }
   if (!isAuthEndpointWithoutBearer(config.url)) {
     const accessToken = localStorage.getItem('accessToken');
     if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
@@ -42,11 +49,13 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   r => r,
   async err => {
-    const originalRequest = err.config;
+    const originalRequest = err.config as ApiRequestConfig & { _retry?: boolean };
 
     if (
       err.response?.status === 401 &&
       !originalRequest._retry &&
+      !originalRequest.skipAuth &&
+      !isPublicAnonymousApi(originalRequest.url) &&
       !isAuthEndpointWithoutBearer(originalRequest.url)
     ) {
       originalRequest._retry = true;
@@ -61,11 +70,14 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
         }
-      } catch (refreshError) {
-        // Refresh failed, logout and redirect
+      } catch {
+        const hadSession = Boolean(localStorage.getItem('refreshToken'));
         const auth = useAuth.getState();
         await auth.logout();
-        if (window.location.pathname !== '/login') window.location.href = '/login';
+        const path = window.location.pathname;
+        if (hadSession && path !== '/login' && !isPublicMarketingPath(path)) {
+          window.location.href = '/login';
+        }
       }
     }
 

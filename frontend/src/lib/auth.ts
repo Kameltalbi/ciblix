@@ -78,6 +78,19 @@ export const useAuth = create<AuthState>((set, get) => ({
       localStorage.setItem('paymentStatus', data.paymentStatus || 'PENDING');
       set({ user: data.user, paymentStatus: data.paymentStatus || 'PENDING' });
     } catch {
+      const refreshToken = get().refreshToken;
+      if (refreshToken) {
+        try {
+          await get().refreshAccessToken();
+          const { data } = await api.get('/auth/me');
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('paymentStatus', data.paymentStatus || 'PENDING');
+          set({ user: data.user, paymentStatus: data.paymentStatus || 'PENDING' });
+          return;
+        } catch {
+          // refresh échoué
+        }
+      }
       clearAuthStorage();
       set({ user: null, accessToken: null, refreshToken: null, paymentStatus: null });
     }

@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './lib/auth';
+import { isPublicMarketingPath } from './lib/publicPaths';
 import './i18n';
 import { Layout } from './components/Layout';
 import { PaymentGuard } from './components/PaymentGuard';
@@ -116,7 +117,8 @@ export default function App() {
   const fetchMe = useAuth((s) => s.fetchMe);
 
   useEffect(() => {
-    fetchMe();
+    if (isPublicMarketingPath(window.location.pathname)) return;
+    void fetchMe();
   }, [fetchMe]);
 
   return (
