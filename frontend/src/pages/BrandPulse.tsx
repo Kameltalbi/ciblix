@@ -34,12 +34,41 @@ type BrandArticle = {
   status: string;
   format: string;
   title: string | null;
+  slug: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
   contentMarkdown: string | null;
   estimatedSeoScore: number | null;
   estimatedImpact: number | null;
 };
+
+function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function downloadMarkdown(article: BrandArticle, content: string): void {
+  const slug = article.slug || slugify(article.title || 'article');
+  const frontmatter = [
+    '---',
+    `title: "${(article.title || '').replace(/"/g, '\\"')}"`,
+    article.metaDescription ? `description: "${article.metaDescription.replace(/"/g, '\\"')}"` : null,
+    `date: ${new Date().toISOString().slice(0, 10)}`,
+    '---',
+    '',
+  ].filter(Boolean).join('\n');
+  const blob = new Blob([frontmatter + content], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${slug}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function scoreColor(score: number): string {
   if (score >= 80) return 'text-emerald-600 bg-emerald-50';
@@ -220,9 +249,18 @@ export function BrandPulse() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
   });
 
+  const [topicsError, setTopicsError] = useState<string | null>(null);
+
   const topicsMutation = useMutation({
     mutationFn: () => api.post('/brand-pulse/topics/generate'),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+    onSuccess: () => {
+      setTopicsError(null);
+      queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] });
+    },
+    onError: (err: { response?: { data?: { error?: string; message?: string } } }) => {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Impossible de générer les sujets (vérifiez OPENAI_API_KEY et le quota).';
+      setTopicsError(msg);
+    },
   });
 
   const generateMutation = useMutation({
@@ -247,6 +285,8 @@ export function BrandPulse() {
 
   const buildCmsConfig = () => {
     switch (cmsPlatform) {
+      case 'MANUAL':
+        return { websiteUrl: cmsSiteUrl || dashboard?.profile?.websiteUrl || '', note: 'Publication manuelle' };
       case 'GHOST':
         return { adminApiUrl: cmsSiteUrl, adminApiKey: cmsPassword };
       case 'WEBFLOW':
@@ -391,6 +431,12 @@ export function BrandPulse() {
         }
       />
 
+      {topicsError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {topicsError}
+        </div>
+      )}
+
       {alerts.length > 0 && (
         <div className="space-y-2">
           {alerts.slice(0, 3).map((a: { id: string; message: string; severity: string }) => (
@@ -464,6 +510,11 @@ export function BrandPulse() {
               <span>Publiés: <strong>{dashboard?.pipeline?.published ?? 0}</strong></span>
             </div>
             <div className="space-y-2 max-h-80 overflow-y-auto">
+              {articles.length === 0 && (
+                <p className="text-sm text-muted-foreground rounded-lg border border-dashed p-4 text-center">
+                  Aucun article pour l&apos;instant. Cliquez sur <strong>Proposer 3 sujets</strong> en haut à droite pour démarrer le pipeline.
+                </p>
+              )}
               {articles.map((art) => (
                 <div key={art.id} className="flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                   <div className="min-w-0">
@@ -488,7 +539,8 @@ export function BrandPulse() {
                         </Button>
                         {cmsConnections.length > 0 && (
                           <Button size="sm" variant="outline" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate(art.id)}>
-                            <Upload size={12} className="mr-1" /> Publier
+                            <Upload size={12} className="mr-1" />
+                            {cmsConnections.some((c: { platform: string }) => c.platform === 'MANUAL') ? 'Marquer publié' : 'Publier'}
                           </Button>
                         )}
                       </>
@@ -547,18 +599,26 @@ export function BrandPulse() {
                 <SelectItem value="WEBFLOW">Webflow</SelectItem>
                 <SelectItem value="SHOPIFY">Shopify Blog</SelectItem>
                 <SelectItem value="WIX">Wix</SelectItem>
+                <SelectItem value="MANUAL">Vite / site statique (fichier .md)</SelectItem>
               </SelectContent>
             </Select>
+            {cmsPlatform === 'MANUAL' ? (
+              <p className="text-xs text-muted-foreground rounded-lg border border-dashed p-3">
+                Site Vite, React, Astro, etc. : après validation, téléchargez le fichier <code>.md</code> et placez-le dans votre projet
+                (ex. <code>src/content/blog/</code> ou <code>content/posts/</code>), puis rebuild / redeploy. Activez ci-dessous pour suivre le statut « publié » dans BrandPulse.
+              </p>
+            ) : null}
             <Input
               placeholder={
-                cmsPlatform === 'SHOPIFY' ? 'boutique.myshopify.com'
-                  : cmsPlatform === 'GHOST' ? 'URL admin Ghost'
-                    : 'URL du site'
+                cmsPlatform === 'MANUAL' ? 'URL de votre site (optionnel)'
+                  : cmsPlatform === 'SHOPIFY' ? 'boutique.myshopify.com'
+                    : cmsPlatform === 'GHOST' ? 'URL admin Ghost'
+                      : 'URL du site'
               }
               value={cmsSiteUrl}
               onChange={(e) => setCmsSiteUrl(e.target.value)}
             />
-            {(cmsPlatform === 'WORDPRESS' || cmsPlatform === 'WEBFLOW' || cmsPlatform === 'SHOPIFY' || cmsPlatform === 'WIX') && (
+            {cmsPlatform !== 'MANUAL' && (cmsPlatform === 'WORDPRESS' || cmsPlatform === 'WEBFLOW' || cmsPlatform === 'SHOPIFY' || cmsPlatform === 'WIX') && (
               <Input
                 placeholder={
                   cmsPlatform === 'WEBFLOW' ? 'Collection ID'
@@ -570,20 +630,22 @@ export function BrandPulse() {
                 onChange={(e) => setCmsUser(e.target.value)}
               />
             )}
-            <Input
-              placeholder={
-                cmsPlatform === 'GHOST' ? 'Admin API Key (id:secret)'
-                  : cmsPlatform === 'WEBFLOW' ? 'API Token'
-                    : cmsPlatform === 'SHOPIFY' ? 'Access Token'
-                      : cmsPlatform === 'WIX' ? 'API Key'
-                        : 'Application Password'
-              }
-              type="password"
-              value={cmsPassword}
-              onChange={(e) => setCmsPassword(e.target.value)}
-            />
+            {cmsPlatform !== 'MANUAL' && (
+              <Input
+                placeholder={
+                  cmsPlatform === 'GHOST' ? 'Admin API Key (id:secret)'
+                    : cmsPlatform === 'WEBFLOW' ? 'API Token'
+                      : cmsPlatform === 'SHOPIFY' ? 'Access Token'
+                        : cmsPlatform === 'WIX' ? 'API Key'
+                          : 'Application Password'
+                }
+                type="password"
+                value={cmsPassword}
+                onChange={(e) => setCmsPassword(e.target.value)}
+              />
+            )}
             <Button size="sm" className="w-full" disabled={cmsConnectMutation.isPending} onClick={() => cmsConnectMutation.mutate()}>
-              Connecter CMS
+              {cmsPlatform === 'MANUAL' ? 'Activer export Vite / statique' : 'Connecter CMS'}
             </Button>
             {cmsConnections.length > 0 && (
               <ul className="space-y-1 text-xs">
@@ -759,6 +821,9 @@ export function BrandPulse() {
             <div className="flex flex-wrap gap-2 p-4 border-t">
               <Button variant="outline" className="gap-1" onClick={() => navigator.clipboard.writeText(editContent)}>
                 <Copy size={14} /> Copier
+              </Button>
+              <Button variant="outline" className="gap-1" onClick={() => reviewArticle && downloadMarkdown(reviewArticle, editContent)}>
+                Télécharger .md
               </Button>
               <Button variant="destructive" onClick={() => reviewMutation.mutate({ id: reviewArticle.id, action: 'reject' })}>Rejeter</Button>
               <Button variant="outline" onClick={() => reviewMutation.mutate({ id: reviewArticle.id, action: 'edit', contentMarkdown: editContent })}>Enregistrer</Button>

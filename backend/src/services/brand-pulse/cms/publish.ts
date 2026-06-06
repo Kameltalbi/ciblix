@@ -78,6 +78,10 @@ export async function publishArticleToCms(
       });
       return { url: '', platform: 'WIX', externalId: r.postId };
     }
+    case 'MANUAL': {
+      const note = config.note || 'Publication manuelle';
+      return { url: config.websiteUrl || '', platform: 'MANUAL', externalId: note };
+    }
     default:
       throw new Error(`Plateforme CMS non supportée: ${connection.platform}`);
   }

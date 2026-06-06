@@ -63,7 +63,7 @@ const reviewSchema = z.object({
 });
 
 const cmsConnectionSchema = z.object({
-  platform: z.enum(['WORDPRESS', 'GHOST', 'WEBFLOW', 'SHOPIFY', 'WIX']),
+  platform: z.enum(['WORDPRESS', 'GHOST', 'WEBFLOW', 'SHOPIFY', 'WIX', 'MANUAL']),
   label: z.string().optional(),
   config: z.record(z.unknown()),
   blogId: z.string().optional(),
@@ -500,7 +500,7 @@ brandPulseRoutes.post('/articles/:id/publish', async (req: AuthRequest, res: Res
       : await prisma.brandCmsConnection.findFirst({ where: { organizationId: orgId, active: true }, orderBy: { updatedAt: 'desc' } });
 
     if (!connection) {
-      res.status(400).json({ error: 'Aucune connexion CMS active. Configurez WordPress ou Ghost.' });
+      res.status(400).json({ error: 'Aucune connexion CMS active. Connectez un CMS ou activez la publication manuelle.' });
       return;
     }
 
@@ -570,14 +570,24 @@ brandPulseRoutes.get('/cms-connections', async (req: AuthRequest, res: Response,
 brandPulseRoutes.post('/cms-connections', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const body = cmsConnectionSchema.parse(req.body);
+    const config =
+      body.platform === 'MANUAL'
+        ? {
+            websiteUrl: (body.config.websiteUrl as string) || '',
+            note: (body.config.note as string) || 'Copier-coller sur votre site',
+          }
+        : body.config;
+
     const row = await prisma.brandCmsConnection.create({
       data: {
         organizationId: req.organizationId!,
         platform: body.platform,
-        label: body.label,
-        encryptedConfig: encryptJson(body.config),
+        label: body.label || (body.platform === 'MANUAL' ? 'Publication manuelle' : undefined),
+        encryptedConfig: encryptJson(config),
         blogId: body.blogId,
         defaultStatus: body.defaultStatus || 'draft',
+        active: true,
+        lastTestedAt: body.platform === 'MANUAL' ? new Date() : undefined,
       },
       select: { id: true, platform: true, label: true, active: true },
     });
