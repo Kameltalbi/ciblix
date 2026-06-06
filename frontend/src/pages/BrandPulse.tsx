@@ -25,7 +25,7 @@ type ChannelRow = {
   channel: string;
   score: number;
   weight: number;
-  details?: { comingSoon?: boolean; interpretation?: string };
+  details?: { comingSoon?: boolean; interpretation?: string; scoreExplain?: string };
   computedAt?: string;
 };
 
@@ -469,6 +469,10 @@ export function BrandPulse() {
               {globalScore ?? '—'}<span className="text-lg text-muted-foreground">/100</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">{profile.brandName}</p>
+            <p className="text-[10px] text-muted-foreground/80 leading-snug mt-2">
+              {channels.find((c) => c.channel === 'GLOBAL')?.details?.scoreExplain
+                || 'Moyenne pondérée : SEO 25 % · Social 20 % · Avis 20 % · Presse 15 % · LLM 10 % · Site 10 %.'}
+            </p>
           </CardContent>
         </Card>
         {channels.filter((c) => c.channel !== 'GLOBAL').map((ch) => (
@@ -483,6 +487,17 @@ export function BrandPulse() {
             </CardHeader>
             <CardContent>
               <p className={cn('text-2xl font-bold', scoreColor(ch.score).split(' ')[0])}>{ch.score}</p>
+              {ch.details?.interpretation && (
+                <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{ch.details.interpretation}</p>
+              )}
+              {ch.details?.scoreExplain && (
+                <p className="text-[10px] text-muted-foreground/80 leading-snug mt-1.5" title={ch.details.scoreExplain}>
+                  {ch.details.scoreExplain}
+                </p>
+              )}
+              {ch.details?.comingSoon && (
+                <p className="text-[9px] text-amber-700/80 mt-1">Connectez le canal pour remplacer l&apos;estimation.</p>
+              )}
             </CardContent>
           </Card>
         ))}

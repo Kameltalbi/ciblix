@@ -6,6 +6,7 @@ import { prisma } from '../db/prisma.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { runSeoAudit } from '../services/brand-pulse/seoAudit.js';
 import { buildChannelScores } from '../services/brand-pulse/scoring.js';
+import { channelScoreExplanation } from '../services/brand-pulse/scoreExplanations.js';
 import { generateTopics } from '../services/brand-pulse/topicPrioritizer.js';
 import { generateArticle } from '../services/brand-pulse/articleGenerator.js';
 import { buildRecommendations } from '../services/brand-pulse/recommendations.js';
@@ -234,13 +235,17 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
     for (const row of latestByChannel) {
       if (!channelMap.has(row.channel)) channelMap.set(row.channel, row);
     }
-    const channels = Array.from(channelMap.values()).map((r) => ({
-      channel: r.channel,
-      score: r.score,
-      weight: r.weight,
-      details: r.details,
-      computedAt: r.computedAt,
-    }));
+    const channels = Array.from(channelMap.values()).map((r) => {
+      const details = (r.details || {}) as Record<string, unknown>;
+      const scoreExplain = channelScoreExplanation(r.channel as import('../services/brand-pulse/types.js').BrandChannel, details);
+      return {
+        channel: r.channel,
+        score: r.score,
+        weight: r.weight,
+        details: { ...details, ...(scoreExplain ? { scoreExplain } : {}) },
+        computedAt: r.computedAt,
+      };
+    });
 
     const global = channels.find((c) => c.channel === 'GLOBAL');
 

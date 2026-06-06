@@ -2,6 +2,7 @@ import type { BrandChannel, ChannelScore, SeoAuditResult } from './types.js';
 import { CHANNEL_WEIGHTS } from './types.js';
 import { seoScoreFromAudit } from './seoAudit.js';
 import type { SyncedChannelData } from './channelSync.js';
+import { channelScoreExplanation, globalScoreExplanation } from './scoreExplanations.js';
 
 export function websiteScoreFromAudit(audit: SeoAuditResult): number {
   let score = 0;
@@ -21,7 +22,13 @@ function channelEntry(
   score: number,
   details: Record<string, unknown>,
 ): ChannelScore {
-  return { channel, score, weight: CHANNEL_WEIGHTS[channel as Exclude<BrandChannel, 'GLOBAL'>], details };
+  const scoreExplain = channelScoreExplanation(channel, details);
+  return {
+    channel,
+    score,
+    weight: CHANNEL_WEIGHTS[channel as Exclude<BrandChannel, 'GLOBAL'>],
+    details: { ...details, ...(scoreExplain ? { scoreExplain } : {}) },
+  };
 }
 
 export function buildChannelScores(
@@ -79,7 +86,11 @@ export function buildChannelScores(
     channel: 'GLOBAL',
     score: globalScore,
     weight: 1,
-    details: { formula: 'Moyenne pondérée 6 canaux', interpretation: scoreLabel(globalScore) },
+    details: {
+      formula: 'Moyenne pondérée 6 canaux',
+      interpretation: scoreLabel(globalScore),
+      scoreExplain: globalScoreExplanation(),
+    },
   });
 
   return channels;
