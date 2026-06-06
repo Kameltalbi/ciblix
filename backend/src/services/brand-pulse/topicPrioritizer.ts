@@ -37,18 +37,22 @@ Score SEO actuel: ${seoScore}/100
 Canal le plus faible: ${weakChannel}
 Priorise les sujets avec impact estimé > 5 points sur le score SEO.`;
 
-  const raw = await callOpenAI(userPrompt, systemPrompt, 1200, 0.4);
-  const parsed = parseJsonFromLlm<TopicLlmResponse>(raw);
+  try {
+    const raw = await callOpenAI(userPrompt, systemPrompt, 1200, 0.4);
+    const parsed = parseJsonFromLlm<TopicLlmResponse>(raw);
 
-  if (parsed?.topics?.length) {
-    return parsed.topics.slice(0, 3).map((t) => ({
-      title: t.title,
-      format: (['SEO', 'LONGFORM', 'FAQ', 'COMPARATIVE'].includes(t.format) ? t.format : 'SEO') as ProposedTopic['format'],
-      targetKeywords: Array.isArray(t.targetKeywords) ? t.targetKeywords : [],
-      reason: t.reason,
-      estimatedImpact: Math.min(10, Math.max(1, Number(t.estimatedImpact) || 5)),
-      priority: Math.min(3, Math.max(1, Number(t.priority) || 2)),
-    }));
+    if (parsed?.topics?.length) {
+      return parsed.topics.slice(0, 3).map((t) => ({
+        title: t.title,
+        format: (['SEO', 'LONGFORM', 'FAQ', 'COMPARATIVE'].includes(t.format) ? t.format : 'SEO') as ProposedTopic['format'],
+        targetKeywords: Array.isArray(t.targetKeywords) ? t.targetKeywords : [],
+        reason: t.reason,
+        estimatedImpact: Math.min(10, Math.max(1, Number(t.estimatedImpact) || 5)),
+        priority: Math.min(3, Math.max(1, Number(t.priority) || 2)),
+      }));
+    }
+  } catch (err) {
+    console.warn('[brand-pulse] OpenAI topics fallback:', err instanceof Error ? err.message : err);
   }
 
   return fallbackTopics(params.brandName, seoScore);

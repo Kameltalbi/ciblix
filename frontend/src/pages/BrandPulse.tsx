@@ -250,15 +250,19 @@ export function BrandPulse() {
   });
 
   const [topicsError, setTopicsError] = useState<string | null>(null);
+  const [topicsSuccess, setTopicsSuccess] = useState<string | null>(null);
 
   const topicsMutation = useMutation({
     mutationFn: () => api.post('/brand-pulse/topics/generate'),
-    onSuccess: () => {
+    onSuccess: (res) => {
       setTopicsError(null);
+      setTopicsSuccess((res.data as { message?: string }).message || '3 sujets ajoutés au pipeline.');
       queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] });
     },
     onError: (err: { response?: { data?: { error?: string; message?: string } } }) => {
-      const msg = err.response?.data?.error || err.response?.data?.message || 'Impossible de générer les sujets (vérifiez OPENAI_API_KEY et le quota).';
+      setTopicsSuccess(null);
+      const data = err.response?.data;
+      const msg = data?.message || data?.error || 'Impossible de générer les sujets (quota, paiement ou clé OpenAI).';
       setTopicsError(msg);
     },
   });
@@ -424,12 +428,19 @@ export function BrandPulse() {
             <Button variant="outline" size="sm" disabled={auditMutation.isPending} onClick={() => auditMutation.mutate()}>
               <RefreshCw size={14} className="mr-1" /> Ré-auditer
             </Button>
-            <Button size="sm" className="bg-rose-600 hover:bg-rose-700" disabled={topicsMutation.isPending} onClick={() => topicsMutation.mutate()}>
-              <Sparkles size={14} className="mr-1" /> Proposer 3 sujets
+            <Button size="sm" className="bg-rose-600 hover:bg-rose-700" disabled={topicsMutation.isPending} onClick={() => { setTopicsSuccess(null); setTopicsError(null); topicsMutation.mutate(); }}>
+              {topicsMutation.isPending ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
+              {topicsMutation.isPending ? 'Génération…' : 'Proposer 3 sujets'}
             </Button>
           </>
         }
       />
+
+      {topicsSuccess && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          {topicsSuccess}
+        </div>
+      )}
 
       {topicsError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

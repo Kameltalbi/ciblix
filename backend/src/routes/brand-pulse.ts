@@ -343,6 +343,11 @@ brandPulseRoutes.post('/topics/generate', async (req: AuthRequest, res: Response
       channels,
     });
 
+    if (topics.length === 0) {
+      res.status(500).json({ error: 'Aucun sujet généré', message: 'Réessayez ou contactez le support.' });
+      return;
+    }
+
     const created = await Promise.all(
       topics.map((t) =>
         prisma.brandArticle.create({
@@ -359,7 +364,13 @@ brandPulseRoutes.post('/topics/generate', async (req: AuthRequest, res: Response
       ),
     );
 
-    res.json({ topics: created });
+    const usedFallback = !process.env.OPENAI_API_KEY;
+    res.json({
+      topics: created,
+      message: usedFallback
+        ? '3 sujets proposés (mode secours — configurez OPENAI_API_KEY pour des sujets IA personnalisés).'
+        : `${created.length} sujet(s) ajouté(s) au pipeline.`,
+    });
   } catch (err) {
     next(err);
   }
