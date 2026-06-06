@@ -56,12 +56,15 @@ model Organization {
   scoutProfile    ScoutProfile?
   scoutOpportunities ScoutOpportunity[]
   agentUsageMonthly AgentUsageMonthly[]
-  brandProfile    BrandProfile?
+  brandProfiles   BrandProfile[]
   brandScoreSnapshots BrandScoreSnapshot[]
   brandArticles   BrandArticle[]
   brandRecommendations BrandRecommendation[]
   brandAlerts       BrandAlert[]
   brandCmsConnections BrandCmsConnection[]
+  brandChannelConnections BrandChannelConnection[]
+  brandCompetitorSnapshots BrandCompetitorSnapshot[]
+  brandApiKeys    BrandApiKey[]
 
   @@map("organizations")
 }
@@ -739,6 +742,7 @@ enum NotificationType {
   RAPPEL                 // Rappel personnalisé
   SUPPORT_TICKET_NEW     // Nouveau ticket support
   SUPPORT_TICKET_REPLY   // Réponse sur ticket support
+  BRAND_PULSE_ALERT      // Alerte BrandPulse AI
 }
 
 model SupportTicket {
@@ -1131,7 +1135,9 @@ model ScoutOpportunity {
 // ═══════════════════════════════════════════════════════════════
 model BrandProfile {
   id              String   @id @default(cuid())
-  organizationId  String   @unique
+  organizationId  String
+  slug            String   @default("primary")
+  isPrimary       Boolean  @default(true)
   brandName       String
   websiteUrl      String
   sector          String?
@@ -1147,6 +1153,8 @@ model BrandProfile {
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  @@unique([organizationId, slug])
+  @@index([organizationId, isPrimary])
   @@map("brand_profiles")
 }
 
@@ -1244,4 +1252,54 @@ model BrandCmsConnection {
 
   @@index([organizationId])
   @@map("brand_cms_connections")
+}
+
+model BrandChannelConnection {
+  id              String   @id @default(cuid())
+  organizationId  String
+  channel         String   // SOCIAL, REVIEWS
+  provider        String   @default("MANUAL")
+  encryptedConfig String?  @db.Text
+  metadata        Json?
+  lastSyncAt      DateTime?
+  lastScore       Int?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, channel])
+  @@map("brand_channel_connections")
+}
+
+model BrandCompetitorSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  competitorName String
+  globalScore    Int
+  channels       Json
+  computedAt     DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, computedAt])
+  @@map("brand_competitor_snapshots")
+}
+
+model BrandApiKey {
+  id             String   @id @default(cuid())
+  organizationId String
+  label          String?
+  keyHash        String
+  keyPrefix      String
+  active         Boolean  @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([keyPrefix])
+  @@map("brand_api_keys")
 }

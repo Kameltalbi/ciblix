@@ -10,11 +10,25 @@ import { generateTopics } from '../services/brand-pulse/topicPrioritizer.js';
 import { generateArticle } from '../services/brand-pulse/articleGenerator.js';
 import { buildRecommendations } from '../services/brand-pulse/recommendations.js';
 import { refreshBrandAlerts } from '../services/brand-pulse/alerts.js';
-import { getSocialChannelStatus } from '../services/brand-pulse/channels/social.js';
-import { getReviewsChannelStatus } from '../services/brand-pulse/channels/reviews.js';
+import { getPrimaryBrandProfile, upsertPrimaryBrandProfile } from '../services/brand-pulse/brandProfile.js';
+import { syncAllChannels } from '../services/brand-pulse/channelSync.js';
+import {
+  connectReviewsChannel,
+  getReviewsChannelStatus,
+} from '../services/brand-pulse/channels/reviews.js';
+import {
+  connectSocialFromWebsite,
+  connectSocialManual,
+  getSocialChannelStatus,
+} from '../services/brand-pulse/channels/social.js';
 import { BRAND_PULSE_ROADMAP } from '../services/brand-pulse/roadmap.js';
 import { testWordPressConnection } from '../services/brand-pulse/cms/wordpress.js';
 import { testGhostConnection } from '../services/brand-pulse/cms/ghost.js';
+import { publishArticleToCms } from '../services/brand-pulse/cms/publish.js';
+import { auditExistingArticles } from '../services/brand-pulse/articleAudit.js';
+import { runCompetitorBenchmark } from '../services/brand-pulse/competitorBenchmark.js';
+import { buildMonthlyReportHtml } from '../services/brand-pulse/monthlyReport.js';
+import { createBrandApiKey } from '../services/brand-pulse/apiKeys.js';
 import { encryptJson, decryptJson } from '../lib/encryption.js';
 import type { ArticleFormat } from '../services/brand-pulse/types.js';
 
@@ -57,7 +71,7 @@ const cmsConnectionSchema = z.object({
 });
 
 async function getProfileOrThrow(organizationId: string) {
-  const profile = await prisma.brandProfile.findUnique({ where: { organizationId } });
+  const profile = await getPrimaryBrandProfile(organizationId);
   if (!profile) {
     throw Object.assign(new Error('Profil marque non configuré'), { statusCode: 404 });
   }
@@ -97,10 +111,50 @@ async function persistRecommendations(organizationId: string, items: ReturnType<
 
 brandPulseRoutes.get('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const profile = await prisma.brandProfile.findUnique({
-      where: { organizationId: req.organizationId! },
-    });
+    const profile = await getPrimaryBrandProfile(req.organizationId!);
     res.json({ profile });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.get('/brands', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const brands = await prisma.brandProfile.findMany({
+      where: { organizationId: req.organizationId! },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+    });
+    res.json({ brands });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.post('/brands', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const data = profileSchema.parse(req.body);
+    const slug = (req.body.slug as string | undefined)?.trim() || `brand-${Date.now()}`;
+    const count = await prisma.brandProfile.count({ where: { organizationId: req.organizationId! } });
+    if (count >= 5) {
+      res.status(403).json({ error: 'Limite multi-marques atteinte (5)' });
+      return;
+    }
+    const brand = await prisma.brandProfile.create({
+      data: {
+        organizationId: req.organizationId!,
+        slug,
+        isPrimary: false,
+        brandName: data.brandName,
+        websiteUrl: data.websiteUrl,
+        sector: data.sector ?? null,
+        competitorName: data.competitorName ?? null,
+        competitorUrl: data.competitorUrl ?? null,
+        brandKeywords: data.brandKeywords,
+        editorialTone: data.editorialTone,
+        articlesPerWeek: data.articlesPerWeek,
+      },
+    });
+    res.status(201).json({ brand });
   } catch (err) {
     next(err);
   }
@@ -109,32 +163,16 @@ brandPulseRoutes.get('/profile', async (req: AuthRequest, res: Response, next: N
 brandPulseRoutes.put('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = profileSchema.parse(req.body);
-    const orgId = req.organizationId!;
-    const profile = await prisma.brandProfile.upsert({
-      where: { organizationId: orgId },
-      create: {
-        organizationId: orgId,
-        brandName: data.brandName,
-        websiteUrl: data.websiteUrl,
-        sector: data.sector ?? null,
-        competitorName: data.competitorName ?? null,
-        competitorUrl: data.competitorUrl ?? null,
-        brandKeywords: data.brandKeywords,
-        editorialTone: data.editorialTone,
-        articlesPerWeek: data.articlesPerWeek,
-        onboardingDone: data.onboardingDone ?? false,
-      },
-      update: {
-        brandName: data.brandName,
-        websiteUrl: data.websiteUrl,
-        sector: data.sector ?? null,
-        competitorName: data.competitorName ?? null,
-        competitorUrl: data.competitorUrl ?? null,
-        brandKeywords: data.brandKeywords,
-        editorialTone: data.editorialTone,
-        articlesPerWeek: data.articlesPerWeek,
-        onboardingDone: data.onboardingDone ?? undefined,
-      },
+    const profile = await upsertPrimaryBrandProfile(req.organizationId!, {
+      brandName: data.brandName,
+      websiteUrl: data.websiteUrl,
+      sector: data.sector ?? null,
+      competitorName: data.competitorName ?? null,
+      competitorUrl: data.competitorUrl ?? null,
+      brandKeywords: data.brandKeywords,
+      editorialTone: data.editorialTone,
+      articlesPerWeek: data.articlesPerWeek,
+      onboardingDone: data.onboardingDone,
     });
     res.json({ profile });
   } catch (err) {
@@ -148,7 +186,8 @@ brandPulseRoutes.post('/audit', async (req: AuthRequest, res: Response, next: Ne
     const profile = await getProfileOrThrow(orgId);
 
     const audit = await runSeoAudit(profile.websiteUrl);
-    const channels = buildChannelScores(audit);
+    const synced = await syncAllChannels(profile);
+    const channels = buildChannelScores(audit, synced);
     await persistScores(orgId, channels);
 
     const recommendations = buildRecommendations(channels, profile.brandName);
@@ -156,7 +195,7 @@ brandPulseRoutes.post('/audit', async (req: AuthRequest, res: Response, next: Ne
     await refreshBrandAlerts(orgId);
 
     await prisma.brandProfile.update({
-      where: { organizationId: orgId },
+      where: { id: profile.id },
       data: { lastAuditAt: new Date(), onboardingDone: true },
     });
 
@@ -169,7 +208,7 @@ brandPulseRoutes.post('/audit', async (req: AuthRequest, res: Response, next: Ne
 brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const orgId = req.organizationId!;
-    const profile = await prisma.brandProfile.findUnique({ where: { organizationId: orgId } });
+    const profile = await getPrimaryBrandProfile(orgId);
 
     const latestByChannel = await prisma.brandScoreSnapshot.findMany({
       where: { organizationId: orgId },
@@ -215,6 +254,21 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
       published: articles.filter((a) => a.status === 'PUBLISHED').length,
     };
 
+    const [socialStatus, reviewsStatus, connections, competitorHistory] = await Promise.all([
+      getSocialChannelStatus(orgId),
+      getReviewsChannelStatus(orgId),
+      prisma.brandCmsConnection.findMany({
+        where: { organizationId: orgId },
+        select: { id: true, platform: true, label: true, active: true, lastTestedAt: true },
+      }),
+      prisma.brandCompetitorSnapshot.findMany({
+        where: { organizationId: orgId },
+        orderBy: { computedAt: 'desc' },
+        take: 6,
+        select: { globalScore: true, competitorName: true, computedAt: true },
+      }),
+    ]);
+
     res.json({
       profile,
       globalScore: global?.score ?? null,
@@ -223,6 +277,9 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
       articles,
       recommendations,
       alerts,
+      channelStatus: { social: socialStatus, reviews: reviewsStatus },
+      cmsConnections: connections,
+      competitorHistory,
     });
   } catch (err) {
     next(err);
@@ -408,10 +465,64 @@ brandPulseRoutes.patch('/articles/:id/review', async (req: AuthRequest, res: Res
 
 brandPulseRoutes.post('/articles/:id/publish', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    res.status(501).json({
-      error: 'Publication CMS en Phase 3',
-      message: 'WordPress et Ghost seront disponibles prochainement. Utilisez l\'export markdown pour l\'instant.',
+    const orgId = req.organizationId!;
+    const id = req.params.id as string;
+    const connectionId = (req.body as { connectionId?: string }).connectionId;
+
+    const article = await prisma.brandArticle.findFirst({
+      where: { id, organizationId: orgId, status: { in: ['APPROVED', 'SCHEDULED'] } },
     });
+    if (!article?.contentMarkdown || !article.title) {
+      res.status(400).json({ error: 'Article non approuvé ou contenu manquant' });
+      return;
+    }
+
+    const connection = connectionId
+      ? await prisma.brandCmsConnection.findFirst({ where: { id: connectionId, organizationId: orgId, active: true } })
+      : await prisma.brandCmsConnection.findFirst({ where: { organizationId: orgId, active: true }, orderBy: { updatedAt: 'desc' } });
+
+    if (!connection) {
+      res.status(400).json({ error: 'Aucune connexion CMS active. Configurez WordPress ou Ghost.' });
+      return;
+    }
+
+    const published = await publishArticleToCms(connection, {
+      title: article.title,
+      contentMarkdown: article.contentMarkdown,
+      slug: article.slug,
+    });
+
+    const updated = await prisma.brandArticle.update({
+      where: { id },
+      data: {
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+        publishedUrl: published.url || null,
+        cmsPlatform: published.platform,
+      },
+    });
+
+    await refreshBrandAlerts(orgId);
+    res.json({ article: updated, published });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.patch('/articles/:id/schedule', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id as string;
+    const scheduledAt = z.string().datetime().parse((req.body as { scheduledAt: string }).scheduledAt);
+    const updated = await prisma.brandArticle.updateMany({
+      where: { id, organizationId: req.organizationId!, status: 'APPROVED' },
+      data: { status: 'SCHEDULED', scheduledAt: new Date(scheduledAt) },
+    });
+    if (updated.count === 0) {
+      res.status(404).json({ error: 'Article approuvé introuvable' });
+      return;
+    }
+    const article = await prisma.brandArticle.findUnique({ where: { id } });
+    res.json({ article });
   } catch (err) {
     next(err);
   }
@@ -504,10 +615,132 @@ brandPulseRoutes.post('/cms-connections/:id/test', async (req: AuthRequest, res:
   }
 });
 
-brandPulseRoutes.get('/channels/status', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+brandPulseRoutes.get('/channels/status', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const [social, reviews] = await Promise.all([getSocialChannelStatus(), getReviewsChannelStatus()]);
+    const orgId = req.organizationId!;
+    const [social, reviews] = await Promise.all([
+      getSocialChannelStatus(orgId),
+      getReviewsChannelStatus(orgId),
+    ]);
     res.json({ social, reviews });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.post('/channels/social/detect', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfileOrThrow(req.organizationId!);
+    const status = await connectSocialFromWebsite(req.organizationId!, profile.websiteUrl, profile.brandName);
+    res.json({ social: status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.put('/channels/social', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const body = z.object({
+      linkedinUrl: z.string().optional(),
+      facebookUrl: z.string().optional(),
+      instagramUrl: z.string().optional(),
+      twitterUrl: z.string().optional(),
+      manualMentionScore: z.number().min(0).max(100).optional(),
+    }).parse(req.body);
+    const status = await connectSocialManual(req.organizationId!, body);
+    res.json({ social: status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.put('/channels/reviews', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const body = z.object({
+      placeId: z.string().optional(),
+      searchQuery: z.string().optional(),
+      manualRating: z.number().min(0).max(5).optional(),
+      manualReviewCount: z.number().int().min(0).optional(),
+    }).parse(req.body);
+    const status = await connectReviewsChannel(req.organizationId!, body);
+    res.json({ reviews: status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.post('/channels/sync', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfileOrThrow(req.organizationId!);
+    const synced = await syncAllChannels(profile);
+    const audit = profile.lastAuditAt ? null : await runSeoAudit(profile.websiteUrl);
+    const channels = buildChannelScores(audit, synced);
+    await persistScores(req.organizationId!, channels);
+    await refreshBrandAlerts(req.organizationId!);
+    res.json({ synced, channels });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.post('/competitor/benchmark', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const profile = await getProfileOrThrow(req.organizationId!);
+    const result = await runCompetitorBenchmark(profile);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.post('/articles/audit-existing', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const urls = z.array(z.string().url()).max(20).parse((req.body as { urls: string[] }).urls);
+    const results = await auditExistingArticles(urls);
+    res.json({ results });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.get('/report/monthly', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const format = (req.query.format as string) || 'json';
+    const html = await buildMonthlyReportHtml(req.organizationId!);
+    if (format === 'html') {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+      return;
+    }
+    res.json({ html });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.post('/api-keys', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const label = (req.body as { label?: string }).label;
+    const created = await createBrandApiKey(req.organizationId!, label);
+    res.status(201).json({
+      id: created.id,
+      prefix: created.prefix,
+      key: created.key,
+      message: 'Copiez cette clé maintenant — elle ne sera plus affichée.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.get('/api-keys', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const keys = await prisma.brandApiKey.findMany({
+      where: { organizationId: req.organizationId! },
+      select: { id: true, label: true, keyPrefix: true, active: true, lastUsedAt: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ keys });
   } catch (err) {
     next(err);
   }

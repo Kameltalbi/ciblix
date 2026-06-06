@@ -1,6 +1,28 @@
 import { prisma } from '../../db/prisma.js';
+import { pushBrandPulseNotification } from './pushNotifications.js';
 
-/** Phase 2 — alertes automatiques (stub MVP : alerte contenu uniquement). */
+async function ensureAlert(
+  organizationId: string,
+  type: string,
+  severity: string,
+  message: string,
+  notify = true,
+): Promise<void> {
+  const existing = await prisma.brandAlert.findFirst({
+    where: { organizationId, type, read: false },
+  });
+  if (existing) return;
+
+  await prisma.brandAlert.create({
+    data: { organizationId, type, severity, message },
+  });
+
+  if (notify) {
+    await pushBrandPulseNotification(organizationId, 'BrandPulse AI', message);
+  }
+}
+
+/** Alertes automatiques — contenu, scores, avis. */
 export async function refreshBrandAlerts(organizationId: string): Promise<void> {
   const lastPublished = await prisma.brandArticle.findFirst({
     where: { organizationId, status: 'PUBLISHED' },
@@ -16,34 +38,61 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
   });
 
   if (noRecentPublish) {
-    const existing = await prisma.brandAlert.findFirst({
-      where: { organizationId, type: 'NO_PUBLISH', read: false },
-    });
-    if (!existing) {
-      await prisma.brandAlert.create({
-        data: {
-          organizationId,
-          type: 'NO_PUBLISH',
-          severity: 'WARNING',
-          message: 'Aucun article publié depuis plus de 10 jours. Validez ou générez de nouveaux contenus.',
-        },
-      });
-    }
+    await ensureAlert(
+      organizationId,
+      'NO_PUBLISH',
+      'WARNING',
+      'Aucun article publié depuis plus de 10 jours. Validez ou générez de nouveaux contenus.',
+    );
   }
 
   if (pendingCount > 0) {
-    const existing = await prisma.brandAlert.findFirst({
-      where: { organizationId, type: 'PENDING_REVIEW', read: false },
-    });
-    if (!existing) {
-      await prisma.brandAlert.create({
-        data: {
-          organizationId,
-          type: 'PENDING_REVIEW',
-          severity: 'INFO',
-          message: `${pendingCount} article(s) en attente de validation.`,
-        },
-      });
+    await ensureAlert(
+      organizationId,
+      'PENDING_REVIEW',
+      'INFO',
+      `${pendingCount} article(s) en attente de validation.`,
+      false,
+    );
+  }
+
+  const seoSnapshots = await prisma.brandScoreSnapshot.findMany({
+    where: { organizationId, channel: 'SEO' },
+    orderBy: { computedAt: 'desc' },
+    take: 2,
+    select: { score: true },
+  });
+
+  if (seoSnapshots.length === 2) {
+    const drop = seoSnapshots[1].score - seoSnapshots[0].score;
+    if (drop >= 10) {
+      await ensureAlert(
+        organizationId,
+        'SEO_DROP',
+        'WARNING',
+        `Score SEO en baisse de ${drop} points depuis le dernier audit.`,
+      );
     }
+  }
+
+  const reviewsConn = await prisma.brandChannelConnection.findUnique({
+    where: { organizationId_channel: { organizationId, channel: 'REVIEWS' } },
+  });
+  const meta = reviewsConn?.metadata as { rating?: number; recentNegative?: number } | null;
+  if (meta?.rating != null && meta.rating < 3.5) {
+    await ensureAlert(
+      organizationId,
+      'NEGATIVE_REVIEW',
+      'CRITICAL',
+      `Note Google faible (${meta.rating}/5). Répondez aux avis récents.`,
+    );
+  }
+  if ((meta?.recentNegative ?? 0) >= 2) {
+    await ensureAlert(
+      organizationId,
+      'NEGATIVE_REVIEW',
+      'WARNING',
+      `${meta?.recentNegative} avis négatif(s) récent(s) détecté(s).`,
+    );
   }
 }

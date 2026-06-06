@@ -6,11 +6,13 @@ import {
   BarChart3,
   Check,
   Copy,
-  FileText,
+  Globe,
+  Link2,
   Loader2,
   Megaphone,
   RefreshCw,
   Sparkles,
+  Upload,
   X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -62,6 +64,7 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [sector, setSector] = useState('');
   const [competitorName, setCompetitorName] = useState('');
+  const [competitorUrl, setCompetitorUrl] = useState('');
   const [keywords, setKeywords] = useState('');
   const [tone, setTone] = useState('professionnel');
 
@@ -72,6 +75,7 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
         websiteUrl,
         sector: sector || null,
         competitorName: competitorName || null,
+        competitorUrl: competitorUrl || null,
         brandKeywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
         editorialTone: tone,
         onboardingDone: false,
@@ -128,10 +132,16 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
           </>
         )}
         {step === 2 && (
-          <div className="space-y-1.5">
-            <Label>Concurrent principal</Label>
-            <Input value={competitorName} onChange={(e) => setCompetitorName(e.target.value)} placeholder="Nom du concurrent" />
-          </div>
+          <>
+            <div className="space-y-1.5">
+              <Label>Concurrent principal</Label>
+              <Input value={competitorName} onChange={(e) => setCompetitorName(e.target.value)} placeholder="Nom du concurrent" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>URL du concurrent (benchmark Phase 6)</Label>
+              <Input value={competitorUrl} onChange={(e) => setCompetitorUrl(e.target.value)} placeholder="https://concurrent.com" />
+            </div>
+          </>
         )}
         {step === 3 && (
           <div className="space-y-1.5">
@@ -148,7 +158,7 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
         )}
         {step === 4 && (
           <p className="text-sm text-muted-foreground">
-            Lancez le premier audit SEO. Les autres canaux seront estimés puis connectés en Phase 2.
+            Lancez le premier audit SEO. Les canaux social et avis pourront être connectés ensuite.
           </p>
         )}
         <div className="flex justify-between pt-2">
@@ -175,6 +185,12 @@ export function BrandPulse() {
   const queryClient = useQueryClient();
   const [reviewArticle, setReviewArticle] = useState<BrandArticle | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [reviewsQuery, setReviewsQuery] = useState('');
+  const [cmsPlatform, setCmsPlatform] = useState('WORDPRESS');
+  const [cmsSiteUrl, setCmsSiteUrl] = useState('');
+  const [cmsUser, setCmsUser] = useState('');
+  const [cmsPassword, setCmsPassword] = useState('');
+  const [auditUrls, setAuditUrls] = useState('');
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['brand-pulse-dashboard'],
@@ -196,6 +212,51 @@ export function BrandPulse() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
   });
 
+  const channelSyncMutation = useMutation({
+    mutationFn: () => api.post('/brand-pulse/channels/sync'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const socialDetectMutation = useMutation({
+    mutationFn: () => api.post('/brand-pulse/channels/social/detect'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const reviewsConnectMutation = useMutation({
+    mutationFn: () => api.put('/brand-pulse/channels/reviews', { searchQuery: reviewsQuery }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const cmsConnectMutation = useMutation({
+    mutationFn: () =>
+      api.post('/brand-pulse/cms-connections', {
+        platform: cmsPlatform,
+        config:
+          cmsPlatform === 'GHOST'
+            ? { adminApiUrl: cmsSiteUrl, adminApiKey: cmsPassword }
+            : { siteUrl: cmsSiteUrl, username: cmsUser, appPassword: cmsPassword },
+        defaultStatus: 'draft',
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/brand-pulse/articles/${id}/publish`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const benchmarkMutation = useMutation({
+    mutationFn: () => api.post('/brand-pulse/competitor/benchmark'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const auditExistingMutation = useMutation({
+    mutationFn: () =>
+      api.post('/brand-pulse/articles/audit-existing', {
+        urls: auditUrls.split('\n').map((u) => u.trim()).filter(Boolean),
+      }),
+  });
+
   const reviewMutation = useMutation({
     mutationFn: ({ id, action, contentMarkdown }: { id: string; action: 'approve' | 'reject' | 'edit'; contentMarkdown?: string }) =>
       api.patch(`/brand-pulse/articles/${id}/review`, {
@@ -214,6 +275,9 @@ export function BrandPulse() {
   const globalScore = dashboard?.globalScore as number | null;
   const recommendations = dashboard?.recommendations || [];
   const alerts = dashboard?.alerts || [];
+  const channelStatus = dashboard?.channelStatus;
+  const cmsConnections = dashboard?.cmsConnections || [];
+  const competitorHistory = dashboard?.competitorHistory || [];
 
   if (isLoading) {
     return (
@@ -337,6 +401,11 @@ export function BrandPulse() {
                         Relire
                       </Button>
                     )}
+                    {art.status === 'APPROVED' && cmsConnections.length > 0 && (
+                      <Button size="sm" variant="outline" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate(art.id)}>
+                        <Upload size={12} className="mr-1" /> Publier
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -345,16 +414,116 @@ export function BrandPulse() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-muted-foreground">Bientôt — Phases 4 à 7</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground grid sm:grid-cols-3 gap-2">
-          <p>Publication CMS (WordPress, Ghost)</p>
-          <p>Benchmark concurrent & radar</p>
-          <p>Rapport PDF mensuel</p>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Link2 size={18} /> Canaux — Phase 2</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" disabled={socialDetectMutation.isPending} onClick={() => socialDetectMutation.mutate()}>
+                Détecter réseaux sociaux
+              </Button>
+              <Button size="sm" variant="outline" disabled={channelSyncMutation.isPending} onClick={() => channelSyncMutation.mutate()}>
+                Synchroniser tous les canaux
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Input placeholder="Rechercher établissement Google..." value={reviewsQuery} onChange={(e) => setReviewsQuery(e.target.value)} />
+              <Button size="sm" disabled={!reviewsQuery || reviewsConnectMutation.isPending} onClick={() => reviewsConnectMutation.mutate()}>
+                Avis Google
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Social: {channelStatus?.social?.connected ? `connecté (${channelStatus.social.score}/100)` : 'non connecté'}
+              {' · '}
+              Avis: {channelStatus?.reviews?.connected ? `connecté (${channelStatus.reviews.score}/100)` : 'non connecté'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Globe size={18} /> CMS — Phase 3/4</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Select value={cmsPlatform} onValueChange={setCmsPlatform}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="WORDPRESS">WordPress</SelectItem>
+                <SelectItem value="GHOST">Ghost</SelectItem>
+                <SelectItem value="WEBFLOW">Webflow</SelectItem>
+                <SelectItem value="SHOPIFY">Shopify Blog</SelectItem>
+                <SelectItem value="WIX">Wix</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input placeholder={cmsPlatform === 'GHOST' ? 'URL admin Ghost' : 'URL du site'} value={cmsSiteUrl} onChange={(e) => setCmsSiteUrl(e.target.value)} />
+            {cmsPlatform === 'WORDPRESS' && (
+              <Input placeholder="Utilisateur WP" value={cmsUser} onChange={(e) => setCmsUser(e.target.value)} />
+            )}
+            <Input placeholder={cmsPlatform === 'GHOST' ? 'Admin API Key' : 'Application Password'} type="password" value={cmsPassword} onChange={(e) => setCmsPassword(e.target.value)} />
+            <Button size="sm" className="w-full" disabled={cmsConnectMutation.isPending} onClick={() => cmsConnectMutation.mutate()}>
+              Connecter CMS
+            </Button>
+            {cmsConnections.length > 0 && (
+              <p className="text-xs text-muted-foreground">{cmsConnections.length} connexion(s) active(s)</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Benchmark concurrent — Phase 6</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Button size="sm" variant="outline" disabled={benchmarkMutation.isPending} onClick={() => benchmarkMutation.mutate()}>
+              Lancer le benchmark
+            </Button>
+            {competitorHistory.length > 0 && (
+              <ul className="text-xs text-muted-foreground space-y-1">
+                {competitorHistory.map((h: { computedAt: string; globalScore: number; competitorName: string }) => (
+                  <li key={h.computedAt}>{h.competitorName}: {h.globalScore}/100 — {new Date(h.computedAt).toLocaleDateString('fr-FR')}</li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Rapport & audit — Phases 4/7</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const r = await api.get('/brand-pulse/report/monthly?format=html', { responseType: 'text' });
+                const w = window.open('', '_blank');
+                if (w) {
+                  w.document.write(r.data as string);
+                  w.document.close();
+                }
+              }}
+            >
+              Rapport mensuel (PDF via impression)
+            </Button>
+            <Textarea rows={3} placeholder="URLs articles existants (une par ligne)" value={auditUrls} onChange={(e) => setAuditUrls(e.target.value)} />
+            <Button size="sm" variant="outline" disabled={auditExistingMutation.isPending} onClick={() => auditExistingMutation.mutate()}>
+              Auditer articles existants
+            </Button>
+            {auditExistingMutation.data?.data?.results && (
+              <ul className="text-xs space-y-1 max-h-24 overflow-y-auto">
+                {(auditExistingMutation.data.data.results as Array<{ url: string; score: number }>).map((r) => (
+                  <li key={r.url}>{r.url}: {r.score}/100</li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {reviewArticle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

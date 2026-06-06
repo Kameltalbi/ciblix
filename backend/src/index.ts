@@ -46,6 +46,7 @@ import { offreBotRoutes } from './routes/offre-bot.js';
 import { factcheckAiRoutes } from './routes/factcheck-ai.js';
 import { commBotRoutes } from './routes/comm-bot.js';
 import { brandPulseRoutes } from './routes/brand-pulse.js';
+import { brandPulsePublicRoutes } from './routes/brand-pulse-public.js';
 import { agentsRoutes } from './routes/agents.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
@@ -174,6 +175,7 @@ app.use('/api/offre-bot', offreBotRoutes);
 app.use('/api/factcheck-ai', factcheckAiRoutes);
 app.use('/api/comm-bot', commBotRoutes);
 app.use('/api/brand-pulse', brandPulseRoutes);
+app.use('/api/public/brand-pulse', brandPulsePublicRoutes);
 app.use('/api/agents', agentsRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
@@ -194,5 +196,8 @@ app.listen(PORT, '0.0.0.0', () => {
   );
   void import('./services/prospecting/automationScheduler.js').then(({ startProspectingAutomationScheduler }) => {
     startProspectingAutomationScheduler();
+  });
+  void import('./services/brand-pulse/brandPulseScheduler.js').then(({ startBrandPulseScheduler }) => {
+    startBrandPulseScheduler();
   });
 });
