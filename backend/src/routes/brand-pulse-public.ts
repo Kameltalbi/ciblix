@@ -19,11 +19,13 @@ brandPulsePublicRoutes.get('/dashboard', async (req, res) => {
   }
 
   const profile = await getPrimaryBrandProfile(organizationId);
-  const snapshots = await prisma.brandScoreSnapshot.findMany({
-    where: { organizationId },
-    orderBy: { computedAt: 'desc' },
-    take: 20,
-  });
+  const snapshots = profile
+    ? await prisma.brandScoreSnapshot.findMany({
+        where: { organizationId, brandProfileId: profile.id },
+        orderBy: { computedAt: 'desc' },
+        take: 20,
+      })
+    : [];
 
   const channelMap = new Map<string, (typeof snapshots)[0]>();
   for (const row of snapshots) {

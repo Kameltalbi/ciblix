@@ -1,30 +1,33 @@
 import { prisma } from '../../db/prisma.js';
-import { getPrimaryBrandProfile } from './brandProfile.js';
+import { getActiveBrandProfile } from './brandProfile.js';
 
 /** Phase 7 — rapport mensuel HTML (export PDF via navigateur). */
-export async function buildMonthlyReportHtml(organizationId: string): Promise<string> {
-  const profile = await getPrimaryBrandProfile(organizationId);
+export async function buildMonthlyReportHtml(organizationId: string, brandProfileId?: string): Promise<string> {
+  const profile = brandProfileId
+    ? await prisma.brandProfile.findFirst({ where: { id: brandProfileId, organizationId } })
+    : await getActiveBrandProfile(organizationId);
   if (!profile) throw Object.assign(new Error('Profil marque introuvable'), { statusCode: 404 });
 
+  const scope = { organizationId, brandProfileId: profile.id };
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [channels, articles, recommendations, alerts] = await Promise.all([
     prisma.brandScoreSnapshot.findMany({
-      where: { organizationId, computedAt: { gte: monthStart } },
+      where: { ...scope, computedAt: { gte: monthStart } },
       orderBy: { computedAt: 'desc' },
       take: 30,
     }),
     prisma.brandArticle.findMany({
-      where: { organizationId, createdAt: { gte: monthStart } },
+      where: { ...scope, createdAt: { gte: monthStart } },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.brandRecommendation.findMany({
-      where: { organizationId, active: true },
+      where: { ...scope, active: true },
       take: 6,
     }),
     prisma.brandAlert.findMany({
-      where: { organizationId, createdAt: { gte: monthStart } },
+      where: { ...scope, createdAt: { gte: monthStart } },
       orderBy: { createdAt: 'desc' },
       take: 10,
     }),

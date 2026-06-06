@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
@@ -42,6 +42,15 @@ type BrandArticle = {
   estimatedImpact: number | null;
 };
 
+function parseBrandKeywords(input: string | string[]): string[] {
+  const raw = Array.isArray(input) ? input.join('\n') : input;
+  const parts = raw
+    .split(/[,;\n|]+/)
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0);
+  return [...new Set(parts)];
+}
+
 function slugify(title: string): string {
   return title
     .toLowerCase()
@@ -77,6 +86,20 @@ function scoreColor(score: number): string {
   return 'text-red-600 bg-red-50';
 }
 
+type BrandProfile = {
+  id?: string;
+  brandName: string;
+  websiteUrl: string;
+  sector?: string | null;
+  competitorName?: string | null;
+  competitorUrl?: string | null;
+  brandKeywords?: string[];
+  editorialTone?: string;
+  articlesPerWeek?: number;
+  onboardingDone?: boolean;
+  isPrimary?: boolean;
+};
+
 const CHANNEL_LABELS: Record<string, string> = {
   SEO: 'SEO & Site Web',
   SOCIAL: 'Réseaux sociaux',
@@ -87,15 +110,23 @@ const CHANNEL_LABELS: Record<string, string> = {
   GLOBAL: 'Score global',
 };
 
-function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
+function OnboardingWizard({
+  onComplete,
+  initialProfile,
+}: {
+  onComplete: () => void;
+  initialProfile?: BrandProfile;
+}) {
   const [step, setStep] = useState(0);
-  const [brandName, setBrandName] = useState('');
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [sector, setSector] = useState('');
-  const [competitorName, setCompetitorName] = useState('');
-  const [competitorUrl, setCompetitorUrl] = useState('');
-  const [keywords, setKeywords] = useState('');
-  const [tone, setTone] = useState('professionnel');
+  const [brandName, setBrandName] = useState(initialProfile?.brandName || '');
+  const [websiteUrl, setWebsiteUrl] = useState(initialProfile?.websiteUrl || '');
+  const [sector, setSector] = useState(initialProfile?.sector || '');
+  const [competitorName, setCompetitorName] = useState(initialProfile?.competitorName || '');
+  const [competitorUrl, setCompetitorUrl] = useState(initialProfile?.competitorUrl || '');
+  const [keywords, setKeywords] = useState(
+    parseBrandKeywords(initialProfile?.brandKeywords || []).join('\n'),
+  );
+  const [tone, setTone] = useState(initialProfile?.editorialTone || 'professionnel');
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -105,7 +136,7 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
         sector: sector || null,
         competitorName: competitorName || null,
         competitorUrl: competitorUrl || null,
-        brandKeywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
+        brandKeywords: parseBrandKeywords(keywords),
         editorialTone: tone,
         onboardingDone: false,
       }),
@@ -132,7 +163,7 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Configurer BrandPulse AI</CardTitle>
+        <CardTitle>Configurer {initialProfile?.brandName || 'BrandPulse AI'}</CardTitle>
         <p className="text-sm text-muted-foreground">Étape {step + 1} / {steps.length} — {steps[step]}</p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -155,8 +186,16 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
               <Input value={sector} onChange={(e) => setSector(e.target.value)} placeholder="CRM B2B, industrie..." />
             </div>
             <div className="space-y-1.5">
-              <Label>Mots-clés marque (séparés par des virgules)</Label>
-              <Input value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="crm, ventes, ia" />
+              <Label>Mots-clés métier</Label>
+              <Textarea
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                placeholder="Un mot-clé par ligne, ou séparés par des virgules&#10;ex: audit énergétique, DPE, rénovation..."
+                rows={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                {parseBrandKeywords(keywords).length} mot(s)-clé détecté(s) — utilisés pour proposer vos sujets d&apos;articles.
+              </p>
             </div>
           </>
         )}
@@ -210,6 +249,68 @@ function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   );
 }
 
+function BrandKeywordsEditor({ profile, onSaved }: { profile: BrandProfile; onSaved: () => void }) {
+  const [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const kws = parseBrandKeywords(profile.brandKeywords || []);
+    setText(kws.join('\n'));
+  }, [profile.brandKeywords]);
+
+  const count = parseBrandKeywords(text).length;
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      api.put('/brand-pulse/profile', {
+        brandName: profile.brandName,
+        websiteUrl: profile.websiteUrl,
+        sector: profile.sector ?? null,
+        competitorName: profile.competitorName ?? null,
+        competitorUrl: profile.competitorUrl ?? null,
+        brandKeywords: parseBrandKeywords(text),
+        editorialTone: profile.editorialTone || 'professionnel',
+        articlesPerWeek: profile.articlesPerWeek ?? 2,
+        onboardingDone: true,
+      }),
+    onSuccess: () => {
+      onSaved();
+      setOpen(false);
+    },
+  });
+
+  return (
+    <div className="mb-4 rounded-lg border border-dashed p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          <strong>{count}</strong> mot(s)-clé métier — les sujets proposés s&apos;appuient sur cette liste.
+        </p>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen((v) => !v)}>
+          {open ? 'Fermer' : 'Modifier'}
+        </Button>
+      </div>
+      {open && (
+        <div className="mt-2 space-y-2">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={5}
+            placeholder="Un mot-clé par ligne ou séparés par des virgules"
+          />
+          <Button
+            size="sm"
+            className="bg-rose-600 hover:bg-rose-700"
+            disabled={saveMutation.isPending || count === 0}
+            onClick={() => saveMutation.mutate()}
+          >
+            {saveMutation.isPending ? 'Enregistrement…' : `Enregistrer ${count} mots-clés`}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function BrandPulse() {
   const queryClient = useQueryClient();
   const [reviewArticle, setReviewArticle] = useState<BrandArticle | null>(null);
@@ -226,6 +327,8 @@ export function BrandPulse() {
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
   const [newBrandName, setNewBrandName] = useState('');
   const [newBrandUrl, setNewBrandUrl] = useState('');
+  const [newBrandSector, setNewBrandSector] = useState('');
+  const [newBrandKeywords, setNewBrandKeywords] = useState('');
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['brand-pulse-dashboard'],
@@ -347,17 +450,33 @@ export function BrandPulse() {
     onSuccess: () => void refetchApiKeys(),
   });
 
+  const activateBrandMutation = useMutation({
+    mutationFn: (brandId: string) => api.post(`/brand-pulse/brands/${brandId}/activate`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['brand-pulse-brands'] });
+    },
+  });
+
   const createBrandMutation = useMutation({
-    mutationFn: () =>
-      api.post('/brand-pulse/brands', {
+    mutationFn: async () => {
+      const res = await api.post('/brand-pulse/brands', {
         brandName: newBrandName,
         websiteUrl: newBrandUrl,
-        brandKeywords: [],
-      }),
+        brandKeywords: parseBrandKeywords(newBrandKeywords),
+        sector: newBrandSector || null,
+      });
+      const brand = (res.data as { brand: { id: string } }).brand;
+      await api.post(`/brand-pulse/brands/${brand.id}/activate`);
+      return brand;
+    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['brand-pulse-brands'] });
       setNewBrandName('');
       setNewBrandUrl('');
+      setNewBrandSector('');
+      setNewBrandKeywords('');
     },
   });
 
@@ -400,7 +519,8 @@ export function BrandPulse() {
   const cmsConnections = dashboard?.cmsConnections || [];
   const competitorHistory = dashboard?.competitorHistory || [];
   const competitorRadar = dashboard?.competitorRadar || [];
-  const brands = brandsData?.brands || [];
+  const brands = (dashboard?.brands as BrandProfile[] | undefined) || brandsData?.brands || [];
+  const activeBrandId = (dashboard?.activeBrandId as string | undefined) || profile?.id;
   const apiKeys = apiKeysData?.keys || [];
 
   if (isLoading) {
@@ -414,8 +534,16 @@ export function BrandPulse() {
   if (!profile?.onboardingDone) {
     return (
       <div className="space-y-6">
-        <Header />
-        <OnboardingWizard onComplete={() => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] })} />
+        <Header
+          brands={brands}
+          activeBrandId={activeBrandId}
+          onBrandChange={(id) => activateBrandMutation.mutate(id)}
+          brandSwitching={activateBrandMutation.isPending}
+        />
+        <OnboardingWizard
+          initialProfile={profile as BrandProfile | undefined}
+          onComplete={() => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] })}
+        />
       </div>
     );
   }
@@ -423,6 +551,10 @@ export function BrandPulse() {
   return (
     <div className="space-y-6">
       <Header
+        brands={brands}
+        activeBrandId={activeBrandId}
+        onBrandChange={(id) => activateBrandMutation.mutate(id)}
+        brandSwitching={activateBrandMutation.isPending}
         actions={
           <>
             <Button variant="outline" size="sm" disabled={auditMutation.isPending} onClick={() => auditMutation.mutate()}>
@@ -535,6 +667,12 @@ export function BrandPulse() {
               <span>À valider: <strong>{dashboard?.pipeline?.pendingReview ?? 0}</strong></span>
               <span>Publiés: <strong>{dashboard?.pipeline?.published ?? 0}</strong></span>
             </div>
+            {profile && (
+              <BrandKeywordsEditor
+                profile={profile as BrandProfile}
+                onSaved={() => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] })}
+              />
+            )}
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {articles.length === 0 && (
                 <p className="text-sm text-muted-foreground rounded-lg border border-dashed p-4 text-center">
@@ -769,15 +907,47 @@ export function BrandPulse() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-base">Multi-marques</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Multi-marques ({brands.length}/5)</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {brands.map((b: { id: string; brandName: string; slug: string; isPrimary: boolean }) => (
-              <p key={b.id} className="text-xs">{b.brandName}{b.isPrimary ? ' (principale)' : ` — ${b.slug}`}</p>
+            <p className="text-xs text-muted-foreground">
+              Chaque marque a ses propres scores, mots-clés, pipeline et connexions CMS. Basculez via le menu en haut.
+            </p>
+            {brands.map((b: { id: string; brandName: string; isPrimary: boolean; onboardingDone?: boolean }) => (
+              <div key={b.id} className="flex items-center justify-between gap-2 rounded border px-2 py-1.5">
+                <span className="text-xs truncate">
+                  {b.brandName}
+                  {b.isPrimary ? ' · active' : ''}
+                  {!b.onboardingDone ? ' · à configurer' : ''}
+                </span>
+                {!b.isPrimary && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs shrink-0"
+                    disabled={activateBrandMutation.isPending}
+                    onClick={() => activateBrandMutation.mutate(b.id)}
+                  >
+                    Activer
+                  </Button>
+                )}
+              </div>
             ))}
-            <Input placeholder="Nouvelle marque" value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
-            <Input placeholder="URL site" value={newBrandUrl} onChange={(e) => setNewBrandUrl(e.target.value)} />
-            <Button size="sm" variant="outline" disabled={!newBrandName || !newBrandUrl || createBrandMutation.isPending} onClick={() => createBrandMutation.mutate()}>
-              Ajouter une marque
+            <Input placeholder="Nom de la marque" value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
+            <Input placeholder="URL du site" value={newBrandUrl} onChange={(e) => setNewBrandUrl(e.target.value)} />
+            <Input placeholder="Secteur (optionnel)" value={newBrandSector} onChange={(e) => setNewBrandSector(e.target.value)} />
+            <Textarea
+              placeholder="Mots-clés (un par ligne)"
+              rows={3}
+              value={newBrandKeywords}
+              onChange={(e) => setNewBrandKeywords(e.target.value)}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!newBrandName || !newBrandUrl || createBrandMutation.isPending || brands.length >= 5}
+              onClick={() => createBrandMutation.mutate()}
+            >
+              {createBrandMutation.isPending ? 'Création…' : 'Ajouter et configurer'}
             </Button>
           </CardContent>
         </Card>
@@ -864,21 +1034,52 @@ export function BrandPulse() {
   );
 }
 
-function Header({ actions }: { actions?: React.ReactNode }) {
+type BrandListItem = { id: string; brandName: string; isPrimary?: boolean };
+
+function Header({
+  actions,
+  brands,
+  activeBrandId,
+  onBrandChange,
+  brandSwitching,
+}: {
+  actions?: React.ReactNode;
+  brands?: BrandListItem[];
+  activeBrandId?: string;
+  onBrandChange?: (brandId: string) => void;
+  brandSwitching?: boolean;
+}) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-      <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 text-white">
+      <div className="flex items-start gap-4 min-w-0">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 text-white">
           <Megaphone size={24} />
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">BrandPulse AI</h1>
           <p className="text-sm text-muted-foreground">
             Score marque, audit SEO et pipeline blog avec validation
           </p>
-          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700 ring-1 ring-rose-200">
-            Exclusif plan Professionnel
-          </span>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700 ring-1 ring-rose-200">
+              Exclusif plan Professionnel
+            </span>
+            {brands && brands.length > 0 && onBrandChange && (
+              <div className="flex items-center gap-1.5">
+                {brandSwitching && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
+                <Select value={activeBrandId || brands[0]?.id} onValueChange={onBrandChange}>
+                  <SelectTrigger className="h-8 w-[min(220px,70vw)] text-xs">
+                    <SelectValue placeholder="Choisir une marque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.brandName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}

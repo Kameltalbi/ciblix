@@ -78,9 +78,12 @@ async function countBrandMentions(brandName: string, websiteUrl: string): Promis
   }
 }
 
-export async function getSocialChannelStatus(organizationId: string): Promise<SocialChannelStatus> {
+export async function getSocialChannelStatus(
+  organizationId: string,
+  brandProfileId: string,
+): Promise<SocialChannelStatus> {
   const conn = await prisma.brandChannelConnection.findUnique({
-    where: { organizationId_channel: { organizationId, channel: 'SOCIAL' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'SOCIAL' } },
   });
 
   if (!conn) {
@@ -105,6 +108,7 @@ export async function getSocialChannelStatus(organizationId: string): Promise<So
 
 export async function connectSocialFromWebsite(
   organizationId: string,
+  brandProfileId: string,
   websiteUrl: string,
   brandName: string,
 ): Promise<SocialChannelStatus> {
@@ -122,9 +126,10 @@ export async function connectSocialFromWebsite(
   const metadata = { ...links, mentionHits: mentions };
 
   await prisma.brandChannelConnection.upsert({
-    where: { organizationId_channel: { organizationId, channel: 'SOCIAL' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'SOCIAL' } },
     create: {
       organizationId,
+      brandProfileId,
       channel: 'SOCIAL',
       provider: 'AUTO_DETECT',
       encryptedConfig: encryptJson(links),
@@ -155,13 +160,15 @@ export async function connectSocialFromWebsite(
 
 export async function connectSocialManual(
   organizationId: string,
+  brandProfileId: string,
   config: SocialConfig,
 ): Promise<SocialChannelStatus> {
   const score = socialToScore(config);
   await prisma.brandChannelConnection.upsert({
-    where: { organizationId_channel: { organizationId, channel: 'SOCIAL' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'SOCIAL' } },
     create: {
       organizationId,
+      brandProfileId,
       channel: 'SOCIAL',
       provider: 'MANUAL',
       encryptedConfig: encryptJson(config),
@@ -180,21 +187,22 @@ export async function connectSocialManual(
     },
   });
 
-  return getSocialChannelStatus(organizationId);
+  return getSocialChannelStatus(organizationId, brandProfileId);
 }
 
 export async function syncSocialChannel(
   organizationId: string,
+  brandProfileId: string,
   websiteUrl: string,
   brandName: string,
 ): Promise<SocialChannelStatus> {
   const conn = await prisma.brandChannelConnection.findUnique({
-    where: { organizationId_channel: { organizationId, channel: 'SOCIAL' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'SOCIAL' } },
   });
-  if (!conn) return getSocialChannelStatus(organizationId);
+  if (!conn) return getSocialChannelStatus(organizationId, brandProfileId);
 
   if (conn.provider === 'AUTO_DETECT') {
-    return connectSocialFromWebsite(organizationId, websiteUrl, brandName);
+    return connectSocialFromWebsite(organizationId, brandProfileId, websiteUrl, brandName);
   }
 
   const config = conn.encryptedConfig ? decryptJson<SocialConfig>(conn.encryptedConfig) : {};

@@ -22,9 +22,12 @@ type ReviewsConfig = {
   manualReviewCount?: number;
 };
 
-export async function getReviewsChannelStatus(organizationId: string): Promise<ReviewsChannelStatus> {
+export async function getReviewsChannelStatus(
+  organizationId: string,
+  brandProfileId: string,
+): Promise<ReviewsChannelStatus> {
   const conn = await prisma.brandChannelConnection.findUnique({
-    where: { organizationId_channel: { organizationId, channel: 'REVIEWS' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'REVIEWS' } },
   });
 
   if (!conn) {
@@ -51,6 +54,7 @@ export async function getReviewsChannelStatus(organizationId: string): Promise<R
 
 export async function connectReviewsChannel(
   organizationId: string,
+  brandProfileId: string,
   input: { placeId?: string; searchQuery?: string; manualRating?: number; manualReviewCount?: number },
 ): Promise<ReviewsChannelStatus> {
   let config: ReviewsConfig = {};
@@ -75,9 +79,10 @@ export async function connectReviewsChannel(
   }
 
   await prisma.brandChannelConnection.upsert({
-    where: { organizationId_channel: { organizationId, channel: 'REVIEWS' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'REVIEWS' } },
     create: {
       organizationId,
+      brandProfileId,
       channel: 'REVIEWS',
       provider,
       encryptedConfig: encryptJson(config),
@@ -90,15 +95,18 @@ export async function connectReviewsChannel(
     },
   });
 
-  return syncReviewsChannel(organizationId);
+  return syncReviewsChannel(organizationId, brandProfileId);
 }
 
-export async function syncReviewsChannel(organizationId: string): Promise<ReviewsChannelStatus> {
+export async function syncReviewsChannel(
+  organizationId: string,
+  brandProfileId: string,
+): Promise<ReviewsChannelStatus> {
   const conn = await prisma.brandChannelConnection.findUnique({
-    where: { organizationId_channel: { organizationId, channel: 'REVIEWS' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'REVIEWS' } },
   });
   if (!conn?.encryptedConfig) {
-    return getReviewsChannelStatus(organizationId);
+    return getReviewsChannelStatus(organizationId, brandProfileId);
   }
 
   const config = decryptJson<ReviewsConfig>(conn.encryptedConfig);

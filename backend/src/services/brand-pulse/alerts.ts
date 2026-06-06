@@ -3,18 +3,19 @@ import { pushBrandPulseNotification } from './pushNotifications.js';
 
 async function ensureAlert(
   organizationId: string,
+  brandProfileId: string,
   type: string,
   severity: string,
   message: string,
   notify = true,
 ): Promise<void> {
   const existing = await prisma.brandAlert.findFirst({
-    where: { organizationId, type, read: false },
+    where: { organizationId, brandProfileId, type, read: false },
   });
   if (existing) return;
 
   await prisma.brandAlert.create({
-    data: { organizationId, type, severity, message },
+    data: { organizationId, brandProfileId, type, severity, message },
   });
 
   if (notify) {
@@ -22,10 +23,12 @@ async function ensureAlert(
   }
 }
 
-/** Alertes automatiques — contenu, scores, avis. */
-export async function refreshBrandAlerts(organizationId: string): Promise<void> {
+/** Alertes automatiques — contenu, scores, avis (par marque active). */
+export async function refreshBrandAlerts(organizationId: string, brandProfileId: string): Promise<void> {
+  const scope = { organizationId, brandProfileId };
+
   const lastPublished = await prisma.brandArticle.findFirst({
-    where: { organizationId, status: 'PUBLISHED' },
+    where: { ...scope, status: 'PUBLISHED' },
     orderBy: { publishedAt: 'desc' },
     select: { publishedAt: true },
   });
@@ -34,12 +37,13 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
   const noRecentPublish = !lastPublished?.publishedAt || lastPublished.publishedAt < tenDaysAgo;
 
   const pendingCount = await prisma.brandArticle.count({
-    where: { organizationId, status: 'PENDING_REVIEW' },
+    where: { ...scope, status: 'PENDING_REVIEW' },
   });
 
   if (noRecentPublish) {
     await ensureAlert(
       organizationId,
+      brandProfileId,
       'NO_PUBLISH',
       'WARNING',
       'Aucun article publié depuis plus de 10 jours. Validez ou générez de nouveaux contenus.',
@@ -49,6 +53,7 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
   if (pendingCount > 0) {
     await ensureAlert(
       organizationId,
+      brandProfileId,
       'PENDING_REVIEW',
       'INFO',
       `${pendingCount} article(s) en attente de validation.`,
@@ -57,7 +62,7 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
   }
 
   const seoSnapshots = await prisma.brandScoreSnapshot.findMany({
-    where: { organizationId, channel: 'SEO' },
+    where: { ...scope, channel: 'SEO' },
     orderBy: { computedAt: 'desc' },
     take: 2,
     select: { score: true },
@@ -68,6 +73,7 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
     if (drop >= 10) {
       await ensureAlert(
         organizationId,
+        brandProfileId,
         'SEO_DROP',
         'WARNING',
         `Score SEO en baisse de ${drop} points depuis le dernier audit.`,
@@ -76,12 +82,13 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
   }
 
   const reviewsConn = await prisma.brandChannelConnection.findUnique({
-    where: { organizationId_channel: { organizationId, channel: 'REVIEWS' } },
+    where: { brandProfileId_channel: { brandProfileId, channel: 'REVIEWS' } },
   });
   const meta = reviewsConn?.metadata as { rating?: number; recentNegative?: number } | null;
   if (meta?.rating != null && meta.rating < 3.5) {
     await ensureAlert(
       organizationId,
+      brandProfileId,
       'NEGATIVE_REVIEW',
       'CRITICAL',
       `Note Google faible (${meta.rating}/5). Répondez aux avis récents.`,
@@ -90,6 +97,7 @@ export async function refreshBrandAlerts(organizationId: string): Promise<void> 
   if ((meta?.recentNegative ?? 0) >= 2) {
     await ensureAlert(
       organizationId,
+      brandProfileId,
       'NEGATIVE_REVIEW',
       'WARNING',
       `${meta?.recentNegative} avis négatif(s) récent(s) détecté(s).`,

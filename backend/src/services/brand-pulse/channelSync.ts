@@ -16,8 +16,8 @@ export async function syncAllChannels(profile: BrandProfile): Promise<SyncedChan
   const result: SyncedChannelData = {};
 
   const [social, reviews, press, llm] = await Promise.all([
-    syncSocialChannel(orgId, profile.websiteUrl, profile.brandName).catch(() => null),
-    syncReviewsChannel(orgId).catch(() => null),
+    syncSocialChannel(orgId, profile.id, profile.websiteUrl, profile.brandName).catch(() => null),
+    syncReviewsChannel(orgId, profile.id).catch(() => null),
     scorePressChannel(profile.brandName, profile.sector).catch(() => null),
     scoreLlmChannel(profile.brandName, profile.sector, (profile.brandKeywords as string[]) || []).catch(() => null),
   ]);

@@ -24,6 +24,7 @@ export async function runCompetitorBenchmark(profile: BrandProfile): Promise<{
   await prisma.brandCompetitorSnapshot.create({
     data: {
       organizationId: profile.organizationId,
+      brandProfileId: profile.id,
       competitorName: profile.competitorName || 'Concurrent',
       globalScore: global,
       channels: channels as object,
@@ -31,7 +32,7 @@ export async function runCompetitorBenchmark(profile: BrandProfile): Promise<{
   });
 
   const history = await prisma.brandCompetitorSnapshot.findMany({
-    where: { organizationId: profile.organizationId },
+    where: { organizationId: profile.organizationId, brandProfileId: profile.id },
     orderBy: { computedAt: 'desc' },
     take: 12,
     select: { globalScore: true, computedAt: true },

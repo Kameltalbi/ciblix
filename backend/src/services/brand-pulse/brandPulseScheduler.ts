@@ -16,7 +16,7 @@ async function tickScheduledPublish(): Promise<void> {
   for (const art of due) {
     if (!art.title || !art.contentMarkdown) continue;
     const connection = await prisma.brandCmsConnection.findFirst({
-      where: { organizationId: art.organizationId, active: true },
+      where: { organizationId: art.organizationId, brandProfileId: art.brandProfileId, active: true },
       orderBy: { updatedAt: 'desc' },
     });
     if (!connection) continue;
@@ -36,7 +36,7 @@ async function tickScheduledPublish(): Promise<void> {
           cmsPlatform: published.platform,
         },
       });
-      await refreshBrandAlerts(art.organizationId);
+      await refreshBrandAlerts(art.organizationId, art.brandProfileId);
     } catch (err) {
       console.warn('[brand-pulse-scheduler] publish planifié', art.id, err);
     }
@@ -59,7 +59,7 @@ async function tickSeoImpact(): Promise<void> {
   for (const art of articles) {
     try {
       const profile = await prisma.brandProfile.findFirst({
-        where: { organizationId: art.organizationId, isPrimary: true },
+        where: { id: art.brandProfileId, organizationId: art.organizationId },
       });
       if (!profile || !art.publishedAt) continue;
 
@@ -69,6 +69,7 @@ async function tickSeoImpact(): Promise<void> {
       const prev = await prisma.brandScoreSnapshot.findFirst({
         where: {
           organizationId: art.organizationId,
+          brandProfileId: art.brandProfileId,
           channel: 'SEO',
           computedAt: { lte: art.publishedAt },
         },
