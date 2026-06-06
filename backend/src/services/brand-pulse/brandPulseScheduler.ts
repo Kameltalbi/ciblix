@@ -3,6 +3,7 @@ import { runSeoAudit } from './seoAudit.js';
 import { seoScoreFromAudit } from './seoAudit.js';
 import { publishArticleToCms } from './cms/publish.js';
 import { refreshBrandAlerts } from './alerts.js';
+import { createProposedTopicsForProfile } from './topicGeneration.js';
 
 const TICK_MS = 15 * 60_000; // 15 min
 
@@ -88,10 +89,44 @@ async function tickSeoImpact(): Promise<void> {
   }
 }
 
+/** Proposition auto de sujets si pipeline vide (cadence articlesPerWeek). */
+async function tickAutoTopics(): Promise<void> {
+  const profiles = await prisma.brandProfile.findMany({
+    where: { onboardingDone: true },
+    take: 50,
+  });
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600_000);
+
+  for (const profile of profiles) {
+    try {
+      const proposed = await prisma.brandArticle.count({
+        where: { brandProfileId: profile.id, status: 'PROPOSED' },
+      });
+      if (proposed > 0) continue;
+
+      const recentArticles = await prisma.brandArticle.count({
+        where: { brandProfileId: profile.id, createdAt: { gte: weekAgo } },
+      });
+      if (recentArticles >= Math.max(3, profile.articlesPerWeek)) continue;
+
+      const result = await createProposedTopicsForProfile(profile.organizationId, profile);
+      if (result.created.length > 0) {
+        console.log(
+          `[brand-pulse-scheduler] ${result.created.length} sujets auto pour ${profile.brandName}`,
+        );
+      }
+    } catch (err) {
+      console.warn('[brand-pulse-scheduler] auto-topics', profile.id, err);
+    }
+  }
+}
+
 async function tickOnce(): Promise<void> {
   if (process.env.BRAND_PULSE_SCHEDULER_DISABLED === '1') return;
   await tickScheduledPublish();
   await tickSeoImpact();
+  await tickAutoTopics();
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null;

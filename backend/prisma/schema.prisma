@@ -1223,6 +1223,7 @@ model BrandRecommendation {
   difficulty       String   @default("MEDIUM") // EASY, MEDIUM, HARD
   timeline         String   @default("SHORT") // SHORT, MEDIUM, LONG
   linkedArticleId  String?
+  cta              String?  // GENERATE_TOPICS, SYNC_CHANNELS, AUDIT_EXISTING, CONNECT_REVIEWS
   active           Boolean  @default(true)
   createdAt        DateTime @default(now())
 

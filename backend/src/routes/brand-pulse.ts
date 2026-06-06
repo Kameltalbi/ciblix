@@ -7,7 +7,9 @@ import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { runSeoAudit } from '../services/brand-pulse/seoAudit.js';
 import { buildChannelScores } from '../services/brand-pulse/scoring.js';
 import { channelScoreExplanation } from '../services/brand-pulse/scoreExplanations.js';
-import { generateTopics } from '../services/brand-pulse/topicPrioritizer.js';
+import { createProposedTopicsForProfile } from '../services/brand-pulse/topicGeneration.js';
+import { buildMonthlyReportHtml } from '../services/brand-pulse/monthlyReport.js';
+import { buildMonthlyReportPdf } from '../services/brand-pulse/monthlyReportPdf.js';
 import { parseBrandKeywords } from '../services/brand-pulse/parseKeywords.js';
 import { generateArticle } from '../services/brand-pulse/articleGenerator.js';
 import { buildRecommendations } from '../services/brand-pulse/recommendations.js';
@@ -34,7 +36,6 @@ import { testGhostConnection } from '../services/brand-pulse/cms/ghost.js';
 import { publishArticleToCms } from '../services/brand-pulse/cms/publish.js';
 import { auditExistingArticles } from '../services/brand-pulse/articleAudit.js';
 import { runCompetitorBenchmark } from '../services/brand-pulse/competitorBenchmark.js';
-import { buildMonthlyReportHtml } from '../services/brand-pulse/monthlyReport.js';
 import { createBrandApiKey } from '../services/brand-pulse/apiKeys.js';
 import { encryptJson, decryptJson } from '../lib/encryption.js';
 import type { ArticleFormat } from '../services/brand-pulse/types.js';
@@ -139,9 +140,20 @@ async function persistRecommendations(
         estimatedImpact: r.estimatedImpact,
         difficulty: r.difficulty,
         timeline: r.timeline,
+        cta: r.cta ?? null,
       })),
     });
   }
+}
+
+function topicsSuccessMessage(usedFallback: boolean, keywordCount: number, count: number, auto = false) {
+  const prefix = auto ? 'Sujets auto-proposés' : `${count} sujet(s) ajouté(s) au pipeline`;
+  if (usedFallback) {
+    return keywordCount > 0
+      ? `${prefix} à partir de vos ${keywordCount} mots-clés (mode secours — sans IA). Configurez OPENAI_API_KEY pour des sujets plus variés.`
+      : `${prefix} (mode secours — ajoutez des mots-clés métier et configurez OPENAI_API_KEY).`;
+  }
+  return `${prefix} (${keywordCount} mot(s)-clé enregistré(s)).`;
 }
 
 brandPulseRoutes.get('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -229,6 +241,7 @@ brandPulseRoutes.post('/audit', async (req: AuthRequest, res: Response, next: Ne
   try {
     const orgId = req.organizationId!;
     const profile = await getProfileOrThrow(orgId);
+    const isFirstAudit = !profile.onboardingDone;
 
     const audit = await runSeoAudit(profile.websiteUrl);
     const synced = await syncAllChannels(profile);
@@ -244,10 +257,31 @@ brandPulseRoutes.post('/audit', async (req: AuthRequest, res: Response, next: Ne
       data: { lastAuditAt: new Date(), onboardingDone: true },
     });
 
-    res.json({ audit, channels, recommendations });
+    let topics: Awaited<ReturnType<typeof createProposedTopicsForProfile>> | null = null;
+    if (isFirstAudit) {
+      topics = await createProposedTopicsForProfile(orgId, profile);
+    }
+
+    res.json({
+      audit,
+      channels,
+      recommendations,
+      topics: topics?.created ?? [],
+      topicsMessage: topics
+        ? topicsSuccessMessage(topics.usedFallback, topics.keywordCount, topics.created.length, true)
+        : undefined,
+      isFirstAudit,
+    });
   } catch (err) {
     next(err);
   }
+});
+
+brandPulseRoutes.get('/status', async (_req: AuthRequest, res: Response) => {
+  res.json({
+    openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
+    schedulerActive: process.env.BRAND_PULSE_SCHEDULER_DISABLED !== '1',
+  });
 });
 
 brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -332,6 +366,10 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
 
     const latestCompetitor = competitorHistory[0] ?? null;
 
+    const publishedArticles = articles.filter((a) => a.status === 'PUBLISHED');
+    const seoImpactTotal = publishedArticles.reduce((sum, a) => sum + (a.impactSeoDelta ?? 0), 0);
+    const articlesWithImpact = publishedArticles.filter((a) => a.impactSeoDelta != null).length;
+
     res.json({
       profile,
       brands,
@@ -347,6 +385,14 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
       competitorHistory,
       latestCompetitor,
       competitorRadar: buildCompetitorRadar(channels, latestCompetitor),
+      seoImpact: {
+        totalDelta: seoImpactTotal,
+        measuredCount: articlesWithImpact,
+        pendingCount: publishedArticles.filter((a) => a.impactSeoDelta == null).length,
+      },
+      aiStatus: {
+        openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
+      },
     });
   } catch (err) {
     next(err);
@@ -360,71 +406,20 @@ brandPulseRoutes.post('/topics/generate', async (req: AuthRequest, res: Response
     const orgId = req.organizationId!;
     const profile = await getProfileOrThrow(orgId);
 
-    const snapshots = await prisma.brandScoreSnapshot.findMany({
-      where: brandScope(orgId, profile.id),
-      orderBy: { computedAt: 'desc' },
-      take: 20,
-    });
-    const channelMap = new Map<string, (typeof snapshots)[0]>();
-    for (const s of snapshots) {
-      if (!channelMap.has(s.channel)) channelMap.set(s.channel, s);
-    }
-
-    let channels = buildChannelScores(null);
-    if (channelMap.has('SEO')) {
-      channels = Array.from(channelMap.values()).map((r) => ({
-        channel: r.channel,
-        score: r.score,
-        weight: r.weight,
-        details: (r.details || {}) as Record<string, unknown>,
-      })) as ReturnType<typeof buildChannelScores>;
-    } else {
-      const audit = await runSeoAudit(profile.websiteUrl);
-      channels = buildChannelScores(audit);
-      await persistScores(orgId, profile.id, channels);
-    }
-
-    const { topics, usedFallback } = await generateTopics({
-      brandName: profile.brandName,
-      sector: profile.sector,
-      competitorName: profile.competitorName,
-      brandKeywords: parseBrandKeywords(profile.brandKeywords as string[]),
-      channels,
+    const { created, usedFallback, keywordCount } = await createProposedTopicsForProfile(orgId, profile, {
+      persistScoresIfMissing: true,
     });
 
-    if (topics.length === 0) {
+    if (created.length === 0) {
       res.status(500).json({ error: 'Aucun sujet généré', message: 'Réessayez ou contactez le support.' });
       return;
     }
-
-    const keywordCount = parseBrandKeywords(profile.brandKeywords as string[]).length;
-
-    const created = await Promise.all(
-      topics.map((t) =>
-        prisma.brandArticle.create({
-          data: {
-            organizationId: orgId,
-            brandProfileId: profile.id,
-            status: 'PROPOSED',
-            format: t.format,
-            title: t.title,
-            targetKeywords: t.targetKeywords,
-            topicReason: { reason: t.reason, priority: t.priority },
-            estimatedImpact: t.estimatedImpact,
-          },
-        }),
-      ),
-    );
 
     res.json({
       topics: created,
       usedFallback,
       keywordCount,
-      message: usedFallback
-        ? keywordCount > 0
-          ? `3 sujets proposés à partir de vos ${keywordCount} mots-clés (mode secours — sans IA). Configurez OPENAI_API_KEY pour des sujets plus variés.`
-          : '3 sujets proposés (mode secours — ajoutez des mots-clés métier et configurez OPENAI_API_KEY).'
-        : `${created.length} sujet(s) ajouté(s) au pipeline (${keywordCount} mot(s)-clé enregistré(s)).`,
+      message: topicsSuccessMessage(usedFallback, keywordCount, created.length),
     });
   } catch (err) {
     next(err);
@@ -828,6 +823,14 @@ brandPulseRoutes.get('/report/monthly', async (req: AuthRequest, res: Response, 
   try {
     const format = (req.query.format as string) || 'json';
     const profile = await getProfileOrThrow(req.organizationId!);
+    if (format === 'pdf') {
+      const pdf = await buildMonthlyReportPdf(req.organizationId!, profile.id);
+      const slug = profile.brandName.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'marque';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="brandpulse-${slug}-${new Date().toISOString().slice(0, 7)}.pdf"`);
+      res.send(pdf);
+      return;
+    }
     const html = await buildMonthlyReportHtml(req.organizationId!, profile.id);
     if (format === 'html') {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

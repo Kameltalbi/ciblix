@@ -1,12 +1,20 @@
 import type { BrandChannel, ChannelScore } from './types.js';
 import { scoreLabel } from './scoring.js';
 
+export type RecommendationCta =
+  | 'GENERATE_TOPICS'
+  | 'SYNC_CHANNELS'
+  | 'AUDIT_EXISTING'
+  | 'CONNECT_REVIEWS'
+  | null;
+
 export interface BrandRecommendationItem {
   channel: BrandChannel;
   action: string;
   estimatedImpact: number;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   timeline: 'SHORT' | 'MEDIUM' | 'LONG';
+  cta: RecommendationCta;
 }
 
 export function buildRecommendations(
@@ -23,6 +31,18 @@ export function buildRecommendations(
       estimatedImpact: 8,
       difficulty: 'MEDIUM',
       timeline: 'SHORT',
+      cta: 'GENERATE_TOPICS',
+    });
+  }
+
+  if (seo && seo.score < 75) {
+    items.push({
+      channel: 'SEO',
+      action: 'Auditer et optimiser les articles existants du blog',
+      estimatedImpact: 5,
+      difficulty: 'MEDIUM',
+      timeline: 'SHORT',
+      cta: 'AUDIT_EXISTING',
     });
   }
 
@@ -35,6 +55,7 @@ export function buildRecommendations(
         estimatedImpact: 4,
         difficulty: 'EASY',
         timeline: 'SHORT',
+        cta: null,
       });
     }
   }
@@ -47,16 +68,20 @@ export function buildRecommendations(
       estimatedImpact: 5,
       difficulty: 'MEDIUM',
       timeline: 'MEDIUM',
+      cta: 'GENERATE_TOPICS',
     });
   }
 
   for (const ch of channels.filter((c) => c.details.comingSoon)) {
+    const cta: RecommendationCta =
+      ch.channel === 'REVIEWS' ? 'CONNECT_REVIEWS' : 'SYNC_CHANNELS';
     items.push({
       channel: ch.channel,
       action: `Connecter ou synchroniser le canal ${ch.channel} pour un score réel`,
       estimatedImpact: 3,
       difficulty: 'EASY',
       timeline: 'LONG',
+      cta,
     });
   }
 

@@ -40,6 +40,8 @@ type BrandArticle = {
   contentMarkdown: string | null;
   estimatedSeoScore: number | null;
   estimatedImpact: number | null;
+  impactSeoDelta: number | null;
+  publishedAt?: string | null;
 };
 
 function parseBrandKeywords(input: string | string[]): string[] {
@@ -77,6 +79,11 @@ function downloadMarkdown(article: BrandArticle, content: string): void {
   a.download = `${slug}.md`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function formatSeoImpact(delta: number | null | undefined): string | null {
+  if (delta == null) return null;
+  return `${delta >= 0 ? '+' : ''}${delta} pt${Math.abs(delta) !== 1 ? 's' : ''} SEO`;
 }
 
 function scoreColor(score: number): string {
@@ -127,6 +134,11 @@ function OnboardingWizard({
     parseBrandKeywords(initialProfile?.brandKeywords || []).join('\n'),
   );
   const [tone, setTone] = useState(initialProfile?.editorialTone || 'professionnel');
+  const [articlesPerWeek, setArticlesPerWeek] = useState(String(initialProfile?.articlesPerWeek ?? 2));
+  const [cmsPlatform, setCmsPlatform] = useState('MANUAL');
+  const [cmsSiteUrl, setCmsSiteUrl] = useState(initialProfile?.websiteUrl || '');
+  const [finishMessage, setFinishMessage] = useState<string | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -138,26 +150,41 @@ function OnboardingWizard({
         competitorUrl: competitorUrl || null,
         brandKeywords: parseBrandKeywords(keywords),
         editorialTone: tone,
+        articlesPerWeek: Number(articlesPerWeek) || 2,
         onboardingDone: false,
       }),
   });
 
-  const auditMutation = useMutation({
-    mutationFn: () => api.post('/brand-pulse/audit'),
-    onSuccess: () => onComplete(),
-  });
-
-  const steps = ['Marque', 'Secteur', 'Concurrent', 'Ton', 'Audit'];
+  const steps = ['Marque', 'Secteur', 'Concurrent', 'Ton', 'CMS', 'Audit'];
 
   const canNext =
     (step === 0 && brandName.length >= 2 && websiteUrl.length >= 4) ||
     step === 1 ||
     step === 2 ||
-    step === 3;
+    step === 3 ||
+    step === 4;
 
   const handleFinish = async () => {
-    await saveMutation.mutateAsync();
-    await auditMutation.mutateAsync();
+    setFinishMessage(null);
+    setIsFinishing(true);
+    try {
+      await saveMutation.mutateAsync();
+      const auditRes = await api.post('/brand-pulse/audit');
+      const data = auditRes.data as { topicsMessage?: string; topics?: unknown[] };
+      if (cmsPlatform === 'MANUAL') {
+        await api.post('/brand-pulse/cms-connections', {
+          platform: 'MANUAL',
+          config: { websiteUrl: cmsSiteUrl || websiteUrl, note: 'Publication manuelle' },
+        });
+      }
+      setFinishMessage(
+        data.topicsMessage
+          || (data.topics?.length ? `${data.topics.length} sujets ajoutés au pipeline.` : 'Audit terminé.'),
+      );
+      onComplete();
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -212,34 +239,75 @@ function OnboardingWizard({
           </>
         )}
         {step === 3 && (
-          <div className="space-y-1.5">
-            <Label>Ton éditorial</Label>
-            <Select value={tone} onValueChange={setTone}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="professionnel">Professionnel</SelectItem>
-                <SelectItem value="expert">Expert</SelectItem>
-                <SelectItem value="accessible">Accessible</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Ton éditorial</Label>
+              <Select value={tone} onValueChange={setTone}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professionnel">Professionnel</SelectItem>
+                  <SelectItem value="expert">Expert</SelectItem>
+                  <SelectItem value="accessible">Accessible</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Articles par semaine (cadence cible)</Label>
+              <Select value={articlesPerWeek} onValueChange={setArticlesPerWeek}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 / semaine</SelectItem>
+                  <SelectItem value="2">2 / semaine</SelectItem>
+                  <SelectItem value="3">3 / semaine</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
         {step === 4 && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Connectez votre plateforme de publication. Vous pourrez ajouter WordPress ou Ghost plus tard.
+            </p>
+            <Select value={cmsPlatform} onValueChange={setCmsPlatform}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MANUAL">Vite / site statique (.md)</SelectItem>
+                <SelectItem value="WORDPRESS">WordPress</SelectItem>
+                <SelectItem value="GHOST">Ghost</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder={cmsPlatform === 'MANUAL' ? 'URL du site (optionnel)' : 'URL du site CMS'}
+              value={cmsSiteUrl}
+              onChange={(e) => setCmsSiteUrl(e.target.value)}
+            />
+            {cmsPlatform === 'MANUAL' && (
+              <p className="text-xs text-muted-foreground">
+                Exportez les articles validés en fichier Markdown et déployez sur votre repo.
+              </p>
+            )}
+          </div>
+        )}
+        {step === 5 && (
           <p className="text-sm text-muted-foreground">
-            Lancez le premier audit SEO. Les canaux social et avis pourront être connectés ensuite.
+            Lancez le premier audit SEO. BrandPulse proposera automatiquement 3 sujets d&apos;articles adaptés à vos scores.
           </p>
+        )}
+        {finishMessage && (
+          <p className="text-sm text-emerald-700 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">{finishMessage}</p>
         )}
         <div className="flex justify-between pt-2">
           <Button variant="outline" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>Retour</Button>
-          {step < 4 ? (
+          {step < 5 ? (
             <Button disabled={!canNext} onClick={() => setStep((s) => s + 1)}>Suivant</Button>
           ) : (
             <Button
               className="bg-rose-600 hover:bg-rose-700"
-              disabled={auditMutation.isPending || saveMutation.isPending}
+              disabled={isFinishing}
               onClick={() => void handleFinish()}
             >
-              {(auditMutation.isPending || saveMutation.isPending) && <Loader2 size={16} className="animate-spin mr-2" />}
+              {isFinishing && <Loader2 size={16} className="animate-spin mr-2" />}
               Lancer l&apos;audit
             </Button>
           )}
@@ -521,6 +589,40 @@ export function BrandPulse() {
   const competitorRadar = dashboard?.competitorRadar || [];
   const brands = (dashboard?.brands as BrandProfile[] | undefined) || brandsData?.brands || [];
   const activeBrandId = (dashboard?.activeBrandId as string | undefined) || profile?.id;
+  const seoImpact = dashboard?.seoImpact as { totalDelta?: number; measuredCount?: number; pendingCount?: number } | undefined;
+  const aiStatus = dashboard?.aiStatus as { openaiConfigured?: boolean } | undefined;
+
+  const handleRecoCta = (cta: string | null | undefined) => {
+    if (cta === 'GENERATE_TOPICS') {
+      setTopicsSuccess(null);
+      setTopicsError(null);
+      topicsMutation.mutate();
+      return;
+    }
+    if (cta === 'SYNC_CHANNELS') {
+      document.getElementById('brand-pulse-channels')?.scrollIntoView({ behavior: 'smooth' });
+      channelSyncMutation.mutate();
+      return;
+    }
+    if (cta === 'CONNECT_REVIEWS') {
+      document.getElementById('brand-pulse-channels')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (cta === 'AUDIT_EXISTING') {
+      document.getElementById('brand-pulse-audit')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const downloadPdfReport = async () => {
+    const res = await api.get('/brand-pulse/report/monthly?format=pdf', { responseType: 'blob' });
+    const blob = new Blob([res.data as BlobPart], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `brandpulse-${profile?.brandName || 'rapport'}-${new Date().toISOString().slice(0, 7)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const apiKeys = apiKeysData?.keys || [];
 
   if (isLoading) {
@@ -577,6 +679,21 @@ export function BrandPulse() {
       {topicsError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {topicsError}
+        </div>
+      )}
+
+      {aiStatus && !aiStatus.openaiConfigured && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <strong>Mode secours actif</strong> — OPENAI_API_KEY non configurée sur le serveur. Les sujets utilisent vos mots-clés sans IA personnalisée. Contactez l&apos;administrateur pour activer l&apos;IA complète.
+        </div>
+      )}
+
+      {(seoImpact?.measuredCount ?? 0) > 0 && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Impact blog mesuré : <strong>{formatSeoImpact(seoImpact?.totalDelta ?? 0)}</strong> cumulé sur {seoImpact?.measuredCount} article(s) publié(s).
+          {(seoImpact?.pendingCount ?? 0) > 0 && (
+            <span className="text-emerald-700/80"> · {seoImpact?.pendingCount} en attente de mesure (24–48 h).</span>
+          )}
         </div>
       )}
 
@@ -646,10 +763,30 @@ export function BrandPulse() {
             {recommendations.length === 0 && (
               <p className="text-sm text-muted-foreground">Lancez un audit pour obtenir des recommandations.</p>
             )}
-            {recommendations.map((r: { id: string; action: string; estimatedImpact: number; channel: string }) => (
+            {recommendations.map((r: { id: string; action: string; estimatedImpact: number; channel: string; cta?: string | null }) => (
               <div key={r.id} className="rounded-lg border p-3 text-sm">
                 <p>{r.action}</p>
                 <p className="text-xs text-muted-foreground mt-1">+{r.estimatedImpact} pts estimés — {r.channel}</p>
+                {r.cta === 'GENERATE_TOPICS' && (
+                  <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" disabled={topicsMutation.isPending} onClick={() => handleRecoCta(r.cta)}>
+                    Générer des sujets
+                  </Button>
+                )}
+                {r.cta === 'SYNC_CHANNELS' && (
+                  <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" disabled={channelSyncMutation.isPending} onClick={() => handleRecoCta(r.cta)}>
+                    Synchroniser les canaux
+                  </Button>
+                )}
+                {r.cta === 'CONNECT_REVIEWS' && (
+                  <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={() => handleRecoCta(r.cta)}>
+                    Connecter les avis
+                  </Button>
+                )}
+                {r.cta === 'AUDIT_EXISTING' && (
+                  <Button size="sm" variant="outline" className="mt-2 h-7 text-xs" onClick={() => handleRecoCta(r.cta)}>
+                    Optimiser articles existants
+                  </Button>
+                )}
               </div>
             ))}
           </CardContent>
@@ -683,7 +820,15 @@ export function BrandPulse() {
                 <div key={art.id} className="flex items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{art.title || 'Sans titre'}</p>
-                    <p className="text-xs text-muted-foreground">{art.format} — {art.status}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {art.format} — {art.status}
+                      {art.status === 'PUBLISHED' && art.impactSeoDelta != null && (
+                        <span className="ml-1 text-emerald-700 font-medium">· {formatSeoImpact(art.impactSeoDelta)}</span>
+                      )}
+                      {art.status === 'PUBLISHED' && art.impactSeoDelta == null && (
+                        <span className="ml-1 text-muted-foreground/70">· impact sous 48 h</span>
+                      )}
+                    </p>
                   </div>
                   <div className="flex shrink-0 gap-1">
                     {art.status === 'PROPOSED' && (
@@ -723,7 +868,7 @@ export function BrandPulse() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card id="brand-pulse-channels">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><Link2 size={18} /> Canaux — Phase 2</CardTitle>
           </CardHeader>
@@ -871,25 +1016,30 @@ export function BrandPulse() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="brand-pulse-audit">
           <CardHeader>
             <CardTitle className="text-base">Rapport & audit — Phases 4/7</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                const r = await api.get('/brand-pulse/report/monthly?format=html', { responseType: 'text' });
-                const w = window.open('', '_blank');
-                if (w) {
-                  w.document.write(r.data as string);
-                  w.document.close();
-                }
-              }}
-            >
-              Rapport mensuel (PDF via impression)
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => void downloadPdfReport()}>
+                Télécharger PDF mensuel
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  const r = await api.get('/brand-pulse/report/monthly?format=html', { responseType: 'text' });
+                  const w = window.open('', '_blank');
+                  if (w) {
+                    w.document.write(r.data as string);
+                    w.document.close();
+                  }
+                }}
+              >
+                Aperçu HTML
+              </Button>
+            </div>
             <Textarea rows={3} placeholder="URLs articles existants (une par ligne)" value={auditUrls} onChange={(e) => setAuditUrls(e.target.value)} />
             <Button size="sm" variant="outline" disabled={auditExistingMutation.isPending} onClick={() => auditExistingMutation.mutate()}>
               Auditer articles existants
