@@ -191,10 +191,28 @@ export function BrandPulse() {
   const [cmsUser, setCmsUser] = useState('');
   const [cmsPassword, setCmsPassword] = useState('');
   const [auditUrls, setAuditUrls] = useState('');
+  const [scheduleArticleId, setScheduleArticleId] = useState<string | null>(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [apiKeyLabel, setApiKeyLabel] = useState('');
+  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
+  const [newBrandName, setNewBrandName] = useState('');
+  const [newBrandUrl, setNewBrandUrl] = useState('');
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['brand-pulse-dashboard'],
     queryFn: () => api.get('/brand-pulse/dashboard').then((r) => r.data),
+  });
+
+  const { data: brandsData } = useQuery({
+    queryKey: ['brand-pulse-brands'],
+    queryFn: () => api.get('/brand-pulse/brands').then((r) => r.data),
+    enabled: !!dashboard?.profile?.onboardingDone,
+  });
+
+  const { data: apiKeysData, refetch: refetchApiKeys } = useQuery({
+    queryKey: ['brand-pulse-api-keys'],
+    queryFn: () => api.get('/brand-pulse/api-keys').then((r) => r.data),
+    enabled: !!dashboard?.profile?.onboardingDone,
   });
 
   const auditMutation = useMutation({
@@ -227,17 +245,76 @@ export function BrandPulse() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
   });
 
+  const buildCmsConfig = () => {
+    switch (cmsPlatform) {
+      case 'GHOST':
+        return { adminApiUrl: cmsSiteUrl, adminApiKey: cmsPassword };
+      case 'WEBFLOW':
+        return { apiToken: cmsPassword, collectionId: cmsUser };
+      case 'SHOPIFY':
+        return { shopDomain: cmsSiteUrl, accessToken: cmsPassword, blogId: cmsUser };
+      case 'WIX':
+        return { apiKey: cmsPassword, siteId: cmsUser };
+      default:
+        return { siteUrl: cmsSiteUrl, username: cmsUser, appPassword: cmsPassword };
+    }
+  };
+
   const cmsConnectMutation = useMutation({
     mutationFn: () =>
       api.post('/brand-pulse/cms-connections', {
         platform: cmsPlatform,
-        config:
-          cmsPlatform === 'GHOST'
-            ? { adminApiUrl: cmsSiteUrl, adminApiKey: cmsPassword }
-            : { siteUrl: cmsSiteUrl, username: cmsUser, appPassword: cmsPassword },
+        config: buildCmsConfig(),
         defaultStatus: 'draft',
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const cmsTestMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/brand-pulse/cms-connections/${id}/test`),
+  });
+
+  const cmsDeleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/brand-pulse/cms-connections/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] }),
+  });
+
+  const scheduleMutation = useMutation({
+    mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
+      api.patch(`/brand-pulse/articles/${id}/schedule`, { scheduledAt: new Date(scheduledAt).toISOString() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brand-pulse-dashboard'] });
+      setScheduleArticleId(null);
+      setScheduleDate('');
+    },
+  });
+
+  const apiKeyMutation = useMutation({
+    mutationFn: () => api.post('/brand-pulse/api-keys', { label: apiKeyLabel || undefined }),
+    onSuccess: (res) => {
+      setCreatedApiKey(res.data.key as string);
+      setApiKeyLabel('');
+      void refetchApiKeys();
+    },
+  });
+
+  const apiKeyDeleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/brand-pulse/api-keys/${id}`),
+    onSuccess: () => void refetchApiKeys(),
+  });
+
+  const createBrandMutation = useMutation({
+    mutationFn: () =>
+      api.post('/brand-pulse/brands', {
+        brandName: newBrandName,
+        websiteUrl: newBrandUrl,
+        brandKeywords: [],
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brand-pulse-brands'] });
+      setNewBrandName('');
+      setNewBrandUrl('');
+    },
   });
 
   const publishMutation = useMutation({
@@ -278,6 +355,9 @@ export function BrandPulse() {
   const channelStatus = dashboard?.channelStatus;
   const cmsConnections = dashboard?.cmsConnections || [];
   const competitorHistory = dashboard?.competitorHistory || [];
+  const competitorRadar = dashboard?.competitorRadar || [];
+  const brands = brandsData?.brands || [];
+  const apiKeys = apiKeysData?.keys || [];
 
   if (isLoading) {
     return (
@@ -401,9 +481,21 @@ export function BrandPulse() {
                         Relire
                       </Button>
                     )}
-                    {art.status === 'APPROVED' && cmsConnections.length > 0 && (
+                    {art.status === 'APPROVED' && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => setScheduleArticleId(art.id)}>
+                          Planifier
+                        </Button>
+                        {cmsConnections.length > 0 && (
+                          <Button size="sm" variant="outline" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate(art.id)}>
+                            <Upload size={12} className="mr-1" /> Publier
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {art.status === 'SCHEDULED' && cmsConnections.length > 0 && (
                       <Button size="sm" variant="outline" disabled={publishMutation.isPending} onClick={() => publishMutation.mutate(art.id)}>
-                        <Upload size={12} className="mr-1" /> Publier
+                        Publier now
                       </Button>
                     )}
                   </div>
@@ -457,16 +549,54 @@ export function BrandPulse() {
                 <SelectItem value="WIX">Wix</SelectItem>
               </SelectContent>
             </Select>
-            <Input placeholder={cmsPlatform === 'GHOST' ? 'URL admin Ghost' : 'URL du site'} value={cmsSiteUrl} onChange={(e) => setCmsSiteUrl(e.target.value)} />
-            {cmsPlatform === 'WORDPRESS' && (
-              <Input placeholder="Utilisateur WP" value={cmsUser} onChange={(e) => setCmsUser(e.target.value)} />
+            <Input
+              placeholder={
+                cmsPlatform === 'SHOPIFY' ? 'boutique.myshopify.com'
+                  : cmsPlatform === 'GHOST' ? 'URL admin Ghost'
+                    : 'URL du site'
+              }
+              value={cmsSiteUrl}
+              onChange={(e) => setCmsSiteUrl(e.target.value)}
+            />
+            {(cmsPlatform === 'WORDPRESS' || cmsPlatform === 'WEBFLOW' || cmsPlatform === 'SHOPIFY' || cmsPlatform === 'WIX') && (
+              <Input
+                placeholder={
+                  cmsPlatform === 'WEBFLOW' ? 'Collection ID'
+                    : cmsPlatform === 'SHOPIFY' ? 'Blog ID'
+                      : cmsPlatform === 'WIX' ? 'Site ID'
+                        : 'Utilisateur WP'
+                }
+                value={cmsUser}
+                onChange={(e) => setCmsUser(e.target.value)}
+              />
             )}
-            <Input placeholder={cmsPlatform === 'GHOST' ? 'Admin API Key' : 'Application Password'} type="password" value={cmsPassword} onChange={(e) => setCmsPassword(e.target.value)} />
+            <Input
+              placeholder={
+                cmsPlatform === 'GHOST' ? 'Admin API Key (id:secret)'
+                  : cmsPlatform === 'WEBFLOW' ? 'API Token'
+                    : cmsPlatform === 'SHOPIFY' ? 'Access Token'
+                      : cmsPlatform === 'WIX' ? 'API Key'
+                        : 'Application Password'
+              }
+              type="password"
+              value={cmsPassword}
+              onChange={(e) => setCmsPassword(e.target.value)}
+            />
             <Button size="sm" className="w-full" disabled={cmsConnectMutation.isPending} onClick={() => cmsConnectMutation.mutate()}>
               Connecter CMS
             </Button>
             {cmsConnections.length > 0 && (
-              <p className="text-xs text-muted-foreground">{cmsConnections.length} connexion(s) active(s)</p>
+              <ul className="space-y-1 text-xs">
+                {cmsConnections.map((c: { id: string; platform: string; label: string | null; active: boolean }) => (
+                  <li key={c.id} className="flex items-center justify-between gap-2 rounded border px-2 py-1">
+                    <span>{c.platform}{c.active ? '' : ' (inactif)'}</span>
+                    <span className="flex gap-1">
+                      <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => cmsTestMutation.mutate(c.id)}>Test</Button>
+                      <Button size="sm" variant="ghost" className="h-6 px-2 text-red-600" onClick={() => cmsDeleteMutation.mutate(c.id)}>×</Button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </CardContent>
         </Card>
@@ -481,8 +611,32 @@ export function BrandPulse() {
             <Button size="sm" variant="outline" disabled={benchmarkMutation.isPending} onClick={() => benchmarkMutation.mutate()}>
               Lancer le benchmark
             </Button>
+            {competitorRadar.length > 0 && (
+              <table className="w-full text-xs mt-2">
+                <thead>
+                  <tr className="text-muted-foreground">
+                    <th className="text-left py-1">Canal</th>
+                    <th className="text-right">Vous</th>
+                    <th className="text-right">Concurrent</th>
+                    <th className="text-right">Δ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {competitorRadar.map((r: { channel: string; brand: number | null; competitor: number | null; delta: number | null }) => (
+                    <tr key={r.channel}>
+                      <td className="py-0.5">{CHANNEL_LABELS[r.channel] || r.channel}</td>
+                      <td className="text-right">{r.brand ?? '—'}</td>
+                      <td className="text-right">{r.competitor ?? '—'}</td>
+                      <td className={cn('text-right', r.delta != null && r.delta >= 0 ? 'text-emerald-600' : 'text-red-600')}>
+                        {r.delta != null ? (r.delta > 0 ? `+${r.delta}` : r.delta) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
             {competitorHistory.length > 0 && (
-              <ul className="text-xs text-muted-foreground space-y-1">
+              <ul className="text-xs text-muted-foreground space-y-1 mt-2">
                 {competitorHistory.map((h: { computedAt: string; globalScore: number; competitorName: string }) => (
                   <li key={h.computedAt}>{h.competitorName}: {h.globalScore}/100 — {new Date(h.computedAt).toLocaleDateString('fr-FR')}</li>
                 ))}
@@ -524,6 +678,67 @@ export function BrandPulse() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="text-base">Multi-marques</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {brands.map((b: { id: string; brandName: string; slug: string; isPrimary: boolean }) => (
+              <p key={b.id} className="text-xs">{b.brandName}{b.isPrimary ? ' (principale)' : ` — ${b.slug}`}</p>
+            ))}
+            <Input placeholder="Nouvelle marque" value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} />
+            <Input placeholder="URL site" value={newBrandUrl} onChange={(e) => setNewBrandUrl(e.target.value)} />
+            <Button size="sm" variant="outline" disabled={!newBrandName || !newBrandUrl || createBrandMutation.isPending} onClick={() => createBrandMutation.mutate()}>
+              Ajouter une marque
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">API publique</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex gap-2">
+              <Input placeholder="Label clé (optionnel)" value={apiKeyLabel} onChange={(e) => setApiKeyLabel(e.target.value)} />
+              <Button size="sm" disabled={apiKeyMutation.isPending} onClick={() => apiKeyMutation.mutate()}>Créer</Button>
+            </div>
+            {createdApiKey && (
+              <p className="text-xs break-all rounded bg-amber-50 border border-amber-200 p-2">
+                Clé (copiez maintenant) : <code>{createdApiKey}</code>
+              </p>
+            )}
+            <ul className="text-xs space-y-1">
+              {apiKeys.map((k: { id: string; keyPrefix: string; label: string | null; active: boolean }) => (
+                <li key={k.id} className="flex justify-between">
+                  <span>{k.label || k.keyPrefix}{!k.active ? ' (révoquée)' : ''}</span>
+                  {k.active && (
+                    <button type="button" className="text-red-600" onClick={() => apiKeyDeleteMutation.mutate(k.id)}>Révoquer</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
+      {scheduleArticleId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <Card className="max-w-sm w-full">
+            <CardHeader><CardTitle className="text-base">Planifier la publication</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Input type="datetime-local" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setScheduleArticleId(null)}>Annuler</Button>
+                <Button
+                  disabled={!scheduleDate || scheduleMutation.isPending}
+                  onClick={() => scheduleMutation.mutate({ id: scheduleArticleId, scheduledAt: scheduleDate })}
+                >
+                  Planifier
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {reviewArticle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

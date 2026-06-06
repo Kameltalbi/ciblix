@@ -53,7 +53,7 @@ export function buildRecommendations(
   for (const ch of channels.filter((c) => c.details.comingSoon)) {
     items.push({
       channel: ch.channel,
-      action: `Connecter le canal ${ch.channel} (bientôt disponible) pour un score réel`,
+      action: `Connecter ou synchroniser le canal ${ch.channel} pour un score réel`,
       estimatedImpact: 3,
       difficulty: 'EASY',
       timeline: 'LONG',

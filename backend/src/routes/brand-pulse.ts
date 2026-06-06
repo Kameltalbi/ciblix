@@ -90,6 +90,20 @@ async function persistScores(organizationId: string, channels: ReturnType<typeof
   });
 }
 
+function buildCompetitorRadar(
+  brandChannels: Array<{ channel: string; score: number }>,
+  latestCompetitor: { channels: unknown; competitorName: string; globalScore: number } | null,
+) {
+  if (!latestCompetitor) return [];
+  const compChannels = (latestCompetitor.channels as Array<{ channel: string; score: number }>) || [];
+  const keys = ['SEO', 'SOCIAL', 'REVIEWS', 'PRESS', 'LLM', 'WEBSITE'] as const;
+  return keys.map((ch) => {
+    const brand = brandChannels.find((c) => c.channel === ch)?.score ?? null;
+    const comp = compChannels.find((c) => c.channel === ch)?.score ?? null;
+    return { channel: ch, brand, competitor: comp, delta: brand != null && comp != null ? brand - comp : null };
+  });
+}
+
 async function persistRecommendations(organizationId: string, items: ReturnType<typeof buildRecommendations>) {
   await prisma.brandRecommendation.updateMany({
     where: { organizationId, active: true },
@@ -265,9 +279,11 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
         where: { organizationId: orgId },
         orderBy: { computedAt: 'desc' },
         take: 6,
-        select: { globalScore: true, competitorName: true, computedAt: true },
+        select: { globalScore: true, competitorName: true, computedAt: true, channels: true },
       }),
     ]);
+
+    const latestCompetitor = competitorHistory[0] ?? null;
 
     res.json({
       profile,
@@ -280,6 +296,8 @@ brandPulseRoutes.get('/dashboard', async (req: AuthRequest, res: Response, next:
       channelStatus: { social: socialStatus, reviews: reviewsStatus },
       cmsConnections: connections,
       competitorHistory,
+      latestCompetitor,
+      competitorRadar: buildCompetitorRadar(channels, latestCompetitor),
     });
   } catch (err) {
     next(err);
@@ -457,7 +475,7 @@ brandPulseRoutes.patch('/articles/:id/review', async (req: AuthRequest, res: Res
         contentMarkdown: body.contentMarkdown ?? article.contentMarkdown,
       },
     });
-    res.json({ article: updated, message: 'Article approuvé. Publication CMS disponible en Phase 3.' });
+    res.json({ article: updated, message: 'Article approuvé. Publiez ou planifiez depuis le pipeline.' });
   } catch (err) {
     next(err);
   }
@@ -609,7 +627,24 @@ brandPulseRoutes.post('/cms-connections/:id/test', async (req: AuthRequest, res:
       return;
     }
 
-    res.status(501).json({ error: `Test connexion ${row.platform} — Phase 4` });
+    const hasConfig = Object.values(config).some((v) => Boolean(v));
+    await prisma.brandCmsConnection.update({
+      where: { id },
+      data: { lastTestedAt: new Date(), active: hasConfig },
+    });
+    res.json({ ok: hasConfig, platform: row.platform, message: 'Validation configuration (test API à affiner)' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.delete('/cms-connections/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id as string;
+    await prisma.brandCmsConnection.deleteMany({
+      where: { id, organizationId: req.organizationId! },
+    });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
@@ -741,6 +776,18 @@ brandPulseRoutes.get('/api-keys', async (req: AuthRequest, res: Response, next: 
       orderBy: { createdAt: 'desc' },
     });
     res.json({ keys });
+  } catch (err) {
+    next(err);
+  }
+});
+
+brandPulseRoutes.delete('/api-keys/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    await prisma.brandApiKey.updateMany({
+      where: { id: req.params.id as string, organizationId: req.organizationId! },
+      data: { active: false },
+    });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
