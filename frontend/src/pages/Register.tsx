@@ -66,7 +66,7 @@ export function Register() {
     { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc' },
     { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc' },
     { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc' },
-    { icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc' },
+    { icon: Megaphone, nameKey: 'agents.brandPulse.name', descKey: 'agents.brandPulse.desc' },
   ];
 
   return (

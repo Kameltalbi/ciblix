@@ -52,7 +52,7 @@ type NavItem = {
  * Sidebar — périmètre par lien (audit produit / droits page=… dans Users → permissions commercial)
  *
  * Accueil · tableau de bord (/dashboard)
- * Agents IA · Hunt, Copilot, CommBot, CareBot, CFO (/agents/*)
+ * Agents IA · Hunt, Copilot, BrandPulse, CareBot, CFO (/agents/*)
  * CRM & pipeline · leads, opportunités, contacts
  * Espace de travail · calendrier, activités, emails, objectifs
  * Performance & finance · dépenses (Enterprise)
@@ -69,7 +69,7 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   { to: '/agents/offre-bot', labelKey: 'nav.agentOffre', icon: FileSignature, page: 'offre-bot', section: 'AGENTS' },
   { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'AGENTS' },
-  { to: '/agents/comm-bot', labelKey: 'nav.agentCommBot', icon: Megaphone, page: 'comm-bot', section: 'AGENTS' },
+  { to: '/agents/brand-pulse', labelKey: 'nav.agentBrandPulse', icon: Megaphone, page: 'brand-pulse', section: 'AGENTS' },
 
   /* CRM & pipeline — ordre funnel */
   { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'CRM' },
@@ -224,7 +224,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           page === 'scout-ai' ||
           page === 'offre-bot' ||
           page === 'factcheck-ai' ||
-          page === 'comm-bot'
+          page === 'brand-pulse'
         ) {
           const prospecting = permissionsData.find((p) => p.page === 'prospection-ia');
           const assistant = permissionsData.find((p) => p.page === 'ai-assistant');
@@ -248,7 +248,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     'scout-ai': 'scout-ai',
     'offre-bot': 'offre-bot',
     'factcheck-ai': 'factcheck-ai',
-    'comm-bot': 'comm-bot',
+    'brand-pulse': 'brand-pulse-ai',
   };
 
   const filteredNav = useMemo(() => {

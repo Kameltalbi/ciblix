@@ -124,7 +124,7 @@ export function Landing() {
                       { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
                       { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
                       { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
-                      { icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc', color: 'text-rose-600', bg: 'bg-rose-50', to: '/agent/comm-bot' },
+                      { icon: Megaphone, nameKey: 'agents.brandPulse.name', descKey: 'agents.brandPulse.desc', color: 'text-rose-600', bg: 'bg-rose-50', to: '/agent/brand-pulse' },
                     ].map((agent) => (
                         <Link
                           key={agent.nameKey}
@@ -218,7 +218,7 @@ export function Landing() {
                   { icon: Radar, nameKey: 'agents.scoutAi.name', color: 'text-indigo-600', to: '/agent/scout-ai' },
                   { icon: FileSignature, nameKey: 'agents.offreBot.name', color: 'text-violet-600', to: '/agent/offre-bot' },
                   { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', color: 'text-emerald-600', to: '/agent/factcheck-ai' },
-                  { icon: Megaphone, nameKey: 'agents.commBot.name', color: 'text-rose-600', to: '/agent/comm-bot' },
+                  { icon: Megaphone, nameKey: 'agents.brandPulse.name', color: 'text-rose-600', to: '/agent/brand-pulse' },
                 ].map((agent) => (
                   <Link key={agent.nameKey} to={agent.to} onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0071DD]">
@@ -356,9 +356,9 @@ export function Landing() {
                 features: ['Vérification multi-sources', 'Score de fiabilité', 'Analyse de pages web'],
               },
               {
-                icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc', to: '/agent/comm-bot',
+                icon: Megaphone, nameKey: 'agents.brandPulse.name', descKey: 'agents.brandPulse.desc', to: '/agent/brand-pulse',
                 color: 'from-rose-500 to-pink-600', iconBg: 'bg-rose-500/20',
-                features: ['Articles SEO', 'Posts LinkedIn', 'Newsletters B2B'],
+                features: ['Score marque /100', 'Audit SEO', 'Pipeline blog IA'],
               },
             ].map((agent) => (
               <Link
@@ -465,7 +465,7 @@ export function Landing() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-foreground">Publiez sans agence marketing</h3>
               <p className="text-base text-muted-foreground">
-                CommBot produit vos contenus SEO, posts LinkedIn, newsletters et fiches produits — pour améliorer votre visibilité B2B sans recruter une équipe dédiée.
+                BrandPulse AI mesure votre marque sur 6 canaux, propose des sujets d'articles et rédige le contenu blog — pour améliorer votre visibilité sans recruter une équipe marketing.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover md:col-span-2 lg:col-span-1">

@@ -19,7 +19,7 @@ export const AGENT_QUOTAS: Record<PlanType, Partial<Record<AgentSlug, number>>> 
     'copilot-ia': 400,
     'scout-ai': 60,
     'offre-bot': 50,
-    'comm-bot': 40,
+    'brand-pulse-ai': 8,
     'factcheck-ai': 25,
   },
 };

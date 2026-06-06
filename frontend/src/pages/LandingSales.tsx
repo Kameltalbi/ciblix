@@ -47,7 +47,7 @@ export function LandingSales() {
       features: [
         'Tout Business',
         'Jusqu\'à 50 utilisateurs',
-        'CommBot — marketing & contenu B2B',
+        'BrandPulse AI — marque en ligne & blog SEO',
         'Vérificateur IA inclus',
         'Dépenses, commissions, Softfacture',
       ],

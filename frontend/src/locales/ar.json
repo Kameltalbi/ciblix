@@ -63,7 +63,7 @@
     "agentScout": "الراصد الذكي",
     "agentOffre": "كاتب العروض",
     "agentFactCheck": "المدقّق الذكي",
-    "agentCommBot": "CommBot",
+    "agentBrandPulse": "BrandPulse AI",
     "agentsMarketplace": "سوق الوكلاء"
   },
   "agentsComingSoon": {
@@ -736,9 +736,9 @@
       "name": "المدقّق الذكي",
       "desc": "التحقق من المعلومات"
     },
-    "commBot": {
-      "name": "CommBot",
-      "desc": "التسويق والمحتوى B2B"
+    "brandPulse": {
+      "name": "BrandPulse AI",
+      "desc": "العلامة التجارية والمدونة SEO"
     }
   },
   "pricingPage": {

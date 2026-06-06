@@ -56,6 +56,12 @@ model Organization {
   scoutProfile    ScoutProfile?
   scoutOpportunities ScoutOpportunity[]
   agentUsageMonthly AgentUsageMonthly[]
+  brandProfile    BrandProfile?
+  brandScoreSnapshots BrandScoreSnapshot[]
+  brandArticles   BrandArticle[]
+  brandRecommendations BrandRecommendation[]
+  brandAlerts       BrandAlert[]
+  brandCmsConnections BrandCmsConnection[]
 
   @@map("organizations")
 }
@@ -1118,4 +1124,124 @@ model ScoutOpportunity {
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@map("scout_opportunities")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BRAND PULSE AI — Profil marque, scores, articles, CMS
+// ═══════════════════════════════════════════════════════════════
+model BrandProfile {
+  id              String   @id @default(cuid())
+  organizationId  String   @unique
+  brandName       String
+  websiteUrl      String
+  sector          String?
+  competitorName  String?
+  competitorUrl   String?
+  brandKeywords   Json     @default("[]") // string[]
+  editorialTone   String   @default("professionnel")
+  articlesPerWeek Int      @default(2)
+  onboardingDone  Boolean  @default(false)
+  lastAuditAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("brand_profiles")
+}
+
+model BrandScoreSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  channel        String   // SEO, SOCIAL, REVIEWS, PRESS, LLM, WEBSITE, GLOBAL
+  score          Int      // 0-100
+  weight         Float    @default(0)
+  details        Json?
+  computedAt     DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, channel, computedAt])
+  @@map("brand_score_snapshots")
+}
+
+model BrandArticle {
+  id               String    @id @default(cuid())
+  organizationId   String
+  status           String    @default("PROPOSED") // PROPOSED, DRAFTING, PENDING_REVIEW, APPROVED, REJECTED, SCHEDULED, PUBLISHED
+  format           String    @default("SEO") // SEO, LONGFORM, FAQ, COMPARATIVE
+  title            String?
+  slug             String?
+  metaTitle        String?
+  metaDescription  String?   @db.Text
+  contentMarkdown  String?   @db.Text
+  targetKeywords   Json      @default("[]")
+  topicReason      Json?
+  estimatedImpact  Int?
+  estimatedSeoScore Int?
+  publishedUrl     String?
+  publishedAt      DateTime?
+  scheduledAt      DateTime?
+  cmsPlatform      String?
+  impactSeoDelta   Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@map("brand_articles")
+}
+
+model BrandRecommendation {
+  id               String   @id @default(cuid())
+  organizationId   String
+  channel          String
+  action           String   @db.Text
+  estimatedImpact  Int      @default(0)
+  difficulty       String   @default("MEDIUM") // EASY, MEDIUM, HARD
+  timeline         String   @default("SHORT") // SHORT, MEDIUM, LONG
+  linkedArticleId  String?
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, channel])
+  @@map("brand_recommendations")
+}
+
+model BrandAlert {
+  id             String   @id @default(cuid())
+  organizationId String
+  type           String   // SEO_DROP, NO_PUBLISH, NEGATIVE_REVIEW, etc.
+  severity       String   @default("INFO") // INFO, WARNING, CRITICAL
+  message        String   @db.Text
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, read, createdAt])
+  @@map("brand_alerts")
+}
+
+model BrandCmsConnection {
+  id              String   @id @default(cuid())
+  organizationId  String
+  platform        String   // WORDPRESS, GHOST, WEBFLOW, SHOPIFY, WIX
+  label           String?
+  encryptedConfig String   @db.Text
+  blogId          String?
+  defaultStatus   String   @default("draft") // draft | publish
+  active          Boolean  @default(true)
+  lastTestedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("brand_cms_connections")
 }

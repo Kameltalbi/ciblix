@@ -36,7 +36,7 @@ const AGENT_NAV = [
   { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', color: 'text-indigo-600', bg: 'bg-indigo-50', to: '/agent/scout-ai' },
   { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', color: 'text-violet-600', bg: 'bg-violet-50', to: '/agent/offre-bot' },
   { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', color: 'text-emerald-600', bg: 'bg-emerald-50', to: '/agent/factcheck-ai' },
-  { icon: Megaphone, nameKey: 'agents.commBot.name', descKey: 'agents.commBot.desc', color: 'text-rose-600', bg: 'bg-rose-50', to: '/agent/comm-bot' },
+  { icon: Megaphone, nameKey: 'agents.brandPulse.name', descKey: 'agents.brandPulse.desc', color: 'text-rose-600', bg: 'bg-rose-50', to: '/agent/brand-pulse' },
 ];
 
 function LandingHeader() {

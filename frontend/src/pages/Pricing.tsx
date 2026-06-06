@@ -41,7 +41,7 @@ const AGENT_MATRIX = [
   { nameKey: 'agents.copilotIa.name', basic: true, business: true, pro: true, comingSoon: false },
   { nameKey: 'agents.scoutAi.name', basic: false, business: true, pro: true, comingSoon: false },
   { nameKey: 'agents.offreBot.name', basic: false, business: true, pro: true, comingSoon: false },
-  { nameKey: 'agents.commBot.name', basic: false, business: false, pro: true, comingSoon: false },
+  { nameKey: 'agents.brandPulse.name', basic: false, business: false, pro: true, comingSoon: false },
   { nameKey: 'agents.factCheckAi.name', basic: false, business: false, pro: true, comingSoon: false },
   { nameKey: 'pricingPage.addonEnricher', basic: false, business: false, pro: false, comingSoon: true, addon: true },
   { nameKey: 'pricingPage.addonNba', basic: false, business: false, pro: false, comingSoon: true, addon: true },
@@ -146,7 +146,7 @@ const PAID_PLANS: PricingPlanRow[] = [
     features: [
       'Tout le plan Business',
       'Jusqu\'à 50 utilisateurs',
-      'CommBot — marketing & contenu B2B',
+      'BrandPulse AI — marque en ligne & blog SEO',
       'Vérificateur IA — contrôle des informations',
       'Dépenses, commissions & Softfacture',
     ],
@@ -508,7 +508,7 @@ export function Pricing() {
                     <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.copilotIa.name')}</th>
                     <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.scoutAi.name')}</th>
                     <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.offreBot.name')}</th>
-                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.commBot.name')}</th>
+                    <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.brandPulse.name')}</th>
                     <th className="px-3 py-3 text-center font-semibold text-gray-700">{t('agents.factCheckAi.name')}</th>
                   </tr>
                 </thead>

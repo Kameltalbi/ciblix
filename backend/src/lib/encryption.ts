@@ -1,21 +1,31 @@
 import CryptoJS from 'crypto-js';
 
-if (!process.env.ENCRYPTION_KEY) {
-  throw new Error('ENCRYPTION_KEY environment variable is required. Generate one with: openssl rand -base64 32');
+function getEncryptionKey(): string {
+  const key = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
+  if (!key) {
+    throw new Error(
+      'ENCRYPTION_KEY environment variable is required. Generate one with: openssl rand -base64 32',
+    );
+  }
+  return key;
 }
-const ENCRYPTION_KEY: string = process.env.ENCRYPTION_KEY;
 
-/**
- * Encrypt sensitive data using AES-256
- */
+/** Encrypt sensitive string (Gmail tokens, etc.) */
 export function encrypt(text: string): string {
-  return CryptoJS.AES.encrypt(text, ENCRYPTION_KEY).toString();
+  return CryptoJS.AES.encrypt(text, getEncryptionKey()).toString();
 }
 
-/**
- * Decrypt sensitive data using AES-256
- */
+/** Decrypt sensitive string */
 export function decrypt(ciphertext: string): string {
-  const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY);
+  const bytes = CryptoJS.AES.decrypt(ciphertext, getEncryptionKey());
   return bytes.toString(CryptoJS.enc.Utf8);
+}
+
+/** Encrypt JSON object (CMS credentials) */
+export function encryptJson(payload: Record<string, unknown>): string {
+  return encrypt(JSON.stringify(payload));
+}
+
+export function decryptJson<T extends Record<string, unknown>>(cipher: string): T {
+  return JSON.parse(decrypt(cipher)) as T;
 }

@@ -63,7 +63,7 @@
     "agentScout": "Veilleur IA",
     "agentOffre": "Rédacteur d'offres",
     "agentFactCheck": "Vérificateur IA",
-    "agentCommBot": "CommBot",
+    "agentBrandPulse": "BrandPulse AI",
     "agentsMarketplace": "Marketplace"
   },
   "agentsComingSoon": {
@@ -742,9 +742,9 @@
       "name": "Vérificateur IA",
       "desc": "Vérification des informations"
     },
-    "commBot": {
-      "name": "CommBot",
-      "desc": "Marketing & contenu B2B"
+    "brandPulse": {
+      "name": "BrandPulse AI",
+      "desc": "Marque en ligne & blog SEO"
     }
   },
   "pricingPage": {
