@@ -213,6 +213,25 @@ export function checkAgentAccess(agentSlug: string) {
         });
       }
 
+      const agentRow = await prisma.organizationAgent.findUnique({
+        where: {
+          organizationId_agentSlug: {
+            organizationId: req.organizationId,
+            agentSlug,
+          },
+        },
+        select: { active: true },
+      });
+
+      // Pas de ligne = actif par défaut (inclus dans le plan). Ligne inactive = désactivé.
+      if (agentRow && !agentRow.active) {
+        return res.status(403).json({
+          error: 'Agent deactivated for this organization',
+          agentSlug,
+          currentPlan: plan,
+        });
+      }
+
       next();
     } catch (error) {
       next(error);

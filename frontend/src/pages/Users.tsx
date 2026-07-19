@@ -13,17 +13,17 @@ const EMPTY = { id: '', email: '', name: '', password: '', confirmPassword: '', 
 
 const PAGES = [
   { key: 'dashboard', label: 'Dashboard' },
-  { key: 'affaires', label: 'Opportunités' },
-  { key: 'clients', label: 'Clients' },
-  { key: 'leads', label: 'Leads' },
-  { key: 'calendar', label: 'Calendrier' },
-  { key: 'expenses', label: 'Dépenses' },
-  { key: 'activites', label: 'Activités' },
-  { key: 'email-templates', label: 'Templates Emails' },
-  { key: 'ai-assistant', label: 'Assistant IA' },
-  { key: 'prospection-ia', label: 'Prospection IA' },
-  { key: 'objectifs', label: 'Objectifs' },
+  { key: 'agents-marketplace', label: 'Agents IA' },
+  { key: 'prospection-ia', label: 'Hunt AI' },
+  { key: 'ai-assistant', label: 'Copilot IA' },
+  { key: 'scout-ai', label: 'Scout AI' },
+  { key: 'offre-bot', label: 'OffreBot' },
+  { key: 'gmail-ai', label: 'Gmail IA' },
+  { key: 'factcheck-ai', label: 'FactCheck AI' },
+  { key: 'brand-pulse', label: 'BrandPulse' },
+  { key: 'all-prospects', label: 'Tous les prospects IA' },
   { key: 'settings', label: 'Paramètres' },
+  { key: 'support', label: 'Support' },
 ];
 
 type PermissionState = { page: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean };

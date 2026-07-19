@@ -15,24 +15,10 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { GoogleAuthCallback } from './pages/GoogleAuthCallback';
 import { Landing } from './pages/Landing';
-import { Leads } from './pages/Leads';
 
 // Heavy authenticated pages: lazy-loaded so they don't bloat the initial bundle.
-const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
-const Affaires = lazy(() => import('./pages/Affaires').then((m) => ({ default: m.Affaires })));
-const AffaireDetail = lazy(() =>
-  import('./pages/AffaireDetail').then((m) => ({ default: m.AffaireDetail }))
-);
-const Clients = lazy(() => import('./pages/Clients').then((m) => ({ default: m.Clients })));
-const ClientDetail = lazy(() =>
-  import('./pages/ClientDetail').then((m) => ({ default: m.ClientDetail }))
-);
-const Calendar = lazy(() => import('./pages/Calendar').then((m) => ({ default: m.Calendar })));
-const Expenses = lazy(() => import('./pages/Expenses').then((m) => ({ default: m.Expenses })));
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
 const Users = lazy(() => import('./pages/Users').then((m) => ({ default: m.Users })));
-const Products = lazy(() => import('./pages/Products').then((m) => ({ default: m.Products })));
-const Activites = lazy(() => import('./pages/Activites').then((m) => ({ default: m.Activites })));
 const Organizations = lazy(() =>
   import('./pages/Organizations').then((m) => ({ default: m.Organizations }))
 );
@@ -42,17 +28,11 @@ const LandingSales = lazy(() =>
 const Legal = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Legal })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const Pricing = lazy(() => import('./pages/Pricing').then((m) => ({ default: m.Pricing })));
-const EmailTemplates = lazy(() =>
-  import('./pages/EmailTemplates').then((m) => ({ default: m.EmailTemplates }))
-);
 const AIAssistant = lazy(() =>
   import('./pages/AIAssistant').then((m) => ({ default: m.AIAssistant }))
 );
 const ProspectionIA = lazy(() =>
   import('./pages/ProspectionIA').then((m) => ({ default: m.ProspectionIA }))
-);
-const AgentComingSoon = lazy(() =>
-  import('./pages/AgentComingSoon').then((m) => ({ default: m.AgentComingSoon }))
 );
 const ScoutAI = lazy(() =>
   import('./pages/ScoutAI').then((m) => ({ default: m.ScoutAI }))
@@ -66,8 +46,14 @@ const FactCheckAI = lazy(() =>
 const BrandPulse = lazy(() =>
   import('./pages/BrandPulse').then((m) => ({ default: m.BrandPulse }))
 );
+const GmailAI = lazy(() =>
+  import('./pages/GmailAI').then((m) => ({ default: m.GmailAI }))
+);
 const AgentsMarketplace = lazy(() =>
   import('./pages/AgentsMarketplace').then((m) => ({ default: m.AgentsMarketplace }))
+);
+const Dashboard = lazy(() =>
+  import('./pages/Dashboard').then((m) => ({ default: m.Dashboard }))
 );
 const AllProspects = lazy(() =>
   import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
@@ -80,7 +66,6 @@ const ScoutAIPage = lazy(() => import('./pages/public/ScoutAIPage').then((m) => 
 const OffreBotPage = lazy(() => import('./pages/public/OffreBotPage').then((m) => ({ default: m.OffreBotPage })));
 const FactCheckAIPage = lazy(() => import('./pages/public/FactCheckAIPage').then((m) => ({ default: m.FactCheckAIPage })));
 const BrandPulsePage = lazy(() => import('./pages/public/BrandPulsePage').then((m) => ({ default: m.BrandPulsePage })));
-const Objectifs = lazy(() => import('./pages/Objectifs').then((m) => ({ default: m.Objectifs })));
 const SupportTickets = lazy(() =>
   import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
 );
@@ -160,30 +145,31 @@ export default function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/affaires" element={<Affaires />} />
-                        <Route path="/affaires/:id" element={<AffaireDetail />} />
-                        <Route path="/clients" element={<Clients />} />
-                        <Route path="/clients/:id" element={<ClientDetail />} />
-                        <Route path="/leads" element={<Leads />} />
-                        <Route path="/calendar" element={<Calendar />} />
-                        <Route path="/expenses" element={<Expenses />} />
+                        <Route path="/affaires" element={<Navigate to="/agents" replace />} />
+                        <Route path="/affaires/:id" element={<Navigate to="/agents" replace />} />
+                        <Route path="/clients" element={<Navigate to="/agents" replace />} />
+                        <Route path="/clients/:id" element={<Navigate to="/agents" replace />} />
+                        <Route path="/leads" element={<Navigate to="/agents" replace />} />
+                        <Route path="/calendar" element={<Navigate to="/agents" replace />} />
+                        <Route path="/expenses" element={<Navigate to="/agents" replace />} />
+                        <Route path="/activites" element={<Navigate to="/agents" replace />} />
+                        <Route path="/email-templates" element={<Navigate to="/agents" replace />} />
+                        <Route path="/objectifs" element={<Navigate to="/agents" replace />} />
+                        <Route path="/products" element={<Navigate to="/agents" replace />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/settings/organizations" element={<Organizations />} />
                         <Route path="/users" element={<Users />} />
-                        <Route path="/products" element={<Products />} />
-                        <Route path="/activites" element={<Activites />} />
-                        <Route path="/email-templates" element={<EmailTemplates />} />
                         <Route path="/prospection-ia" element={<ProspectionIA />} />
                         <Route path="/agents" element={<AgentsMarketplace />} />
                         <Route path="/agents/scout-ai" element={<ScoutAI />} />
                         <Route path="/agents/offre-bot" element={<OffreBot />} />
                         <Route path="/agents/factcheck-ai" element={<FactCheckAI />} />
                         <Route path="/agents/brand-pulse" element={<BrandPulse />} />
+                        <Route path="/agents/gmail-ai" element={<GmailAI />} />
                         <Route path="/agents/comm-bot" element={<Navigate to="/agents/brand-pulse" replace />} />
-                        <Route path="/agents/:agentId" element={<AgentComingSoon />} />
+                        <Route path="/agents/:agentId" element={<Navigate to="/agents" replace />} />
                         <Route path="/all-prospects" element={<AllProspects />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />
-                        <Route path="/objectifs" element={<Objectifs />} />
                         <Route path="/support" element={<SupportTickets />} />
                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                       </Routes>

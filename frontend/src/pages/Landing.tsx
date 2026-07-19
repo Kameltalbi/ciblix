@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Shield, Zap, Users, BarChart3, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Megaphone, Sparkles, ChevronDown } from 'lucide-react';
+import { TrendingUp, Shield, Zap, Users, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Target, Lock, DollarSign, PieChart, Award, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Megaphone, Sparkles, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -276,7 +276,7 @@ export function Landing() {
               {t('landing.heroSubtitle')}
             </p>
             <p className="mb-10 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-[#BED6F6]/60 bg-white/80 px-4 py-2 text-sm font-medium text-[#1E72B9] shadow-sm">
-              {t('landing.heroHighlights', { defaultValue: 'CRM · 6 agents IA · Pipeline · Offres · Veille TUNEPS' })}
+              {t('landing.heroHighlights', { defaultValue: '6 agents IA · Hunt · Copilot · Scout · OffreBot · FactCheck · BrandPulse' })}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
@@ -324,7 +324,7 @@ export function Landing() {
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-lg text-white/70">
-              Chaque agent est un expert spécialisé dans une tâche métier. Ils travaillent ensemble pour booster votre activité commerciale.
+              Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse : six experts IA spécialisés, disponibles 24/7 pour accélérer votre activité.
             </p>
           </div>
 
@@ -407,10 +407,10 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="mb-4 text-4xl font-serif font-bold tracking-tight text-[#0071DD] md:text-5xl">
-              Vendez plus, vendez mieux
+              Six agents IA, une plateforme
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              L'IA travaille pour vous à chaque étape du cycle de vente — de la prospection à la signature.
+              Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse travaillent ensemble pour accélérer votre activité.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -438,7 +438,7 @@ export function Landing() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-foreground">Rédigez vos offres en 30 secondes</h3>
               <p className="text-base text-muted-foreground">
-                Le Rédacteur d'offres génère des propositions commerciales personnalisées à partir de vos données CRM. Prêtes à envoyer.
+                OffreBot génère des propositions commerciales personnalisées à partir du contexte client. Prêtes à envoyer.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
@@ -447,7 +447,7 @@ export function Landing() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-foreground">Pilotez votre activité en une question</h3>
               <p className="text-base text-muted-foreground">
-                L'Assistant IA répond instantanément à vos questions : CA du mois, top clients, pipeline, prévisions. Pas de tableaux à lire, que de l'utile.
+                Copilot répond instantanément à vos questions : priorités du jour, top prospects, signaux, prévisions. Pas de tableaux à lire, que de l'utile.
               </p>
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
@@ -470,11 +470,11 @@ export function Landing() {
             </div>
             <div className="rounded-2xl border border-[#BED6F6]/35 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover md:col-span-2 lg:col-span-1">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef4fc] ring-1 ring-[#BED6F6]/50">
-                <BarChart3 size={24} className="text-[#0071DD]" />
+                <Sparkles size={24} className="text-[#0071DD]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">Un CRM conçu pour conclure</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Une plateforme d'agents IA</h3>
               <p className="text-base text-muted-foreground">
-                Pipeline visuel, suivi des affaires, gestion des contacts, objectifs de vente et calendrier — tout ce qu'il faut pour transformer vos prospects en clients.
+                Activez Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse depuis un seul hub — chaque agent est spécialisé, tous travaillent pour vous.
               </p>
             </div>
           </div>

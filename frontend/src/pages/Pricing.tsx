@@ -91,7 +91,7 @@ const QUOTA_ROWS = [
     copilot: 400,
     scout: 60,
     offre: 50,
-    comm: 40,
+    comm: 8,
     fact: 25,
   },
 ] as const;
@@ -111,11 +111,10 @@ const PAID_PLANS: PricingPlanRow[] = [
     monthlyPrice: 40,
     annualPrice: 480,
     features: [
-      'Prospects illimités',
       'Jusqu\'à 5 utilisateurs',
-      'Pipeline Kanban & objectifs',
-      'Chasseur IA — prospection intelligente',
-      'Assistant IA — copilote commercial',
+      'Hunt AI — prospection intelligente (150/mois)',
+      'Copilot IA — assistant commercial (80/mois)',
+      'Accès marketplace agents',
     ],
     cta: 'Démarrer l\'essai gratuit',
   },
@@ -129,9 +128,9 @@ const PAID_PLANS: PricingPlanRow[] = [
     features: [
       'Tout le plan Basic',
       'Jusqu\'à 20 utilisateurs',
-      'Reporting avancé & support prioritaire',
-      'Veilleur IA — veille d\'opportunités',
-      'Rédacteur d\'offres — propositions commerciales',
+      'Scout AI — veille d\'opportunités (30/mois)',
+      'OffreBot — propositions commerciales (25/mois)',
+      'Quotas Hunt 400 · Copilot 200 / mois',
     ],
     cta: 'Démarrer l\'essai gratuit',
     popular: true,
@@ -146,9 +145,9 @@ const PAID_PLANS: PricingPlanRow[] = [
     features: [
       'Tout le plan Business',
       'Jusqu\'à 50 utilisateurs',
-      'BrandPulse AI — marque en ligne & blog SEO',
-      'Vérificateur IA — contrôle des informations',
-      'Dépenses, commissions & Softfacture',
+      'BrandPulse AI — marque & blog SEO (8/mois)',
+      'FactCheck AI — vérification d\'infos (25/mois)',
+      'Quotas Hunt 800 · Copilot 400 / mois',
     ],
     cta: 'Démarrer l\'essai gratuit',
   },
@@ -175,7 +174,7 @@ export function Pricing() {
     onSuccess: () => {
       alert(t('pricingPage.requestSent', { defaultValue: "Demande d'abonnement envoyée ! Nous vous contacterons pour confirmer le paiement." }));
       setDialogOpen(false);
-      navigate('/dashboard');
+      navigate('/agents');
     },
   });
 
@@ -607,7 +606,7 @@ export function Pricing() {
                 />
               </div>
               <p className="text-gray-400 text-sm">
-                Plateforme simple et puissante pour la prospection, les opportunités et vos contacts.
+                Plateforme de 6 agents IA : Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse.
               </p>
             </div>
             <div>

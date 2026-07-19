@@ -90,48 +90,99 @@ offreBotRoutes.get('/organization', async (req: AuthRequest, res: Response, next
   }
 });
 
+const briefSchema = z.object({
+  clientName: z.string().min(1),
+  contactName: z.string().optional().default(''),
+  need: z.string().min(1),
+  context: z.string().optional().default(''),
+  budgetHT: z.number().nonnegative().optional(),
+  productService: z.string().optional().default(''),
+});
+
 const generateSchema = z.object({
-  affaireId: z.string().min(1),
+  affaireId: z.string().min(1).optional(),
+  brief: briefSchema.optional(),
   tone: z.enum(['formal', 'friendly', 'concise']).optional().default('formal'),
   includeConditions: z.boolean().optional().default(true),
   customNotes: z.string().optional().default(''),
   language: z.enum(['fr', 'en', 'ar']).optional().default('fr'),
+}).refine((d) => Boolean(d.affaireId || d.brief), {
+  message: 'affaireId or brief is required',
 });
 
 /**
  * POST /api/offre-bot/generate
- * Genere une proposition commerciale structuree pour une affaire donnee.
+ * Genere une proposition commerciale (brief libre ou affaire legacy).
  */
 offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!(await tryConsumeAgentQuota(req.organizationId!, 'offre-bot', res))) return;
 
-    const { affaireId, tone, includeConditions, customNotes, language } = generateSchema.parse(req.body);
-
-    const affaire = await prisma.affaire.findFirst({
-      where: {
-        id: affaireId,
-        organizationId: req.organizationId!,
-        deletedAt: null,
-      },
-      include: {
-        client: true,
-        product: true,
-        assignedTo: { select: { name: true, email: true, phone: true } },
-      },
-    });
-
-    if (!affaire) {
-      res.status(404).json({ error: 'Affaire not found' });
-      return;
-    }
+    const { affaireId, brief, tone, includeConditions, customNotes, language } = generateSchema.parse(req.body);
 
     const org = await prisma.organization.findUnique({
       where: { id: req.organizationId! },
       select: { name: true, email: true, phone: true, address: true },
     });
 
-    const montantHT = Number(affaire.montantHT);
+    let clientName = brief?.clientName || '';
+    let contactName = brief?.contactName || '';
+    let clientEmail = 'N/A';
+    let clientPhone = 'N/A';
+    let clientAddress = 'N/A';
+    let clientMatricule = 'N/A';
+    let title = brief?.need || '';
+    let type = 'BRIEF';
+    let description = [brief?.need, brief?.context].filter(Boolean).join('\n\n') || 'N/A';
+    let productBlock = brief?.productService
+      ? `PRODUIT/SERVICE:\n- Nom: ${brief.productService}`
+      : '';
+    let assignedTo = 'N/A';
+    let affaireMeta: { id?: string; title: string | null; type: string } = {
+      title: brief?.need || null,
+      type: 'BRIEF',
+    };
+    let montantHT = Number(brief?.budgetHT ?? 0);
+
+    if (affaireId) {
+      const affaire = await prisma.affaire.findFirst({
+        where: {
+          id: affaireId,
+          organizationId: req.organizationId!,
+          deletedAt: null,
+        },
+        include: {
+          client: true,
+          product: true,
+          assignedTo: { select: { name: true, email: true, phone: true } },
+        },
+      });
+
+      if (!affaire) {
+        res.status(404).json({ error: 'Affaire not found' });
+        return;
+      }
+
+      clientName = affaire.client.name;
+      contactName = affaire.client.contactName || '';
+      clientEmail = affaire.client.email || 'N/A';
+      clientPhone = affaire.client.phone || 'N/A';
+      clientAddress = affaire.client.address || 'N/A';
+      clientMatricule = affaire.client.matricule || 'N/A';
+      title = affaire.title || affaire.type;
+      type = affaire.type;
+      description = affaire.description || 'N/A';
+      montantHT = Number(affaire.montantHT);
+      assignedTo = affaire.assignedTo?.name || 'N/A';
+      affaireMeta = { id: affaire.id, title: affaire.title, type: affaire.type };
+      productBlock = affaire.product
+        ? `PRODUIT/SERVICE:
+- Nom: ${affaire.product.name}
+- Description: ${affaire.product.description || 'N/A'}
+- Prix unitaire: ${Number(affaire.product.price).toFixed(3)} DT`
+        : productBlock;
+    }
+
     const tva = montantHT * 0.19;
     const montantTTC = montantHT + tva;
 
@@ -186,28 +237,24 @@ ENTREPRISE ÉMETTRICE:
 - Adresse: ${org?.address || 'N/A'}
 
 CLIENT:
-- Entreprise: ${affaire.client.name}
-- Contact: ${affaire.client.contactName || 'N/A'}
-- Email: ${affaire.client.email || 'N/A'}
-- Tél: ${affaire.client.phone || 'N/A'}
-- Adresse: ${affaire.client.address || 'N/A'}
-- Matricule fiscal: ${affaire.client.matricule || 'N/A'}
+- Entreprise: ${clientName}
+- Contact: ${contactName || 'N/A'}
+- Email: ${clientEmail}
+- Tél: ${clientPhone}
+- Adresse: ${clientAddress}
+- Matricule fiscal: ${clientMatricule}
 
-AFFAIRE:
-- Titre: ${affaire.title || affaire.type}
-- Type: ${affaire.type}
-- Description: ${affaire.description || 'N/A'}
-- Montant HT: ${montantHT.toFixed(3)} DT
-- TVA (19%): ${tva.toFixed(3)} DT
-- Montant TTC: ${montantTTC.toFixed(3)} DT
-- Mois prévu: ${affaire.moisPrevu}/${affaire.anneePrevue}
+AFFAIRE / BRIEF:
+- Titre: ${title}
+- Type: ${type}
+- Description: ${description}
+- Montant HT: ${montantHT > 0 ? `${montantHT.toFixed(3)} DT` : 'À estimer'}
+- TVA (19%): ${montantHT > 0 ? `${tva.toFixed(3)} DT` : 'À estimer'}
+- Montant TTC: ${montantHT > 0 ? `${montantTTC.toFixed(3)} DT` : 'À estimer'}
 
-${affaire.product ? `PRODUIT/SERVICE:
-- Nom: ${affaire.product.name}
-- Description: ${affaire.product.description || 'N/A'}
-- Prix unitaire: ${Number(affaire.product.price).toFixed(3)} DT` : ''}
+${productBlock}
 
-COMMERCIAL ASSIGNÉ: ${affaire.assignedTo?.name || 'N/A'}
+COMMERCIAL ASSIGNÉ: ${assignedTo}
 
 ${includeConditions ? 'Inclure les conditions générales (paiement, validité, propriété intellectuelle).' : 'Ne pas inclure de conditions générales.'}
 ${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}`;
@@ -219,9 +266,11 @@ ${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}`;
     if (jsonMatch) {
       try {
         proposal = JSON.parse(jsonMatch[0]);
-        proposal.montantHT = montantHT;
-        proposal.tva = tva;
-        proposal.montantTTC = montantTTC;
+        if (montantHT > 0) {
+          proposal.montantHT = montantHT;
+          proposal.tva = tva;
+          proposal.montantTTC = montantTTC;
+        }
       } catch {
         proposal = { raw: aiResponse };
       }
@@ -232,16 +281,16 @@ ${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}`;
     res.json({
       proposal,
       affaire: {
-        id: affaire.id,
-        title: affaire.title,
-        type: affaire.type,
-        montantHT,
-        tva,
-        montantTTC,
+        id: affaireMeta.id,
+        title: affaireMeta.title,
+        type: affaireMeta.type,
+        montantHT: proposal?.montantHT ?? montantHT,
+        tva: proposal?.tva ?? tva,
+        montantTTC: proposal?.montantTTC ?? montantTTC,
       },
       client: {
-        name: affaire.client.name,
-        contactName: affaire.client.contactName,
+        name: clientName,
+        contactName: contactName || null,
       },
       organization: org,
       generatedAt: new Date().toISOString(),

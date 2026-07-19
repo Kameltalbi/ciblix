@@ -495,9 +495,9 @@ export function ProspectionIA() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/leads">
+          <Link to="/all-prospects">
             <Button variant="outline" size="sm">
-              Prospects (Leads)
+              Tous les prospects IA
             </Button>
           </Link>
           <Link to="/ai-assistant">
@@ -527,7 +527,7 @@ export function ProspectionIA() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Leads chauds</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prospects chauds</p>
                   <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-primary">{dash.hotLeads}</p>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
@@ -553,7 +553,7 @@ export function ProspectionIA() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Leads source IA</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prospects source IA</p>
                   <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight text-foreground">{dash.opportunitiesFromAi}</p>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">

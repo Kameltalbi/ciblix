@@ -26,8 +26,15 @@ const AVAILABLE_PAGES = [
   'email-templates',
   'ai-assistant',
   'prospection-ia',
+  'scout-ai',
+  'offre-bot',
+  'gmail-ai',
+  'factcheck-ai',
+  'brand-pulse',
+  'agents-marketplace',
   'objectifs',
   'settings',
+  'support',
 ] as const;
 
 // GET permissions for a user

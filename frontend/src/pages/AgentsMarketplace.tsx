@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Lock,
   Megaphone,
+  Mail,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,6 +40,13 @@ interface Agent {
   requiredPlanLabel: string | null;
 }
 
+interface AgentUsageRow {
+  agentSlug: string;
+  usage: number;
+  limit: number;
+  monthKey: string;
+}
+
 const ICON_MAP: Record<string, LucideIcon> = {
   Radio,
   Bot,
@@ -46,6 +54,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   FileSignature,
   ShieldCheck,
   Megaphone,
+  Mail,
 };
 
 const COLOR_MAP: Record<string, { bg: string; text: string; border: string; accent: string; ring: string }> = {
@@ -55,6 +64,17 @@ const COLOR_MAP: Record<string, { bg: string; text: string; border: string; acce
   amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', accent: 'bg-amber-100', ring: 'ring-amber-300' },
   emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', accent: 'bg-emerald-100', ring: 'ring-emerald-300' },
   rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', accent: 'bg-rose-100', ring: 'ring-rose-300' },
+  red: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', accent: 'bg-red-100', ring: 'ring-red-300' },
+};
+
+const AGENT_LABELS: Record<string, string> = {
+  'hunt-ai': 'Hunt AI',
+  'copilot-ia': 'Copilot',
+  'scout-ai': 'Scout AI',
+  'offre-bot': 'OffreBot',
+  'gmail-ai': 'Gmail IA',
+  'factcheck-ai': 'FactCheck',
+  'brand-pulse-ai': 'BrandPulse',
 };
 
 function AgentCard({ agent, onToggle, isToggling }: { agent: Agent; onToggle: () => void; isToggling: boolean }) {
@@ -147,34 +167,73 @@ export function AgentsMarketplace() {
     queryFn: () => api.get('/agents').then((r) => r.data),
   });
 
+  const { data: usageData } = useQuery<{ usage: AgentUsageRow[]; planLabel: string }>({
+    queryKey: ['agents-usage'],
+    queryFn: () => api.get('/agents/usage').then((r) => r.data),
+  });
+
   const toggleMutation = useMutation({
     mutationFn: ({ slug, active }: { slug: string; active: boolean }) =>
       api.post(`/agents/${slug}/${active ? 'deactivate' : 'activate'}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents-marketplace'] });
       queryClient.invalidateQueries({ queryKey: ['agents-active-slugs'] });
+      queryClient.invalidateQueries({ queryKey: ['agents-usage'] });
     },
   });
 
   const agents = data?.agents || [];
   const activeCount = agents.filter((a) => a.active).length;
   const includedCount = agents.filter((a) => a.includedInPlan).length;
+  const usageRows = usageData?.usage || [];
 
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-white">
-            <Sparkles size={20} strokeWidth={2} />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 text-white">
+              <Sparkles size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Centre de commandement Agents IA</h1>
+              <p className="text-sm text-muted-foreground">
+                Plan {data?.planLabel ?? '…'} · {activeCount} actif{activeCount > 1 ? 's' : ''} sur {includedCount} inclus
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agents IA</h1>
-            <p className="text-sm text-muted-foreground">
-              Plan {data?.planLabel ?? '…'} · {activeCount} actif{activeCount > 1 ? 's' : ''} sur {includedCount} inclus
-            </p>
-          </div>
+          <Link to="/pricing">
+            <Button variant="outline" size="sm">Voir les plans</Button>
+          </Link>
         </div>
       </div>
+
+      {usageRows.length > 0 && (
+        <Card className="border-violet-100 bg-gradient-to-r from-violet-50/60 via-white to-sky-50/40">
+          <CardContent className="p-5">
+            <p className="mb-3 text-sm font-semibold text-foreground">Consommation mensuelle</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {usageRows.map((row) => {
+                const pct = row.limit > 0 ? Math.min(100, Math.round((row.usage / row.limit) * 100)) : 0;
+                return (
+                  <div key={row.agentSlug} className="rounded-xl border bg-white/80 p-3">
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground">{AGENT_LABELS[row.agentSlug] || row.agentSlug}</span>
+                      <span className="text-muted-foreground">{row.usage}/{row.limit}</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={cn('h-full rounded-full', pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-sky-500')}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isPending ? (
         <div className="py-20 text-center text-muted-foreground">

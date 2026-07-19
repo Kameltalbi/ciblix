@@ -17,10 +17,10 @@ export function LandingSales() {
       period: '/an',
       sub: '(40 DT/mois)',
       features: [
-        'Prospects illimités',
         'Jusqu\'à 5 utilisateurs',
-        'Chasseur IA & Assistant IA',
-        'Pipeline & objectifs de vente',
+        'Hunt AI & Copilot IA',
+        'Quotas Hunt 150 · Copilot 80 / mois',
+        'Marketplace agents',
       ],
       cta: 'Voir les tarifs',
       popular: false,
@@ -33,8 +33,8 @@ export function LandingSales() {
       features: [
         'Tout Basic',
         'Jusqu\'à 20 utilisateurs',
-        'Veilleur IA & Rédacteur d\'offres',
-        'Reporting avancé',
+        'Scout AI & OffreBot',
+        'Quotas Hunt 400 · Scout 30 · Offre 25',
       ],
       cta: 'Voir les tarifs',
       popular: true,
@@ -47,9 +47,8 @@ export function LandingSales() {
       features: [
         'Tout Business',
         'Jusqu\'à 50 utilisateurs',
-        'BrandPulse AI — marque en ligne & blog SEO',
-        'Vérificateur IA inclus',
-        'Dépenses, commissions, Softfacture',
+        'BrandPulse AI (8/mois) & FactCheck AI',
+        'Les 6 agents IA inclus',
       ],
       cta: 'Voir les tarifs',
       popular: false,
@@ -59,33 +58,33 @@ export function LandingSales() {
   const features = [
     {
       icon: Zap,
-      title: 'Assistant IA',
-      description: 'Posez vos questions en langage naturel et obtenez des réponses instantanées sur votre CA, opportunités et clients.',
+      title: 'Copilot IA',
+      description: 'Posez vos questions en langage naturel et obtenez des réponses instantanées sur vos priorités, prospects et signaux.',
     },
     {
       icon: BarChart,
-      title: 'Lead Scoring',
-      description: 'Score automatique 0-100 basé sur montant, probabilité et historique pour prioriser vos opportunités.',
+      title: 'Hunt AI',
+      description: 'Prospection multi-sources avec lead scoring IA pour prioriser les meilleurs prospects automatiquement.',
     },
     {
       icon: Shield,
       title: '100% Tunisien',
-      description: 'Adapté à la législation tunisienne (matricule fiscal, TVA) avec support local en français.',
+      description: 'Adapté au marché tunisien avec support local en français et en arabe.',
     },
     {
       icon: DollarSign,
-      title: 'Intégration Softfacture',
-      description: 'Générez vos devis et factures automatiquement via Softfacture, la solution de facturation tunisienne.',
+      title: 'OffreBot',
+      description: 'Générez des propositions commerciales personnalisées en quelques secondes, prêtes à envoyer.',
     },
     {
       icon: Users,
-      title: 'Contacts & suivi',
-      description: 'Centralisez vos contacts, opportunités et activités dans une interface simple, orientée résultats.',
+      title: '6 agents IA',
+      description: 'Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse — une plateforme d\'agents, pas un CRM.',
     },
     {
       icon: Mail,
-      title: 'Email Templates',
-      description: 'Créez des modèles d\'emails personnalisables avec variables automatiques pour gagner du temps.',
+      title: 'Scout & BrandPulse',
+      description: 'Veille d\'opportunités (TUNEPS, événements) et présence de marque en ligne avec blog SEO assisté.',
     },
   ];
 
@@ -124,10 +123,10 @@ export function LandingSales() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="font-serif text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            La prospection intelligente pour les TPE et PME tunisiennes
+            Une plateforme de 6 agents IA pour les TPE et PME tunisiennes
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Gérez vos opportunités, contacts et relances avec un assistant IA. 
+            Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse travaillent pour vous.
             Simple, local, et adapté à votre business.
           </p>
           <div className="flex gap-4 justify-center">
@@ -231,7 +230,7 @@ export function LandingSales() {
       <section className="py-20 px-4 bg-leaf text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-serif text-4xl font-bold mb-6">
-            Prêt à accélérer votre prospection avec l'IA ?
+            Prêt à activer vos agents IA ?
           </h2>
           <p className="text-xl mb-8 opacity-90">
             Rejoignez les équipes tunisiennes qui font confiance à CIBLIX
@@ -247,7 +246,7 @@ export function LandingSales() {
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
           <div>
             <h3 className="font-serif text-2xl font-bold mb-4">CIBLIX</h3>
-            <p className="text-gray-400">Plateforme de prospection intelligente pour les TPE et PME tunisiennes.</p>
+            <p className="text-gray-400">Plateforme de 6 agents IA pour les TPE et PME tunisiennes.</p>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Produit</h4>

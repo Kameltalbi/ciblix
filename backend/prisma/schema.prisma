@@ -65,6 +65,8 @@ model Organization {
   brandChannelConnections BrandChannelConnection[]
   brandCompetitorSnapshots BrandCompetitorSnapshot[]
   brandApiKeys    BrandApiKey[]
+  gmailAiSyncStates GmailAiSyncState[]
+  gmailAiProcessedMessages GmailAiProcessedMessage[]
 
   @@map("organizations")
 }
@@ -96,6 +98,8 @@ model User {
   calendarEventsCreated CalendarEvent[]
   expensesCreated  Expense[]
   gmailTokens      GmailToken?
+  gmailAiSyncState GmailAiSyncState?
+  gmailAiProcessedMessages GmailAiProcessedMessage[]
   notifications    Notification[]
   createdSupportTickets SupportTicket[] @relation("SupportTicketCreatedBy")
   assignedSupportTickets SupportTicket[] @relation("SupportTicketAssignedTo")
@@ -649,6 +653,7 @@ model GmailToken {
   refreshToken String   @db.Text // Encrypted at rest
   expiresAt    DateTime
   scope        String
+  lastRefreshAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -656,6 +661,73 @@ model GmailToken {
 
   @@index([organizationId])
   @@map("gmail_tokens")
+}
+
+enum GmailAiProcessedStatus {
+  PROCESSED
+  SKIPPED
+  ERROR
+}
+
+enum GmailAiPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/// Curseur de sync History API pour l’agent Gmail IA (nouveaux mails uniquement).
+model GmailAiSyncState {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String   @unique
+  enabled        Boolean  @default(true)
+  historyId      String?
+  labelId        String?
+  activatedAt    DateTime @default(now())
+  lastSyncAt     DateTime?
+  replyLanguage  String   @default("fr")
+  replyTone      String   @default("professionnel")
+  signature      String?  @db.Text
+  ignoreNewsletters Boolean @default(true)
+  ignorePromotions  Boolean @default(true)
+  ignoreSocial      Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("gmail_ai_sync_states")
+}
+
+/// Messages déjà traités par l’agent (idempotence + historique léger).
+model GmailAiProcessedMessage {
+  id                String                 @id @default(cuid())
+  organizationId    String
+  userId            String
+  providerMessageId String
+  threadId          String
+  subject           String?
+  fromEmail         String?
+  summary           String?                @db.Text
+  actionRequested   String?                @db.Text
+  analysis          String?                @db.Text
+  priority          GmailAiPriority?
+  draftId           String?
+  status            GmailAiProcessedStatus
+  errorMessage      String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, providerMessageId])
+  @@index([organizationId])
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@map("gmail_ai_processed_messages")
 }
 
 // ═══════════════════════════════════════════════════════════════

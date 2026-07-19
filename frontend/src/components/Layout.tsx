@@ -1,30 +1,22 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Briefcase,
-  Users,
   Settings,
   LogOut,
   Menu,
   X,
-  FileText,
   Building2,
-  UserCheck,
-  Calendar as CalendarIcon,
-  Receipt,
-  Mail,
-  Target,
   Globe,
   MessageSquare,
   Radio,
   Sparkles,
-
   Radar,
   FileSignature,
   ShieldCheck,
   Bot,
   Store,
   Megaphone,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -42,65 +34,37 @@ type NavItem = {
   labelKey: string;
   icon: LucideIcon;
   page: string;
-  requiresEnterprise?: boolean;
   /** Ordre d’affichage des blocs sidebar (voir SIDEBAR_SECTION_ORDER). */
   section?: string;
   comingSoon?: boolean;
 };
 
 /**
- * Sidebar — périmètre par lien (audit produit / droits page=… dans Users → permissions commercial)
- *
- * Accueil · tableau de bord (/dashboard)
- * Agents IA · Hunt, Copilot, BrandPulse, CareBot, CFO (/agents/*)
- * CRM & pipeline · leads, opportunités, contacts
- * Espace de travail · calendrier, activités, emails, objectifs
- * Performance & finance · dépenses (Enterprise)
+ * Sidebar — plateforme Agents IA uniquement.
+ * Agents · Hunt, Copilot, Scout, OffreBot, FactCheck, BrandPulse
  * Aide · support
  */
 const NAV_STRUCTURE: NavItem[] = [
-  /* Accueil */
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
-
-  /* Agents IA (automatisations) */
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'AGENTS' },
   { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'AGENTS' },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   { to: '/agents/offre-bot', labelKey: 'nav.agentOffre', icon: FileSignature, page: 'offre-bot', section: 'AGENTS' },
+  { to: '/agents/gmail-ai', labelKey: 'nav.agentGmail', icon: Mail, page: 'gmail-ai', section: 'AGENTS' },
   { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'AGENTS' },
   { to: '/agents/brand-pulse', labelKey: 'nav.agentBrandPulse', icon: Megaphone, page: 'brand-pulse', section: 'AGENTS' },
-
-  /* CRM & pipeline — ordre funnel */
-  { to: '/leads', labelKey: 'nav.prospects', icon: UserCheck, page: 'leads', section: 'CRM' },
-  { to: '/affaires', labelKey: 'nav.affaires', icon: Briefcase, page: 'affaires', section: 'CRM' },
-  { to: '/clients', labelKey: 'nav.clients', icon: Users, page: 'clients', section: 'CRM' },
-
-  { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarIcon, page: 'calendar', section: 'WORKSPACE' },
-  { to: '/activites', labelKey: 'nav.activities', icon: FileText, page: 'activites', section: 'WORKSPACE' },
-  { to: '/email-templates', labelKey: 'nav.emailTemplates', icon: Mail, page: 'email-templates', section: 'WORKSPACE' },
-  { to: '/objectifs', labelKey: 'nav.objectives', icon: Target, page: 'objectifs', section: 'WORKSPACE' },
-
-  { to: '/expenses', labelKey: 'nav.expenses', icon: Receipt, page: 'expenses', requiresEnterprise: true, section: 'ENTERPRISE' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
 /** Ordre d’affichage des blocs sidebar (libellés i18n : nav.section*). */
 const SIDEBAR_SECTION_ORDER = [
-  'OVERVIEW',
   'AGENTS',
-  'CRM',
-  'WORKSPACE',
-  'ENTERPRISE',
   'SUPPORT',
 ] as const;
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
-  OVERVIEW: 'nav.sectionOverview',
   AGENTS: 'nav.sectionAgents',
-  CRM: 'nav.sectionCrm',
-  WORKSPACE: 'nav.sectionWorkspace',
-  ENTERPRISE: 'nav.sectionEnterprise',
   SUPPORT: 'nav.sectionSupport',
 };
 
@@ -146,11 +110,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     setConsentOpen(!stored);
   }, []);
 
-  // Télécharge le chunk Dashboard en parallèle (ex. bandeau RGPD) pour réduire l’attente après acceptation
-  useEffect(() => {
-    if (user) void import('../pages/Dashboard');
-  }, [user]);
-
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
@@ -158,11 +117,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: organizationsData } = useQuery<Organization | Organization[]>({
     queryKey: ['organizations'],
     queryFn: () => api.get('/organizations').then((r) => r.data),
-  });
-
-  const { data: subscriptionData } = useQuery({
-    queryKey: ['current-subscription'],
-    queryFn: () => api.get('/subscriptions/current').then(r => r.data),
   });
 
   const { data: activeSlugsData } = useQuery<{ activeSlugs: string[] }>({
@@ -178,7 +132,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const organization = Array.isArray(organizationsData) ? organizationsData[0] : organizationsData;
   const orgLogoSrc = useOrganizationLogoSrc(organization?.logoUrl);
-  const currentPlan = subscriptionData?.plan || 'FREE';
 
   const handleLogout = async () => {
     await logout();
@@ -218,18 +171,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         // Tant que l’API des droits n’a pas encore répondu, ne pas masquer toute la nav (sinon sidebar vide).
         // Une fois `[]` ou une liste renvoyée, on applique les `canView` normalement — l’API reste authoritative.
         if (permissionsData === undefined) return true;
-        if (
-          page === 'prospection-ia' ||
-          page === 'ai-assistant' ||
-          page === 'scout-ai' ||
-          page === 'offre-bot' ||
-          page === 'factcheck-ai' ||
-          page === 'brand-pulse'
-        ) {
-          const prospecting = permissionsData.find((p) => p.page === 'prospection-ia');
-          const assistant = permissionsData.find((p) => p.page === 'ai-assistant');
-          return Boolean(prospecting?.canView || assistant?.canView);
-        }
+        if (page === 'agents-marketplace' || page === 'dashboard') return true;
         const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
       }
@@ -238,8 +180,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     [user, permissionsData],
   );
 
-  const expensesAccessible = currentPlan === 'ENTERPRISE';
-
   const activeSlugs = activeSlugsData?.activeSlugs;
 
   const PAGE_TO_SLUG: Record<string, string> = {
@@ -247,19 +187,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
     'ai-assistant': 'copilot-ia',
     'scout-ai': 'scout-ai',
     'offre-bot': 'offre-bot',
+    'gmail-ai': 'gmail-ai',
     'factcheck-ai': 'factcheck-ai',
     'brand-pulse': 'brand-pulse-ai',
   };
 
   const filteredNav = useMemo(() => {
     return NAV_STRUCTURE.filter((item) => {
-      if (item.requiresEnterprise && !expensesAccessible) return false;
       if (!canViewPage(item.page)) return false;
       const slug = PAGE_TO_SLUG[item.page];
       if (slug && activeSlugs && !activeSlugs.includes(slug)) return false;
       return true;
     });
-  }, [canViewPage, expensesAccessible, activeSlugs]);
+  }, [canViewPage, activeSlugs]);
 
   const showAssistantFab = canViewPage('ai-assistant');
 
@@ -391,41 +331,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
               const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
-              const hideSectionHeading = section === 'OVERVIEW' && sectionItems.length <= 1;
 
               return (
                 <div key={section} className="flex flex-col gap-0.5">
-                  {!hideSectionHeading && sidebarExpanded && (
+                  {sidebarExpanded && (
                     <div className="px-2 pb-1 pt-3">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         {sectionHeading}
                       </span>
                     </div>
                   )}
-                  {!hideSectionHeading && !sidebarExpanded && section !== 'OVERVIEW' && (
+                  {!sidebarExpanded && (
                     <div className="my-1.5 mx-2 border-t border-white/10" />
                   )}
                   {sectionItems.map((item) => {
                     const { to, labelKey, icon: Icon, page, comingSoon } = item;
-                    const isExpenses = page === 'expenses';
-                    const isDisabled = isExpenses && !expensesAccessible;
 
                     return (
                       <NavLink
                         key={to}
-                        to={isDisabled ? '#' : to}
+                        to={to}
                         end={to === '/'}
-                        onClick={(e) => { if (isDisabled) { e.preventDefault(); return; } }}
                         title={!sidebarExpanded ? t(labelKey) : undefined}
                         className={({ isActive }) =>
                           cn(
                             'group relative flex items-center rounded-lg transition-colors duration-150',
                             sidebarExpanded ? 'gap-3 px-3 py-2' : 'justify-center px-0 py-2',
-                            isDisabled
-                              ? 'cursor-not-allowed opacity-30'
-                              : isActive
-                                ? 'bg-white/15 text-white'
-                                : 'text-slate-400 hover:bg-white/10 hover:text-white',
+                            isActive
+                              ? 'bg-white/15 text-white'
+                              : 'text-slate-400 hover:bg-white/10 hover:text-white',
                           )
                         }
                       >
@@ -532,30 +466,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
               const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
-              const hideSectionHeading = section === 'OVERVIEW' && sectionItems.length <= 1;
 
               return (
                 <div key={section} className="flex flex-col gap-0.5">
-                  {!hideSectionHeading && (
-                    <div className="px-2 pb-1 pt-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{sectionHeading}</span>
-                    </div>
-                  )}
+                  <div className="px-2 pb-1 pt-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{sectionHeading}</span>
+                  </div>
                   {sectionItems.map((item) => {
                     const { to, labelKey, icon: Icon, page, comingSoon } = item;
-                    const isExpenses = page === 'expenses';
-                    const isDisabled = isExpenses && !expensesAccessible;
                     return (
                       <NavLink
                         key={to}
-                        to={isDisabled ? '#' : to}
+                        to={to}
                         end={to === '/'}
-                        onClick={(e) => { if (isDisabled) { e.preventDefault(); return; } closeSidebarOnMobile(); }}
+                        onClick={() => { closeSidebarOnMobile(); }}
                         className={({ isActive }) =>
                           cn(
                             'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
-                            isDisabled ? 'cursor-not-allowed opacity-30'
-                              : isActive ? 'bg-white/15 text-white'
+                            isActive ? 'bg-white/15 text-white'
                               : 'text-slate-400 hover:bg-white/10 hover:text-white',
                           )
                         }

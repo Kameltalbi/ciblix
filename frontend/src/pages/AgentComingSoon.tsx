@@ -29,7 +29,7 @@ export function AgentComingSoon() {
   const { t } = useTranslation();
 
   if (!agentId || !AGENT_META[agentId]) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/agents" replace />;
   }
 
   const meta = AGENT_META[agentId];
@@ -38,7 +38,7 @@ export function AgentComingSoon() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <Link
-        to="/dashboard"
+        to="/agents"
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft size={16} strokeWidth={2} />

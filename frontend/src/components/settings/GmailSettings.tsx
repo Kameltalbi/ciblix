@@ -43,7 +43,9 @@ export function GmailSettings() {
             </div>
             <div className="flex-1">
               <CardTitle className="text-lg">Gmail</CardTitle>
-              <CardDescription>Envoyer devis et factures directement depuis CIBLIX</CardDescription>
+              <CardDescription>
+                Connexion pour l’agent Gmail IA (lecture + brouillons) et l’envoi manuel. Aucun envoi automatique.
+              </CardDescription>
             </div>
             {gmailStatus?.connected ? (
               <div className="flex items-center gap-1.5 text-sm text-leaf font-medium">
@@ -68,7 +70,8 @@ export function GmailSettings() {
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Connectez votre compte Gmail pour envoyer vos documents Softfacture par email en un clic.
+                Connectez Gmail pour permettre à l’agent de lire les nouveaux e-mails et de préparer des brouillons
+                sous le libellé « Réponse à valider ». Vous validez et envoyez vous-même dans Gmail.
               </p>
               <Button onClick={connectGmail} className="w-full sm:w-auto">Connecter Gmail</Button>
             </div>

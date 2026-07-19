@@ -48,6 +48,7 @@ import { commBotRoutes } from './routes/comm-bot.js';
 import { brandPulseRoutes } from './routes/brand-pulse.js';
 import { brandPulsePublicRoutes } from './routes/brand-pulse-public.js';
 import { agentsRoutes } from './routes/agents.js';
+import { gmailAiRoutes } from './routes/gmail-ai.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 
@@ -177,6 +178,7 @@ app.use('/api/comm-bot', commBotRoutes);
 app.use('/api/brand-pulse', brandPulseRoutes);
 app.use('/api/public/brand-pulse', brandPulsePublicRoutes);
 app.use('/api/agents', agentsRoutes);
+app.use('/api/gmail-ai', gmailAiRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
 
@@ -199,5 +201,8 @@ app.listen(PORT, '0.0.0.0', () => {
   });
   void import('./services/brand-pulse/brandPulseScheduler.js').then(({ startBrandPulseScheduler }) => {
     startBrandPulseScheduler();
+  });
+  void import('./services/gmail-ai/scheduler.js').then(({ startGmailAiScheduler }) => {
+    startGmailAiScheduler();
   });
 });

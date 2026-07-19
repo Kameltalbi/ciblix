@@ -1,19 +1,14 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   FileSignature,
   FileText,
-  Building2,
-  User,
-  Calendar,
   DollarSign,
   Loader2,
   RefreshCw,
   Copy,
   Check,
-  ChevronDown,
-  ChevronUp,
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
@@ -21,20 +16,6 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-interface Affaire {
-  id: string;
-  title: string | null;
-  type: string;
-  montantHT: number;
-  statut: string;
-  moisPrevu: number;
-  anneePrevue: number;
-  description: string | null;
-  client: { id: string; name: string; contactName: string | null; email: string | null; phone: string | null };
-  product: { id: string; name: string; description: string | null; price: number } | null;
-  assignedTo: { name: string; email: string } | null;
-}
 
 interface Prestation {
   titre: string;
@@ -243,28 +224,39 @@ function buildPlainText(proposal: Proposal, org: any, client: any): string {
 
 export function OffreBot() {
   const { t } = useTranslation();
-  const [selectedAffaireId, setSelectedAffaireId] = useState<string>('');
   const [tone, setTone] = useState<'formal' | 'friendly' | 'concise'>('formal');
   const [includeConditions, setIncludeConditions] = useState(true);
   const [customNotes, setCustomNotes] = useState('');
-  const [showAffaires, setShowAffaires] = useState(true);
-
-  const { data: affairesData, isPending: affairesPending } = useQuery<{ affaires: Affaire[] }>({
-    queryKey: ['offre-bot-affaires'],
-    queryFn: () => api.get('/offre-bot/affaires').then((r) => r.data),
-  });
-
-  const affaires = affairesData?.affaires || [];
-  const selectedAffaire = affaires.find((a) => a.id === selectedAffaireId);
+  const [clientName, setClientName] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [need, setNeed] = useState('');
+  const [context, setContext] = useState('');
+  const [budgetHT, setBudgetHT] = useState('');
+  const [productService, setProductService] = useState('');
 
   const generateMutation = useMutation({
-    mutationFn: (params: { affaireId: string; tone: string; includeConditions: boolean; customNotes: string }) =>
+    mutationFn: (params: Record<string, unknown>) =>
       api.post('/offre-bot/generate', params).then((r) => r.data),
   });
 
+  const canGenerate = clientName.trim().length > 0 && need.trim().length > 0;
+
   const handleGenerate = () => {
-    if (!selectedAffaireId) return;
-    generateMutation.mutate({ affaireId: selectedAffaireId, tone, includeConditions, customNotes });
+    if (!canGenerate) return;
+    const budget = budgetHT.trim() ? Number(budgetHT) : undefined;
+    generateMutation.mutate({
+      brief: {
+        clientName: clientName.trim(),
+        contactName: contactName.trim(),
+        need: need.trim(),
+        context: context.trim(),
+        budgetHT: Number.isFinite(budget) ? budget : undefined,
+        productService: productService.trim(),
+      },
+      tone,
+      includeConditions,
+      customNotes,
+    });
   };
 
   return (
@@ -275,74 +267,79 @@ export function OffreBot() {
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">OffreBot</h1>
-          <p className="text-sm text-muted-foreground">Génère des propositions commerciales à partir de vos affaires</p>
+          <p className="text-sm text-muted-foreground">
+            {t('agents.offreBotSubtitle', 'Génère des propositions commerciales à partir d’un brief client')}
+          </p>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left: Config */}
         <div className="space-y-4 lg:col-span-1">
           <Card>
-            <CardHeader className="cursor-pointer" onClick={() => setShowAffaires(!showAffaires)}>
-              <CardTitle className="flex items-center justify-between text-base">
-                <span>1. Sélectionner une affaire</span>
-                {showAffaires ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </CardTitle>
+            <CardHeader>
+              <CardTitle className="text-base">1. Brief client</CardTitle>
             </CardHeader>
-            {showAffaires && (
-              <CardContent className="max-h-80 space-y-2 overflow-y-auto">
-                {affairesPending ? (
-                  <p className="text-sm text-muted-foreground">Chargement...</p>
-                ) : affaires.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune affaire trouvée.</p>
-                ) : (
-                  affaires.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => { setSelectedAffaireId(a.id); setShowAffaires(false); }}
-                      className={cn(
-                        'w-full rounded-lg border p-3 text-left transition-colors',
-                        selectedAffaireId === a.id
-                          ? 'border-blue-300 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50',
-                      )}
-                    >
-                      <p className="text-sm font-medium text-foreground truncate">{a.title || a.type}</p>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                        <Building2 size={10} /> {a.client.name}
-                        <span>·</span>
-                        <DollarSign size={10} /> {fmtDT(Number(a.montantHT))} DT
-                      </div>
-                    </button>
-                  ))
-                )}
-              </CardContent>
-            )}
+            <CardContent className="space-y-3">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Client / entreprise *</label>
+                <input
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  placeholder="Ex: Société ABC"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Contact</label>
+                <input
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  placeholder="Ex: Ahmed Ben Ali"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Besoin *</label>
+                <textarea
+                  value={need}
+                  onChange={(e) => setNeed(e.target.value)}
+                  placeholder="Ex: Audit SEO + plan éditorial 3 mois"
+                  rows={3}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Contexte</label>
+                <textarea
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder="Secteur, urgence, contraintes…"
+                  rows={2}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Produit / service</label>
+                <input
+                  value={productService}
+                  onChange={(e) => setProductService(e.target.value)}
+                  placeholder="Ex: Pack BrandPulse Business"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Budget HT (DT)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={budgetHT}
+                  onChange={(e) => setBudgetHT(e.target.value)}
+                  placeholder="Optionnel"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+            </CardContent>
           </Card>
-
-          {selectedAffaire && (
-            <Card className="border-blue-100 bg-blue-50/30">
-              <CardContent className="space-y-2 p-4">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Affaire sélectionnée</p>
-                <p className="font-medium text-foreground">{selectedAffaire.title || selectedAffaire.type}</p>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <User size={10} /> {selectedAffaire.client.name}
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <DollarSign size={10} /> {fmtDT(Number(selectedAffaire.montantHT))} DT HT
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Calendar size={10} /> {selectedAffaire.moisPrevu}/{selectedAffaire.anneePrevue}
-                </div>
-                {selectedAffaire.product && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <FileText size={10} /> {selectedAffaire.product.name}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           <Card>
             <CardHeader>
@@ -383,15 +380,15 @@ export function OffreBot() {
                 <textarea
                   value={customNotes}
                   onChange={(e) => setCustomNotes(e.target.value)}
-                  placeholder="Ex: Mentionner la remise de 10%, ajouter une clause de confidentialité..."
+                  placeholder="Ex: Mentionner la remise de 10%…"
                   rows={3}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
 
               <Button
                 onClick={handleGenerate}
-                disabled={!selectedAffaireId || generateMutation.isPending}
+                disabled={!canGenerate || generateMutation.isPending}
                 className="w-full gap-2"
               >
                 {generateMutation.isPending ? (
@@ -404,7 +401,6 @@ export function OffreBot() {
           </Card>
         </div>
 
-        {/* Right: Preview */}
         <div className="lg:col-span-2">
           {generateMutation.isError && (
             <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -423,8 +419,8 @@ export function OffreBot() {
           {!generateMutation.data && !generateMutation.isPending && (
             <div className="flex h-64 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 text-center">
               <FileSignature size={40} className="mb-3 text-muted-foreground/40" />
-              <p className="text-muted-foreground">Sélectionnez une affaire et cliquez "Générer l'offre"</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">L'IA rédigera une proposition commerciale complète</p>
+              <p className="text-muted-foreground">Renseignez un brief client et cliquez « Générer l'offre »</p>
+              <p className="mt-1 text-xs text-muted-foreground/60">L'IA rédigera une proposition commerciale complète</p>
             </div>
           )}
         </div>

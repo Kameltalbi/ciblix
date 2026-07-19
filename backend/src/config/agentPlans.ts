@@ -7,6 +7,7 @@ export const ALL_AGENT_SLUGS = [
   'copilot-ia',
   'scout-ai',
   'offre-bot',
+  'gmail-ai',
   'factcheck-ai',
   'brand-pulse-ai',
 ] as const;
@@ -19,6 +20,7 @@ export const AGENT_MIN_PLAN: Record<AgentSlug, PlanType> = {
   'copilot-ia': 'BASIC',
   'scout-ai': 'BUSINESS',
   'offre-bot': 'BUSINESS',
+  'gmail-ai': 'BUSINESS',
   'factcheck-ai': 'ENTERPRISE',
   'brand-pulse-ai': 'ENTERPRISE',
 };

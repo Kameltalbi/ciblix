@@ -59,6 +59,23 @@ const AVAILABLE_AGENTS = [
     defaultActive: false,
   },
   {
+    slug: 'gmail-ai',
+    name: 'Gmail IA',
+    role: 'Résumés & brouillons Gmail',
+    description: 'Lit les nouveaux e-mails, prépare un résumé et un brouillon de réponse dans Gmail sous « Réponse à valider ». Aucun envoi automatique.',
+    icon: 'Mail',
+    color: 'red',
+    features: [
+      'Sync des nouveaux e-mails uniquement',
+      'Résumé IA',
+      'Brouillon de réponse dans Gmail',
+      'Libellé « Réponse à valider »',
+      'Validation humaine avant envoi',
+    ],
+    route: '/agents/gmail-ai',
+    defaultActive: false,
+  },
+  {
     slug: 'factcheck-ai',
     name: 'Vérificateur IA',
     role: 'Vérification d\'informations',
@@ -201,6 +218,19 @@ agentsRoutes.post('/:slug/activate', async (req: AuthRequest, res: Response, nex
       update: { active: true, activatedAt: new Date(), deactivatedAt: null },
       create: { organizationId: orgId, agentSlug: slug, active: true },
     });
+
+    if (slug === 'gmail-ai' && req.userId) {
+      try {
+        const { ensureGmailAiSyncState } = await import('../services/gmail-ai/sync.js');
+        await ensureGmailAiSyncState({
+          userId: req.userId,
+          organizationId: orgId,
+        });
+      } catch (syncErr) {
+        // Gmail peut ne pas être connecté encore — l'UI guidera la connexion.
+        console.warn('[agents] gmail-ai activate-sync deferred', syncErr);
+      }
+    }
 
     res.json({ activated: true, agent });
   } catch (err) {

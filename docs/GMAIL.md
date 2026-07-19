@@ -18,8 +18,13 @@ Pour pouvoir envoyer des emails depuis le CRM, il faut créer une application OA
    - Email de support : ton email
    - Domaines autorisés : `tondomaine.com`
 4. Scopes : ajouter
-   - `https://www.googleapis.com/auth/gmail.send`
+   - `openid`
    - `https://www.googleapis.com/auth/userinfo.email`
+   - `https://www.googleapis.com/auth/userinfo.profile`
+   - `https://www.googleapis.com/auth/gmail.readonly` (lecture)
+   - `https://www.googleapis.com/auth/gmail.modify` (brouillons + libellés)
+
+> L’agent Gmail IA crée des **brouillons** sous le libellé « Réponse à valider » et **n’envoie jamais** automatiquement (`messages.send` n’est pas utilisé dans ce flux).
 5. Utilisateurs de test : ajoute ton email (pendant la phase de dev)
 
 ## 3. Créer des credentials OAuth

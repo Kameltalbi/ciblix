@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Send,
   Bot,
@@ -12,7 +12,6 @@ import {
   Zap,
   Mail,
   MessageCircle,
-  CalendarPlus,
   KanbanSquare,
   RefreshCw,
   ChevronRight,
@@ -68,7 +67,6 @@ interface OperationalBriefing {
 
 export function AIAssistant() {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const relanceRef = useRef<HTMLDivElement | null>(null);
 
   const suggestions = [
@@ -261,14 +259,14 @@ export function AIAssistant() {
               <Radio size={16} /> {t('nav.agentHunt')}
             </Button>
           </Link>
-          <Link to="/dashboard">
+          <Link to="/agents">
             <Button variant="outline" size="sm" className="gap-1.5">
-              <BarChart3 size={16} /> Tableau de bord
+              <BarChart3 size={16} /> Agents IA
             </Button>
           </Link>
-          <Link to="/affaires">
+          <Link to="/all-prospects">
             <Button variant="outline" size="sm" className="gap-1.5">
-              <KanbanSquare size={16} /> Pipeline
+              <KanbanSquare size={16} /> Prospects IA
             </Button>
           </Link>
         </div>
@@ -377,8 +375,11 @@ export function AIAssistant() {
                     <span className="font-medium">{a.clientName || 'Contact'}</span>
                     <span className="block text-xs text-muted-foreground">{a.message}</span>
                   </span>
-                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate(`/affaires/${a.affaireId}`)}>
-                    Ouvrir
+                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => {
+                    setFollowAffaireId(a.affaireId);
+                    relanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}>
+                    Relancer
                   </Button>
                 </div>
               ))}
@@ -403,8 +404,11 @@ export function AIAssistant() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-semibold">{fmtDT(o.montantHT)}</p>
-                    <Button variant="link" className="h-auto p-0 text-xs" onClick={() => navigate(`/affaires/${o.id}`)}>
-                      Fiche
+                    <Button variant="link" className="h-auto p-0 text-xs" onClick={() => {
+                      setFollowAffaireId(o.id);
+                      relanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}>
+                      Relancer
                     </Button>
                   </div>
                 </div>
@@ -432,24 +436,24 @@ export function AIAssistant() {
               >
                 <RefreshCw size={16} /> Générer une relance
               </Button>
-              <Link to="/email-templates" className="block">
+              <Link to="/prospection-ia" className="block">
                 <Button variant="outline" className="w-full justify-start gap-2">
-                  <Mail size={16} /> Modèles d&apos;emails
+                  <Radio size={16} /> Lancer Hunt AI
                 </Button>
               </Link>
-              <Link to="/calendar" className="block">
+              <Link to="/agents/scout-ai" className="block">
                 <Button variant="outline" className="w-full justify-start gap-2">
-                  <CalendarPlus size={16} /> Programmer un rappel
+                  <Zap size={16} /> Ouvrir Scout AI
                 </Button>
               </Link>
-              <Link to="/activites" className="block">
+              <Link to="/agents/offre-bot" className="block">
                 <Button variant="outline" className="w-full justify-start gap-2">
-                  <Zap size={16} /> Créer une activité
+                  <Mail size={16} /> Rédiger une offre
                 </Button>
               </Link>
-              <Link to="/affaires" className="block">
+              <Link to="/all-prospects" className="block">
                 <Button variant="outline" className="w-full justify-start gap-2">
-                  <KanbanSquare size={16} /> Mettre à jour le pipeline
+                  <KanbanSquare size={16} /> Voir les prospects IA
                 </Button>
               </Link>
             </CardContent>
