@@ -392,7 +392,11 @@ export function GmailAI() {
                           ? 'Email ignoré'
                           : 'Erreur de traitement'}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">{item.subject || item.fromEmail || '—'}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.status === 'ERROR' && item.errorMessage
+                        ? item.errorMessage
+                        : item.subject || item.fromEmail || '—'}
+                    </p>
                   </div>
                   <span className="text-[10px] text-muted-foreground">{new Date(item.createdAt).toLocaleTimeString()}</span>
                 </div>

@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 /**
  * Charge `.env` sans paquet `dotenv` (évite ERR_MODULE_NOT_FOUND en prod si
  * node_modules workspace est uniquement à la racine du monorepo).
- * Ne remplace pas une variable déjà définie dans l’environnement.
+ *
+ * Les valeurs du fichier .env priment sur l’env process (PM2 peut garder une
+ * ancienne OPENAI_API_KEY / DATABASE_URL après restart — sinon le fichier est ignoré).
  */
 export function loadEnvFromFile(): void {
   const here = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +40,6 @@ function applyEnvFile(raw: string): void {
     ) {
       val = val.slice(1, -1);
     }
-    if (process.env[key] === undefined) process.env[key] = val;
+    process.env[key] = val;
   }
 }

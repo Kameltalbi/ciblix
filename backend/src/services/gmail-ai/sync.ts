@@ -96,7 +96,14 @@ async function processOneMessage(opts: {
       },
     },
   });
-  if (already) return 'skipped';
+  if (already) {
+    // Les échecs (ex. mauvaise clé OpenAI) doivent pouvoir être retraités après correctif.
+    if (already.status === 'ERROR') {
+      await prisma.gmailAiProcessedMessage.delete({ where: { id: already.id } });
+    } else {
+      return 'skipped';
+    }
+  }
 
   const token = await prisma.gmailToken.findUnique({ where: { userId: opts.userId } });
   if (!token) return 'error';
@@ -261,7 +268,16 @@ export async function syncGmailAiForUser(userId: string): Promise<{
   let errors = 0;
   let quotaStopped = false;
 
-  for (const messageId of messageIds) {
+  const failedRows = await prisma.gmailAiProcessedMessage.findMany({
+    where: { userId, status: 'ERROR' },
+    orderBy: { createdAt: 'desc' },
+    take: 25,
+    select: { providerMessageId: true },
+  });
+  const retryIds = failedRows.map((r: { providerMessageId: string }) => r.providerMessageId);
+  const toProcess = [...new Set([...retryIds, ...messageIds])];
+
+  for (const messageId of toProcess) {
     const result = await processOneMessage({
       userId,
       organizationId: state.organizationId,
