@@ -49,11 +49,9 @@ export function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      const { user: currentUser, paymentStatus: ps } = useAuth.getState();
+      const { user: currentUser } = useAuth.getState();
       if (currentUser?.role === 'SUPERADMIN') {
         navigate('/admin', { replace: true });
-      } else if (ps !== 'APPROVED' && ps !== null) {
-        navigate('/payment-pending', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }

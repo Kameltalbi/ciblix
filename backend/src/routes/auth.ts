@@ -106,7 +106,7 @@ authRoutes.post('/register', async (req, res, next) => {
       data: {
         name: organizationName,
         email: email,
-        paymentStatus: 'PENDING',
+        paymentStatus: 'APPROVED',
         plan,
       },
     });
@@ -538,7 +538,7 @@ authRoutes.get('/google/callback', async (req, res, next) => {
         data: {
           name: `${organizationName} — Organisation`,
           email: profile.email,
-          paymentStatus: 'PENDING',
+          paymentStatus: 'APPROVED',
         },
       });
 

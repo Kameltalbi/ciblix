@@ -19,7 +19,7 @@ async function tickOnce(): Promise<void> {
         where: { id: state.organizationId },
         select: { plan: true, paymentStatus: true, suspended: true },
       });
-      if (!org || org.suspended || org.paymentStatus !== 'APPROVED') continue;
+      if (!org || org.suspended) continue;
 
       const plan = normalizePlan(org.plan);
       if (!isAgentIncludedInPlan(plan, 'gmail-ai')) continue;

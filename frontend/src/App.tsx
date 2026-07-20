@@ -4,7 +4,6 @@ import { useAuth } from './lib/auth';
 import { isPublicMarketingPath } from './lib/publicPaths';
 import './i18n';
 import { Layout } from './components/Layout';
-import { PaymentGuard } from './components/PaymentGuard';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 // Public / auth pages: kept eager since they must render fast on cold load and
@@ -72,9 +71,6 @@ const SupportTickets = lazy(() =>
 const AdminDashboard = lazy(() =>
   import('./pages/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
 );
-const PaymentPending = lazy(() =>
-  import('./pages/PaymentPending').then((m) => ({ default: m.PaymentPending }))
-);
 
 function PageFallback() {
   return (
@@ -127,19 +123,11 @@ export default function App() {
           <Route path="/agent/factcheck-ai" element={<FactCheckAIPage />} />
           <Route path="/agent/brand-pulse" element={<BrandPulsePage />} />
           <Route path="/agent/comm-bot" element={<Navigate to="/agent/brand-pulse" replace />} />
-          <Route
-            path="/payment-pending"
-            element={
-              <ProtectedRoute>
-                <PaymentPending />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/payment-pending" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/*"
             element={
               <ProtectedRoute>
-                <PaymentGuard>
                   <Layout>
                     <Suspense fallback={<PageFallback />}>
                       <Routes>
@@ -175,7 +163,6 @@ export default function App() {
                       </Routes>
                     </Suspense>
                   </Layout>
-                </PaymentGuard>
               </ProtectedRoute>
             }
           />

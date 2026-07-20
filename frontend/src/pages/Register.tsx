@@ -37,18 +37,14 @@ export function Register() {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.user));
-      const ps = data.paymentStatus ?? 'PENDING';
-      localStorage.setItem('paymentStatus', ps);
       useAuth.setState({
         user: data.user,
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
-        paymentStatus: ps,
+        paymentStatus: data.paymentStatus ?? null,
       });
       if (data.user.role === 'SUPERADMIN') {
         navigate('/admin', { replace: true });
-      } else if (ps !== 'APPROVED' && ps !== null) {
-        navigate('/payment-pending', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }

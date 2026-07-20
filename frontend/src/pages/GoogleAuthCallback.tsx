@@ -17,7 +17,7 @@ export function GoogleAuthCallback() {
 
     const accessToken = p.get('accessToken');
     const refreshToken = p.get('refreshToken');
-    const paymentStatus = p.get('paymentStatus') || 'PENDING';
+    const paymentStatus = p.get('paymentStatus') || null;
 
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
 
@@ -30,7 +30,8 @@ export function GoogleAuthCallback() {
 
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('paymentStatus', paymentStatus);
+      if (paymentStatus) localStorage.setItem('paymentStatus', paymentStatus);
+      else localStorage.removeItem('paymentStatus');
 
       useAuth.setState({
         accessToken,
@@ -46,11 +47,8 @@ export function GoogleAuthCallback() {
           navigate('/login?error=google_profile_failed', { replace: true });
           return;
         }
-        const ps = useAuth.getState().paymentStatus;
         if (u.role === 'SUPERADMIN') {
           navigate('/admin', { replace: true });
-        } else if (ps !== 'APPROVED' && ps !== null) {
-          navigate('/payment-pending', { replace: true });
         } else {
           navigate('/dashboard', { replace: true });
         }

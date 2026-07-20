@@ -49,8 +49,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('paymentStatus', data.paymentStatus || 'PENDING');
-      set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken, paymentStatus: data.paymentStatus || 'PENDING', loading: false });
+      localStorage.setItem('paymentStatus', data.paymentStatus ?? '');
+      set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken, paymentStatus: data.paymentStatus ?? null, loading: false });
     } catch (e) {
       clearAuthStorage();
       set({ user: null, accessToken: null, refreshToken: null, paymentStatus: null, loading: false });
@@ -75,8 +75,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       const { data } = await api.get('/auth/me');
       localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('paymentStatus', data.paymentStatus || 'PENDING');
-      set({ user: data.user, paymentStatus: data.paymentStatus || 'PENDING' });
+      localStorage.setItem('paymentStatus', data.paymentStatus ?? '');
+      set({ user: data.user, paymentStatus: data.paymentStatus ?? null });
     } catch {
       const refreshToken = get().refreshToken;
       if (refreshToken) {
@@ -84,8 +84,8 @@ export const useAuth = create<AuthState>((set, get) => ({
           await get().refreshAccessToken();
           const { data } = await api.get('/auth/me');
           localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('paymentStatus', data.paymentStatus || 'PENDING');
-          set({ user: data.user, paymentStatus: data.paymentStatus || 'PENDING' });
+          localStorage.setItem('paymentStatus', data.paymentStatus ?? '');
+          set({ user: data.user, paymentStatus: data.paymentStatus ?? null });
           return;
         } catch {
           // refresh échoué

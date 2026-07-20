@@ -102,34 +102,11 @@ export const requirePage = (page: string) => {
   };
 };
 
-// Middleware to check if organization payment is approved
+/** Ancien garde-fou paiement — désactivé : l’accès n’est plus bloqué par paymentStatus. */
 export const requirePaymentApproved = async (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Non authentifié' });
   }
-
-  // SUPERADMIN bypasses payment check
-  if (req.user.role === 'SUPERADMIN') {
-    return next();
-  }
-
-  // Check organization payment status
-  const organization = await prisma.organization.findUnique({
-    where: { id: req.organizationId },
-    select: { paymentStatus: true },
-  });
-
-  if (!organization) {
-    return res.status(404).json({ error: 'Organisation introuvable' });
-  }
-
-  if (organization.paymentStatus !== 'APPROVED') {
-    return res.status(403).json({ 
-      error: 'Accès en attente de validation du paiement',
-      paymentStatus: organization.paymentStatus 
-    });
-  }
-
   next();
 };
 

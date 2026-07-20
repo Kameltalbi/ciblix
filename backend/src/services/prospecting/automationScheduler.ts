@@ -29,7 +29,6 @@ async function tickOnce(): Promise<void> {
       active: true,
       nextRunAt: { lte: now },
       organization: {
-        paymentStatus: 'APPROVED',
         suspended: false,
       },
     },
