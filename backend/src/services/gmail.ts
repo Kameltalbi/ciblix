@@ -233,33 +233,19 @@ class GmailService {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
+    // Gmail refuse labelIds sur drafts.create ("Cannot set labels on drafts").
+    // Le label « Réponse à valider » est appliqué sur le message entrant côté sync.
     const { data } = await gmail.users.drafts.create({
       userId: 'me',
       requestBody: {
         message: {
           raw,
           threadId: opts.threadId,
-          labelIds: opts.labelIds,
         },
       },
     });
 
-    const draftId = data.id || '';
-    const draftMessageId = data.message?.id;
-
-    if (draftMessageId && opts.labelIds?.length) {
-      try {
-        await gmail.users.messages.modify({
-          userId: 'me',
-          id: draftMessageId,
-          requestBody: { addLabelIds: opts.labelIds },
-        });
-      } catch {
-        // Labels on drafts can be restricted; original message labeling is handled separately.
-      }
-    }
-
-    return draftId;
+    return data.id || '';
   }
 
   async addLabelsToMessage(
