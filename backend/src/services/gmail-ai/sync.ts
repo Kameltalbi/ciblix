@@ -158,7 +158,7 @@ async function processOneMessage(opts: {
 
     const messageIdHeader = getHeader(message, 'Message-ID') || getHeader(message, 'Message-Id');
     const references = getHeader(message, 'References');
-    const draftBody = buildDraftBody(ai);
+    const draftBody = buildDraftBody(ai, opts.signature);
 
     const draftId = await gmailService.createReplyDraft(token, {
       threadId,

@@ -73,10 +73,11 @@ Rules:
 - actionRequested: what the sender wants the recipient to do.
 - analysis: brief intent classification (quote, meeting, support, info, complaint, other).
 - priority: HIGH if urgent/deadline/customer risk, MEDIUM otherwise, LOW if FYI/newsletter-like.
-- reply: ready-to-send draft in ${lang}, tone: ${opts.tone}.
+- reply: a complete, ready-to-send email reply in ${lang}, tone: ${opts.tone}. It must read as if the recipient wrote it themselves.
+- The reply must start with an appropriate greeting and contain full sentences.
+- IMPORTANT: do NOT include any closing salutation, signature, sender name, or placeholder such as "[Votre Nom]" / "[Your Name]" at the end of the reply. The signature is added automatically afterwards. End the reply on the last content sentence.
 - Do not invent facts. Ask politely if info is missing.
-- Never claim the email was already sent.
-${opts.signature ? `- End the reply with this signature block:\\n${opts.signature}` : '- Sign with a short closing (e.g. Cordialement).'}`;
+- Never claim the email was already sent.`;
 
   const prompt = `From: ${opts.from}
 Subject: ${opts.subject}
@@ -109,27 +110,35 @@ ${opts.body.slice(0, 8000)}`;
       actionRequested: 'Répondre au message',
       analysis: 'Analyse indisponible',
       priority: 'MEDIUM',
-      reply:
-        raw ||
-        `Bonjour,\n\nMerci pour votre message. Je reviens vers vous rapidement.\n\n${opts.signature || 'Cordialement,'}`,
+      reply: raw || `Bonjour,\n\nMerci pour votre message. Je reviens vers vous rapidement.`,
     };
   }
 }
 
-export function buildDraftBody(result: GmailAiDraftResult): string {
-  const priorityLabel =
-    result.priority === 'HIGH' ? 'Haute' : result.priority === 'LOW' ? 'Basse' : 'Moyenne';
-  return [
-    '--- Résumé IA (ne pas envoyer tel quel) ---',
-    result.summary.trim(),
-    '',
-    `Priorité : ${priorityLabel}`,
-    `Action demandée : ${result.actionRequested.trim()}`,
-    `Analyse : ${result.analysis.trim()}`,
-    '',
-    '--- Brouillon de réponse (à valider avant envoi) ---',
-    result.reply.trim(),
-    '',
-    '— Généré par Ciblix Gmail IA. Vérifiez puis cliquez Envoyer dans Gmail. —',
-  ].join('\n');
+/** Enlève une éventuelle signature/salutation finale laissée par le modèle. */
+function stripTrailingSignature(reply: string): string {
+  let text = reply.trim();
+  const closings = /^(cordialement|bien à vous|sincèrement|respectueusement|best regards|regards|kind regards|sincerely|thanks|thank you|merci)\b/i;
+  const placeholder = /\[(votre nom|your name|nom)\]/i;
+  const lines = text.split('\n');
+  while (lines.length) {
+    const last = lines[lines.length - 1].trim();
+    if (last === '' || placeholder.test(last) || closings.test(last)) {
+      lines.pop();
+      continue;
+    }
+    break;
+  }
+  text = lines.join('\n').trim();
+  return text;
+}
+
+/**
+ * Corps du brouillon = uniquement la réponse prête à envoyer + signature.
+ * Le résumé/analyse IA reste dans Ciblix (jamais dans le mail envoyé).
+ */
+export function buildDraftBody(result: GmailAiDraftResult, signature?: string | null): string {
+  const reply = stripTrailingSignature(result.reply);
+  const sig = signature?.trim();
+  return sig ? `${reply}\n\n${sig}` : reply;
 }
