@@ -1,30 +1,118 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, CheckCircle2, ArrowRight, Mail, Phone, MapPin, Menu, X, Globe, Radio, Bot, Radar, FileSignature, ShieldCheck, Sparkles, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  CheckCircle2,
+  ArrowRight,
+  Mail,
+  Phone,
+  MapPin,
+  Menu,
+  X,
+  Globe,
+  Radio,
+  Bot,
+  Radar,
+  FileSignature,
+  ShieldCheck,
+  Sparkles,
+  ChevronDown,
+  TrendingUp,
+  Play,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
+  DEMO_URL,
+  LandingProofStats,
   LandingProblem,
-  LandingHowItWorks,
-  LandingDifferentiation,
+  LandingSolution,
+  LandingVideo,
+  LandingCompare,
+  LandingUseCases,
   LandingPricing,
   LandingDataTrust,
   LandingFinalCta,
+  HeroPipelineIllustration,
 } from '@/components/landing/LandingSections';
 
-const DEMO_URL = import.meta.env.VITE_DEMO_VIDEO_URL || '#how-it-works';
-
 const LANDING_AGENTS = [
-  { icon: Radio, nameKey: 'agents.huntAi.name', descKey: 'agents.huntAi.desc', memoryKey: 'landingHome.agentMemoryHunt', iconBg: 'bg-orange-500/20', iconColor: 'text-orange-600', to: '/agent/hunt-ai', features: ['Recherche multi-sources', 'Lead scoring IA', 'Enrichissement automatique'] },
-  { icon: Bot, nameKey: 'agents.copilotIa.name', descKey: 'agents.copilotIa.desc', memoryKey: 'landingHome.agentMemoryCopilot', iconBg: 'bg-blue-500/20', iconColor: 'text-blue-600', to: '/agent/copilot-ia', features: ['Analyse appels & WhatsApp', 'Score de qualification', 'Actions suggérées'] },
-  { icon: Radar, nameKey: 'agents.scoutAi.name', descKey: 'agents.scoutAi.desc', memoryKey: 'landingHome.agentMemoryScout', iconBg: 'bg-indigo-500/20', iconColor: 'text-indigo-600', to: '/agent/scout-ai', features: ["Appels d'offres", 'Événements sectoriels', 'Signaux faibles'] },
-  { icon: FileSignature, nameKey: 'agents.offreBot.name', descKey: 'agents.offreBot.desc', memoryKey: 'landingHome.agentMemoryOffre', iconBg: 'bg-violet-500/20', iconColor: 'text-violet-600', to: '/agent/offre-bot', features: ['Historique réel', 'Personnalisation client', 'Export professionnel'] },
-  { icon: Mail, nameKey: 'agents.gmailAi.name', descKey: 'agents.gmailAi.desc', memoryKey: 'landingHome.agentMemoryGmail', iconBg: 'bg-sky-500/20', iconColor: 'text-sky-600', to: '/register', features: ['Résumés automatiques', 'Brouillons intelligents', 'Mémoire partagée'] },
-  { icon: ShieldCheck, nameKey: 'agents.factCheckAi.name', descKey: 'agents.factCheckAi.desc', memoryKey: 'landingHome.agentMemoryFact', iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-600', to: '/agent/factcheck-ai', features: ['Vérification multi-sources', 'Score de fiabilité', 'Analyse de pages web'] },
+  {
+    icon: Radio,
+    nameKey: 'agents.huntAi.name',
+    descKey: 'agents.huntAi.desc',
+    memoryKey: 'landingHome.agentMemoryHunt',
+    iconBg: 'bg-orange-500/20',
+    iconColor: 'text-orange-600',
+    to: '/agent/hunt-ai',
+  },
+  {
+    icon: Bot,
+    nameKey: 'agents.copilotIa.name',
+    descKey: 'agents.copilotIa.desc',
+    memoryKey: 'landingHome.agentMemoryCopilot',
+    iconBg: 'bg-blue-500/20',
+    iconColor: 'text-blue-600',
+    to: '/agent/copilot-ia',
+  },
+  {
+    icon: Radar,
+    nameKey: 'agents.scoutAi.name',
+    descKey: 'agents.scoutAi.desc',
+    memoryKey: 'landingHome.agentMemoryScout',
+    iconBg: 'bg-indigo-500/20',
+    iconColor: 'text-indigo-600',
+    to: '/agent/scout-ai',
+  },
+  {
+    icon: FileSignature,
+    nameKey: 'agents.offreBot.name',
+    descKey: 'agents.offreBot.desc',
+    memoryKey: 'landingHome.agentMemoryOffre',
+    iconBg: 'bg-violet-500/20',
+    iconColor: 'text-violet-600',
+    to: '/agent/offre-bot',
+  },
+  {
+    icon: Mail,
+    nameKey: 'agents.gmailAi.name',
+    descKey: 'agents.gmailAi.desc',
+    memoryKey: 'landingHome.agentMemoryGmail',
+    iconBg: 'bg-sky-500/20',
+    iconColor: 'text-sky-600',
+    to: '/register',
+  },
+  {
+    icon: ShieldCheck,
+    nameKey: 'agents.factCheckAi.name',
+    descKey: 'agents.factCheckAi.desc',
+    memoryKey: 'landingHome.agentMemoryFact',
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-600',
+    to: '/agent/factcheck-ai',
+  },
 ] as const;
 
 const SOFTFACTURE_BANNER_SLIDE_MS = 500;
+
+const SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Ciblix',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    'Plateforme d’agents IA collaboratifs : vos agents trouvent, qualifient et suivent vos prospects — le pipeline se construit automatiquement.',
+  url: 'https://ciblix.com',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'TND',
+    description: 'Essai Découverte',
+  },
+  inLanguage: ['fr', 'ar', 'en'],
+};
 
 export function Landing() {
   const { i18n, t } = useTranslation();
@@ -37,52 +125,61 @@ export function Landing() {
   const popupUnmountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    document.title = t('landing.seoTitle');
+    const desc = t('landing.seoDescription');
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'description');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', desc);
+
+    let script = document.getElementById('ciblix-schema') as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'ciblix-schema';
+      script.type = 'application/ld+json';
+      document.head.appendChild(script);
+    }
+    script.textContent = JSON.stringify(SCHEMA);
+  }, [t, i18n.language]);
+
+  useEffect(() => {
     const today = new Date().toDateString();
     const storageKey = 'softfacture_popup_count';
     const storageDateKey = 'softfacture_popup_date';
-
     const storedDate = localStorage.getItem(storageDateKey);
     const storedCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
-
     if (storedDate !== today) {
       localStorage.setItem(storageKey, '0');
       localStorage.setItem(storageDateKey, today);
     }
-
     const currentCount = storedDate === today ? storedCount : 0;
-
     if (currentCount < 2) {
       const timer = setTimeout(() => {
         setShowPopup(true);
         localStorage.setItem(storageKey, String(currentCount + 1));
         localStorage.setItem(storageDateKey, today);
       }, 2000);
-
       return () => clearTimeout(timer);
     }
   }, []);
 
   useEffect(() => {
     if (!showPopup) return;
-
     setPopupEntered(false);
     setPopupExiting(false);
     const enterDelayMs = 30;
     const slideMs = SOFTFACTURE_BANNER_SLIDE_MS;
     const enterTimer = setTimeout(() => setPopupEntered(true), enterDelayMs);
-
-    // 5 s affichées une fois la barre ouverte, puis fermeture
     const visibleMs = 5000;
-    popupExitTimerRef.current = setTimeout(
-      () => setPopupExiting(true),
-      enterDelayMs + slideMs + visibleMs,
-    );
+    popupExitTimerRef.current = setTimeout(() => setPopupExiting(true), enterDelayMs + slideMs + visibleMs);
     popupUnmountTimerRef.current = setTimeout(() => {
       setShowPopup(false);
       setPopupExiting(false);
       setPopupEntered(false);
     }, enterDelayMs + slideMs + visibleMs + slideMs);
-
     return () => {
       clearTimeout(enterTimer);
       if (popupExitTimerRef.current) clearTimeout(popupExitTimerRef.current);
@@ -100,349 +197,271 @@ export function Landing() {
       setPopupEntered(false);
     }, SOFTFACTURE_BANNER_SLIDE_MS);
   };
-  
+
+  const demoIsExternal = DEMO_URL.startsWith('http');
+
   return (
-    <div className="min-h-screen bg-kt-mesh">
-      {/* Header — même ADN que l’app (bleu structure) */}
-      <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/90 shadow-sm backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20 sm:py-0">
-            <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+    <div className="min-h-screen bg-white">
+      <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20">
+            <Link to="/" className="transition-opacity hover:opacity-80">
               <img
                 src="/logo-ciblix.png"
                 alt="CIBLIX"
-                className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem] md:max-w-[16rem]"
+                className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
               />
             </Link>
-            <nav className="hidden md:flex items-center gap-5 flex-1 justify-center">
-              <a href="#how-it-works" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
+            <nav className="hidden flex-1 items-center justify-center gap-6 md:flex">
+              <a href="#how-it-works" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
                 {t('landing.navFeatures')}
               </a>
-              <a href="#problem" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
+              <a href="#agents" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
+                Agents
+              </a>
+              <a href="#compare" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
                 {t('landing.navWhy')}
+              </a>
+              <a href="#pricing" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
+                {t('landing.navPricing')}
               </a>
               <div
                 className="relative"
                 onMouseEnter={() => setAgentsDropdownOpen(true)}
                 onMouseLeave={() => setAgentsDropdownOpen(false)}
               >
-                <a
-                  href="#agents"
-                  className="flex items-center gap-1 text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]"
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-sm font-semibold text-foreground/70 hover:text-[#0071DD]"
                 >
-                  <Sparkles size={15} className="text-[#016AEB]" />
-                  Agents IA
+                  <Sparkles size={14} className="text-[#016AEB]" />
+                  {t('landing.navAgents')}
                   <ChevronDown size={14} className={cn('transition-transform', agentsDropdownOpen && 'rotate-180')} />
-                </a>
+                </button>
                 {agentsDropdownOpen && (
-                  <div className="absolute left-1/2 top-full z-50 w-[340px] -translate-x-1/2 pt-2">
-                    <div className="rounded-2xl border border-[#BED6F6]/40 bg-white p-3 shadow-xl">
-                    {LANDING_AGENTS.map((agent) => (
+                  <div className="absolute left-1/2 top-full z-50 w-[320px] -translate-x-1/2 pt-2">
+                    <div className="rounded-2xl border border-[#BED6F6]/40 bg-white/95 p-3 shadow-xl backdrop-blur-xl">
+                      {LANDING_AGENTS.map((agent) => (
                         <Link
                           key={agent.nameKey}
                           to={agent.to}
                           onClick={() => setAgentsDropdownOpen(false)}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#f4f8fd]"
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-[#f4f8fd]"
                         >
-                          <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', agent.iconBg)}>
+                          <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', agent.iconBg)}>
                             <agent.icon size={18} className={agent.iconColor} />
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{t(agent.nameKey)}</p>
-                            <p className="text-xs text-muted-foreground">{t(agent.descKey)}</p>
-                          </div>
+                          <p className="text-sm font-semibold">{t(agent.nameKey)}</p>
                         </Link>
                       ))}
-                      <div className="mt-2 border-t border-gray-100 pt-2">
-                        <Link
-                          to="/register"
-                          onClick={() => setAgentsDropdownOpen(false)}
-                          className="flex items-center justify-center gap-2 rounded-xl bg-[#0071DD] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#016AEB]"
-                        >
-                          Essayer gratuitement <ArrowRight size={14} />
-                        </Link>
-                      </div>
                     </div>
                   </div>
                 )}
               </div>
-              <a href="#pricing" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
-                {t('landing.navPricing')}
-              </a>
-              <a href="#contact" className="text-[15px] font-semibold text-foreground/80 transition-colors hover:text-[#0071DD]">
-                {t('landing.navContact')}
-              </a>
             </nav>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
+                type="button"
                 onClick={() => {
                   const languages = ['fr', 'en', 'ar'];
                   const currentIndex = languages.indexOf(i18n.language);
-                  const nextIndex = (currentIndex + 1) % languages.length;
-                  i18n.changeLanguage(languages[nextIndex]);
+                  i18n.changeLanguage(languages[(currentIndex + 1) % languages.length]);
                 }}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#eef4fc] hover:text-[#1E72B9]"
-                title="Change language"
+                className="flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-[#eef4fc]"
               >
                 <Globe size={18} className="text-[#016AEB]" />
                 <span className="font-semibold text-[#0071DD]">{i18n.language.toUpperCase()}</span>
               </button>
               <button
+                type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden rounded-xl p-2 text-[#1E72B9] transition-colors hover:bg-[#eef4fc]"
+                className="rounded-xl p-2 text-[#1E72B9] hover:bg-[#eef4fc] md:hidden"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
-              <div className="hidden md:flex items-center gap-3">
+              <div className="hidden items-center gap-2 md:flex">
                 <Link to="/login">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-[#BED6F6] bg-white text-[#0071DD] hover:bg-[#e8f1fc]"
-                  >
+                  <Button variant="outline" className="border-[#BED6F6] text-[#0071DD] hover:bg-[#e8f1fc]">
                     {t('auth.signIn')}
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="lg" className="shadow-glow">
-                    {t('auth.signUp')}
-                  </Button>
+                  <Button className="shadow-glow">{t('landing.cta')}</Button>
                 </Link>
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-white">
-            <div className="px-4 py-4 space-y-3">
-              <a href="#how-it-works" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
+          <div className="border-t bg-white md:hidden">
+            <div className="space-y-3 px-4 py-4">
+              <a href="#how-it-works" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navFeatures')}
               </a>
-              <a href="#problem" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
-                {t('landing.navWhy')}
+              <a href="#agents" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+                Agents
               </a>
-              <a href="#agents" className="flex items-center gap-2 text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
-                <Sparkles size={16} className="text-[#016AEB]" /> Agents IA
-              </a>
-              <div className="ml-6 space-y-2">
-                {LANDING_AGENTS.map((agent) => (
-                  <Link key={agent.nameKey} to={agent.to} onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-[#0071DD]">
-                    <agent.icon size={14} className={agent.iconColor} /> {t(agent.nameKey)}
-                  </Link>
-                ))}
-              </div>
-              <a href="#pricing" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
+              <a href="#pricing" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navPricing')}
               </a>
-              <a href="#contact" className="block text-lg text-muted-foreground transition-colors hover:text-[#0071DD]" onClick={() => setMobileMenuOpen(false)}>
-                {t('landing.navContact')}
-              </a>
-              <div className="pt-4 space-y-2">
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full border-[#BED6F6] bg-white text-[#0071DD] hover:bg-[#e8f1fc]"
-                  >
-                    {t('auth.signIn')}
-                  </Button>
-                </Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button size="lg" className="w-full shadow-glow">
-                    {t('auth.signUp')}
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="mt-2 w-full shadow-glow">{t('landing.cta')}</Button>
+              </Link>
             </div>
           </div>
         )}
       </header>
 
-      {/* Hero — palette KTOptima uniquement (plus de vert / arc-en-ciel) */}
+      {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-[#f4f8fd] to-[#e8f1fc]/80" aria-hidden />
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-[32rem] w-[min(100vw,56rem)] -translate-x-1/2 rounded-full bg-[#BED6F6]/35 blur-3xl" aria-hidden />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#BED6F6]/70 bg-white/90 px-4 py-2 text-lg font-medium text-[#1E72B9] shadow-sm backdrop-blur-sm">
-              <TrendingUp size={24} className="text-[#016AEB]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#f7faff] via-white to-[#e8f1fc]/60" />
+        <div className="pointer-events-none absolute -left-32 top-0 h-[28rem] w-[28rem] rounded-full bg-[#BED6F6]/40 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-0 h-[24rem] w-[24rem] rounded-full bg-[#016AEB]/10 blur-3xl" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-2 lg:gap-16 lg:px-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#BED6F6]/70 bg-white/80 px-3.5 py-1.5 text-sm font-medium text-[#1E72B9] shadow-sm backdrop-blur-md">
+              <Sparkles size={16} className="text-[#016AEB]" />
               {t('landing.badge')}
             </div>
-            <h1 className="mb-6 text-5xl font-serif font-bold tracking-tight text-foreground md:text-7xl lg:text-8xl">
-              {t('landing.heroTitle1')}{' '}
-              <span className="bg-gradient-to-r from-[#0071DD] to-[#016AEB] bg-clip-text text-transparent">
-                {t('landing.heroTitle2')}
-              </span>
+            <h1 className="mb-5 font-serif text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
+              {t('landing.heroTitle')}
             </h1>
-            <p className="mb-10 max-w-3xl mx-auto text-xl text-muted-foreground md:text-2xl">
+            <p className="mb-8 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
               {t('landing.heroSubtitle')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link to="/register">
-                <Button size="lg" className="px-8 text-lg shadow-glow">
+                <Button size="lg" className="w-full px-8 text-base shadow-glow sm:w-auto">
                   {t('landing.cta')}
-                  <ArrowRight size={20} className="ml-2" />
+                  <ArrowRight size={18} className="ml-2" />
                 </Button>
               </Link>
-              <a href={DEMO_URL} target={DEMO_URL.startsWith('http') ? '_blank' : undefined} rel="noreferrer">
-                <Button size="lg" variant="outline" className="border-[#BED6F6] px-8 text-lg text-[#0071DD] hover:bg-[#e8f1fc] w-full sm:w-auto">
+              <a href={DEMO_URL} target={demoIsExternal ? '_blank' : undefined} rel="noreferrer">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full border-[#BED6F6] px-8 text-base text-[#0071DD] hover:bg-[#e8f1fc] sm:w-auto"
+                >
+                  <Play size={16} className="mr-2 fill-current" />
                   {t('landing.demo')}
                 </Button>
               </a>
             </div>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-base text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                {t('landing.noCommitment')}
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                {t('landing.localSupport')}
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                {t('landing.secure')}
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="shrink-0 text-[#016AEB]" />
-                {t('landing.multilingual')}
-              </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              {[t('landing.noCommitment'), t('landing.localSupport'), t('landing.secure'), t('landing.multilingual')].map(
+                (label) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <CheckCircle2 size={15} className="text-[#016AEB]" />
+                    {label}
+                  </div>
+                )
+              )}
             </div>
-          </div>
+          </motion.div>
+          <motion.div
+            className="flex justify-center lg:justify-end"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+          >
+            <HeroPipelineIllustration />
+          </motion.div>
         </div>
       </section>
 
+      <LandingProofStats />
       <LandingProblem />
-      <LandingHowItWorks />
+      <LandingSolution />
+      <LandingVideo />
 
-      {/* Agents IA Section */}
-      <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,113,221,0.25),transparent_70%)]" aria-hidden />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-[#BED6F6] backdrop-blur-sm">
-              <Sparkles size={16} /> {t('landing.agentsBadge', { defaultValue: '6 agents IA spécialisés' })}
-            </div>
-            <h2 className="mb-4 text-4xl font-serif font-bold tracking-tight md:text-5xl">
-              {t('landing.agentsSectionTitle')}
-            </h2>
-            <p className="mx-auto max-w-2xl text-lg text-white/70">
-              {t('landing.agentsIntro')}
-            </p>
+      {/* Agents team */}
+      <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white md:py-28">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,113,221,0.28),transparent_65%)]" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-14 text-center">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#BED6F6]">{t('landing.agentsBadge')}</p>
+            <h2 className="mb-4 font-serif text-3xl font-bold tracking-tight md:text-5xl">{t('landing.agentsSectionTitle')}</h2>
+            <p className="mx-auto max-w-2xl text-lg text-white/70">{t('landing.agentsIntro')}</p>
           </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {LANDING_AGENTS.map((agent) => (
               <Link
                 key={agent.nameKey}
                 to={agent.to}
-                className="group relative rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
+                className="group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 hover:shadow-xl"
               >
-                <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-xl', agent.iconBg)}>
-                  <agent.icon size={24} className="text-white" />
+                <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-2xl', agent.iconBg)}>
+                  <agent.icon size={22} className="text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-1">{t(agent.nameKey)}</h3>
-                <p className="mb-2 text-sm leading-relaxed text-white/65">{t(agent.descKey)}</p>
-                <p className="mb-4 text-xs italic text-[#BED6F6]/90">{t(agent.memoryKey)}</p>
-                <ul className="mb-4 space-y-1.5">
-                  {agent.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-xs text-white/50">
-                      <CheckCircle2 size={12} className="shrink-0 text-[#BED6F6]" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#BED6F6] transition-colors group-hover:text-white">
-                  {t('landing.learnMore')} <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+                <h3 className="mb-1 text-xl font-bold">{t(agent.nameKey)}</h3>
+                <p className="mb-2 text-sm text-white/65">{t(agent.descKey)}</p>
+                <p className="mb-5 text-xs leading-relaxed text-[#BED6F6]">{t(agent.memoryKey)}</p>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#BED6F6] group-hover:text-white">
+                  {t('landing.learnMore')}
+                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
                 </span>
               </Link>
             ))}
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 p-6 text-center">
-              <Sparkles size={32} className="mb-3 text-[#BED6F6]" />
-              <h3 className="mb-2 text-lg font-bold">{t('landing.agentsCtaTitle')}</h3>
-              <p className="mb-5 text-sm text-white/60">
-                {t('landing.agentsCtaBody')}
-              </p>
-              <Link to="/register">
-                <Button size="lg" className="bg-white text-[#016AEB] hover:bg-white/90 shadow-glow">
-                  Démarrer gratuitement <ArrowRight size={16} className="ml-2" />
-                </Button>
-              </Link>
-            </div>
+          </div>
+          <div className="mt-12 text-center">
+            <Link to="/register">
+              <Button size="lg" className="bg-white text-[#016AEB] shadow-glow hover:bg-white/90">
+                {t('landing.cta')}
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      <LandingDifferentiation />
+      <LandingCompare />
+      <LandingUseCases />
       <LandingPricing />
       <LandingDataTrust />
       <LandingFinalCta />
 
-      {/* Footer */}
       <footer id="contact" className="bg-gradient-to-b from-[#1E72B9] to-[#0a2540] py-16 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 grid gap-8 md:grid-cols-4">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <img
-                  src="/logo-ciblix.png"
-                  alt="CIBLIX"
-                  className="h-12 w-auto max-w-[min(12rem,70vw)] object-contain brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)] sm:h-14"
-                />
-              </div>
-              <p className="text-white/75 mb-4 max-w-md text-base">
-                {t('landing.footerDesc')}
-              </p>
-              <div className="flex items-center gap-4">
-                <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-                  <Mail size={20} />
-                </a>
-                <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20">
-                  <Phone size={20} />
-                </a>
-              </div>
+              <img
+                src="/logo-ciblix.png"
+                alt="CIBLIX"
+                className="mb-4 h-12 w-auto max-w-[min(12rem,70vw)] object-contain brightness-0 invert sm:h-14"
+              />
+              <p className="mb-4 max-w-md text-base text-white/75">{t('landing.footerDesc')}</p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-lg text-[#BED6F6]">{t('landing.footerLinks')}</h4>
+              <h3 className="mb-4 text-lg font-semibold text-[#BED6F6]">{t('landing.footerLinks')}</h3>
               <ul className="space-y-2 text-base text-white/80">
                 <li>
-                  <a href="#how-it-works" className="transition-colors hover:text-white">
+                  <a href="#how-it-works" className="hover:text-white">
                     {t('landing.navFeatures')}
                   </a>
                 </li>
                 <li>
-                  <a href="#pricing" className="transition-colors hover:text-white">
+                  <a href="#pricing" className="hover:text-white">
                     {t('landing.navPricing')}
                   </a>
                 </li>
                 <li>
-                  <Link to="/login" className="transition-colors hover:text-white">
-                    {t('auth.signIn')}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/register" className="transition-colors hover:text-white">
-                    {t('auth.signUp')}
+                  <Link to="/register" className="hover:text-white">
+                    {t('landing.cta')}
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-lg text-[#BED6F6]">{t('landing.footerContact')}</h4>
+              <h3 className="mb-4 text-lg font-semibold text-[#BED6F6]">{t('landing.footerContact')}</h3>
               <ul className="space-y-2 text-base text-white/80">
                 <li className="flex items-center gap-2">
-                  <Mail size={16} />
-                  contact@ciblix.com
+                  <Mail size={16} /> contact@ciblix.com
                 </li>
                 <li className="flex items-center gap-2">
-                  <Phone size={16} />
-                  +216 55 053 505
+                  <Phone size={16} /> +216 55 053 505
                 </li>
                 <li className="flex items-center gap-2">
-                  <MapPin size={16} />
-                  Tunis, Tunisie
+                  <MapPin size={16} /> Tunis, Tunisie
                 </li>
               </ul>
             </div>
@@ -453,15 +472,14 @@ export function Landing() {
         </div>
       </footer>
 
-      {/* Softfacture — bandeau latéral gauche */}
       {showPopup && (
         <div
           className={cn(
-            'fixed inset-y-0 left-0 z-[100] w-[min(19rem,88vw)] flex flex-col shadow-2xl',
+            'fixed inset-y-0 left-0 z-[100] flex w-[min(19rem,88vw)] flex-col shadow-2xl',
             'bg-gradient-to-b from-[#0071DD] via-[#016AEB] to-[#0a2540]',
-            'ring-2 ring-brand-soft/40 border-r border-white/20',
+            'border-r border-white/20 ring-2 ring-brand-soft/40',
             'transition-transform duration-500 ease-out',
-            popupExiting || !popupEntered ? '-translate-x-full' : 'translate-x-0',
+            popupExiting || !popupEntered ? '-translate-x-full' : 'translate-x-0'
           )}
           role="complementary"
           aria-label="Softfacture"
@@ -470,7 +488,7 @@ export function Landing() {
             <button
               type="button"
               onClick={dismissSoftfactureBanner}
-              className="absolute top-3 right-3 rounded-md p-1.5 text-white/80 hover:bg-white/15 hover:text-white transition-colors"
+              className="absolute right-3 top-3 rounded-md p-1.5 text-white/80 hover:bg-white/15"
               aria-label="Fermer"
             >
               <X size={18} />
@@ -479,20 +497,17 @@ export function Landing() {
               href="https://softfacture.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex flex-col gap-4 pr-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 rounded-md"
+              className="group flex flex-col gap-4 pr-6"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm ring-1 ring-white/30">
-                <TrendingUp size={24} className="text-white" aria-hidden />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30">
+                <TrendingUp size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-bold tracking-tight drop-shadow-sm">Softfacture</h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/95">
-                  Facturation intelligente et automatisée
-                </p>
+                <h3 className="text-lg font-bold">Softfacture</h3>
+                <p className="mt-2 text-sm text-white/95">Facturation intelligente et automatisée</p>
               </div>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#BED6F6] transition-colors group-hover:text-white drop-shadow-sm">
-                Découvrir
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#BED6F6] group-hover:text-white">
+                Découvrir <ArrowRight size={16} />
               </span>
             </a>
           </div>
