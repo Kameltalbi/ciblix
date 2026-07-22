@@ -8,6 +8,7 @@ import { prisma } from '../db/prisma.js';
 import { enrichHitWebsiteCached } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
 import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
+import { assertChannelAvailableForMessageType } from '../services/prospecting/channelAvailability.js';
 import { importProspectsFromSearch } from '../services/prospecting/importProspectsFromSearch.js';
 import type { CompanySearchCriteria, CompanySearchHit, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
 import {
@@ -613,6 +614,19 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       where: { id, organizationId: req.organizationId!, deletedAt: null },
     });
     if (!row) return res.status(404).json({ error: 'Prospect introuvable' });
+
+    const channelCheck = assertChannelAvailableForMessageType(
+      {
+        email: row.email,
+        phone: row.phone,
+        linkedin: row.linkedin,
+        detectedEmails: row.detectedEmails,
+      },
+      messageType
+    );
+    if (!channelCheck.ok) {
+      return res.status(400).json({ error: channelCheck.error });
+    }
 
     const [organization, senderUser] = await Promise.all([
       prisma.organization.findUnique({

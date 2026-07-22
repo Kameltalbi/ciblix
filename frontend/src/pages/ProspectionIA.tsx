@@ -28,6 +28,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input, Label } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import {
+  CHANNEL_UNAVAILABLE_HINTS,
+  getChannelAvailability,
+} from '@/lib/prospectChannelAvailability';
 
 type Potential = 'TRES_FORT' | 'MOYEN' | 'FAIBLE' | string | null;
 
@@ -462,6 +466,9 @@ export function ProspectionIA() {
         signatureWarning: data.signatureWarning ? data.signatureWarningText : undefined,
       });
     },
+    onError: (e: { response?: { data?: { error?: string } }; message?: string }) => {
+      window.alert(e?.response?.data?.error || e?.message || 'Génération impossible pour ce canal');
+    },
   });
 
   const copyPreview = async () => {
@@ -880,6 +887,7 @@ export function ProspectionIA() {
               const mainEmail = emails[0];
               const techs = techList(p.technologiesDetected);
               const tel = p.phone?.replace(/\s/g, '') || '';
+              const channels = getChannelAvailability(p);
 
               return (
                 <Card
@@ -954,13 +962,24 @@ export function ProspectionIA() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {tel ? (
-                        <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
-                          <a href={`tel:${tel}`}>
+                      <span title={channels.canCall ? undefined : CHANNEL_UNAVAILABLE_HINTS.call} className="inline-flex">
+                        {channels.canCall ? (
+                          <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
+                            <a href={`tel:${tel}`}>
+                              <Phone size={14} /> Appeler
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 rounded-lg opacity-50 cursor-not-allowed"
+                            disabled
+                          >
                             <Phone size={14} /> Appeler
-                          </a>
-                        </Button>
-                      ) : null}
+                          </Button>
+                        )}
+                      </span>
                       {p.website ? (
                         <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
                           <a href={p.website} target="_blank" rel="noreferrer">
@@ -968,13 +987,31 @@ export function ProspectionIA() {
                           </a>
                         </Button>
                       ) : null}
-                      {p.linkedin ? (
+                      {mainEmail ? (
                         <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
-                          <a href={p.linkedin} target="_blank" rel="noreferrer">
-                            <ExternalLink size={14} /> LinkedIn
+                          <a href={`mailto:${mainEmail}`}>
+                            <Mail size={14} /> {mainEmail}
                           </a>
                         </Button>
                       ) : null}
+                      <span title={channels.canLinkedIn ? undefined : CHANNEL_UNAVAILABLE_HINTS.linkedin} className="inline-flex">
+                        {channels.canLinkedIn && p.linkedin ? (
+                          <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
+                            <a href={p.linkedin} target="_blank" rel="noreferrer">
+                              <ExternalLink size={14} /> LinkedIn
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 rounded-lg opacity-50 cursor-not-allowed"
+                            disabled
+                          >
+                            <ExternalLink size={14} /> LinkedIn
+                          </Button>
+                        )}
+                      </span>
                       {p.facebookUrl ? (
                         <Button size="sm" variant="ghost" className="rounded-lg px-2 text-xs" asChild>
                           <a href={p.facebookUrl} target="_blank" rel="noreferrer">
@@ -986,13 +1023,6 @@ export function ProspectionIA() {
                         <Button size="sm" variant="ghost" className="rounded-lg px-2 text-xs" asChild>
                           <a href={p.instagramUrl} target="_blank" rel="noreferrer">
                             IG
-                          </a>
-                        </Button>
-                      ) : null}
-                      {mainEmail ? (
-                        <Button size="sm" variant="secondary" className="gap-1.5 rounded-lg text-xs font-normal" asChild>
-                          <a href={`mailto:${mainEmail}`}>
-                            <Mail size={14} /> {mainEmail}
                           </a>
                         </Button>
                       ) : null}
@@ -1043,33 +1073,58 @@ export function ProspectionIA() {
                         <KanbanSquare size={14} />
                         {inPipe ? t('prospectionIA.inOpportunitiesLabel') : t('prospectionIA.addToOpportunities')}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={ignored}
-                        className="rounded-lg gap-1.5"
-                        onClick={() => messageMutation.mutate({ id: p.id, messageType: 'FIRST_CONTACT', tone: 'commercial' })}
-                      >
-                        <Mail size={14} /> Email IA
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="rounded-lg"
-                        disabled={ignored}
-                        onClick={() => messageMutation.mutate({ id: p.id, messageType: 'LINKEDIN', tone: 'doux' })}
-                      >
-                        Message LinkedIn
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="rounded-lg gap-1.5"
-                        disabled={ignored}
-                        onClick={() => messageMutation.mutate({ id: p.id, messageType: 'WHATSAPP', tone: 'commercial' })}
-                      >
-                        <MessageCircle size={14} /> WhatsApp
-                      </Button>
+
+                      {!channels.hasAnyChannel ? (
+                        <p className="w-full text-xs text-muted-foreground py-1">
+                          {CHANNEL_UNAVAILABLE_HINTS.none}
+                        </p>
+                      ) : (
+                        <>
+                          <span title={channels.canEmail ? undefined : CHANNEL_UNAVAILABLE_HINTS.email} className="inline-flex">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={ignored || !channels.canEmail || messageMutation.isPending}
+                              className={cn('rounded-lg gap-1.5', !channels.canEmail && 'opacity-50 cursor-not-allowed')}
+                              onClick={() =>
+                                channels.canEmail &&
+                                messageMutation.mutate({ id: p.id, messageType: 'FIRST_CONTACT', tone: 'commercial' })
+                              }
+                            >
+                              <Mail size={14} /> Email IA
+                            </Button>
+                          </span>
+                          <span title={channels.canLinkedIn ? undefined : CHANNEL_UNAVAILABLE_HINTS.linkedin} className="inline-flex">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={cn('rounded-lg', !channels.canLinkedIn && 'opacity-50 cursor-not-allowed')}
+                              disabled={ignored || !channels.canLinkedIn || messageMutation.isPending}
+                              onClick={() =>
+                                channels.canLinkedIn &&
+                                messageMutation.mutate({ id: p.id, messageType: 'LINKEDIN', tone: 'doux' })
+                              }
+                            >
+                              Message LinkedIn
+                            </Button>
+                          </span>
+                          <span title={channels.canWhatsApp ? undefined : CHANNEL_UNAVAILABLE_HINTS.whatsapp} className="inline-flex">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={cn('rounded-lg gap-1.5', !channels.canWhatsApp && 'opacity-50 cursor-not-allowed')}
+                              disabled={ignored || !channels.canWhatsApp || messageMutation.isPending}
+                              onClick={() =>
+                                channels.canWhatsApp &&
+                                messageMutation.mutate({ id: p.id, messageType: 'WHATSAPP', tone: 'commercial' })
+                              }
+                            >
+                              <MessageCircle size={14} /> WhatsApp
+                            </Button>
+                          </span>
+                        </>
+                      )}
+
                       <Button
                         size="sm"
                         variant="outline"
