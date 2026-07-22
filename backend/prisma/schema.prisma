@@ -70,6 +70,8 @@ model Organization {
   contacts              Contact[]
   agentEvents           AgentEvent[]
   contactDedupConflicts ContactDedupConflict[]
+  copilotOrgConfig      CopilotOrgConfig?
+  copilotMessages       CopilotMessage[]
   /// TTL transcription brute (jours) — appliqué par le job de purge S3
   agentEventRawRetentionDays Int @default(90)
 
@@ -114,6 +116,7 @@ model User {
   salesObjectives  SalesObjective[]
   permissions      UserPermission[]
   agentEvents      AgentEvent[]
+  copilotMessages  CopilotMessage[]
 
   @@index([organizationId])
   @@map("users")
@@ -1465,6 +1468,7 @@ model Contact {
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   events         AgentEvent[]
+  copilotMessages CopilotMessage[]
   dedupConflicts ContactDedupConflict[] @relation("ExistingContact")
 
   @@index([organizationId])
@@ -1501,12 +1505,17 @@ model AgentEvent {
 
   sourceRef           String?
 
+  processingStatus    CopilotProcessingStatus?
+  processingError     String?  @db.Text
+  analysisJson        Json?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  copilotMessages CopilotMessage[]
 
   @@index([organizationId, createdAt])
   @@index([organizationId, contactId, createdAt])
@@ -1536,4 +1545,46 @@ model ContactDedupConflict {
 
   @@index([organizationId, createdAt])
   @@map("contact_dedup_conflicts")
+}
+
+enum CopilotProcessingStatus {
+  PROCESSING
+  DONE
+  ERROR
+}
+
+model CopilotOrgConfig {
+  organizationId  String   @id
+  sector          String?
+  businessLexicon String?  @db.Text
+  scoringGrid     Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("copilot_org_configs")
+}
+
+model CopilotMessage {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  contactId      String?
+  agentEventId   String?
+
+  role           String
+  content        String   @db.Text
+
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  agentEvent     AgentEvent?  @relation(fields: [agentEventId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, userId, createdAt])
+  @@index([contactId, createdAt])
+  @@index([agentEventId, createdAt])
+  @@map("copilot_messages")
 }

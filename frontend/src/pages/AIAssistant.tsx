@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState, useRef, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
@@ -17,75 +17,88 @@ import {
   ChevronRight,
   BarChart3,
   Radio,
+  Upload,
+  Mic,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
-import { fmtDT } from '@/lib/utils';
 
 interface Message {
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
-  data?: unknown;
 }
 
-interface OperationalBriefing {
+interface CopilotBriefing {
   generatedAt: string;
   summary: {
-    priorityOpportunities: number;
-    quotesWithoutReply7d: number;
-    atRiskCount: number;
-    hotLeads: number;
-    monthForecastWeightedHT: number;
+    recentConversations: number;
+    highScoreCount: number;
+    pendingContacts: number;
+    avgScore: number;
   };
   recommendations: Array<{
-    affaireId: string;
-    clientName: string;
+    agentEventId: string;
+    contactName?: string;
     action: string;
-    iaLabelFr: string;
     score: number;
   }>;
   alerts: Array<{
     type: string;
-    affaireId: string;
-    clientName?: string | null;
+    agentEventId: string;
+    contactName?: string;
     message: string;
   }>;
-  hotOpportunities: Array<{
+  topOpportunities: Array<{
     id: string;
-    clientName?: string | null;
-    montantHT: number;
-    iaLabelFr: string;
-    heatFr: string;
-    daysSinceLastTouch: number;
-    signatureProbabilityPct: number;
-    statut: string;
+    contactName?: string;
+    resume: string;
+    score: number;
+    createdAt: string;
   }>;
 }
 
+interface ConversationResult {
+  agentEventId: string;
+  status: 'processing' | 'done' | 'error';
+  processingError?: string | null;
+  resume?: string | null;
+  score?: number | null;
+  actionsSuggerees?: string[];
+  scoreDetail?: Record<string, string | number>;
+  signauxAchat?: string[];
+}
+
 export function AIAssistant() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const relanceRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const suggestions = [
-    'Quels clients dois-je relancer ?',
-    'Quelles sont mes opportunités les plus chaudes ?',
-    'Quel est mon CA probable ce mois ?',
-    'Quels dossiers sont bloqués ?',
-    'Quels commerciaux performent le mieux ?',
-    t('aiAssistant.suggestions.predictYearEnd'),
-    t('aiAssistant.suggestions.recommendations'),
+    'Quelles conversations dois-je relancer en priorité ?',
+    'Résume mes derniers échanges analysés',
+    'Quels signaux d’achat ont été détectés ?',
+    'Quelles actions me recommandes-tu cette semaine ?',
   ];
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: t('aiAssistant.welcomeMessage'),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [chatLoaded, setChatLoaded] = useState(false);
+
+  const [pastedText, setPastedText] = useState('');
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [consentConfirmed, setConsentConfirmed] = useState(false);
+  const [contactHintPhone, setContactHintPhone] = useState('');
+  const [contactHintEmail, setContactHintEmail] = useState('');
+  const [activeAgentEventId, setActiveAgentEventId] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<ConversationResult | null>(null);
+  const analysisRef = useRef<HTMLDivElement | null>(null);
 
   const [followAffaireId, setFollowAffaireId] = useState('');
   const [followTone, setFollowTone] = useState<'soft' | 'commercial' | 'firm'>('commercial');
@@ -93,27 +106,92 @@ export function AIAssistant() {
   const [followLength, setFollowLength] = useState<'short' | 'long'>('short');
   const [followPreview, setFollowPreview] = useState('');
 
-  const { data: briefing, isPending: briefingPending } = useQuery<OperationalBriefing>({
-    queryKey: ['operational-briefing'],
-    queryFn: () => api.get('/ai-assistant/operational-briefing').then((r) => r.data),
+  const { data: briefing, isPending: briefingPending } = useQuery<CopilotBriefing>({
+    queryKey: ['copilot-briefing'],
+    queryFn: () => api.get('/copilot/briefing').then((r) => r.data),
     staleTime: 60_000,
   });
 
-  const queryMutation = useMutation({
-    mutationFn: (message: string) =>
-      api.post('/ai-assistant/query', { message, language: i18n.language }).then((r) => r.data),
-    onSuccess: (data) => {
-      const response = formatResponse(data);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: response, data: data.result },
-      ]);
+  const { data: chatHistory } = useQuery({
+    queryKey: ['copilot-chat-messages', activeAgentEventId],
+    queryFn: () =>
+      api
+        .get('/copilot/chat/messages', {
+          params: activeAgentEventId ? { agentEventId: activeAgentEventId } : {},
+        })
+        .then((r) => r.data.messages as Message[]),
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    setChatLoaded(false);
+  }, [activeAgentEventId]);
+
+  useEffect(() => {
+    if (chatHistory && !chatLoaded) {
+      setMessages(chatHistory.filter((m) => m.id !== 'welcome' || chatHistory.length === 1));
+      setChatLoaded(true);
+    }
+  }, [chatHistory, chatLoaded]);
+
+  const { data: selectedConversation } = useQuery<ConversationResult>({
+    queryKey: ['copilot-conversation', activeAgentEventId],
+    queryFn: () => api.get(`/copilot/conversations/${activeAgentEventId}`).then((r) => r.data),
+    enabled: !!activeAgentEventId,
+    refetchInterval: (query) => (query.state.data?.status === 'processing' ? 2500 : false),
+  });
+
+  useEffect(() => {
+    if (!selectedConversation) return;
+    setAnalysisResult(selectedConversation);
+    if (selectedConversation.status === 'done') {
+      void queryClient.invalidateQueries({ queryKey: ['copilot-briefing'] });
+    }
+  }, [selectedConversation, queryClient]);
+
+  useEffect(() => {
+    if (analysisResult?.status === 'done') {
+      analysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [analysisResult?.agentEventId, analysisResult?.status]);
+
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      const form = new FormData();
+      if (pastedText.trim()) form.append('texte', pastedText.trim());
+      if (audioFile) form.append('file', audioFile);
+      form.append('consentConfirmed', consentConfirmed ? 'true' : 'false');
+      if (contactHintPhone.trim()) form.append('contactHintPhone', contactHintPhone.trim());
+      if (contactHintEmail.trim()) form.append('contactHintEmail', contactHintEmail.trim());
+
+      const res = await api.post('/copilot/conversations', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data as ConversationResult;
     },
-    onError: (err: any) => {
-      const msg =
-        err?.response?.status === 403
-          ? 'Fonction réservée à votre formule (IA conversationnelle). Le résumé et les relances ci-dessus restent disponibles selon votre offre.'
-          : err?.response?.data?.error || err?.message || 'Erreur';
+    onSuccess: (data) => {
+      setActiveAgentEventId(data.agentEventId);
+      setAnalysisResult(data);
+      void queryClient.invalidateQueries({ queryKey: ['copilot-conversation', data.agentEventId] });
+      if (data.status === 'done') {
+        void queryClient.invalidateQueries({ queryKey: ['copilot-briefing'] });
+      }
+    },
+  });
+
+  const chatMutation = useMutation({
+    mutationFn: (message: string) =>
+      api
+        .post('/copilot/chat', {
+          message,
+          agentEventId: activeAgentEventId || undefined,
+        })
+        .then((r) => r.data),
+    onSuccess: (data: { reply: string }) => {
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+    },
+    onError: (err: { response?: { data?: { error?: string } }; message?: string }) => {
+      const msg = err?.response?.data?.error || err?.message || 'Erreur';
       setMessages((prev) => [...prev, { role: 'assistant', content: msg }]);
     },
   });
@@ -126,7 +204,6 @@ export function AIAssistant() {
           tone: followTone,
           channel: followChannel,
           length: followLength,
-          language: i18n.language,
         })
         .then((r) => r.data),
     onSuccess: (data: { source?: string; text?: string; subject?: string; body?: string }) => {
@@ -137,108 +214,31 @@ export function AIAssistant() {
         setFollowPreview(`${sub}${data.body || ''}`);
       }
     },
-    onError: (err: any) => {
+    onError: (err: { response?: { data?: { error?: string } } }) => {
       setFollowPreview(err?.response?.data?.error || 'Impossible de générer la relance.');
     },
   });
-
-  const fmtDTLocal = (v: number) => Math.round(v).toLocaleString('fr-FR') + ' DT';
-
-  const formatResponse = (data: any): string => {
-    const { result } = data;
-
-    if (typeof result === 'string') {
-      return result;
-    }
-
-    if (result.type === 'metric') {
-      return `📊 ${result.title} : ${result.value}`;
-    }
-
-    if (result.type === 'list') {
-      if (!result.data || result.data.length === 0) {
-        return `📋 ${result.title}\n\nAucun élément trouvé.`;
-      }
-      const items = result.data.map((item: any, i: number) => {
-        if (typeof item === 'string') return `${i + 1}. ${item}`;
-        const parts = Object.entries(item)
-          .map(([, v]) => `${v}`)
-          .join(' — ');
-        return `${i + 1}. ${parts}`;
-      }).join('\n');
-      return `📋 ${result.title}\n\n${items}`;
-    }
-
-    if (result.type === 'text') {
-      return result.value;
-    }
-
-    if (result.type === 'prediction') {
-      const growth = Number(result.growth || 0);
-      const hasPipeline = Number(result.pipelineCA || 0) > 0;
-      const predictedCA = Number(result.predictedCA || 0);
-
-      let diagnostic = 'Votre dynamique commerciale est stable.';
-      if (growth > 8) {
-        diagnostic = 'Votre dynamique commerciale est positive et orientée croissance.';
-      } else if (growth < 0) {
-        diagnostic = 'Votre dynamique commerciale est sous pression et nécessite un pilotage rapproché.';
-      }
-
-      let focus = 'Maintenez une cadence régulière de prospection et de qualification pour sécuriser le CA.';
-      if (hasPipeline) {
-        focus = 'Concentrez vos efforts sur la conversion des opportunités qualifiées tout en gardant un flux constant de prospection.';
-      }
-
-      return (
-        `📈 Prévision CA fin d'année\n\n` +
-        `CA prévisionnel de fin d'année : ${fmtDTLocal(predictedCA)} HT\n\n` +
-        `Prévision construite à partir des opportunités réalisées, du pipeline en cours et de la prospection, en tenant compte de la saisonnalité, de la tendance et de la croissance mensuelle.\n\n` +
-        `${diagnostic}\n` +
-        `${focus}\n\n` +
-        `💡 Recommandations professionnelles :\n` +
-        `1. Continuer à prospecter de manière structurée pour alimenter le haut de pipeline.\n` +
-        `2. Qualifier en continu les prospects pour accélérer les décisions commerciales.\n` +
-        `3. Suivre les opportunités clés sans perte de vue, jusqu'à la clôture.\n` +
-        `4. Piloter chaque mois les priorités commerciales pour sécuriser et dépasser les objectifs.`
-      );
-    }
-
-    if (result.type === 'recommendations') {
-      const recs = (result.recommendations || []).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n');
-      return `💡 Recommandations personnalisées\n\n${recs}`;
-    }
-
-    if (result.type === 'target_analysis') {
-      const monthlyTarget = fmtDTLocal(result.monthlyTarget || 0);
-      return (
-        `🎯 Analyse des objectifs\n\n` +
-        `CA réalisé : ${fmtDTLocal(result.currentCA)} HT\n` +
-        `CA prévu fin d'année : ${fmtDTLocal(result.predictedCA)} HT\n` +
-        `Objectif mensuel moyen : ${monthlyTarget} HT\n` +
-        `Mois restants : ${result.monthsRemaining}\n\n` +
-        (result.recommendations
-          ? `💡 Recommandations :\n${(result.recommendations || []).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}`
-          : '')
-      );
-    }
-
-    return JSON.stringify(result, null, 2);
-  };
 
   const handleSend = () => {
     if (!input.trim()) return;
     const userMessage = input.trim();
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
-    queryMutation.mutate(userMessage);
+    chatMutation.mutate(userMessage);
   };
 
   const handleSuggestion = (suggestion: string) => {
     setInput(suggestion);
   };
 
-  const firstRecId = briefing?.recommendations[0]?.affaireId;
+  const canAnalyze = consentConfirmed && (Boolean(pastedText.trim()) || Boolean(audioFile));
+
+  const scoreBadgeClass =
+    (analysisResult?.score ?? 0) >= 70
+      ? 'bg-emerald-100 text-emerald-800'
+      : (analysisResult?.score ?? 0) >= 40
+        ? 'bg-amber-100 text-amber-800'
+        : 'bg-rose-100 text-rose-800';
 
   return (
     <div className="flex flex-col gap-6 md:gap-8 px-2 md:px-0 min-h-0 flex-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
@@ -249,8 +249,7 @@ export function AIAssistant() {
             <span className="break-words">Assistant IA</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Résumé quotidien, priorités commerciales et copilote conversationnel — vos données CIBLIX, sans saisie
-            superflue.
+            Analysez vos conversations (audio ou texte), obtenez un score et un briefing basé sur votre activité réelle.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -264,59 +263,200 @@ export function AIAssistant() {
               <BarChart3 size={16} /> Agents IA
             </Button>
           </Link>
-          <Link to="/all-prospects">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <KanbanSquare size={16} /> Prospects IA
-            </Button>
-          </Link>
         </div>
       </div>
 
-      {/* Résumé quotidien */}
+      {/* Upload conversation */}
+      <Card className="shadow-sm border-violet-200/60">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Upload className="text-violet-600" size={18} />
+            Analyser une conversation
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Mic size={14} /> Fichier audio
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={16} />
+                {audioFile ? audioFile.name : 'Choisir un fichier audio'}
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <FileText size={14} /> Texte collé (WhatsApp, email…)
+              </label>
+              <textarea
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                placeholder="Collez ici la conversation à analyser…"
+                className="w-full min-h-[88px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              value={contactHintPhone}
+              onChange={(e) => setContactHintPhone(e.target.value)}
+              placeholder="Indice téléphone (optionnel)"
+            />
+            <Input
+              value={contactHintEmail}
+              onChange={(e) => setContactHintEmail(e.target.value)}
+              placeholder="Indice email (optionnel)"
+            />
+          </div>
+
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={consentConfirmed}
+              onChange={(e) => setConsentConfirmed(e.target.checked)}
+            />
+            <span>
+              Je confirme avoir le consentement des interlocuteurs pour analyser cette conversation (obligatoire).
+            </span>
+          </label>
+
+          <Button
+            type="button"
+            disabled={!canAnalyze || uploadMutation.isPending}
+            onClick={() => uploadMutation.mutate()}
+            className="gap-2"
+          >
+            {uploadMutation.isPending ? (
+              <>
+                <Loader2 size={16} className="animate-spin" /> Analyse en cours…
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} /> Lancer l&apos;analyse
+              </>
+            )}
+          </Button>
+
+          {uploadMutation.isError && (
+            <p className="text-sm text-destructive">
+              {(uploadMutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+                'Erreur lors de l’analyse'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Résultat analyse */}
+      {analysisResult && (
+        <Card ref={analysisRef} className="shadow-sm border-border/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center justify-between gap-2">
+              <span>Résultat de l&apos;analyse</span>
+              {analysisResult.status === 'processing' && (
+                <span className="text-xs font-normal text-muted-foreground flex items-center gap-1">
+                  <Loader2 size={14} className="animate-spin" /> Transcription en cours…
+                </span>
+              )}
+              {analysisResult.status === 'error' && (
+                <span className="text-xs font-normal text-destructive">Erreur</span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {analysisResult.status === 'error' ? (
+              <p className="text-sm text-destructive">{analysisResult.processingError || 'Échec du traitement'}</p>
+            ) : analysisResult.status === 'processing' ? (
+              <p className="text-sm text-muted-foreground">Votre fichier audio est en cours de transcription et d&apos;analyse.</p>
+            ) : (
+              <>
+                {typeof analysisResult.score === 'number' && (
+                  <div className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${scoreBadgeClass}`}>
+                    Score : {analysisResult.score}/100
+                  </div>
+                )}
+                {analysisResult.resume && (
+                  <p className="text-sm whitespace-pre-wrap">{analysisResult.resume}</p>
+                )}
+                {(analysisResult.actionsSuggerees?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Actions suggérées</p>
+                    <ul className="text-sm list-disc pl-5 space-y-1">
+                      {analysisResult.actionsSuggerees!.map((a) => (
+                        <li key={a}>{a}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Link to="/agents/gmail-ai">
+                    <Button size="sm" variant="secondary" className="gap-1.5">
+                      <Mail size={14} /> Créer relance (Gmail IA)
+                    </Button>
+                  </Link>
+                  <Link to="/agents/offre-bot">
+                    <Button size="sm" variant="outline" className="gap-1.5">
+                      <FileText size={14} /> Rédiger une offre
+                    </Button>
+                  </Link>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Briefing */}
       <section aria-labelledby="daily-summary-heading">
         <h2 id="daily-summary-heading" className="sr-only">
-          Résumé quotidien IA
+          Briefing Copilot
         </h2>
         {briefingPending ? (
           <div className="text-sm text-muted-foreground py-6">Analyse de votre activité…</div>
         ) : briefing ? (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <Card className="border-violet-200/80 bg-gradient-to-br from-violet-50/90 to-white shadow-sm">
               <CardContent className="p-4">
                 <p className="text-xs font-medium text-violet-700 flex items-center gap-1">
-                  <Flame size={14} /> Opportunités prioritaires
+                  <Flame size={14} /> Conversations (48h)
                 </p>
-                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.priorityOpportunities}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-amber-200/80 bg-white shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-xs font-medium text-amber-800 flex items-center gap-1">
-                  <Mail size={14} /> Offres sans réponse (7j+)
-                </p>
-                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.quotesWithoutReply7d}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-rose-200/80 bg-white shadow-sm">
-              <CardContent className="p-4">
-                <p className="text-xs font-medium text-rose-800 flex items-center gap-1">
-                  <AlertTriangle size={14} /> Dossiers à risque
-                </p>
-                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.atRiskCount}</p>
+                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.recentConversations}</p>
               </CardContent>
             </Card>
             <Card className="border-sky-200/80 bg-white shadow-sm">
               <CardContent className="p-4">
                 <p className="text-xs font-medium text-sky-800 flex items-center gap-1">
-                  <Zap size={14} /> Leads chauds
+                  <Zap size={14} /> Scores élevés (≥70)
                 </p>
-                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.hotLeads}</p>
+                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.highScoreCount}</p>
               </CardContent>
             </Card>
-            <Card className="border-sky-200/80 bg-white shadow-sm col-span-2 lg:col-span-1">
+            <Card className="border-rose-200/80 bg-white shadow-sm">
               <CardContent className="p-4">
-                <p className="text-xs font-medium text-sky-800">CA pondéré du mois (pipeline)</p>
-                <p className="text-xl font-bold tabular-nums mt-1">{fmtDT(briefing.summary.monthForecastWeightedHT)}</p>
+                <p className="text-xs font-medium text-rose-800 flex items-center gap-1">
+                  <AlertTriangle size={14} /> Contacts non résolus
+                </p>
+                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.pendingContacts}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-200/80 bg-white shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs font-medium text-amber-800">Score moyen</p>
+                <p className="text-2xl font-bold tabular-nums mt-1">{briefing.summary.avgScore}/100</p>
               </CardContent>
             </Card>
           </div>
@@ -335,25 +475,22 @@ export function AIAssistant() {
             <CardContent className="space-y-2">
               {(briefing?.recommendations || []).slice(0, 8).map((r) => (
                 <button
-                  key={r.affaireId}
+                  key={`${r.agentEventId}-${r.action}`}
                   type="button"
-                  onClick={() => {
-                    setFollowAffaireId(r.affaireId);
-                    relanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
+                  onClick={() => setActiveAgentEventId(r.agentEventId)}
                   className="w-full flex items-start gap-3 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-left text-sm hover:bg-muted/40 transition-colors"
                 >
                   <ChevronRight className="shrink-0 text-muted-foreground mt-0.5" size={16} />
                   <span className="min-w-0">
                     <span className="font-medium text-foreground">{r.action}</span>
                     <span className="block text-xs text-muted-foreground mt-0.5">
-                      {r.clientName} · score {r.score} · {r.iaLabelFr}
+                      {r.contactName || 'Contact'} · score {r.score}
                     </span>
                   </span>
                 </button>
               ))}
               {!briefing?.recommendations?.length && (
-                <p className="text-sm text-muted-foreground">Aucune recommandation pour le moment — enrichissez le pipeline.</p>
+                <p className="text-sm text-muted-foreground">Analysez une conversation pour obtenir des recommandations.</p>
               )}
             </CardContent>
           </Card>
@@ -362,59 +499,51 @@ export function AIAssistant() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="text-amber-600" size={18} />
-                Alertes intelligentes
+                Alertes
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {(briefing?.alerts || []).slice(0, 6).map((a) => (
                 <div
-                  key={a.affaireId + a.type}
+                  key={a.agentEventId + a.type}
                   className="flex items-center justify-between gap-2 rounded-lg border border-amber-200/60 bg-amber-50/50 px-3 py-2 text-sm"
                 >
                   <span className="min-w-0">
-                    <span className="font-medium">{a.clientName || 'Contact'}</span>
+                    <span className="font-medium">{a.contactName || 'Contact'}</span>
                     <span className="block text-xs text-muted-foreground">{a.message}</span>
                   </span>
-                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => {
-                    setFollowAffaireId(a.affaireId);
-                    relanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}>
-                    Relancer
+                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setActiveAgentEventId(a.agentEventId)}>
+                    Voir
                   </Button>
                 </div>
               ))}
               {!briefing?.alerts?.length && (
-                <p className="text-sm text-muted-foreground">Aucune alerte bloquante détectée.</p>
+                <p className="text-sm text-muted-foreground">Aucune alerte pour le moment.</p>
               )}
             </CardContent>
           </Card>
 
           <Card className="shadow-sm border-border/60">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Opportunités les plus chaudes</CardTitle>
+              <CardTitle className="text-base">Meilleures opportunités détectées</CardTitle>
             </CardHeader>
             <CardContent className="divide-y divide-border/60">
-              {(briefing?.hotOpportunities || []).map((o) => (
+              {(briefing?.topOpportunities || []).map((o) => (
                 <div key={o.id} className="flex items-center justify-between gap-3 py-2 first:pt-0">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{o.clientName || '—'}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {o.heatFr} · {o.iaLabelFr} · {o.daysSinceLastTouch}j sans échange · ~{o.signatureProbabilityPct}% sign.
-                    </p>
+                    <p className="font-medium truncate">{o.contactName || 'Contact'}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{o.resume}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold">{fmtDT(o.montantHT)}</p>
-                    <Button variant="link" className="h-auto p-0 text-xs" onClick={() => {
-                      setFollowAffaireId(o.id);
-                      relanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}>
-                      Relancer
+                    <p className="text-sm font-semibold">{o.score}/100</p>
+                    <Button variant="link" className="h-auto p-0 text-xs" onClick={() => setActiveAgentEventId(o.id)}>
+                      Détail
                     </Button>
                   </div>
                 </div>
               ))}
-              {!briefing?.hotOpportunities?.length && (
-                <p className="text-sm text-muted-foreground py-2">Pas encore assez de données dans le pipeline.</p>
+              {!briefing?.topOpportunities?.length && (
+                <p className="text-sm text-muted-foreground py-2">Pas encore de conversations analysées.</p>
               )}
             </CardContent>
           </Card>
@@ -426,34 +555,19 @@ export function AIAssistant() {
               <CardTitle className="text-base">Actions rapides</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-2">
-              <Button
-                variant="secondary"
-                className="justify-start gap-2"
-                onClick={() => {
-                  setFollowAffaireId(firstRecId || followAffaireId);
-                  relanceRef.current?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <RefreshCw size={16} /> Générer une relance
-              </Button>
-              <Link to="/prospection-ia" className="block">
-                <Button variant="outline" className="w-full justify-start gap-2">
-                  <Radio size={16} /> Lancer Hunt AI
-                </Button>
-              </Link>
-              <Link to="/agents/scout-ai" className="block">
-                <Button variant="outline" className="w-full justify-start gap-2">
-                  <Zap size={16} /> Ouvrir Scout AI
+              <Link to="/agents/gmail-ai" className="block">
+                <Button variant="secondary" className="w-full justify-start gap-2">
+                  <Mail size={16} /> Gmail IA
                 </Button>
               </Link>
               <Link to="/agents/offre-bot" className="block">
                 <Button variant="outline" className="w-full justify-start gap-2">
-                  <Mail size={16} /> Rédiger une offre
+                  <FileText size={16} /> Rédiger une offre
                 </Button>
               </Link>
-              <Link to="/all-prospects" className="block">
+              <Link to="/prospection-ia" className="block">
                 <Button variant="outline" className="w-full justify-start gap-2">
-                  <KanbanSquare size={16} /> Voir les prospects IA
+                  <Radio size={16} /> Lancer Hunt AI
                 </Button>
               </Link>
             </CardContent>
@@ -463,50 +577,30 @@ export function AIAssistant() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageCircle className="text-violet-600" size={18} />
-                Relance IA
+                Relance IA (legacy affaire)
               </CardTitle>
-              <p className="text-xs text-muted-foreground">Aperçu du message — copiez-collez ou adaptez avant envoi.</p>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">ID opportunité (affaire)</label>
-                <Input
-                  value={followAffaireId}
-                  onChange={(e) => setFollowAffaireId(e.target.value)}
-                  placeholder="Collez l’ID ou cliquez une recommandation ci-dessus"
-                  className="font-mono text-xs"
-                />
-              </div>
+              <Input
+                value={followAffaireId}
+                onChange={(e) => setFollowAffaireId(e.target.value)}
+                placeholder="ID affaire (optionnel)"
+                className="font-mono text-xs"
+              />
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium">Ton</label>
-                  <Select value={followTone} onValueChange={(v) => setFollowTone(v as typeof followTone)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="soft">Douce</SelectItem>
-                      <SelectItem value="commercial">Commerciale</SelectItem>
-                      <SelectItem value="firm">Ferme</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium">Canal</label>
-                  <Select value={followChannel} onValueChange={(v) => setFollowChannel(v as typeof followChannel)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium">Longueur</label>
-                <Select value={followLength} onValueChange={(v) => setFollowLength(v as typeof followLength)}>
+                <Select value={followTone} onValueChange={(v) => setFollowTone(v as typeof followTone)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="short">Courte</SelectItem>
-                    <SelectItem value="long">Plus détaillée</SelectItem>
+                    <SelectItem value="soft">Douce</SelectItem>
+                    <SelectItem value="commercial">Commerciale</SelectItem>
+                    <SelectItem value="firm">Ferme</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={followChannel} onValueChange={(v) => setFollowChannel(v as typeof followChannel)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -528,7 +622,7 @@ export function AIAssistant() {
         </div>
       </div>
 
-      {/* Conversation */}
+      {/* Conversation persistante */}
       <Card className="flex flex-col min-h-0 shadow-sm border-border/60 overflow-hidden">
         <CardHeader className="border-b py-3 sm:py-4 shrink-0">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -540,11 +634,10 @@ export function AIAssistant() {
           className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3 sm:space-y-4 min-h-[280px] max-h-[420px]"
           role="log"
           aria-live="polite"
-          aria-relevant="additions"
         >
           {messages.map((message, index) => (
             <div
-              key={index}
+              key={message.id ?? index}
               className={`flex gap-2 sm:gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {message.role === 'assistant' && (
@@ -554,9 +647,7 @@ export function AIAssistant() {
               )}
               <div
                 className={`max-w-[min(92%,26rem)] rounded-2xl px-3 py-2.5 sm:p-3 ${
-                  message.role === 'user'
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-muted/60 text-foreground'
+                  message.role === 'user' ? 'bg-violet-600 text-white' : 'bg-muted/60 text-foreground'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.content}</p>
@@ -568,26 +659,26 @@ export function AIAssistant() {
               )}
             </div>
           ))}
-          {queryMutation.isPending && (
+          {chatMutation.isPending && (
             <div className="flex gap-2 sm:gap-3 justify-start">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
                 <Bot size={15} className="text-violet-600 sm:w-4 sm:h-4" />
               </div>
-              <div className="bg-muted/60 rounded-2xl px-3 py-2.5 sm:p-3 max-w-[min(92%,26rem)]">
+              <div className="bg-muted/60 rounded-2xl px-3 py-2.5 sm:p-3">
                 <p className="text-sm text-muted-foreground">{t('aiAssistant.thinking')}</p>
               </div>
             </div>
           )}
         </CardContent>
         <div className="border-t p-3 sm:p-4 space-y-2 sm:space-y-3 shrink-0 bg-card">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 max-h-[30vh] sm:max-h-none overflow-y-auto sm:overflow-visible">
-            {suggestions.map((suggestion: string) => (
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((suggestion) => (
               <Button
                 key={suggestion}
                 variant="outline"
                 size="sm"
                 onClick={() => handleSuggestion(suggestion)}
-                className="text-xs w-full sm:w-auto sm:max-w-[280px] justify-start text-left h-auto min-h-9 py-2 px-3 whitespace-normal leading-snug"
+                className="text-xs max-w-full justify-start text-left h-auto min-h-9 py-2 px-3 whitespace-normal"
               >
                 {suggestion}
               </Button>
@@ -604,17 +695,15 @@ export function AIAssistant() {
                 }
               }}
               placeholder={t('aiAssistant.inputPlaceholder')}
-              className="flex-1 min-w-0 min-h-11 text-base sm:text-sm"
+              className="flex-1 min-w-0 min-h-11"
               autoComplete="off"
-              enterKeyHint="send"
             />
             <Button
               type="button"
               size="icon"
               className="h-11 w-11 shrink-0"
               onClick={handleSend}
-              disabled={queryMutation.isPending || !input.trim()}
-              aria-label={t('common.submit', { defaultValue: 'Envoyer' })}
+              disabled={chatMutation.isPending || !input.trim()}
             >
               <Send size={18} />
             </Button>

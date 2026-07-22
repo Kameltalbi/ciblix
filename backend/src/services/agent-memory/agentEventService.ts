@@ -3,6 +3,7 @@ import type {
   AgentEventResolutionStatus,
   AgentEventSource,
   AgentEventType,
+  CopilotProcessingStatus,
   Prisma,
 } from '@prisma/client';
 import { prisma } from '../../db/prisma.js';
@@ -21,6 +22,9 @@ export type CreateAgentEventInput = {
   consentConfirmedBy?: string | null;
   consentConfirmedAt?: Date | null;
   sourceRef?: string | null;
+  processingStatus?: CopilotProcessingStatus | null;
+  processingError?: string | null;
+  analysisJson?: Prisma.InputJsonValue | null;
 };
 
 async function retentionExpiresAt(organizationId: string): Promise<Date | null> {
@@ -54,6 +58,9 @@ export async function createAgentEvent(input: CreateAgentEventInput): Promise<Ag
       consentConfirmedBy: input.consentConfirmedBy || null,
       consentConfirmedAt: input.consentConfirmedAt || null,
       sourceRef: input.sourceRef || null,
+      processingStatus: input.processingStatus ?? null,
+      processingError: input.processingError ?? null,
+      analysisJson: input.analysisJson ?? undefined,
       resolutionStatus: input.contactId ? 'RESOLVED' : 'PENDING',
       resolutionNextRetryAt: input.contactId ? null : new Date(),
     },
@@ -67,6 +74,63 @@ export async function createAgentEvent(input: CreateAgentEventInput): Promise<Ag
   }
 
   return event;
+}
+
+export async function getAgentEventForOrg(organizationId: string, eventId: string) {
+  return prisma.agentEvent.findFirst({
+    where: { id: eventId, organizationId },
+    include: {
+      contact: { select: { id: true, name: true, phone: true, email: true } },
+    },
+  });
+}
+
+export async function updateAgentEvent(
+  eventId: string,
+  data: Prisma.AgentEventUpdateInput
+): Promise<AgentEvent> {
+  return prisma.agentEvent.update({ where: { id: eventId }, data });
+}
+
+export async function listRecentEventsForOrganization(
+  organizationId: string,
+  since: Date,
+  opts: { take?: number } = {}
+) {
+  const take = Math.min(opts.take ?? 100, 200);
+  return prisma.agentEvent.findMany({
+    where: {
+      organizationId,
+      createdAt: { gte: since },
+      OR: [{ processingStatus: 'DONE' }, { processingStatus: null }],
+    },
+    orderBy: { createdAt: 'desc' },
+    take,
+    include: {
+      contact: { select: { id: true, name: true } },
+    },
+  });
+}
+
+export async function createProcessingPlaceholder(input: {
+  organizationId: string;
+  userId: string;
+  type: AgentEventType;
+  consentConfirmedBy: string;
+}): Promise<AgentEvent> {
+  return prisma.agentEvent.create({
+    data: {
+      organizationId: input.organizationId,
+      userId: input.userId,
+      source: 'COPILOT',
+      type: input.type,
+      processingStatus: 'PROCESSING',
+      consentConfirmedBy: input.consentConfirmedBy,
+      consentConfirmedAt: new Date(),
+      resolutionStatus: 'PENDING',
+      resolutionNextRetryAt: new Date(),
+    },
+  });
 }
 
 export async function listEventsForContact(

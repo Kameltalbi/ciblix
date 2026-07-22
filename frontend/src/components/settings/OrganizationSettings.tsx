@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/form-controls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Organization } from '@/types';
+import { CopilotOrgSettings } from '@/components/settings/CopilotOrgSettings';
 
 export function OrganizationSettings() {
   const qc = useQueryClient();
@@ -88,6 +89,7 @@ export function OrganizationSettings() {
   };
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader>
         <CardTitle>Informations de l'organisation</CardTitle>
@@ -171,5 +173,7 @@ export function OrganizationSettings() {
         </div>
       </CardContent>
     </Card>
+    <CopilotOrgSettings />
+    </div>
   );
 }
