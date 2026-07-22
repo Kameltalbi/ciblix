@@ -231,7 +231,8 @@
       "categories": "الفئات",
       "commissions": "المكافآت"
     },
-    "securityTitle": "أمان الحساب"
+    "securityTitle": "أمان الحساب",
+    "securitySubtitle": "غيّر كلمة المرور. سيتم تسجيل خروجك بعد التحديث."
   },
   "organizations": {
     "title": "مؤسستي",
@@ -718,6 +719,7 @@
     "confirmPassword": "تأكيد كلمة المرور",
     "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين.",
     "changePassword": "تغيير كلمة المرور",
+    "passwordHint": "8 أحرف على الأقل، حرف كبير وصغير ورقم ورمز خاص (@$!%*?&+._-#)",
     "passwordChangedSuccess": "تم تحديث كلمة المرور. جارٍ تسجيل الخروج...",
     "passwordChangeError": "تعذر تغيير كلمة المرور.",
     "backToLogin": "العودة إلى تسجيل الدخول",

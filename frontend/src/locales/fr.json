@@ -231,7 +231,8 @@
       "categories": "Catégories",
       "commissions": "Primes"
     },
-    "securityTitle": "Sécurité du compte"
+    "securityTitle": "Sécurité du compte",
+    "securitySubtitle": "Changez votre mot de passe. Après mise à jour, vous serez déconnecté."
   },
   "organizations": {
     "title": "Mon Organisation",
@@ -724,6 +725,7 @@
     "confirmPassword": "Confirmer le mot de passe",
     "passwordsDoNotMatch": "Les mots de passe ne correspondent pas.",
     "changePassword": "Changer le mot de passe",
+    "passwordHint": "8 caractères min., majuscule, minuscule, chiffre et caractère spécial (@$!%*?&+._-#)",
     "passwordChangedSuccess": "Mot de passe mis à jour. Reconnexion en cours...",
     "passwordChangeError": "Erreur lors du changement de mot de passe.",
     "backToLogin": "Retour à la connexion",

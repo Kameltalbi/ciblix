@@ -64,11 +64,14 @@ const loginSchema = z.object({
   password: z.string().min(8),
 });
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&+._\-#])[A-Za-z\d@$!%*?&+._\-#]{8,}$/;
+const passwordRuleMsg =
+  'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&+._-#)';
 
 const registerSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8).regex(passwordRegex, 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)'),
+  password: z.string().min(8).regex(passwordRegex, passwordRuleMsg),
   name: z.string().min(1),
   organizationName: z.string().min(1),
   phone: z.string().optional(),
@@ -81,12 +84,12 @@ const forgotPasswordSchema = z.object({
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  newPassword: z.string().min(8).regex(passwordRegex, 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)'),
+  newPassword: z.string().min(8).regex(passwordRegex, passwordRuleMsg),
 });
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(8).regex(passwordRegex, 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)'),
+  newPassword: z.string().min(8).regex(passwordRegex, passwordRuleMsg),
 });
 
 authRoutes.post('/register', async (req, res, next) => {

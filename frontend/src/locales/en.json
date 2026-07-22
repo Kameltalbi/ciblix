@@ -231,7 +231,8 @@
       "categories": "Categories",
       "commissions": "Bonuses"
     },
-    "securityTitle": "Account Security"
+    "securityTitle": "Account Security",
+    "securitySubtitle": "Change your password. You will be signed out after the update."
   },
   "organizations": {
     "title": "My Organization",
@@ -718,6 +719,7 @@
     "confirmPassword": "Confirm password",
     "passwordsDoNotMatch": "Passwords do not match.",
     "changePassword": "Change password",
+    "passwordHint": "Min. 8 characters, uppercase, lowercase, number and special character (@$!%*?&+._-#)",
     "passwordChangedSuccess": "Password updated. Signing out...",
     "passwordChangeError": "Unable to change password.",
     "backToLogin": "Back to login",

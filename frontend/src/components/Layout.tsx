@@ -391,7 +391,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               );
             })}
-            {user?.role === 'OWNER' && (
+            {user && (
               <>
                 <div className="my-1.5 mx-2 border-t border-white/10" />
                 <NavLink
@@ -508,7 +508,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               );
             })}
-            {user?.role === 'OWNER' && (
+            {user && (
               <>
                 <div className="my-1.5 mx-2 border-t border-white/10" />
                 <NavLink

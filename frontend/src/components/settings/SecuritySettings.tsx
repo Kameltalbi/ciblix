@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/form-controls';
 import { api } from '@/lib/api';
@@ -13,6 +14,8 @@ export function SecuritySettings() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -28,7 +31,6 @@ export function SecuritySettings() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      // Force fresh login with new credentials.
       setTimeout(() => {
         logout();
       }, 1200);
@@ -53,27 +55,60 @@ export function SecuritySettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('settings.securityTitle')}</CardTitle>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+            <Lock className="text-slate-700" size={20} />
+          </div>
+          <div>
+            <CardTitle>{t('settings.securityTitle')}</CardTitle>
+            <CardDescription>{t('settings.securitySubtitle')}</CardDescription>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
+        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
           <div className="space-y-1.5">
             <Label>{t('auth.currentPassword')}</Label>
-            <Input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                type={showCurrent ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                onClick={() => setShowCurrent((v) => !v)}
+                aria-label={showCurrent ? 'Masquer' : 'Afficher'}
+              >
+                {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>{t('auth.newPassword')}</Label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                type={showNew ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                onClick={() => setShowNew((v) => !v)}
+                aria-label={showNew ? 'Masquer' : 'Afficher'}
+              >
+                {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('auth.passwordHint')}</p>
           </div>
           <div className="space-y-1.5">
             <Label>{t('auth.confirmPassword')}</Label>
@@ -81,11 +116,12 @@ export function SecuritySettings() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
           </div>
-          {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>}
-          {success && <p className="text-sm text-sky-700 bg-sky-50 px-3 py-2 rounded-md">{success}</p>}
+          {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+          {success && <p className="rounded-md bg-sky-50 px-3 py-2 text-sm text-sky-700">{success}</p>}
           <Button type="submit" disabled={changePassword.isPending}>
             {changePassword.isPending ? t('common.loading') : t('auth.changePassword')}
           </Button>
@@ -94,4 +130,3 @@ export function SecuritySettings() {
     </Card>
   );
 }
-
