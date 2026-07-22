@@ -14,21 +14,21 @@ const EMPTY = { id: '', email: '', name: '', password: '', confirmPassword: '', 
 const PAGES = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'agents-marketplace', label: 'Agents IA' },
-  { key: 'prospection-ia', label: 'Hunt AI' },
-  { key: 'ai-assistant', label: 'Copilot IA' },
-  { key: 'scout-ai', label: 'Scout AI' },
-  { key: 'offre-bot', label: 'OffreBot' },
+  { key: 'contacts', label: 'Contacts' },
+  { key: 'prospection-ia', label: 'Chasseur IA' },
+  { key: 'ai-assistant', label: 'Assistant IA' },
+  { key: 'scout-ai', label: 'Veilleur IA' },
+  { key: 'offre-bot', label: "Rédacteur d'offres" },
   { key: 'gmail-ai', label: 'Gmail IA' },
-  { key: 'factcheck-ai', label: 'FactCheck AI' },
+  { key: 'factcheck-ai', label: 'Vérificateur IA' },
   { key: 'brand-pulse', label: 'BrandPulse' },
-  { key: 'all-prospects', label: 'Tous les prospects IA' },
   { key: 'settings', label: 'Paramètres' },
   { key: 'support', label: 'Support' },
 ];
 
 type PermissionState = { page: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean };
 
-export function Users() {
+export function Users({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -122,14 +122,21 @@ export function Users() {
     setOpen(true);
   };
 
-  const isOwner = currentUser?.role === 'OWNER';
+  const isOwner = currentUser?.role === 'OWNER' || currentUser?.role === 'SUPERADMIN';
 
   return (
-    <div className="space-y-6 px-2 md:px-0">
+    <div className={embedded ? 'space-y-4' : 'space-y-6 px-2 md:px-0'}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl md:text-3xl">{t('usersPage.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('usersPage.subtitle')}</p>
+          {!embedded && <h1 className="font-serif text-2xl md:text-3xl">{t('usersPage.title')}</h1>}
+          {embedded ? (
+            <>
+              <h2 className="text-lg font-semibold">{t('usersPage.settingsTitle')}</h2>
+              <p className="text-sm text-muted-foreground">{t('usersPage.settingsSubtitle')}</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('usersPage.subtitle')}</p>
+          )}
         </div>
         {isOwner && (
           <Button onClick={() => { setForm(EMPTY); setShowPassword(false); setShowConfirmPassword(false); setFormError(''); setOpen(true); }} className="w-full sm:w-auto">

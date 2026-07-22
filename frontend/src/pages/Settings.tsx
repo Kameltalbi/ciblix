@@ -13,7 +13,7 @@ type Tab = 'organization' | 'gmail' | 'users' | 'security';
 const ALL_TABS: { id: Tab; label: string; icon: typeof Building2; ownerOnly?: boolean }[] = [
   { id: 'organization', label: 'Organisation', icon: Building2, ownerOnly: true },
   { id: 'gmail', label: 'Gmail', icon: Mail },
-  { id: 'users', label: 'Utilisateurs', icon: Users, ownerOnly: true },
+  { id: 'users', label: 'Utilisateurs & permissions', icon: Users, ownerOnly: true },
   { id: 'security', label: 'Sécurité', icon: Lock },
 ];
 

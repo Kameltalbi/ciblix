@@ -78,6 +78,15 @@ usersRoutes.post('/', checkUserLimit, async (req: AuthRequest, res, next) => {
       return res.status(400).json({ error: 'Mot de passe requis' });
     }
 
+    if (data.role === 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Impossible d’attribuer le rôle SUPERADMIN' });
+    }
+
+    // Seul le propriétaire peut créer des utilisateurs ; le créateur d’org reste OWNER.
+    const role = data.role === 'OWNER' || data.role === 'COMMERCIAL' || data.role === 'PARTNER'
+      ? data.role
+      : 'PARTNER';
+
     const passwordHash = await bcrypt.hash(data.password, 10);
 
     const user = await prisma.user.create({
@@ -85,7 +94,7 @@ usersRoutes.post('/', checkUserLimit, async (req: AuthRequest, res, next) => {
         email: data.email,
         passwordHash,
         name: data.name,
-        role: data.role || 'PARTNER',
+        role,
         organizationId: req.organizationId!,
       },
       select: {

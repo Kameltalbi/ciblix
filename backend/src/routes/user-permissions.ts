@@ -17,6 +17,7 @@ const permissionSchema = z.object({
 
 const AVAILABLE_PAGES = [
   'dashboard',
+  'contacts',
   'affaires',
   'clients',
   'leads',
@@ -82,6 +83,11 @@ userPermissionsRoutes.get('/me', async (req: AuthRequest, res, next) => {
 // POST create/update permissions for a user (bulk)
 userPermissionsRoutes.post('/bulk', async (req: AuthRequest, res, next) => {
   try {
+    const actor = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!actor || actor.role !== 'OWNER' || actor.organizationId !== req.organizationId) {
+      return res.status(403).json({ error: 'Réservé à l’administrateur de l’organisation' });
+    }
+
     const { userId, permissions } = req.body as {
       userId: string;
       permissions: Array<{
@@ -98,6 +104,9 @@ userPermissionsRoutes.post('/bulk', async (req: AuthRequest, res, next) => {
       where: { id: userId, organizationId: req.organizationId },
     });
     if (!user) return res.status(400).json({ error: 'Utilisateur introuvable' });
+    if (user.role === 'OWNER' || user.role === 'SUPERADMIN') {
+      return res.status(400).json({ error: 'Les administrateurs ont déjà un accès complet' });
+    }
 
     // Delete existing permissions for this user
     await prisma.userPermission.deleteMany({
