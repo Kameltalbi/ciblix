@@ -208,8 +208,8 @@ export function Dashboard() {
   const draftsToValidate = (gmailProcessed?.items || []).filter((i) => i.status === 'PROCESSED');
   const prospects = prospectingDash?.prospectsFound ?? 0;
   const scoutOpportunities = scoutStats?.total ?? 0;
-  const publishedArticles = brandPulse?.pipeline.published ?? 0;
-  const pendingArticles = brandPulse?.pipeline.pendingReview ?? 0;
+  const publishedArticles = brandPulse?.pipeline?.published ?? 0;
+  const pendingArticles = brandPulse?.pipeline?.pendingReview ?? 0;
 
   const resultBySlug: Record<string, number> = {
     'hunt-ai': prospects,
@@ -285,14 +285,21 @@ export function Dashboard() {
   const demoDistribution =
     distributionData.length > 0
       ? distributionData
-      : includedAgents.slice(0, 5).map((a, i) => ({
-          slug: a.slug,
-          name: AGENT_LABELS[a.slug] || a.name,
-          value: [37, 28, 19, 10, 6][i] || 5,
-          color: AGENT_COLORS[a.slug] || '#2563eb',
-          icon: a.icon,
-          route: a.route,
-        }));
+      : includedAgents.length > 0
+        ? includedAgents.slice(0, 5).map((a, i) => ({
+            slug: a.slug,
+            name: AGENT_LABELS[a.slug] || a.name,
+            value: [37, 28, 19, 10, 6][i] || 5,
+            color: AGENT_COLORS[a.slug] || '#2563eb',
+            icon: a.icon,
+            route: a.route,
+          }))
+        : [
+            { slug: 'hunt-ai', name: 'Chasseur IA', value: 40, color: '#0ea5e9', icon: 'Radio', route: '/prospection-ia' },
+            { slug: 'copilot-ia', name: 'Assistant IA', value: 30, color: '#2563eb', icon: 'Bot', route: '/ai-assistant' },
+            { slug: 'scout-ai', name: 'Veilleur IA', value: 20, color: '#0284c7', icon: 'Radar', route: '/agents/scout-ai' },
+            { slug: 'offre-bot', name: "Rédacteur d'offres", value: 10, color: '#f59e0b', icon: 'FileSignature', route: '/agents/offre-bot' },
+          ];
 
   const demoTotal = demoDistribution.reduce((s, d) => s + d.value, 0);
   const hasRealActivity = totalActions > 0 || totalResults > 0;

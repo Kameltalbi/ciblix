@@ -174,6 +174,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         // Une fois `[]` ou une liste renvoyée, on applique les `canView` normalement — l’API reste authoritative.
         if (permissionsData === undefined) return true;
         if (page === 'agents-marketplace' || page === 'dashboard') return true;
+        if (!Array.isArray(permissionsData)) return true;
         const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
       }
