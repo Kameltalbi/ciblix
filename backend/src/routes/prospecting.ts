@@ -614,6 +614,19 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
     });
     if (!row) return res.status(404).json({ error: 'Prospect introuvable' });
 
+    const [organization, senderUser] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: req.organizationId! },
+        select: { name: true },
+      }),
+      req.userId
+        ? prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { name: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
     const hit = {
       companyName: row.companyName,
       website: row.website,
@@ -624,8 +637,22 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       country: row.country,
       industry: row.industry,
       companySize: row.companySize,
+      probableBusinessProblem: row.probableBusinessProblem,
+      commercialAngle: row.commercialAngle,
+      suggestedPitch: row.suggestedPitch,
+      aiSummary: row.aiSummary,
     };
-    const { body, source } = await generateOutreachMessage(hit, messageType as OutreachMessageType, tone);
+
+    const { body, source, signatureWarning } = await generateOutreachMessage(
+      hit,
+      messageType as OutreachMessageType,
+      tone,
+      {
+        organizationName: organization?.name || 'Notre entreprise',
+        organizationSector: null,
+        senderName: senderUser?.name || null,
+      }
+    );
 
     const channel: 'EMAIL' | 'WHATSAPP' | 'NOTE' =
       messageType === 'WHATSAPP' ? 'WHATSAPP' : messageType === 'LINKEDIN' ? 'NOTE' : 'EMAIL';
@@ -648,6 +675,10 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
 
     res.json({
       disclaimer: 'Message généré à titre d’aide — relisez et validez avant tout envoi.',
+      signatureWarning,
+      signatureWarningText: signatureWarning
+        ? '⚠️ Ce message semble mal généré — vérifiez la signature avant envoi (il ne doit pas être signé du nom du prospect).'
+        : undefined,
       messageType,
       tone,
       body,

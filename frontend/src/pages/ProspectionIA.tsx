@@ -329,6 +329,7 @@ export function ProspectionIA() {
     title: string;
     body: string;
     disclaimer?: string;
+    signatureWarning?: string;
   }>({ open: false, title: '', body: '' });
 
   const [autoActive, setAutoActive] = useState(false);
@@ -446,12 +447,19 @@ export function ProspectionIA() {
   const messageMutation = useMutation({
     mutationFn: (args: { id: string; messageType: string; tone?: string }) =>
       api.post(`/prospecting/prospects/${args.id}/generate-message`, args).then((r) => r.data),
-    onSuccess: (data: { body: string; disclaimer?: string; messageType?: string }) => {
+    onSuccess: (data: {
+      body: string;
+      disclaimer?: string;
+      messageType?: string;
+      signatureWarning?: boolean;
+      signatureWarningText?: string;
+    }) => {
       setPreview({
         open: true,
         title: 'Aperçu du message (validation humaine)',
         body: data.body,
         disclaimer: data.disclaimer,
+        signatureWarning: data.signatureWarning ? data.signatureWarningText : undefined,
       });
     },
   });
@@ -1113,6 +1121,11 @@ export function ProspectionIA() {
           </DialogHeader>
           {preview.disclaimer ? (
             <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2">{preview.disclaimer}</p>
+          ) : null}
+          {preview.signatureWarning ? (
+            <p className="text-xs font-medium text-red-800 bg-red-50 border border-red-200 rounded-lg p-2">
+              {preview.signatureWarning}
+            </p>
           ) : null}
           <div className="rounded-lg border bg-muted/30 p-3 text-sm whitespace-pre-wrap max-h-[50vh] overflow-y-auto">{preview.body}</div>
           <DialogFooter className="gap-2 sm:gap-0">
