@@ -51,14 +51,17 @@ import { agentsRoutes } from './routes/agents.js';
 import { gmailAiRoutes } from './routes/gmail-ai.js';
 import { contactsRoutes } from './routes/contacts.js';
 import { suggestionsRoutes } from './routes/suggestions.js';
+import { opsRoutes } from './routes/ops.js';
 import { copilotRoutes } from './routes/copilot.js';
 import { integrationsRoutes, integrationsWebhookRoutes } from './routes/integrations.js';
 import { billingRoutes, billingWebhookRoutes } from './routes/billing.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
+import { getAllowedCorsOrigins } from './lib/corsOrigins.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
+const allowedCorsOrigins = getAllowedCorsOrigins();
 
 // ─── Middleware ──────────────────────────────────────────
 app.set('trust proxy', 1);
@@ -71,7 +74,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", process.env.FRONTEND_URL || ''],
+      connectSrc: ["'self'", ...allowedCorsOrigins],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -88,7 +91,26 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Requêtes same-origin / outils sans Origin (health, curl, cron)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedCorsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 204,
+  })
+);
 app.use(
   express.json({
     limit: '2mb',
@@ -195,6 +217,7 @@ app.use('/api/agents', agentsRoutes);
 app.use('/api/gmail-ai', gmailAiRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/suggestions', suggestionsRoutes);
+app.use('/api/ops', opsRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/integrations', integrationsWebhookRoutes);
 app.use('/api/integrations', integrationsRoutes);

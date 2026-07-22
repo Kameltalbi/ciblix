@@ -82,22 +82,39 @@ Les fichiers de prod sont dans **`frontend/dist/`**. Configurez le vhost pour se
 
 ### Exemple Nginx (indicatif)
 
+Voir aussi `deploy/nginx-ciblix.conf.example` (redirection **www → apex** + proxy `/api` sans headers CORS Nginx).
+
 ```nginx
+# www → domaine canonique
 server {
   listen 443 ssl http2;
-  server_name crm.example.com;
+  server_name www.ciblix.com;
+  return 301 https://ciblix.com$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name ciblix.com;
   root /var/www/crm/frontend/dist;
   index index.html;
   location / { try_files $uri $uri/ /index.html; }
   location /api/ {
-    proxy_pass http://127.0.0.1:4000;
+    proxy_pass http://127.0.0.1:4000/api/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+    # Ne pas ajouter Access-Control-* ici — Express gère CORS
   }
 }
+```
+
+**Env backend (canonique unique) :**
+
+```bash
+FRONTEND_URL=https://ciblix.com
+# CORS autorise aussi https://www.ciblix.com automatiquement
 ```
 
 Adaptez le port backend et les certificats TLS (Let’s Encrypt, etc.).

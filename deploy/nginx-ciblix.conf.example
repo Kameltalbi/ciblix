@@ -1,0 +1,81 @@
+# Exemple Nginx — Ciblix (domaine canonique : https://ciblix.com)
+#
+# Objectif :
+# 1) Rediriger TOUT www → apex (301)
+# 2) Servir le SPA + proxy /api vers Node
+# 3) NE PAS ajouter de headers CORS côté Nginx (le backend Express les gère)
+#
+# Installation typique :
+#   sudo cp deploy/nginx-ciblix.conf.example /etc/nginx/sites-available/ciblix
+#   # adapter chemins SSL + root, puis :
+#   sudo ln -sf /etc/nginx/sites-available/ciblix /etc/nginx/sites-enabled/ciblix
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# .env backend (canonique SANS www) :
+#   FRONTEND_URL=https://ciblix.com
+#   # optionnel : CORS_ORIGINS=https://staging.ciblix.com
+
+# ─── HTTP → HTTPS ───────────────────────────────────────────
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ciblix.com www.ciblix.com;
+    return 301 https://ciblix.com$request_uri;
+}
+
+# ─── www → apex (HTTPS) ─────────────────────────────────────
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.ciblix.com;
+
+    # ssl_certificate     /etc/letsencrypt/live/ciblix.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/ciblix.com/privkey.pem;
+    # include /etc/letsencrypt/options-ssl-nginx.conf;
+
+    return 301 https://ciblix.com$request_uri;
+}
+
+# ─── Site canonique ─────────────────────────────────────────
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name ciblix.com;
+
+    # ssl_certificate     /etc/letsencrypt/live/ciblix.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/ciblix.com/privkey.pem;
+    # include /etc/letsencrypt/options-ssl-nginx.conf;
+
+    root /var/www/crm/frontend/dist;
+    index index.html;
+
+    # SPA
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    location = /service-worker.js {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # API → Express (ne pas écraser les headers CORS du backend)
+    location /api/ {
+        proxy_pass http://127.0.0.1:4000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Origin $http_origin;
+        # Pas de add_header Access-Control-* ici
+    }
+}
