@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Minus, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, CheckCircle2, Minus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LandingFooter } from '@/components/landing/LandingSections';
+import { LandingFooter, LandingHeader } from '@/components/landing/LandingSections';
 import { cn } from '@/lib/utils';
 
 type Currency = 'TND' | 'EUR' | 'USD';
@@ -161,26 +161,7 @@ export function Tarifs() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-40 border-b border-[#BED6F6]/40 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#0071DD] hover:underline">
-            <ArrowLeft size={16} /> Accueil
-          </Link>
-          <Link to="/">
-            <img src="/logo-ciblix.png" alt="CIBLIX" className="h-10 object-contain" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link to="/login" className="hidden text-sm font-bold text-foreground/70 hover:text-[#0071DD] sm:inline">
-              Connexion
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="shadow-glow">
-                Inscription
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       <main>
         <section className="border-b border-[#BED6F6]/30 bg-gradient-to-b from-[#f7faff] to-white">

@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2,
   ArrowRight,
   Mail,
-  Menu,
-  X,
-  Globe,
   Radio,
   Bot,
   Radar,
@@ -20,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   DEMO_URL,
+  LandingHeader,
   LandingProblem,
   LandingSolution,
   LandingDifferentiation,
@@ -88,7 +86,6 @@ const SCHEMA = {
 
 export function Landing() {
   const { i18n, t } = useTranslation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     document.title = t('landing.seoTitle');
@@ -113,108 +110,7 @@ export function Landing() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20">
-            <div className="flex min-w-0 items-center gap-8 lg:gap-10">
-              <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
-                <img
-                  src="/logo-ciblix.png"
-                  alt="CIBLIX"
-                  className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
-                />
-              </Link>
-              <nav className="hidden items-center gap-6 md:flex lg:gap-8">
-                <Link to="/fonctionnalites" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
-                  {t('landing.navFeatures')}
-                </Link>
-                <Link to="/solutions" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
-                  {t('landing.navSolutions')}
-                </Link>
-                <Link to="/tarifs" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
-                  {t('landing.navPricing')}
-                </Link>
-                <Link to="/ressources" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
-                  {t('landing.navResources')}
-                </Link>
-              </nav>
-            </div>
-            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const languages = ['fr', 'en', 'ar'];
-                  const currentIndex = languages.indexOf(i18n.language);
-                  i18n.changeLanguage(languages[(currentIndex + 1) % languages.length]);
-                }}
-                className="flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-[#eef4fc]"
-              >
-                <Globe size={18} className="text-[#016AEB]" />
-                <span className="font-semibold text-[#0071DD]">{i18n.language.toUpperCase()}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="rounded-xl p-2 text-[#1E72B9] hover:bg-[#eef4fc] md:hidden"
-              >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-              <div className="hidden items-center gap-2 md:flex">
-                <Link to="/login">
-                  <Button variant="outline" className="border-[#BED6F6] text-[#0071DD] hover:bg-[#e8f1fc]">
-                    {t('landing.headerLogin')}
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="shadow-glow">{t('landing.headerRegister')}</Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="border-t bg-white md:hidden">
-            <div className="space-y-3 px-4 py-4">
-              <Link
-                to="/fonctionnalites"
-                className="block text-lg font-bold text-foreground/80"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('landing.navFeatures')}
-              </Link>
-              <Link
-                to="/solutions"
-                className="block text-lg font-bold text-foreground/80"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('landing.navSolutions')}
-              </Link>
-              <Link
-                to="/tarifs"
-                className="block text-lg font-bold text-foreground/80"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('landing.navPricing')}
-              </Link>
-              <Link
-                to="/ressources"
-                className="block text-lg font-bold text-foreground/80"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('landing.navResources')}
-              </Link>
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="mt-2 w-full border-[#BED6F6] text-[#0071DD]">
-                  {t('landing.headerLogin')}
-                </Button>
-              </Link>
-              <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full shadow-glow">{t('landing.headerRegister')}</Button>
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
+      <LandingHeader />
 
       {/* Hero */}
       <section className="relative overflow-hidden">

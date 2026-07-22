@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, useInView } from 'framer-motion';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -10,9 +10,11 @@ import {
   CheckCircle2,
   ClipboardList,
   FileSignature,
+  Globe,
   Globe2,
   Lock,
   Mail,
+  Menu,
   MessageCircle,
   PhoneCall,
   Play,
@@ -24,6 +26,7 @@ import {
   Sparkles,
   Trash2,
   Users,
+  X,
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +34,110 @@ import { cn } from '@/lib/utils';
 
 export const DEMO_URL = (import.meta.env.VITE_DEMO_VIDEO_URL as string | undefined) || '#demo';
 export const EXPERT_MAIL = 'mailto:contact@ciblix.com?subject=Parler%20%C3%A0%20un%20expert%20Ciblix';
+
+const NAV_LINKS = [
+  { to: '/fonctionnalites', labelKey: 'landing.navFeatures' },
+  { to: '/solutions', labelKey: 'landing.navSolutions' },
+  { to: '/tarifs', labelKey: 'landing.navPricing' },
+  { to: '/ressources', labelKey: 'landing.navResources' },
+] as const;
+
+/** Shared marketing header (home + Fonctionnalités / Solutions / Tarifs / Ressources) */
+export function LandingHeader() {
+  const { i18n, t } = useTranslation();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const linkClass = (to: string) =>
+    cn(
+      'text-sm font-bold transition-colors hover:text-[#0071DD]',
+      location.pathname === to || location.pathname.startsWith(`${to}/`)
+        ? 'text-[#0071DD]'
+        : 'text-foreground/80'
+    );
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20">
+          <div className="flex min-w-0 items-center gap-8 lg:gap-10">
+            <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
+              <img
+                src="/logo-ciblix.png"
+                alt="CIBLIX"
+                className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
+              />
+            </Link>
+            <nav className="hidden items-center gap-6 md:flex lg:gap-8">
+              {NAV_LINKS.map((link) => (
+                <Link key={link.to} to={link.to} className={linkClass(link.to)}>
+                  {t(link.labelKey)}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const languages = ['fr', 'en', 'ar'];
+                const currentIndex = languages.indexOf(i18n.language);
+                i18n.changeLanguage(languages[(currentIndex + 1) % languages.length]);
+              }}
+              className="flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-[#eef4fc]"
+            >
+              <Globe size={18} className="text-[#016AEB]" />
+              <span className="font-semibold text-[#0071DD]">{i18n.language.toUpperCase()}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="rounded-xl p-2 text-[#1E72B9] hover:bg-[#eef4fc] md:hidden"
+              aria-expanded={mobileMenuOpen}
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <div className="hidden items-center gap-2 md:flex">
+              <Link to="/login">
+                <Button variant="outline" className="border-[#BED6F6] text-[#0071DD] hover:bg-[#e8f1fc]">
+                  {t('landing.headerLogin')}
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button className="shadow-glow">{t('landing.headerRegister')}</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+      {mobileMenuOpen ? (
+        <div className="border-t bg-white md:hidden">
+          <div className="space-y-3 px-4 py-4">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={cn('block text-lg font-bold', linkClass(link.to))}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t(link.labelKey)}
+              </Link>
+            ))}
+            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="outline" className="mt-2 w-full border-[#BED6F6] text-[#0071DD]">
+                {t('landing.headerLogin')}
+              </Button>
+            </Link>
+            <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+              <Button className="w-full shadow-glow">{t('landing.headerRegister')}</Button>
+            </Link>
+          </div>
+        </div>
+      ) : null}
+    </header>
+  );
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },

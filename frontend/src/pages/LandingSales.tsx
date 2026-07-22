@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check, Zap, Shield, DollarSign, BarChart, Users, ArrowRight, Mail, Phone, MapPin } from 'lucide-react';
+import { Check, Zap, Shield, DollarSign, BarChart, Users, ArrowRight, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { LandingFooter, LandingHeader } from '@/components/landing/LandingSections';
 
 export function LandingSales() {
   const { t } = useTranslation();
@@ -108,16 +109,7 @@ export function LandingSales() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Hero */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="font-serif text-2xl font-bold text-leaf">CIBLIX</div>
-          <div className="flex gap-4">
-            <Button variant="ghost" onClick={() => navigate('/login')}>{t('common.login')}</Button>
-            <Button onClick={() => navigate('/register')}>{t('landing.cta')}</Button>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* Hero Section */}
       <section className="py-20 px-4">
@@ -242,41 +234,7 @@ export function LandingSales() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-4">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-serif text-2xl font-bold mb-4">CIBLIX</h3>
-            <p className="text-gray-400">Plateforme de 6 agents IA pour les TPE et PME tunisiennes.</p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Produit</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>Fonctionnalités</li>
-              <li>Tarifs</li>
-              <li>Intégrations</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Support</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>Centre d'aide</li>
-              <li>Contact</li>
-              <li>FAQ</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Contact</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li className="flex items-center gap-2"><Mail size={16} /> contact@ciblix.com</li>
-              <li className="flex items-center gap-2"><Phone size={16} /> +216 55 053 505</li>
-              <li className="flex items-center gap-2"><MapPin size={16} /> Tunis, Tunisie</li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-          <p>© 2026 CIBLIX. Tous droits réservés.</p>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }
