@@ -1,4 +1,10 @@
 import type { CompanySearchCriteria, CompanySearchHit, CompanySearchPort } from '../types.js';
+import {
+  countryToRegionCode,
+  filterHitsBySearchLocation,
+  getCityCoords,
+  hitMatchesSearchCity,
+} from '../geoFilter.js';
 
 /**
  * Google Places API (New) — endpoint moderne avec pagination améliorée.
@@ -7,6 +13,7 @@ import type { CompanySearchCriteria, CompanySearchHit, CompanySearchPort } from 
  * Options env :
  * - `PROSPECTING_GOOGLE_MAX_PAGES` (défaut **10**) : pages (jusqu'à 20 résultats/page = ~200 max par variante)
  * - `PROSPECTING_QUERY_VARIANTS` (défaut **8**) : variantes de requête pour maximiser les résultats
+ * - `PROSPECTING_LOCATION_RADIUS_M` (défaut **45000**) : rayon du locationBias autour de la ville
  */
 export class GooglePlacesNewProvider implements CompanySearchPort {
   readonly id = 'google_places' as const;
@@ -35,13 +42,17 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
 
     if (sector && location) {
       variants.add(`${sector} ${location}`);
-      variants.add(`cabinet ${sector} ${location}`);
-      variants.add(`bureau ${sector} ${location}`);
-      variants.add(`société ${sector} ${location}`);
+      variants.add(`entreprise ${sector} ${location}`);
+      if (country) {
+        variants.add(`${sector} ${city} ${country}`.replace(/\s+/g, ' ').trim());
+      }
     }
-    if (sector && city) {
+    // Toujours garder le pays dans les variantes « à / près de »
+    if (sector && city && country) {
+      variants.add(`${sector} à ${city} ${country}`);
+      variants.add(`${sector} près de ${city} ${country}`);
+    } else if (sector && city) {
       variants.add(`${sector} à ${city}`);
-      variants.add(`${sector} près de ${city}`);
     }
 
     const maxVariants = Math.min(10, Math.max(2, Number(process.env.PROSPECTING_QUERY_VARIANTS) || 8));
@@ -54,6 +65,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
 
   private async searchPage(
     textQuery: string,
+    criteria: CompanySearchCriteria,
     pageToken?: string,
     maxResults: number = 20
   ): Promise<{ places: Array<any>; nextPageToken?: string }> {
@@ -65,6 +77,26 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
       languageCode: 'fr',
     };
 
+    const regionCode = countryToRegionCode(criteria.country);
+    if (regionCode) {
+      body.regionCode = regionCode;
+    }
+
+    const coords = getCityCoords(criteria.city);
+    const radius = Math.min(
+      50000,
+      Math.max(5000, Number(process.env.PROSPECTING_LOCATION_RADIUS_M) || 45000)
+    );
+    if (coords) {
+      // Bias fort autour de la ville demandée (ex. Nabeul) pour éviter Paris/FR
+      body.locationBias = {
+        circle: {
+          center: { latitude: coords.lat, longitude: coords.lng },
+          radius,
+        },
+      };
+    }
+
     if (pageToken) {
       body.pageToken = pageToken;
     }
@@ -72,10 +104,13 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': this.apiKey,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.internationalPhoneNumber,places.websiteUri,places.nationalPhoneNumber',
+      'X-Goog-FieldMask':
+        'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.internationalPhoneNumber,places.websiteUri,places.nationalPhoneNumber',
     };
 
-    console.log(`[GooglePlaces New] Requesting "${textQuery}" with token: ${pageToken ? 'yes' : 'no'}`);
+    console.log(
+      `[GooglePlaces New] "${textQuery}" region=${regionCode || '—'} bias=${coords ? `${coords.lat},${coords.lng} r=${radius}` : '—'}`
+    );
 
     try {
       const res = await fetch(url, {
@@ -114,7 +149,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     }
   }
 
-  private async fetchAllPages(query: string, maxPages: number): Promise<Array<any>> {
+  private async fetchAllPages(query: string, criteria: CompanySearchCriteria, maxPages: number): Promise<Array<any>> {
     const results: Array<any> = [];
     let pageToken: string | undefined;
 
@@ -123,7 +158,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
         await this.sleep(2100);
       }
 
-      const { places, nextPageToken } = await this.searchPage(query, pageToken);
+      const { places, nextPageToken } = await this.searchPage(query, criteria, pageToken);
       console.log(`[GooglePlaces New] "${query}" page ${page + 1} → ${places.length} résultats`);
       results.push(...places);
 
@@ -143,7 +178,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     console.log(`[GooglePlaces New] Running ${queryVariants.length} query variants:`, queryVariants);
 
     for (const query of queryVariants) {
-      const batch = await this.fetchAllPages(query, maxPages);
+      const batch = await this.fetchAllPages(query, criteria, maxPages);
       merged.push(...batch);
     }
 
@@ -165,9 +200,9 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
       if (!name || !r.id) continue;
 
       const addr = r.formattedAddress || '';
-      const parts = addr.split(',').map((s: string) => s.trim());
-      const cityGuess = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || null;
+      const parts = addr.split(',').map((s: string) => s.trim()).filter(Boolean);
       const countryGuess = parts.length >= 1 ? parts[parts.length - 1] : null;
+      const cityGuess = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || null;
 
       hits.push({
         companyName: name,
@@ -175,18 +210,32 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
         linkedin: null,
         phone: r.internationalPhoneNumber || r.nationalPhoneNumber || null,
         email: null,
-        city: cityGuess || criteria.city?.trim() || null,
-        country: countryGuess || criteria.country?.trim() || null,
+        // Ne pas réécrire Nabeul/Tunisie sur une adresse française
+        city: cityGuess || null,
+        country: countryGuess || null,
         industry: criteria.sector?.trim() || null,
         companySize: criteria.companySize?.trim() || null,
         externalId: r.id,
         raw: {
           types: r.types,
           location: r.location,
+          formattedAddress: addr,
         },
       });
     }
 
-    return hits;
+    const byCountry = filterHitsBySearchLocation(hits, criteria);
+    const byCity = byCountry.filter((h) =>
+      hitMatchesSearchCity(
+        { ...h, formattedAddress: typeof h.raw?.formattedAddress === 'string' ? h.raw.formattedAddress : null },
+        criteria
+      )
+    );
+
+    console.log(
+      `[GooglePlaces New] Après filtre geo: ${byCity.length}/${hits.length} (pays+ville)`
+    );
+
+    return byCity;
   }
 }

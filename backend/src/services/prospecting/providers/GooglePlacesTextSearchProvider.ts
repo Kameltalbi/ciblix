@@ -1,30 +1,10 @@
 import type { CompanySearchCriteria, CompanySearchHit, CompanySearchPort } from '../types.js';
-
-/** Coordonnées GPS de villes courantes pour Nearby Search. */
-const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
-  tunis:        { lat: 36.8065, lng: 10.1815 },
-  sfax:         { lat: 34.7406, lng: 10.7603 },
-  sousse:       { lat: 35.8288, lng: 10.6405 },
-  kairouan:     { lat: 35.6781, lng: 10.0963 },
-  bizerte:      { lat: 37.2744, lng: 9.8739 },
-  gabes:        { lat: 33.8815, lng: 10.0982 },
-  ariana:       { lat: 36.8625, lng: 10.1956 },
-  gafsa:        { lat: 34.425,  lng: 8.7842 },
-  monastir:     { lat: 35.7643, lng: 10.8113 },
-  'ben arous':  { lat: 36.7533, lng: 10.2281 },
-  manouba:      { lat: 36.8101, lng: 10.0956 },
-  nabeul:       { lat: 36.4561, lng: 10.7376 },
-  medenine:     { lat: 33.3549, lng: 10.5055 },
-  kasserine:    { lat: 35.1672, lng: 8.8365 },
-  alger:        { lat: 36.7538, lng: 3.0588 },
-  casablanca:   { lat: 33.5731, lng: -7.5898 },
-  paris:        { lat: 48.8566, lng: 2.3522 },
-};
-
-function getCityCoords(city: string): { lat: number; lng: number } | null {
-  const key = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-  return CITY_COORDS[key] || null;
-}
+import {
+  countryToRegionCode,
+  filterHitsBySearchLocation,
+  getCityCoords,
+  hitMatchesSearchCity,
+} from '../geoFilter.js';
 
 /**
  * Google Places — API « classique » (recherche texte) avec pagination `next_page_token`.
@@ -67,14 +47,13 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
 
     if (sector && location) {
       variants.add(`${sector} ${location}`);
-      variants.add(`cabinet ${sector} ${location}`);
-      variants.add(`bureau ${sector} ${location}`);
-      variants.add(`société ${sector} ${location}`);
       variants.add(`entreprise ${sector} ${location}`);
     }
-    if (sector && city) {
+    if (sector && city && country) {
+      variants.add(`${sector} à ${city} ${country}`);
+      variants.add(`${sector} près de ${city} ${country}`);
+    } else if (sector && city) {
       variants.add(`${sector} à ${city}`);
-      variants.add(`${sector} près de ${city}`);
     }
 
     const maxVariants = Math.min(6, Math.max(2, Number(process.env.PROSPECTING_QUERY_VARIANTS) || 5));
@@ -108,7 +87,11 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
     }
   }
 
-  private async fetchTextSearchPage(query: string, pagetoken?: string): Promise<{
+  private async fetchTextSearchPage(
+    query: string,
+    criteria: CompanySearchCriteria,
+    pagetoken?: string
+  ): Promise<{
     results: Array<{
       name?: string;
       place_id?: string;
@@ -130,6 +113,13 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
     } else {
       url.searchParams.set('query', query);
       url.searchParams.set('language', 'fr');
+      const region = countryToRegionCode(criteria.country);
+      if (region) url.searchParams.set('region', region.toLowerCase());
+      const coords = getCityCoords(criteria.city);
+      if (coords) {
+        url.searchParams.set('location', `${coords.lat},${coords.lng}`);
+        url.searchParams.set('radius', String(Number(process.env.PROSPECTING_LOCATION_RADIUS_M) || 45000));
+      }
     }
 
     const res = await fetch(url.toString());
@@ -156,16 +146,22 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
   }
 
   /** Pagine une requête unique et renvoie tous les résultats bruts. */
-  private async fetchAllPagesForQuery(query: string, maxPages: number): Promise<Array<{
-    name?: string;
-    place_id?: string;
-    formatted_address?: string;
-    geometry?: { location?: { lat?: number; lng?: number } };
-    types?: string[];
-    formatted_phone_number?: string;
-    international_phone_number?: string;
-    website?: string;
-  }>> {
+  private async fetchAllPagesForQuery(
+    query: string,
+    criteria: CompanySearchCriteria,
+    maxPages: number
+  ): Promise<
+    Array<{
+      name?: string;
+      place_id?: string;
+      formatted_address?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+      types?: string[];
+      formatted_phone_number?: string;
+      international_phone_number?: string;
+      website?: string;
+    }>
+  > {
     const results: Array<{
       name?: string;
       place_id?: string;
@@ -183,7 +179,7 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
         await this.sleep(2100);
       }
 
-      const data = await this.fetchTextSearchPage(query, pagetoken);
+      const data = await this.fetchTextSearchPage(query, criteria, pagetoken);
 
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
         if (page === 0) {
@@ -301,7 +297,7 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
     // 1) Text Search avec variantes de requête
     console.log(`[GooglePlaces] Running ${queryVariants.length} text search variants:`, queryVariants);
     for (const query of queryVariants) {
-      const batch = await this.fetchAllPagesForQuery(query, maxPages);
+      const batch = await this.fetchAllPagesForQuery(query, criteria, maxPages);
       console.log(`[GooglePlaces] TextSearch "${query}" → ${batch.length} résultats`);
       merged.push(...batch);
     }
@@ -346,7 +342,7 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
       }
 
       const addr = r.formatted_address || (r as PlaceResult).vicinity || '';
-      const parts = addr.split(',').map((s) => s.trim());
+      const parts = addr.split(',').map((s) => s.trim()).filter(Boolean);
       const cityGuess = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || null;
       const countryGuess = parts.length >= 1 ? parts[parts.length - 1] : null;
 
@@ -356,15 +352,21 @@ export class GooglePlacesTextSearchProvider implements CompanySearchPort {
         linkedin: null,
         phone,
         email: null,
-        city: cityGuess || criteria.city?.trim() || null,
-        country: countryGuess || criteria.country?.trim() || null,
+        city: cityGuess || null,
+        country: countryGuess || null,
         industry: criteria.sector?.trim() || null,
         companySize: criteria.companySize?.trim() || null,
         externalId: r.place_id,
-        raw: { types: r.types, place_id: r.place_id },
+        raw: { types: r.types, place_id: r.place_id, formattedAddress: addr },
       });
     }
 
-    return hits;
+    const byCountry = filterHitsBySearchLocation(hits, criteria);
+    return byCountry.filter((h) =>
+      hitMatchesSearchCity(
+        { ...h, formattedAddress: typeof h.raw?.formattedAddress === 'string' ? h.raw.formattedAddress : null },
+        criteria
+      )
+    );
   }
 }

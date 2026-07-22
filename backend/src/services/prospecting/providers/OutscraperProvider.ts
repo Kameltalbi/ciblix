@@ -1,4 +1,5 @@
 import type { CompanySearchCriteria, CompanySearchHit, CompanySearchPort } from '../types.js';
+import { countryToRegionCode, filterHitsBySearchLocation, hitMatchesSearchCity } from '../geoFilter.js';
 
 /**
  * Outscraper Google Maps Scraper — retourne des centaines de résultats par recherche.
@@ -26,21 +27,23 @@ export class OutscraperProvider implements CompanySearchPort {
   async searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]> {
     const query = this.buildQuery(criteria);
     const limit = Math.min(500, Math.max(10, Number(process.env.OUTSCRAPER_LIMIT) || 200));
+    const region = countryToRegionCode(criteria.country);
 
-    console.log(`[Outscraper] Searching: "${query}" limit=${limit}`);
+    console.log(`[Outscraper] Searching: "${query}" limit=${limit} region=${region || '—'}`);
 
     const url = new URL('https://api.app.outscraper.com/maps/search-v3');
     url.searchParams.set('query', query);
     url.searchParams.set('limit', String(limit));
     url.searchParams.set('language', 'fr');
     url.searchParams.set('async', 'false');
+    if (region) url.searchParams.set('region', region);
 
     try {
       const res = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'X-API-KEY': this.apiKey,
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       });
 
@@ -52,25 +55,27 @@ export class OutscraperProvider implements CompanySearchPort {
 
       const json = (await res.json()) as {
         status?: string;
-        data?: Array<Array<{
-          name?: string;
-          place_id?: string;
-          full_address?: string;
-          city?: string;
-          country?: string;
-          phone?: string;
-          site?: string;
-          type?: string;
-          category?: string;
-          subtypes?: string[];
-          rating?: number;
-          reviews?: number;
-          working_hours?: Record<string, string>;
-          linkedin?: string;
-          email?: string;
-          facebook?: string;
-          instagram?: string;
-        }>>;
+        data?: Array<
+          Array<{
+            name?: string;
+            place_id?: string;
+            full_address?: string;
+            city?: string;
+            country?: string;
+            phone?: string;
+            site?: string;
+            type?: string;
+            category?: string;
+            subtypes?: string[];
+            rating?: number;
+            reviews?: number;
+            working_hours?: Record<string, string>;
+            linkedin?: string;
+            email?: string;
+            facebook?: string;
+            instagram?: string;
+          }>
+        >;
       };
 
       const places = json.data?.[0] ?? [];
@@ -93,8 +98,8 @@ export class OutscraperProvider implements CompanySearchPort {
           linkedin: p.linkedin || null,
           phone: p.phone || null,
           email: p.email || null,
-          city: p.city || criteria.city?.trim() || null,
-          country: p.country || criteria.country?.trim() || null,
+          city: p.city || null,
+          country: p.country || null,
           industry: p.category || p.type || criteria.sector?.trim() || null,
           companySize: criteria.companySize?.trim() || null,
           externalId: placeId || null,
@@ -105,12 +110,23 @@ export class OutscraperProvider implements CompanySearchPort {
             reviews: p.reviews,
             facebook: p.facebook,
             instagram: p.instagram,
+            formattedAddress: p.full_address,
           },
         });
       }
 
-      console.log(`[Outscraper] Returning ${hits.length} unique hits`);
-      return hits;
+      const byCountry = filterHitsBySearchLocation(hits, criteria);
+      const filtered = byCountry.filter((h) =>
+        hitMatchesSearchCity(
+          {
+            ...h,
+            formattedAddress: typeof h.raw?.formattedAddress === 'string' ? h.raw.formattedAddress : null,
+          },
+          criteria
+        )
+      );
+      console.log(`[Outscraper] Returning ${filtered.length}/${hits.length} after geo filter`);
+      return filtered;
     } catch (err) {
       console.error('[Outscraper] Error:', err);
       return [];
