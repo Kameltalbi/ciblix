@@ -179,7 +179,7 @@ export function Pricing() {
   });
 
   const handleSubscribe = (plan: PricingPlanRow) => {
-    navigate(`/register?plan=${plan.slug.toLowerCase()}&trial=14`);
+    navigate(`/register?plan=${plan.slug.toLowerCase()}&trial=7`);
   };
 
   const handleConfirmSubscribe = () => {
@@ -200,13 +200,13 @@ export function Pricing() {
       <CardHeader className="pt-8">
         <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
           <Sparkles size={12} />
-          {t('pricingPage.trialBadge', { defaultValue: '14 jours d\'essai gratuit' })}
+          {t('pricingPage.trialBadge', { defaultValue: '7 jours d\'essai gratuit' })}
         </div>
         <CardTitle className="text-2xl font-bold text-sky-700">{plan.name}</CardTitle>
         <p className="text-sm font-medium text-sky-600">{t(plan.packKey)}</p>
         <p className="text-xs text-muted-foreground">{t(plan.packDescKey)}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          {t('pricingPage.billingNote', { defaultValue: 'Facturation hors TVA · 0 DT pendant 14 jours' })}
+          {t('pricingPage.billingNote', { defaultValue: 'Facturation hors TVA · 0 DT pendant 7 jours' })}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -340,7 +340,7 @@ export function Pricing() {
           <div className="text-center mb-12">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
               <Sparkles size={16} />
-              {t('pricingPage.heroTrial', { defaultValue: '14 jours d\'essai gratuit — sans carte bancaire' })}
+              {t('pricingPage.heroTrial', { defaultValue: '7 jours d\'essai gratuit — sans carte bancaire' })}
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               {t('pricingPage.title', { defaultValue: 'Choisissez votre plan' })}
@@ -387,7 +387,7 @@ export function Pricing() {
               {t('pricingPage.subtitle', { defaultValue: 'Sans engagement · sans carte bancaire · support inclus' })}
             </p>
             <p className="mt-2 text-xs text-gray-400">
-              {t('pricingPage.trialNote', { defaultValue: 'Testez toutes les fonctionnalités pendant 14 jours. Paiement uniquement si vous continuez.' })}
+              {t('pricingPage.trialNote', { defaultValue: 'Testez toutes les fonctionnalités pendant 7 jours. Paiement uniquement si vous continuez.' })}
             </p>
 
             {/* Bandeau agents IA */}

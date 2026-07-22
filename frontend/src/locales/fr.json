@@ -745,6 +745,7 @@
       "google_missing_tokens": "Échec de la connexion (jetons manquants).",
       "google_profile_failed": "Impossible de charger le profil après Google.",
       "account_locked": "Compte temporairement verrouillé.",
+      "organization_suspended": "Organisation suspendue. Contactez le support.",
       "google_failed": "Échec de la connexion Google. Réessayez.",
       "invalid_callback": "Réponse Google invalide.",
       "misconfiguration": "Configuration serveur incorrecte."
@@ -787,11 +788,11 @@
   },
   "pricingPage": {
     "title": "Choisissez votre plan",
-    "heroTrial": "14 jours d'essai gratuit — sans carte bancaire",
+    "heroTrial": "7 jours d'essai gratuit — sans carte bancaire",
     "subtitle": "Sans engagement · sans carte bancaire · support inclus",
-    "trialNote": "Testez toutes les fonctionnalités pendant 14 jours. Paiement uniquement si vous continuez.",
-    "trialBadge": "14 jours d'essai gratuit",
-    "billingNote": "Facturation hors TVA · 0 DT pendant 14 jours",
+    "trialNote": "Testez toutes les fonctionnalités pendant 7 jours. Paiement uniquement si vous continuez.",
+    "trialBadge": "7 jours d'essai gratuit",
+    "billingNote": "Facturation hors TVA · 0 DT pendant 7 jours",
     "perYearAfterTrial": "par an après l'essai",
     "perMonthAfterTrial": "par mois après l'essai",
     "ctaTrial": "Démarrer l'essai gratuit",

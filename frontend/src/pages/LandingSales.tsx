@@ -131,7 +131,7 @@ export function LandingSales() {
           </p>
           <div className="flex gap-4 justify-center">
             <Button size="lg" onClick={() => navigate('/register')} className="text-lg px-8">
-              Essai gratuit 14 jours <ArrowRight className="ml-2" size={20} />
+              Essai gratuit 7 jours <ArrowRight className="ml-2" size={20} />
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
               Démo vidéo

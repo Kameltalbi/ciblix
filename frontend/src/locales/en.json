@@ -739,6 +739,7 @@
       "google_missing_tokens": "Sign-in failed (missing tokens).",
       "google_profile_failed": "Could not load your profile after Google.",
       "account_locked": "Account is temporarily locked.",
+      "organization_suspended": "Organization suspended. Contact support.",
       "google_failed": "Google sign-in failed. Please try again.",
       "invalid_callback": "Invalid response from Google.",
       "misconfiguration": "Server configuration error."
@@ -781,11 +782,11 @@
   },
   "pricingPage": {
     "title": "Choose your plan",
-    "heroTrial": "14-day free trial — no credit card required",
+    "heroTrial": "7-day free trial — no credit card required",
     "subtitle": "No commitment · no credit card · support included",
-    "trialNote": "Try all features for 14 days. Pay only if you continue.",
-    "trialBadge": "14-day free trial",
-    "billingNote": "Excl. VAT · 0 DT for 14 days",
+    "trialNote": "Try all features for 7 days. Pay only if you continue.",
+    "trialBadge": "7-day free trial",
+    "billingNote": "Excl. VAT · 0 DT for 7 days",
     "perYearAfterTrial": "per year after trial",
     "perMonthAfterTrial": "per month after trial",
     "ctaTrial": "Start free trial",

@@ -197,13 +197,19 @@ authRoutes.post('/login', async (req, res, next) => {
       data: { failedLoginAttempts: 0, lockedUntil: null },
     });
 
-    const [{ accessToken, refreshToken }, organization] = await Promise.all([
-      createSessionTokens(user.id),
-      prisma.organization.findUnique({
-        where: { id: user.organizationId },
-        select: { paymentStatus: true },
-      }),
-    ]);
+    const organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { paymentStatus: true, suspended: true },
+    });
+
+    if (user.role !== 'SUPERADMIN' && organization?.suspended) {
+      return res.status(403).json({
+        error: 'Organisation suspendue. Contactez le support.',
+        code: 'ORGANIZATION_SUSPENDED',
+      });
+    }
+
+    const { accessToken, refreshToken } = await createSessionTokens(user.id);
 
     void logAudit({
       organizationId: user.organizationId,
@@ -248,8 +254,15 @@ authRoutes.get('/me', async (req, res, next) => {
 
     const organization = await prisma.organization.findUnique({
       where: { id: user.organizationId },
-      select: { paymentStatus: true },
+      select: { paymentStatus: true, suspended: true },
     });
+
+    if (user.role !== 'SUPERADMIN' && organization?.suspended) {
+      return res.status(403).json({
+        error: 'Organisation suspendue. Contactez le support.',
+        code: 'ORGANIZATION_SUSPENDED',
+      });
+    }
 
     res.json({ user, paymentStatus: organization?.paymentStatus });
   } catch (e) {
@@ -577,6 +590,15 @@ authRoutes.get('/google/callback', async (req, res, next) => {
       return fail('account_locked');
     }
 
+    const organizationBeforeSession = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { paymentStatus: true, suspended: true },
+    });
+
+    if (user.role !== 'SUPERADMIN' && organizationBeforeSession?.suspended) {
+      return fail('organization_suspended');
+    }
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -601,11 +623,7 @@ authRoutes.get('/google/callback', async (req, res, next) => {
       });
     }
 
-    const organization = await prisma.organization.findUnique({
-      where: { id: user.organizationId },
-      select: { paymentStatus: true },
-    });
-    const ps = organization?.paymentStatus ?? 'PENDING';
+    const ps = organizationBeforeSession?.paymentStatus ?? 'PENDING';
 
     const hash = [
       `accessToken=${encodeURIComponent(accessToken)}`,

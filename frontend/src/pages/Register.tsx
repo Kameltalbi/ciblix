@@ -135,7 +135,7 @@ export function Register() {
             <p className="mb-6 text-sm text-white/50">
               {['BASIC', 'BUSINESS', 'ENTERPRISE'].includes(selectedPlan)
                 ? `Essai gratuit${trialDays ? ` ${trialDays} jours` : ''} — plan ${selectedPlan === 'ENTERPRISE' ? 'Professionnel' : selectedPlan.charAt(0) + selectedPlan.slice(1).toLowerCase()}`
-                : '14 jours d\'essai gratuit — choisissez votre plan sur la page tarifs'}
+                : '7 jours d\'essai gratuit — choisissez votre plan sur la page tarifs'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

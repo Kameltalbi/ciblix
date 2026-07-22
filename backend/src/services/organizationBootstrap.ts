@@ -71,7 +71,7 @@ Cordialement`,
 export async function seedTrialSubscriptionForOrganization(organization: Organization): Promise<void> {
   const startDate = new Date();
   const endDate = new Date();
-  endDate.setMonth(endDate.getMonth() + 1);
+  endDate.setDate(endDate.getDate() + 7);
 
   const tier = normalizePlan(organization.plan);
   const trialPrice =

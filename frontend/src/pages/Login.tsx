@@ -19,6 +19,7 @@ const OAUTH_FALLBACK_MESSAGES: Record<string, string> = {
   google_missing_tokens: 'Échec de la connexion Google (jetons absents).',
   google_profile_failed: 'Impossible de charger ton profil après Google.',
   account_locked: 'Compte temporairement verrouillé.',
+  organization_suspended: 'Organisation suspendue. Contactez le support.',
   google_failed: 'Échec de la connexion Google.',
   invalid_callback: 'Réponse Google invalide.',
   misconfiguration: 'Configuration serveur incorrecte.',

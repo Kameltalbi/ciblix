@@ -14,6 +14,27 @@ export interface AuthRequest extends Request {
   };
 }
 
+async function loadUserWithOrg(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      organizationId: true,
+      organization: { select: { suspended: true } },
+    },
+  });
+}
+
+function isOrgSuspended(
+  user: { role: string; organization?: { suspended: boolean } | null }
+): boolean {
+  if (user.role === 'SUPERADMIN') return false;
+  return Boolean(user.organization?.suspended);
+}
+
 const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
@@ -23,19 +44,28 @@ const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     req.userId = decoded.userId;
-    
-    // Fetch user to get organizationId and full user data
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, email: true, name: true, role: true, organizationId: true }
-    });
-    
+
+    const user = await loadUserWithOrg(decoded.userId);
+
     if (!user) {
       return res.status(401).json({ error: 'Utilisateur introuvable' });
     }
-    
+
+    if (isOrgSuspended(user)) {
+      return res.status(403).json({
+        error: 'Organisation suspendue. Contactez le support.',
+        code: 'ORGANIZATION_SUSPENDED',
+      });
+    }
+
     req.organizationId = user.organizationId;
-    req.user = user;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      organizationId: user.organizationId,
+    };
     next();
   } catch {
     return res.status(401).json({ error: 'Token invalide ou expiré' });
@@ -51,14 +81,17 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
   const token = authHeader.substring(7);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, email: true, name: true, role: true, organizationId: true },
-    });
-    if (!user) return next();
+    const user = await loadUserWithOrg(decoded.userId);
+    if (!user || isOrgSuspended(user)) return next();
     req.userId = user.id;
     req.organizationId = user.organizationId;
-    req.user = user;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      organizationId: user.organizationId,
+    };
   } catch {
     // Jeton expiré ou invalide : route publique, on ignore.
   }
