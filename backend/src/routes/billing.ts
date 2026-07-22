@@ -6,11 +6,16 @@ import {
   changeTier,
   checkQuota,
   createCheckoutSession,
-  ensureBillingSubscription,
   getBillingContext,
   handleStripeWebhookEvent,
 } from '../services/billing/billingService.js';
+import {
+  getTrialAgentUsageSummary,
+  selectDiscoveryAgent,
+  trialBannerPayload,
+} from '../services/billing/trialService.js';
 import { TIER_LABELS } from '../config/billingTiers.js';
+import { TRIAL_AGENTS, TRIAL_AGENT_LABELS, isTrialAgentSlug } from '../config/trial.js';
 
 export const billingRoutes = Router();
 export const billingWebhookRoutes = Router();
@@ -28,6 +33,8 @@ billingRoutes.get('/status', async (req: AuthRequest, res, next) => {
   try {
     const { sub, quota } = await getBillingContext(req.organizationId!);
     const quotaStatus = await checkQuota(req.organizationId!);
+    const msLeft = sub.trialEndsAt.getTime() - Date.now();
+    const daysLeft = sub.status === 'TRIALING' ? Math.ceil(msLeft / 86_400_000) : null;
     res.json({
       tier: sub.tier,
       tierLabel: TIER_LABELS[sub.tier],
@@ -36,7 +43,11 @@ billingRoutes.get('/status', async (req: AuthRequest, res, next) => {
       trialStartedAt: sub.trialStartedAt,
       trialEndsAt: sub.trialEndsAt,
       trialExtensionCount: sub.trialExtensionCount,
+      selectedDiscoveryAgent: sub.selectedDiscoveryAgent,
       currentPeriodEnd: sub.currentPeriodEnd,
+      daysLeft,
+      trialBanner: trialBannerPayload(sub),
+      trialAgents: TRIAL_AGENTS.map((slug) => ({ slug, label: TRIAL_AGENT_LABELS[slug] })),
       readOnly: sub.status === 'TRIAL_EXPIRED' || sub.status === 'CANCELED' || sub.status === 'PAST_DUE',
       usage: {
         used: quota.agentActionsUsed,
@@ -45,6 +56,39 @@ billingRoutes.get('/status', async (req: AuthRequest, res, next) => {
         softCap: quotaStatus.softCap,
       },
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+billingRoutes.get('/trial-agents', async (req: AuthRequest, res, next) => {
+  try {
+    const { sub } = await getBillingContext(req.organizationId!);
+    const agents = await getTrialAgentUsageSummary(req.organizationId!);
+    res.json({
+      tier: sub.tier,
+      status: sub.status,
+      selectedDiscoveryAgent: sub.selectedDiscoveryAgent,
+      agents,
+      canSelect: sub.tier === 'DECOUVERTE',
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+billingRoutes.post('/select-discovery-agent', requireOwner, async (req: AuthRequest, res, next) => {
+  try {
+    const body = z
+      .object({
+        agentSlug: z.string().refine(isTrialAgentSlug, { message: 'Agent invalide' }),
+      })
+      .parse(req.body);
+    const result = await selectDiscoveryAgent({
+      organizationId: req.organizationId!,
+      agentSlug: body.agentSlug,
+    });
+    res.json(result);
   } catch (e) {
     next(e);
   }

@@ -7,6 +7,7 @@ import {
   PLAN_AGENT_LABELS,
   type PlanType,
 } from '../config/agentPlans.js';
+import { isTrialAgentSlug } from '../config/trial.js';
 
 export type { PlanType };
 
@@ -201,8 +202,14 @@ export function checkAgentAccess(agentSlug: string) {
       }
 
       const plan = await resolveOrganizationPlan(req.organizationId);
+      const billing = await prisma.billingSubscription.findUnique({
+        where: { organizationId: req.organizationId },
+        select: { status: true },
+      });
+      const trialAccess =
+        billing?.status === 'TRIALING' && isTrialAgentSlug(agentSlug);
 
-      if (!isAgentIncludedInPlan(plan, agentSlug)) {
+      if (!trialAccess && !isAgentIncludedInPlan(plan, agentSlug)) {
         const requiredPlan = getMinimumPlanForAgent(agentSlug) ?? 'ENTERPRISE';
         return res.status(403).json({
           error: 'Agent not available in your plan',

@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TrialEndingBanner } from '@/components/TrialEndingBanner';
 import {
   BarChart,
   Bar,
@@ -315,6 +316,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-5">
+      <TrialEndingBanner />
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>

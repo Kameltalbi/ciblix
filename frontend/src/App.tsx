@@ -54,6 +54,9 @@ const AgentsMarketplace = lazy(() =>
 const Dashboard = lazy(() =>
   import('./pages/Dashboard').then((m) => ({ default: m.Dashboard }))
 );
+const ChooseDiscoveryAgent = lazy(() =>
+  import('./pages/ChooseDiscoveryAgent').then((m) => ({ default: m.ChooseDiscoveryAgent }))
+);
 const AllProspects = lazy(() =>
   import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
 );
@@ -150,6 +153,7 @@ export default function App() {
                         <Route path="/objectifs" element={<Navigate to="/agents" replace />} />
                         <Route path="/products" element={<Navigate to="/agents" replace />} />
                         <Route path="/settings" element={<Settings />} />
+                        <Route path="/settings/billing/choose-agent" element={<ChooseDiscoveryAgent />} />
                         <Route path="/settings/organizations" element={<Organizations />} />
                         <Route path="/users" element={<Users />} />
                         <Route path="/prospection-ia" element={<ProspectionIA />} />

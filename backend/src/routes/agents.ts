@@ -8,6 +8,7 @@ import {
   PLAN_AGENT_LABELS,
   syncAgentsForPlan,
 } from '../config/agentPlans.js';
+import { isTrialAgentSlug } from '../config/trial.js';
 import { resolveOrganizationPlan } from '../middleware/planRestrictions.js';
 import { getOrganizationAgentUsageSummary } from '../services/agentUsage.js';
 
@@ -105,8 +106,10 @@ function buildAgentResponse(
   agent: (typeof AVAILABLE_AGENTS)[number],
   orgAgent: { active: boolean; activatedAt: Date | null } | undefined,
   plan: ReturnType<typeof normalizePlan>,
+  opts?: { trialing?: boolean },
 ) {
-  const includedInPlan = isAgentIncludedInPlan(plan, agent.slug);
+  const trialIncluded = Boolean(opts?.trialing && isTrialAgentSlug(agent.slug));
+  const includedInPlan = trialIncluded || isAgentIncludedInPlan(plan, agent.slug);
   const requiredPlan = getMinimumPlanForAgent(agent.slug);
   const isActive = includedInPlan && (orgAgent ? orgAgent.active : true);
 
@@ -121,6 +124,14 @@ function buildAgentResponse(
   };
 }
 
+async function isOrgTrialing(organizationId: string): Promise<boolean> {
+  const sub = await prisma.billingSubscription.findUnique({
+    where: { organizationId },
+    select: { status: true },
+  });
+  return sub?.status === 'TRIALING';
+}
+
 /**
  * GET /api/agents
  * Liste tous les agents avec leur statut d'activation pour le tenant.
@@ -129,6 +140,7 @@ agentsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction
   try {
     const orgId = req.organizationId!;
     const plan = await resolveOrganizationPlan(orgId);
+    const trialing = await isOrgTrialing(orgId);
 
     const orgAgents = await prisma.organizationAgent.findMany({
       where: { organizationId: orgId },
@@ -137,10 +149,10 @@ agentsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction
     const agentMap = new Map(orgAgents.map((a) => [a.agentSlug, a]));
 
     const agents = AVAILABLE_AGENTS.map((agent) =>
-      buildAgentResponse(agent, agentMap.get(agent.slug), plan),
+      buildAgentResponse(agent, agentMap.get(agent.slug), plan, { trialing }),
     );
 
-    res.json({ agents, plan, planLabel: PLAN_AGENT_LABELS[plan] });
+    res.json({ agents, plan, planLabel: PLAN_AGENT_LABELS[plan], trialing });
   } catch (err) {
     next(err);
   }
@@ -154,6 +166,7 @@ agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: 
   try {
     const orgId = req.organizationId!;
     const plan = await resolveOrganizationPlan(orgId);
+    const trialing = await isOrgTrialing(orgId);
 
     const orgAgents = await prisma.organizationAgent.findMany({
       where: { organizationId: orgId },
@@ -162,7 +175,7 @@ agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: 
     const agentMap = new Map(orgAgents.map((a) => [a.agentSlug, a]));
 
     const activeSlugs = AVAILABLE_AGENTS
-      .filter((agent) => buildAgentResponse(agent, agentMap.get(agent.slug), plan).active)
+      .filter((agent) => buildAgentResponse(agent, agentMap.get(agent.slug), plan, { trialing }).active)
       .map((a) => a.slug);
 
     res.json({ activeSlugs });
@@ -201,7 +214,9 @@ agentsRoutes.post('/:slug/activate', async (req: AuthRequest, res: Response, nex
     }
 
     const plan = await resolveOrganizationPlan(orgId);
-    if (!isAgentIncludedInPlan(plan, slug)) {
+    const trialing = await isOrgTrialing(orgId);
+    const allowed = (trialing && isTrialAgentSlug(slug)) || isAgentIncludedInPlan(plan, slug);
+    if (!allowed) {
       const requiredPlan = getMinimumPlanForAgent(slug) ?? 'ENTERPRISE';
       res.status(403).json({
         error: 'Agent not available in your plan',

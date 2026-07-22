@@ -1722,6 +1722,8 @@ model BillingSubscription {
   trialEndsAt          DateTime
   trialExtendedBy      String?
   trialExtensionCount  Int                @default(0)
+  /// Agent unique gardé après essai si tier = DECOUVERTE (slug hunt-ai | copilot-ia | offre-bot)
+  selectedDiscoveryAgent String?
   currentPeriodEnd     DateTime?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt

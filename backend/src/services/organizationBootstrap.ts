@@ -119,8 +119,14 @@ export async function seedTrialSubscriptionForOrganization(
 export async function bootstrapOrganizationAgents(organization: Organization): Promise<void> {
   const billing = await prisma.billingSubscription.findUnique({ where: { organizationId: organization.id } });
   if (billing) {
-    const { syncAgentsForTier } = await import('./billing/trialService.js');
-    await syncAgentsForTier(organization.id, billing.tier);
+    const { activateTrialAgents, activateTierAgents } = await import('./billing/trialService.js');
+    if (billing.status === 'TRIALING') {
+      await activateTrialAgents(organization.id);
+    } else {
+      await activateTierAgents(organization.id, billing.tier, {
+        selectedDiscoveryAgent: billing.selectedDiscoveryAgent,
+      });
+    }
     return;
   }
   await syncAgentsForPlan(organization.id, normalizePlan(organization.plan));

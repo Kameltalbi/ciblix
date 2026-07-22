@@ -1,5 +1,6 @@
 import type { BillingTier } from '@prisma/client';
 import type { AgentSlug } from './agentPlans.js';
+import { TRIAL_DURATION_DAYS } from './trial.js';
 
 export const TIER_ACTION_LIMITS: Record<BillingTier, number> = {
   DECOUVERTE: 50,
@@ -23,20 +24,15 @@ export const TIER_TO_PLAN: Record<BillingTier, string> = {
   ENTERPRISE: 'ENTERPRISE',
 };
 
-/** Agents inclus par palier (aligné page tarifs). */
+/**
+ * Agents inclus par palier — appliqués UNIQUEMENT après l'essai (ou changement de tier payant).
+ * DECOUVERTE est vide : 1 agent au choix via selectedDiscoveryAgent (fallback COPILOT).
+ */
 export const TIER_AGENTS: Record<BillingTier, AgentSlug[]> = {
-  DECOUVERTE: ['hunt-ai'],
-  CROISSANCE: ['hunt-ai', 'copilot-ia', 'scout-ai'],
-  PRO: ['hunt-ai', 'copilot-ia', 'scout-ai', 'offre-bot', 'gmail-ai', 'factcheck-ai'],
-  ENTERPRISE: [
-    'hunt-ai',
-    'copilot-ia',
-    'scout-ai',
-    'offre-bot',
-    'gmail-ai',
-    'factcheck-ai',
-    'brand-pulse-ai',
-  ],
+  DECOUVERTE: [],
+  CROISSANCE: ['hunt-ai', 'copilot-ia', 'gmail-ai'],
+  PRO: ['hunt-ai', 'copilot-ia', 'gmail-ai', 'scout-ai', 'offre-bot', 'factcheck-ai'],
+  ENTERPRISE: ['hunt-ai', 'copilot-ia', 'gmail-ai', 'scout-ai', 'offre-bot', 'factcheck-ai'],
 };
 
 export const TIER_PRICES: Record<BillingTier, { TND: number | null; EUR: number | null; USD: number | null }> = {
@@ -53,7 +49,8 @@ export const TIER_LABELS: Record<BillingTier, string> = {
   ENTERPRISE: 'Enterprise',
 };
 
-export const TRIAL_DAYS = 7;
+/** @deprecated Prefer TRIAL_DURATION_DAYS from config/trial.ts */
+export const TRIAL_DAYS = TRIAL_DURATION_DAYS;
 
 /** Price IDs Stripe — à configurer dans .env (un par tier × devise). */
 export function stripePriceId(tier: BillingTier, currency: string): string | null {

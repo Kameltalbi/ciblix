@@ -21,7 +21,7 @@ const TIERS: Array<{
     id: 'DECOUVERTE',
     name: 'Découverte',
     prices: { TND: 49, EUR: 19, USD: 21 },
-    features: ['1 agent au choix (Chasseur IA)', 'Quota découverte (50 actions/mois)', 'Essai 7 jours inclus'],
+    features: ['1 agent au choix parmi les 3 testés', 'Quota découverte (50 actions/mois)', 'Essai 7 jours : Chasseur + Assistant + Rédacteur'],
     cta: "Commencer l'essai gratuit de 7 jours",
   },
   {
@@ -29,14 +29,14 @@ const TIERS: Array<{
     name: 'Croissance',
     prices: { TND: 149, EUR: 49, USD: 55 },
     highlight: true,
-    features: ['3 agents cœur', 'Mémoire partagée active', 'Pipeline inféré', 'Essai 7 jours inclus'],
+    features: ['Chasseur IA + Assistant IA + Gmail IA', 'Mémoire partagée active', 'Pipeline inféré', 'Essai 7 jours inclus'],
     cta: "Commencer l'essai gratuit de 7 jours",
   },
   {
     id: 'PRO',
     name: 'Pro',
     prices: { TND: 299, EUR: 99, USD: 109 },
-    features: ['Les 6 agents', 'Scoring avancé', 'Webhook CRM externe', 'Essai 7 jours inclus'],
+    features: ['6 agents (sans BrandPulse)', 'Scoring avancé', 'Webhook CRM externe', 'Essai 7 jours inclus'],
     cta: "Commencer l'essai gratuit de 7 jours",
   },
   {

@@ -18,6 +18,7 @@ export function BillingSettings() {
     status: string;
     trialEndsAt?: string;
     readOnly?: boolean;
+    selectedDiscoveryAgent?: string | null;
     usage: { used: number; limit: number; overLimit: boolean; softCap: boolean };
   }>({
     queryKey: ['billing-status'],
@@ -59,6 +60,15 @@ export function BillingSettings() {
         {data?.readOnly ? (
           <p className="text-xs text-amber-700 bg-amber-50 rounded-md px-2 py-1 mt-2">
             Essai terminé — lecture seule. Ajoutez un moyen de paiement pour relancer les agents.
+          </p>
+        ) : null}
+        {data?.status === 'TRIALING' && data?.tier === 'DECOUVERTE' ? (
+          <p className="text-xs text-sky-800 bg-sky-50 rounded-md px-2 py-1 mt-2">
+            Essai Découverte : choisissez l’agent à garder après les 7 jours.{' '}
+            <a href="/settings/billing/choose-agent" className="underline font-medium">
+              Choisir mon agent
+            </a>
+            {data.selectedDiscoveryAgent ? ` · actuel : ${data.selectedDiscoveryAgent}` : ''}
           </p>
         ) : null}
       </CardHeader>

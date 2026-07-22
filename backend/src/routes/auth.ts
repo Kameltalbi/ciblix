@@ -170,7 +170,12 @@ authRoutes.post('/register', async (req, res, next) => {
     });
 
     const { sendTrialEmail } = await import('../services/mail/trialMailer.js');
-    void sendTrialEmail({ kind: 'welcome', toEmail: email, orgName: organizationName });
+    void sendTrialEmail({
+      kind: 'welcome',
+      toEmail: email,
+      orgName: organizationName,
+      tier: billingTier as import('@prisma/client').BillingTier,
+    });
 
     res.status(201).json({
       accessToken,

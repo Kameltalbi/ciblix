@@ -11,7 +11,7 @@ import {
 } from '../../config/billingTiers.js';
 import { normalizePlan } from '../../config/agentPlans.js';
 import { structuredLog } from '../../lib/structuredLog.js';
-import { assertAgentActionsAllowed, syncAgentsForTier } from './trialService.js';
+import { assertAgentActionsAllowed, activateTierAgents } from './trialService.js';
 
 export type QuotaCheckResult = {
   used: number;
@@ -137,7 +137,10 @@ export async function changeTier(organizationId: string, newTier: BillingTier) {
     where: { id: organizationId },
     data: { plan },
   });
-  await syncAgentsForTier(organizationId, newTier);
+  const subFresh = await prisma.billingSubscription.findUnique({ where: { organizationId } });
+  await activateTierAgents(organizationId, newTier, {
+    selectedDiscoveryAgent: subFresh?.selectedDiscoveryAgent,
+  });
 
   return sub;
 }
