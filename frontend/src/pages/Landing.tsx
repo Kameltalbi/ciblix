@@ -5,8 +5,6 @@ import {
   CheckCircle2,
   ArrowRight,
   Mail,
-  Phone,
-  MapPin,
   Menu,
   X,
   Globe,
@@ -16,7 +14,6 @@ import {
   FileSignature,
   ShieldCheck,
   Sparkles,
-  ChevronDown,
   TrendingUp,
   Play,
 } from 'lucide-react';
@@ -34,6 +31,7 @@ import {
   LandingPricing,
   LandingDataTrust,
   LandingFinalCta,
+  LandingFooter,
 } from '@/components/landing/LandingSections';
 
 const LANDING_AGENTS = [
@@ -116,7 +114,6 @@ const SCHEMA = {
 export function Landing() {
   const { i18n, t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [agentsDropdownOpen, setAgentsDropdownOpen] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupEntered, setPopupEntered] = useState(false);
   const [popupExiting, setPopupExiting] = useState(false);
@@ -211,54 +208,21 @@ export function Landing() {
                 className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
               />
             </Link>
-            <nav className="hidden flex-1 items-center justify-center gap-6 md:flex">
+            <nav className="ml-auto hidden items-center gap-7 md:flex">
               <a href="#how-it-works" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
                 {t('landing.navFeatures')}
               </a>
-              <a href="#agents" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
-                Agents
-              </a>
-              <a href="#compare" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
-                {t('landing.navWhy')}
+              <a href="#use-cases" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
+                {t('landing.navSolutions')}
               </a>
               <a href="#pricing" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
                 {t('landing.navPricing')}
               </a>
-              <div
-                className="relative"
-                onMouseEnter={() => setAgentsDropdownOpen(true)}
-                onMouseLeave={() => setAgentsDropdownOpen(false)}
-              >
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-sm font-semibold text-foreground/70 hover:text-[#0071DD]"
-                >
-                  <Sparkles size={14} className="text-[#016AEB]" />
-                  {t('landing.navAgents')}
-                  <ChevronDown size={14} className={cn('transition-transform', agentsDropdownOpen && 'rotate-180')} />
-                </button>
-                {agentsDropdownOpen && (
-                  <div className="absolute left-1/2 top-full z-50 w-[320px] -translate-x-1/2 pt-2">
-                    <div className="rounded-2xl border border-[#BED6F6]/40 bg-white/95 p-3 shadow-xl backdrop-blur-xl">
-                      {LANDING_AGENTS.map((agent) => (
-                        <Link
-                          key={agent.nameKey}
-                          to={agent.to}
-                          onClick={() => setAgentsDropdownOpen(false)}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-[#f4f8fd]"
-                        >
-                          <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', agent.iconBg)}>
-                            <agent.icon size={18} className={agent.iconColor} />
-                          </div>
-                          <p className="text-sm font-semibold">{t(agent.nameKey)}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <a href="#resources" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
+                {t('landing.navResources')}
+              </a>
             </nav>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 md:ml-6">
               <button
                 type="button"
                 onClick={() => {
@@ -297,14 +261,22 @@ export function Landing() {
               <a href="#how-it-works" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navFeatures')}
               </a>
-              <a href="#agents" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
-                Agents
+              <a href="#use-cases" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+                {t('landing.navSolutions')}
               </a>
               <a href="#pricing" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
                 {t('landing.navPricing')}
               </a>
+              <a href="#resources" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+                {t('landing.navResources')}
+              </a>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" className="mt-2 w-full border-[#BED6F6] text-[#0071DD]">
+                  {t('auth.signIn')}
+                </Button>
+              </Link>
               <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="mt-2 w-full shadow-glow">{t('landing.cta')}</Button>
+                <Button className="w-full shadow-glow">{t('landing.cta')}</Button>
               </Link>
             </div>
           </div>
@@ -426,58 +398,7 @@ export function Landing() {
       <LandingPricing />
       <LandingDataTrust />
       <LandingFinalCta />
-
-      <footer id="contact" className="bg-gradient-to-b from-[#1E72B9] to-[#0a2540] py-16 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 grid gap-8 md:grid-cols-4">
-            <div className="md:col-span-2">
-              <img
-                src="/logo-ciblix.png"
-                alt="CIBLIX"
-                className="mb-4 h-12 w-auto max-w-[min(12rem,70vw)] object-contain brightness-0 invert sm:h-14"
-              />
-              <p className="mb-4 max-w-md text-base text-white/75">{t('landing.footerDesc')}</p>
-            </div>
-            <div>
-              <h3 className="mb-4 text-lg font-semibold text-[#BED6F6]">{t('landing.footerLinks')}</h3>
-              <ul className="space-y-2 text-base text-white/80">
-                <li>
-                  <a href="#how-it-works" className="hover:text-white">
-                    {t('landing.navFeatures')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#pricing" className="hover:text-white">
-                    {t('landing.navPricing')}
-                  </a>
-                </li>
-                <li>
-                  <Link to="/register" className="hover:text-white">
-                    {t('landing.cta')}
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="mb-4 text-lg font-semibold text-[#BED6F6]">{t('landing.footerContact')}</h3>
-              <ul className="space-y-2 text-base text-white/80">
-                <li className="flex items-center gap-2">
-                  <Mail size={16} /> contact@ciblix.com
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone size={16} /> +216 55 053 505
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin size={16} /> Tunis, Tunisie
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-white/15 pt-8 text-center text-base text-white/65">
-            <p>{t('landing.footerRights')}</p>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
 
       {showPopup && (
         <div

@@ -416,7 +416,7 @@ export function LandingDataTrust() {
   ];
 
   return (
-    <section id="security" className="bg-white py-20 md:py-28">
+    <section id="resources" className="bg-white py-20 md:py-28">
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <Reveal>
           <h2 className="mb-4 text-center font-serif text-3xl font-bold tracking-tight md:text-4xl">
@@ -474,6 +474,147 @@ export function LandingFinalCta() {
         </Reveal>
       </div>
     </section>
+  );
+}
+
+const footerLinkClass =
+  'text-[14px] font-medium text-neutral-500 transition-colors hover:text-neutral-900';
+
+export function LandingFooter() {
+  const { t } = useTranslation();
+
+  const product = [
+    { label: t('landing.navFeatures'), href: '#how-it-works' },
+    { label: t('landing.navPricing'), href: '#pricing' },
+    { label: t('landing.footerIntegrations'), href: '#demo' },
+    { label: t('landing.footerSecurity'), href: '#resources' },
+  ];
+  const resources = [
+    { label: t('landing.footerBlog'), href: 'mailto:contact@ciblix.com?subject=Blog%20Ciblix' },
+    { label: t('landing.footerDocs'), href: 'mailto:contact@ciblix.com?subject=Documentation%20Ciblix' },
+    { label: t('landing.footerHelp'), href: 'mailto:contact@ciblix.com?subject=Centre%20d%27aide%20Ciblix' },
+    { label: t('landing.footerFaq'), href: '#resources' },
+  ];
+  const company = [
+    { label: t('landing.footerAbout'), href: 'mailto:contact@ciblix.com?subject=%C3%80%20propos%20de%20Ciblix' },
+    { label: t('landing.footerContact'), href: 'mailto:contact@ciblix.com' },
+    { label: t('landing.footerPrivacy'), to: '/legal/privacy' },
+    { label: t('landing.footerTerms'), to: '/legal/cgu' },
+  ];
+
+  return (
+    <footer className="border-t border-neutral-200/80 bg-[#FAFAFC]">
+      <div className="mx-auto max-w-[1280px] px-6 py-14 sm:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Link to="/" className="inline-block">
+              <img
+                src="/logo-ciblix.png"
+                alt="CIBLIX"
+                className="mb-4 h-9 w-auto max-w-[9.5rem] object-contain"
+              />
+            </Link>
+            <p className="max-w-xs text-[14px] leading-relaxed text-neutral-500">{t('landing.footerDesc')}</p>
+          </div>
+
+          <div>
+            <h3 className="mb-4 text-base font-semibold text-neutral-900">{t('landing.footerProduct')}</h3>
+            <ul className="space-y-3">
+              {product.map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className={footerLinkClass}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="mb-4 text-base font-semibold text-neutral-900">{t('landing.footerResources')}</h3>
+            <ul className="space-y-3">
+              {resources.map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className={footerLinkClass}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="mb-4 text-base font-semibold text-neutral-900">{t('landing.footerCompany')}</h3>
+            <ul className="space-y-3">
+              {company.map((item) => (
+                <li key={item.label}>
+                  {'to' in item && item.to ? (
+                    <Link to={item.to} className={footerLinkClass}>
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a href={'href' in item ? item.href : '#'} className={footerLinkClass}>
+                      {item.label}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <p className="mt-12 text-center text-[13px] font-medium tracking-wide text-neutral-500">
+          🇹🇳 {t('landing.footerCredibility')}
+        </p>
+
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-neutral-200/80 pt-6 sm:flex-row">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[13px] text-neutral-500">
+            <span>{t('landing.footerRights')}</span>
+            <span className="hidden text-neutral-300 sm:inline" aria-hidden>
+              ·
+            </span>
+            <span>
+              {t('landing.footerMadeIn')} 🇹🇳
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://www.linkedin.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="rounded-md p-1.5 text-neutral-400 transition-colors hover:text-neutral-800"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+              </svg>
+            </a>
+            <a
+              href="https://www.youtube.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="YouTube"
+              className="rounded-md p-1.5 text-neutral-400 transition-colors hover:text-neutral-800"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+                <path d="M23.498 6.186a2.997 2.997 0 00-2.11-2.122C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.388.518A2.997 2.997 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a2.997 2.997 0 002.11 2.122c1.883.518 9.388.518 9.388.518s7.505 0 9.388-.518a2.997 2.997 0 002.11-2.122C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+              </svg>
+            </a>
+            <a
+              href="https://x.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X"
+              className="rounded-md p-1.5 text-neutral-400 transition-colors hover:text-neutral-800"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }
 
