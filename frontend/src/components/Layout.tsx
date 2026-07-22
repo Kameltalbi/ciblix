@@ -6,6 +6,7 @@ import {
   Menu,
   X,
   Building2,
+  Users,
   Globe,
   MessageSquare,
   Radio,
@@ -47,6 +48,7 @@ type NavItem = {
 const NAV_STRUCTURE: NavItem[] = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'AGENTS' },
   { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'AGENTS' },
+  { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'AGENTS' },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
@@ -184,6 +186,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const PAGE_TO_SLUG: Record<string, string> = {
     'prospection-ia': 'hunt-ai',
+    'contacts': 'copilot-ia',
     'ai-assistant': 'copilot-ia',
     'scout-ai': 'scout-ai',
     'offre-bot': 'offre-bot',

@@ -95,6 +95,18 @@ export async function seedTrialSubscriptionForOrganization(organization: Organiz
       endDate,
     },
   });
+
+  const { ensureBillingSubscription, ensureUsageQuota } = await import('./billing/billingService.js');
+  const billingTier =
+    tier === 'ENTERPRISE'
+      ? 'ENTERPRISE'
+      : tier === 'BUSINESS'
+        ? 'PRO'
+        : tier === 'BASIC'
+          ? 'CROISSANCE'
+          : 'DECOUVERTE';
+  const sub = await ensureBillingSubscription(organization.id, billingTier as import('@prisma/client').BillingTier);
+  await ensureUsageQuota(organization.id, sub.tier);
 }
 
 export async function bootstrapOrganizationAgents(organization: Organization): Promise<void> {

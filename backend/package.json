@@ -13,7 +13,8 @@
     "backup": "tsx scripts/backup.ts",
     "migrate-status": "tsx src/migrate-status.ts",
     "test": "vitest run",
-    "test:integration": "vitest run src/services/agent-memory/contactDedup.integration.test.ts",
+    "test:unit": "vitest run src/services/agent-memory/computePipelineStatus.test.ts src/services/integrations/*.test.ts src/services/billing/*.test.ts",
+    "test:integration": "vitest run src/**/*.integration.test.ts",
     "test:places": "tsx scripts/test-google-places.ts"
   },
   "prisma": {

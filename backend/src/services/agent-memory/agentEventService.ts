@@ -71,7 +71,17 @@ export async function createAgentEvent(input: CreateAgentEventInput): Promise<Ag
     void resolveEventContact(event.id).catch((err) => {
       console.warn('[agent-memory] resolve after create failed', event.id, err);
     });
+  } else {
+    void import('./pipelineStatusService.js').then(({ recalculateForContact }) =>
+      recalculateForContact(input.contactId!).catch((err) => {
+        console.warn('[agent-memory] pipeline recalc failed', input.contactId, err);
+      })
+    );
   }
+
+  void import('../integrations/outboundWebhookService.js').then(({ enqueueOutboundWebhook }) =>
+    enqueueOutboundWebhook(event.id)
+  );
 
   return event;
 }

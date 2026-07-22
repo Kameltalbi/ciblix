@@ -163,6 +163,11 @@ export async function resolveEventContact(eventId: string): Promise<void> {
         resolutionNextRetryAt: null,
       },
     });
+    void import('./pipelineStatusService.js').then(({ recalculateForContact }) =>
+      recalculateForContact(contactId!).catch((err) => {
+        console.warn('[agent-memory] pipeline recalc after resolve failed', contactId, err);
+      })
+    );
     return;
   }
 
@@ -285,4 +290,10 @@ export async function resolveEventWithKeys(
   });
 
   scheduleOrgRescan(event.organizationId);
+
+  void import('./pipelineStatusService.js').then(({ recalculateForContact }) =>
+    recalculateForContact(contact.id).catch((err) => {
+      console.warn('[agent-memory] pipeline recalc after resolve failed', contact.id, err);
+    })
+  );
 }

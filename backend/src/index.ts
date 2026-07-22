@@ -51,6 +51,8 @@ import { agentsRoutes } from './routes/agents.js';
 import { gmailAiRoutes } from './routes/gmail-ai.js';
 import { contactsRoutes } from './routes/contacts.js';
 import { copilotRoutes } from './routes/copilot.js';
+import { integrationsRoutes, integrationsWebhookRoutes } from './routes/integrations.js';
+import { billingRoutes, billingWebhookRoutes } from './routes/billing.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 
@@ -86,7 +88,16 @@ app.use(helmet({
 }));
 
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
-app.use(express.json({ limit: '2mb' }));
+app.use(
+  express.json({
+    limit: '2mb',
+    verify: (req, _res, buf) => {
+      if (req.url?.includes('/api/integrations/') && req.url.includes('/webhook/')) {
+        (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+      }
+    },
+  })
+);
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Stricter rate limit for auth routes (20 req/min)
@@ -183,6 +194,10 @@ app.use('/api/agents', agentsRoutes);
 app.use('/api/gmail-ai', gmailAiRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/copilot', copilotRoutes);
+app.use('/api/integrations', integrationsWebhookRoutes);
+app.use('/api/integrations', integrationsRoutes);
+app.use('/api/billing', billingWebhookRoutes);
+app.use('/api/billing', billingRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
 
@@ -198,7 +213,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   // Si cette ligne n’apparaît pas après déploiement, PM2 sert encore un ancien build (sans /api/prospecting ni briefing).
   console.log(
-    '[bootstrap] IA routes: /api/copilot/*, /api/ai-assistant/operational-briefing, /api/prospecting/*'
+    '[bootstrap] IA routes: /api/copilot/*, /api/integrations/*, /api/ai-assistant/operational-briefing, /api/prospecting/*'
   );
   void import('./services/prospecting/automationScheduler.js').then(({ startProspectingAutomationScheduler }) => {
     startProspectingAutomationScheduler();

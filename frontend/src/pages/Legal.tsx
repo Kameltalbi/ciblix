@@ -24,7 +24,7 @@ export function Legal() {
         },
         {
           title: '4. Données personnelles',
-          content: 'Les données personnelles sont traitées conformément à notre politique de confidentialité et à la législation tunisienne sur la protection des données personnelles.',
+          content: 'Les données personnelles sont traitées conformément à notre politique de confidentialité et à la législation applicable. Ciblix fournit les mécanismes techniques de consentement et d\'effacement ; le client reste responsable de l\'obtention du consentement auprès de ses propres contacts (WhatsApp, enregistrement d\'appels).',
         },
         {
           title: '5. Paiements',

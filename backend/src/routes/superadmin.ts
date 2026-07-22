@@ -846,3 +846,100 @@ superadminRoutes.post('/contacts/:id/erase', async (req: AuthRequest, res, next)
     next(e);
   }
 });
+
+superadminRoutes.get('/legacy-vs-agent-memory', async (req: AuthRequest, res, next) => {
+  try {
+    const days = Math.min(Math.max(Number(req.query.days) || 30, 7), 90);
+    const since = new Date(Date.now() - days * 86_400_000);
+    const organizationId =
+      typeof req.query.organizationId === 'string' ? req.query.organizationId : undefined;
+
+    const orgFilter = organizationId ? { organizationId } : {};
+
+    const [legacyLead, legacyClient, legacyAffaire, agentEvent] = await Promise.all([
+      prisma.lead.count({ where: { ...orgFilter, createdAt: { gte: since }, deletedAt: null } }),
+      prisma.client.count({ where: { ...orgFilter, createdAt: { gte: since }, deletedAt: null } }),
+      prisma.affaire.count({ where: { ...orgFilter, createdAt: { gte: since }, deletedAt: null } }),
+      prisma.agentEvent.count({ where: { ...orgFilter, createdAt: { gte: since } } }),
+    ]);
+
+    res.json({
+      windowDays: days,
+      since: since.toISOString(),
+      organizationId: organizationId || null,
+      buckets: [
+        { bucket: 'legacy_lead', count: legacyLead },
+        { bucket: 'legacy_client', count: legacyClient },
+        { bucket: 'legacy_affaire', count: legacyAffaire },
+        { bucket: 'agent_event', count: agentEvent },
+      ],
+      readyForDeprecation:
+        legacyLead === 0 && legacyClient === 0 && legacyAffaire === 0 && agentEvent > 0,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+superadminRoutes.get('/observability/overview', async (req: AuthRequest, res, next) => {
+  try {
+    const days = Math.min(Math.max(Number(req.query.days) || 7, 1), 30);
+    const since = new Date(Date.now() - days * 86_400_000);
+
+    const [
+      llmByOrg,
+      resolutionPending,
+      needsReview,
+      webhookFailed,
+      whatsappBuffers,
+      analysisErrors,
+    ] = await Promise.all([
+      prisma.llmUsageLog.groupBy({
+        by: ['organizationId'],
+        where: { createdAt: { gte: since } },
+        _sum: { costEstimateUsd: true, durationMs: true },
+        _count: { id: true },
+      }),
+      prisma.agentEvent.count({ where: { resolutionStatus: 'PENDING', contactId: null } }),
+      prisma.agentEvent.count({ where: { resolutionStatus: 'NEEDS_REVIEW' } }),
+      prisma.webhookDeliveryLog.count({ where: { status: 'failed', lastAttemptAt: { gte: since } } }),
+      prisma.whatsappSessionBuffer.count(),
+      prisma.agentEvent.count({
+        where: { processingStatus: 'ERROR', createdAt: { gte: since } },
+      }),
+    ]);
+
+    const orgIds = llmByOrg.map((r) => r.organizationId);
+    const orgs = await prisma.organization.findMany({
+      where: { id: { in: orgIds } },
+      select: { id: true, name: true },
+    });
+    const orgNames = new Map(orgs.map((o) => [o.id, o.name]));
+
+    res.json({
+      windowDays: days,
+      since: since.toISOString(),
+      llmCostByOrg: llmByOrg.map((r) => ({
+        organizationId: r.organizationId,
+        organizationName: orgNames.get(r.organizationId) || r.organizationId,
+        calls: r._count.id,
+        costEstimateUsd: r._sum.costEstimateUsd ?? 0,
+        durationMs: r._sum.durationMs ?? 0,
+      })),
+      jobs: {
+        resolutionPending,
+        needsReview,
+        webhookFailed,
+        whatsappOpenSessions: whatsappBuffers,
+        copilotAnalysisErrors: analysisErrors,
+      },
+      alerts: {
+        highLlmCost: llmByOrg.some((r) => (r._sum.costEstimateUsd ?? 0) > 50),
+        resolutionBacklog: resolutionPending > 100,
+        webhookFailures: webhookFailed > 20,
+      },
+    });
+  } catch (e) {
+    next(e);
+  }
+});

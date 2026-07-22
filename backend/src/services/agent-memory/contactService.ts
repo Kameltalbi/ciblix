@@ -1,4 +1,4 @@
-import type { AgentEventSource, Contact, ContactCreatedVia, Prisma } from '@prisma/client';
+import type { AgentEventSource, Contact, ContactCreatedVia, ContactPipelineStatus, Prisma } from '@prisma/client';
 import { prisma } from '../../db/prisma.js';
 import { namesConflict, normalizeEmail, normalizeName, normalizePhone, normalizeWhatsapp } from './normalize.js';
 
@@ -164,15 +164,25 @@ export async function findOrCreateContact(input: FindOrCreateContactInput): Prom
 
 export async function listContacts(
   organizationId: string,
-  opts: { take?: number; skip?: number; search?: string } = {}
+  opts: {
+    take?: number;
+    skip?: number;
+    search?: string;
+    status?: ContactPipelineStatus;
+    sort?: 'pipelineStatusAt' | 'createdAt';
+    sortDir?: 'asc' | 'desc';
+  } = {}
 ): Promise<{ items: Contact[]; total: number }> {
   const take = Math.min(opts.take ?? 30, 100);
   const skip = opts.skip ?? 0;
   const search = opts.search?.trim();
+  const sortField = opts.sort === 'createdAt' ? 'createdAt' : 'pipelineStatusAt';
+  const sortDir = opts.sortDir === 'asc' ? 'asc' : 'desc';
 
   const where: Prisma.ContactWhereInput = {
     organizationId,
     erasedAt: null,
+    ...(opts.status ? { pipelineStatus: opts.status } : {}),
     ...(search
       ? {
           OR: [
@@ -188,7 +198,7 @@ export async function listContacts(
   const [items, total] = await Promise.all([
     prisma.contact.findMany({
       where,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { [sortField]: sortDir },
       take,
       skip,
     }),

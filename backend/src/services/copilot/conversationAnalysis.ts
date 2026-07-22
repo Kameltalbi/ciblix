@@ -1,4 +1,7 @@
 import { getCopilotOrgConfig } from './orgConfig.js';
+import { consumeAgentAction } from '../billing/billingService.js';
+import { estimateLlmCost, logLlmUsage } from '../billing/llmUsageService.js';
+import { withStructuredLog } from '../../lib/structuredLog.js';
 
 export type ConversationAnalysis = {
   resume: string;
@@ -65,12 +68,19 @@ export async function analyzeConversation(
   organizationId: string,
   transcription: string
 ): Promise<ConversationAnalysis> {
-  const cfg = await getCopilotOrgConfig(organizationId);
-  const gridText = cfg.scoringGrid
-    .map((c) => `- ${c.label} (poids ${c.weight}%)`)
-    .join('\n');
+  await consumeAgentAction(organizationId, 1);
+  const started = Date.now();
 
-  const systemPrompt = `Tu es un assistant qui analyse une conversation commerciale pour ${cfg.orgName}, secteur ${cfg.sector}.
+  return withStructuredLog(
+    'conversationAnalysisService',
+    'analyze',
+    async () => {
+      const cfg = await getCopilotOrgConfig(organizationId);
+      const gridText = cfg.scoringGrid
+        .map((c) => `- ${c.label} (poids ${c.weight}%)`)
+        .join('\n');
+
+      const systemPrompt = `Tu es un assistant qui analyse une conversation commerciale pour ${cfg.orgName}, secteur ${cfg.sector}.
 
 Contexte métier : ${cfg.businessLexicon}
 Grille de scoring :
@@ -85,32 +95,57 @@ Réponds UNIQUEMENT en JSON valide :
   "signauxAchat": ["signal si présent"]
 }`;
 
-  const prompt = `Transcription :\n${transcription.slice(0, 12_000)}`;
+      const prompt = `Transcription :\n${transcription.slice(0, 12_000)}`;
 
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const raw = await callOpenAIJson(prompt, systemPrompt);
-      return parseAnalysisJson(raw);
-    } catch (err) {
-      lastErr = err;
-    }
-  }
+      let result: ConversationAnalysis | undefined;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const raw = await callOpenAIJson(prompt, systemPrompt);
+          result = parseAnalysisJson(raw);
+          break;
+        } catch {
+          /* retry */
+        }
+      }
 
-  // Fallback minimal si JSON invalide
-  const fallbackRaw = await callOpenAIJson(
-    `${prompt}\n\nIMPORTANT: retourne uniquement le JSON demandé, sans markdown.`,
-    systemPrompt
-  );
-  try {
-    return parseAnalysisJson(fallbackRaw);
-  } catch {
-    return {
-      resume: transcription.slice(0, 500),
-      score: 50,
-      scoreDetail: { fallback: 'analyse_partielle' },
-      actionsSuggerees: ['Relire la transcription et planifier un suivi'],
-      signauxAchat: [],
-    };
-  }
+      if (!result) {
+        const fallbackRaw = await callOpenAIJson(
+          `${prompt}\n\nIMPORTANT: retourne uniquement le JSON demandé, sans markdown.`,
+          systemPrompt
+        );
+        try {
+          result = parseAnalysisJson(fallbackRaw);
+        } catch {
+          result = {
+            resume: transcription.slice(0, 500),
+            score: 50,
+            scoreDetail: { fallback: 'analyse_partielle' },
+            actionsSuggerees: ['Relire la transcription et planifier un suivi'],
+            signauxAchat: [],
+          };
+        }
+      }
+
+      void logLlmUsage({
+        organizationId,
+        service: 'conversationAnalysis',
+        success: true,
+        durationMs: Date.now() - started,
+        tokensEstimate: transcription.length,
+        costEstimateUsd: estimateLlmCost('conversationAnalysis', transcription.length),
+      });
+
+      return result;
+    },
+    { organizationId }
+  ).catch(async (err) => {
+    void logLlmUsage({
+      organizationId,
+      service: 'conversationAnalysis',
+      success: false,
+      durationMs: Date.now() - started,
+      errorCode: err instanceof Error ? err.message : 'error',
+    });
+    throw err;
+  });
 }

@@ -57,6 +57,10 @@ const Dashboard = lazy(() =>
 const AllProspects = lazy(() =>
   import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
 );
+const Contacts = lazy(() => import('./pages/Contacts').then((m) => ({ default: m.Contacts })));
+const ContactDetail = lazy(() =>
+  import('./pages/ContactDetail').then((m) => ({ default: m.ContactDetail }))
+);
 
 // Public agent pages (marketing / pre-login)
 const HuntAIPage = lazy(() => import('./pages/public/HuntAIPage').then((m) => ({ default: m.HuntAIPage })));
@@ -135,8 +139,8 @@ export default function App() {
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/affaires" element={<Navigate to="/agents" replace />} />
                         <Route path="/affaires/:id" element={<Navigate to="/agents" replace />} />
-                        <Route path="/clients" element={<Navigate to="/agents" replace />} />
-                        <Route path="/clients/:id" element={<Navigate to="/agents" replace />} />
+                        <Route path="/clients" element={<Navigate to="/contacts" replace />} />
+                        <Route path="/clients/:id" element={<Navigate to="/contacts" replace />} />
                         <Route path="/leads" element={<Navigate to="/agents" replace />} />
                         <Route path="/calendar" element={<Navigate to="/agents" replace />} />
                         <Route path="/expenses" element={<Navigate to="/agents" replace />} />
@@ -156,6 +160,8 @@ export default function App() {
                         <Route path="/agents/gmail-ai" element={<GmailAI />} />
                         <Route path="/agents/comm-bot" element={<Navigate to="/agents/brand-pulse" replace />} />
                         <Route path="/agents/:agentId" element={<Navigate to="/agents" replace />} />
+                        <Route path="/contacts" element={<Contacts />} />
+                        <Route path="/contacts/:id" element={<ContactDetail />} />
                         <Route path="/all-prospects" element={<AllProspects />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />
                         <Route path="/support" element={<SupportTickets />} />

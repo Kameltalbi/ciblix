@@ -4,6 +4,9 @@ import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
+import { getContactById } from '../services/agent-memory/contactService.js';
+import { listEventsForContact } from '../services/agent-memory/agentEventService.js';
+import { normalizeEmail } from '../services/agent-memory/normalize.js';
 
 export const offreBotRoutes = Router();
 
@@ -50,8 +53,34 @@ async function callOpenAI(prompt: string, systemPrompt: string): Promise<string>
 // ─── Routes ─────────────────────────────────────────────────
 
 /**
+ * GET /api/offre-bot/contacts
+ * Contacts avec historique pour génération d'offre.
+ */
+offreBotRoutes.get('/contacts', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const contacts = await prisma.contact.findMany({
+      where: { organizationId: req.organizationId!, erasedAt: null },
+      orderBy: { pipelineStatusAt: 'desc' },
+      take: 100,
+      select: {
+        id: true,
+        name: true,
+        companyName: true,
+        email: true,
+        phone: true,
+        pipelineStatus: true,
+        pipelineStatusScore: true,
+      },
+    });
+    res.json({ contacts });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * GET /api/offre-bot/affaires
- * Liste les affaires disponibles pour generer une offre.
+ * @deprecated Utiliser /contacts — conservé pour compat temporaire.
  */
 offreBotRoutes.get('/affaires', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -100,14 +129,15 @@ const briefSchema = z.object({
 });
 
 const generateSchema = z.object({
+  contactId: z.string().min(1).optional(),
   affaireId: z.string().min(1).optional(),
   brief: briefSchema.optional(),
   tone: z.enum(['formal', 'friendly', 'concise']).optional().default('formal'),
   includeConditions: z.boolean().optional().default(true),
   customNotes: z.string().optional().default(''),
   language: z.enum(['fr', 'en', 'ar']).optional().default('fr'),
-}).refine((d) => Boolean(d.affaireId || d.brief), {
-  message: 'affaireId or brief is required',
+}).refine((d) => Boolean(d.contactId || d.affaireId || d.brief), {
+  message: 'contactId, affaireId or brief is required',
 });
 
 /**
@@ -118,7 +148,8 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
   try {
     if (!(await tryConsumeAgentQuota(req.organizationId!, 'offre-bot', res))) return;
 
-    const { affaireId, brief, tone, includeConditions, customNotes, language } = generateSchema.parse(req.body);
+    const { contactId, affaireId, brief, tone, includeConditions, customNotes, language } =
+      generateSchema.parse(req.body);
 
     const org = await prisma.organization.findUnique({
       where: { id: req.organizationId! },
@@ -143,8 +174,39 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
       type: 'BRIEF',
     };
     let montantHT = Number(brief?.budgetHT ?? 0);
+    let historyBlock = '';
 
-    if (affaireId) {
+    if (contactId) {
+      const contact = await getContactById(req.organizationId!, contactId);
+      if (!contact) {
+        res.status(404).json({ error: 'Contact introuvable' });
+        return;
+      }
+
+      const { items: events } = await listEventsForContact(req.organizationId!, contactId, {
+        take: 15,
+      });
+
+      clientName = contact.companyName || contact.name || 'Client';
+      contactName = contact.name || '';
+      clientEmail = contact.email || 'N/A';
+      clientPhone = contact.phone || 'N/A';
+      title = `Proposition pour ${clientName}`;
+      type = 'CONTACT';
+      affaireMeta = { id: contactId, title, type: 'CONTACT' };
+
+      historyBlock = events
+        .filter((e) => e.resume)
+        .slice(0, 8)
+        .map(
+          (e) =>
+            `- [${e.source}/${e.type}] ${e.createdAt.toISOString().slice(0, 10)} — ${e.resume}${
+              e.score != null ? ` (score ${e.score})` : ''
+            }`
+        )
+        .join('\n');
+      description = historyBlock || description;
+    } else if (affaireId) {
       const affaire = await prisma.affaire.findFirst({
         where: {
           id: affaireId,
@@ -181,6 +243,24 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
 - Description: ${affaire.product.description || 'N/A'}
 - Prix unitaire: ${Number(affaire.product.price).toFixed(3)} DT`
         : productBlock;
+
+      // Mapping legacy affaire → contact existant si possible
+      const emailNorm = normalizeEmail(affaire.client.email);
+      if (emailNorm) {
+        const mapped = await prisma.contact.findFirst({
+          where: { organizationId: req.organizationId!, emailNormalized: emailNorm, erasedAt: null },
+        });
+        if (mapped) {
+          const { items: events } = await listEventsForContact(req.organizationId!, mapped.id, {
+            take: 10,
+          });
+          historyBlock = events
+            .filter((e) => e.resume)
+            .map((e) => `- ${e.resume}`)
+            .join('\n');
+          if (historyBlock) description = `${description}\n\nHISTORIQUE AGENT:\n${historyBlock}`;
+        }
+      }
     }
 
     const tva = montantHT * 0.19;
@@ -254,6 +334,7 @@ AFFAIRE / BRIEF:
 
 ${productBlock}
 
+${historyBlock ? `HISTORIQUE DES ÉCHANGES (AgentEvent):\n${historyBlock}\n` : ''}
 COMMERCIAL ASSIGNÉ: ${assignedTo}
 
 ${includeConditions ? 'Inclure les conditions générales (paiement, validité, propriété intellectuelle).' : 'Ne pas inclure de conditions générales.'}

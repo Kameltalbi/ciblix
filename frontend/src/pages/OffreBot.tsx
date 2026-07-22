@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   FileSignature,
@@ -224,35 +225,59 @@ function buildPlainText(proposal: Proposal, org: any, client: any): string {
 
 export function OffreBot() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [tone, setTone] = useState<'formal' | 'friendly' | 'concise'>('formal');
   const [includeConditions, setIncludeConditions] = useState(true);
   const [customNotes, setCustomNotes] = useState('');
+  const [selectedContactId, setSelectedContactId] = useState(searchParams.get('contactId') || '');
   const [clientName, setClientName] = useState('');
   const [contactName, setContactName] = useState('');
   const [need, setNeed] = useState('');
   const [context, setContext] = useState('');
   const [budgetHT, setBudgetHT] = useState('');
   const [productService, setProductService] = useState('');
+  const [useBriefMode, setUseBriefMode] = useState(false);
+
+  const { data: contactsData } = useQuery({
+    queryKey: ['offre-bot-contacts'],
+    queryFn: () => api.get('/offre-bot/contacts').then((r) => r.data),
+  });
+
+  useEffect(() => {
+    const id = searchParams.get('contactId');
+    if (id) setSelectedContactId(id);
+  }, [searchParams]);
 
   const generateMutation = useMutation({
     mutationFn: (params: Record<string, unknown>) =>
       api.post('/offre-bot/generate', params).then((r) => r.data),
   });
 
-  const canGenerate = clientName.trim().length > 0 && need.trim().length > 0;
+  const canGenerate = useBriefMode
+    ? clientName.trim().length > 0 && need.trim().length > 0
+    : Boolean(selectedContactId);
 
   const handleGenerate = () => {
     if (!canGenerate) return;
-    const budget = budgetHT.trim() ? Number(budgetHT) : undefined;
+    if (useBriefMode) {
+      const budget = budgetHT.trim() ? Number(budgetHT) : undefined;
+      generateMutation.mutate({
+        brief: {
+          clientName: clientName.trim(),
+          contactName: contactName.trim(),
+          need: need.trim(),
+          context: context.trim(),
+          budgetHT: Number.isFinite(budget) ? budget : undefined,
+          productService: productService.trim(),
+        },
+        tone,
+        includeConditions,
+        customNotes,
+      });
+      return;
+    }
     generateMutation.mutate({
-      brief: {
-        clientName: clientName.trim(),
-        contactName: contactName.trim(),
-        need: need.trim(),
-        context: context.trim(),
-        budgetHT: Number.isFinite(budget) ? budget : undefined,
-        productService: productService.trim(),
-      },
+      contactId: selectedContactId,
       tone,
       includeConditions,
       customNotes,
@@ -277,9 +302,47 @@ export function OffreBot() {
         <div className="space-y-4 lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">1. Brief client</CardTitle>
+              <CardTitle className="text-base">1. Contact ou brief</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useBriefMode}
+                  onChange={(e) => setUseBriefMode(e.target.checked)}
+                />
+                Saisie manuelle (brief libre)
+              </label>
+
+              {!useBriefMode ? (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Contact *</label>
+                  <select
+                    value={selectedContactId}
+                    onChange={(e) => setSelectedContactId(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Sélectionner un contact…</option>
+                    {(contactsData?.contacts || []).map(
+                      (c: {
+                        id: string;
+                        name?: string;
+                        companyName?: string;
+                        pipelineStatus?: string;
+                      }) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name || c.companyName || c.id}
+                          {c.pipelineStatus ? ` (${c.pipelineStatus})` : ''}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    L&apos;offre est générée à partir de l&apos;historique AgentEvent du contact.
+                  </p>
+                </div>
+              ) : (
+              <>
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Client / entreprise *</label>
                 <input
@@ -338,6 +401,8 @@ export function OffreBot() {
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
+              </>
+              )}
             </CardContent>
           </Card>
 

@@ -6,11 +6,12 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { getUploadsDir } from '../lib/uploadsDir.js';
-import {
-  mapOrganizationLogoInPlace,
-  normalizeOrganizationLogoUrlForApi,
-  organizationLogoFilenameFromStored,
-} from '../lib/organizationLogoUrl.js';
+import { mapOrganizationLogoInPlace, normalizeOrganizationLogoUrlForApi, organizationLogoFilenameFromStored } from '../lib/organizationLogoUrl.js';
+import { parsePipelineThresholds, DEFAULT_PIPELINE_THRESHOLDS } from '../services/agent-memory/computePipelineStatus.js';
+import { upsertCopilotOrgConfig } from '../services/copilot/orgConfig.js';
+import { SECTOR_TEMPLATES, getSectorTemplate } from '../services/copilot/sectorTemplates.js';
+import { ensureBillingSubscription, changeTier } from '../services/billing/billingService.js';
+import type { BillingTier } from '@prisma/client';
 
 export const organizationsRoutes = Router();
 organizationsRoutes.use(auth);
@@ -213,6 +214,138 @@ Cordialement`,
     });
 
     res.status(201).json(mapOrganizationLogoInPlace(organization));
+  } catch (e) { next(e); }
+});
+
+organizationsRoutes.get('/config/pipeline', async (req: AuthRequest, res, next) => {
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: req.organizationId! },
+      select: { pipelineThresholds: true },
+    });
+    res.json({ thresholds: parsePipelineThresholds(org?.pipelineThresholds) });
+  } catch (e) { next(e); }
+});
+
+organizationsRoutes.put('/config/pipeline', async (req: AuthRequest, res, next) => {
+  try {
+    if (req.user?.role !== 'OWNER' && req.user?.role !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Réservé au propriétaire' });
+    }
+    const body = z
+      .object({
+        chaudScore: z.number().min(0).max(100),
+        chaudJours: z.number().min(1).max(365),
+        relanceJours: z.number().min(1).max(365),
+        tiedeScore: z.number().min(0).max(100),
+        archiveJours: z.number().min(1).max(730),
+      })
+      .parse(req.body);
+
+    if (body.chaudScore < body.tiedeScore) {
+      return res.status(400).json({ error: 'Le seuil "chaud" doit être ≥ au seuil "tiède".' });
+    }
+
+    await prisma.organization.update({
+      where: { id: req.organizationId! },
+      data: { pipelineThresholds: body },
+    });
+    res.json({ thresholds: body });
+  } catch (e) { next(e); }
+});
+
+organizationsRoutes.get('/config/compliance', async (req: AuthRequest, res, next) => {
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: req.organizationId! },
+      select: {
+        agentEventRawRetentionDays: true,
+        telephonyRecordingConsentMode: true,
+        telephonyConsentConfirmedAt: true,
+      },
+    });
+    res.json(org);
+  } catch (e) { next(e); }
+});
+
+organizationsRoutes.put('/config/compliance', async (req: AuthRequest, res, next) => {
+  try {
+    if (req.user?.role !== 'OWNER' && req.user?.role !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Réservé au propriétaire' });
+    }
+    const body = z
+      .object({
+        agentEventRawRetentionDays: z.number().int().min(7).max(365).optional(),
+      })
+      .parse(req.body);
+
+    const org = await prisma.organization.update({
+      where: { id: req.organizationId! },
+      data: {
+        ...(body.agentEventRawRetentionDays
+          ? { agentEventRawRetentionDays: body.agentEventRawRetentionDays }
+          : {}),
+      },
+      select: {
+        agentEventRawRetentionDays: true,
+        telephonyRecordingConsentMode: true,
+        telephonyConsentConfirmedAt: true,
+      },
+    });
+    res.json(org);
+  } catch (e) { next(e); }
+});
+
+organizationsRoutes.get('/sector-templates', async (_req: AuthRequest, res) => {
+  res.json(SECTOR_TEMPLATES.map(({ id, label, sector }) => ({ id, label, sector })));
+});
+
+organizationsRoutes.post('/onboarding/complete', async (req: AuthRequest, res, next) => {
+  try {
+    const body = z
+      .object({
+        sectorTemplateId: z.string().min(1),
+        tier: z.enum(['DECOUVERTE', 'CROISSANCE', 'PRO', 'ENTERPRISE']).optional(),
+        agentSlugs: z.array(z.string()).optional(),
+      })
+      .parse(req.body);
+
+    const template = getSectorTemplate(body.sectorTemplateId) || getSectorTemplate('generic')!;
+
+    await upsertCopilotOrgConfig(req.organizationId!, {
+      sector: template.sector,
+      businessLexicon: template.businessLexicon,
+      scoringGrid: template.scoringGrid,
+    });
+
+    const tier = (body.tier || 'DECOUVERTE') as BillingTier;
+    await ensureBillingSubscription(req.organizationId!, tier);
+    if (tier === 'DECOUVERTE') {
+      await changeTier(req.organizationId!, tier);
+    }
+
+    if (body.agentSlugs?.length) {
+      for (const slug of body.agentSlugs) {
+        await prisma.organizationAgent.upsert({
+          where: {
+            organizationId_agentSlug: { organizationId: req.organizationId!, agentSlug: slug },
+          },
+          create: { organizationId: req.organizationId!, agentSlug: slug, active: true },
+          update: { active: true, deactivatedAt: null },
+        });
+      }
+    }
+
+    await prisma.organization.update({
+      where: { id: req.organizationId! },
+      data: {
+        onboardingCompletedAt: new Date(),
+        onboardingSector: template.sector,
+        pipelineThresholds: DEFAULT_PIPELINE_THRESHOLDS,
+      },
+    });
+
+    res.json({ ok: true, sector: template.sector, tier });
   } catch (e) { next(e); }
 });
 

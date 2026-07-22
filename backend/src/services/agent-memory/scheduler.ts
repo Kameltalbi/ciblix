@@ -1,5 +1,7 @@
 import { processDueResolutions, weeklyNeedsReviewRetry } from './contactResolution.js';
 import { purgeExpiredRawContent } from './purgeRawContent.js';
+import { recalculateStaleContacts } from './pipelineStatusService.js';
+import { closeStaleWhatsAppSessions } from '../integrations/whatsappSessionService.js';
 
 const TICK_MS = 60_000;
 const DAY_MS = 86_400_000;
@@ -15,6 +17,12 @@ async function tickOnce(): Promise<void> {
     console.warn('[agent-memory-scheduler] resolution tick', err);
   }
 
+  try {
+    await closeStaleWhatsAppSessions(30);
+  } catch (err) {
+    console.warn('[agent-memory-scheduler] whatsapp session tick', err);
+  }
+
   const now = Date.now();
   if (now - lastDailyPurge > DAY_MS) {
     lastDailyPurge = now;
@@ -25,6 +33,11 @@ async function tickOnce(): Promise<void> {
       } while (purged === 50);
     } catch (err) {
       console.warn('[agent-memory-scheduler] purge tick', err);
+    }
+    try {
+      await recalculateStaleContacts(undefined, 500);
+    } catch (err) {
+      console.warn('[agent-memory-scheduler] pipeline stale recalc', err);
     }
   }
 

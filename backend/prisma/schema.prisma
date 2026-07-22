@@ -74,8 +74,36 @@ model Organization {
   copilotMessages       CopilotMessage[]
   /// TTL transcription brute (jours) — appliqué par le job de purge S3
   agentEventRawRetentionDays Int @default(90)
+  pipelineThresholds         Json?
+
+  // Phase 5 — intégrations externes (désactivées par défaut)
+  whatsappBusinessAccountId      String?
+  whatsappPhoneNumberId          String?
+  whatsappWebhookToken           String?
+  whatsappSessionTimeoutMinutes  Int      @default(30)
+  zoomOAuthToken                 String?
+  telephonyWebhookSecret         String?
+  telephonyRecordingConsentMode  TelephonyRecordingConsentMode @default(DISABLED)
+  telephonyConsentConfirmedAt    DateTime?
+  telephonyConsentConfirmedBy    String?
+
+  whatsappSessionBuffers WhatsappSessionBuffer[]
+  outboundWebhookConfig  OutboundWebhookConfig?
+  webhookDeliveryLogs    WebhookDeliveryLog[]
+
+  onboardingCompletedAt DateTime?
+  onboardingSector      String?
+
+  billingSubscription   BillingSubscription?
+  usageQuotas           UsageQuota[]
+  llmUsageLogs          LlmUsageLog[]
 
   @@map("organizations")
+}
+
+enum TelephonyRecordingConsentMode {
+  DISABLED
+  CLIENT_RESPONSIBLE
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1443,6 +1471,15 @@ enum AgentEventResolutionStatus {
   NEEDS_REVIEW
 }
 
+enum ContactPipelineStatus {
+  NOUVEAU
+  CHAUD
+  TIEDE
+  A_RELANCER
+  FROID
+  ARCHIVE
+}
+
 model Contact {
   id             String   @id @default(cuid())
   organizationId String
@@ -1463,6 +1500,12 @@ model Contact {
   createdVia     ContactCreatedVia
   erasedAt       DateTime?
 
+  pipelineStatus      ContactPipelineStatus @default(NOUVEAU)
+  pipelineStatusScore Float?
+  pipelineStatusAt    DateTime?
+
+  whatsappConsentAt DateTime?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -1470,12 +1513,15 @@ model Contact {
   events         AgentEvent[]
   copilotMessages CopilotMessage[]
   dedupConflicts ContactDedupConflict[] @relation("ExistingContact")
+  whatsappSessions WhatsappSessionBuffer[]
 
   @@index([organizationId])
   @@index([organizationId, phoneNormalized])
   @@index([organizationId, emailNormalized])
   @@index([organizationId, whatsappNormalized])
   @@index([organizationId, companyName])
+  @@index([organizationId, pipelineStatus])
+  @@index([organizationId, pipelineStatusAt])
   @@map("contacts")
 }
 
@@ -1587,4 +1633,121 @@ model CopilotMessage {
   @@index([contactId, createdAt])
   @@index([agentEventId, createdAt])
   @@map("copilot_messages")
+}
+
+model WhatsappSessionBuffer {
+  id             String   @id @default(cuid())
+  organizationId String
+  whatsappId     String
+  contactId      String?
+  messages       Json     @default("[]")
+  lastMessageAt  DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, whatsappId])
+  @@index([organizationId, lastMessageAt])
+  @@map("whatsapp_session_buffers")
+}
+
+model OutboundWebhookConfig {
+  id             String           @id @default(cuid())
+  organizationId String           @unique
+  targetUrl      String
+  secret         String
+  enabled        Boolean          @default(false)
+  eventTypes     AgentEventType[] @default([])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("outbound_webhook_configs")
+}
+
+model WebhookDeliveryLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  agentEventId   String
+  status         String
+  httpStatus     Int?
+  attempts       Int      @default(1)
+  lastAttemptAt  DateTime @default(now())
+  errorMessage   String?  @db.Text
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([agentEventId])
+  @@map("webhook_delivery_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PHASE 6 — Facturation SaaS + quotas + observabilité LLM
+// ═══════════════════════════════════════════════════════════════
+
+enum BillingTier {
+  DECOUVERTE
+  CROISSANCE
+  PRO
+  ENTERPRISE
+}
+
+enum BillingCurrency {
+  TND
+  EUR
+  USD
+}
+
+model BillingSubscription {
+  id                   String          @id @default(cuid())
+  organizationId       String          @unique
+  tier                 BillingTier     @default(DECOUVERTE)
+  currency             BillingCurrency @default(TND)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String          @default("trialing")
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("billing_subscriptions")
+}
+
+model UsageQuota {
+  id                String   @id @default(cuid())
+  organizationId    String
+  month             String
+  agentActionsUsed  Int      @default(0)
+  agentActionsLimit Int
+  overageAllowed    Boolean  @default(false)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, month])
+  @@index([organizationId, month])
+  @@map("usage_quotas")
+}
+
+model LlmUsageLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  service        String
+  success        Boolean  @default(true)
+  durationMs     Int      @default(0)
+  tokensEstimate Int?
+  costEstimateUsd Float?
+  errorCode      String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([service, createdAt])
+  @@map("llm_usage_logs")
 }

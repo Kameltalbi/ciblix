@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Mail, Users, Lock, Building2 } from 'lucide-react';
 import { GmailSettings } from '@/components/settings/GmailSettings';
 import { UsersSettings } from '@/components/settings/UsersSettings';
-import { OrganizationSettings } from '@/components/settings/OrganizationSettings';
+import { OrganizationHub } from '@/components/settings/OrganizationHub';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
 import { useAuth } from '@/lib/auth';
@@ -97,7 +97,7 @@ export function Settings() {
       </div>
 
       <div className="pt-4">
-        {visibleTab === 'organization' && isOwner && <OrganizationSettings />}
+        {visibleTab === 'organization' && isOwner && <OrganizationHub />}
         {visibleTab === 'gmail' && <GmailSettings />}
         {visibleTab === 'users' && isOwner && <UsersSettings />}
         {visibleTab === 'security' && <SecuritySettings />}
