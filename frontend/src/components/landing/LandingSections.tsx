@@ -486,7 +486,7 @@ export function LandingFooter() {
   const product = [
     { label: t('landing.navFeatures'), href: '#how-it-works' },
     { label: t('landing.navPricing'), href: '#pricing' },
-    { label: t('landing.footerIntegrations'), href: '#demo' },
+    { label: t('landing.footerIntegrations'), href: '#how-it-works' },
     { label: t('landing.footerSecurity'), href: '#resources' },
   ];
   const resources = [

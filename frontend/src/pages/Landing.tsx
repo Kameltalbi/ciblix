@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -14,18 +14,14 @@ import {
   FileSignature,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
-  Play,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  DEMO_URL,
   LandingProofStats,
   LandingProblem,
   LandingSolution,
-  LandingVideo,
   LandingCompare,
   LandingUseCases,
   LandingPricing,
@@ -91,8 +87,6 @@ const LANDING_AGENTS = [
   },
 ] as const;
 
-const SOFTFACTURE_BANNER_SLIDE_MS = 500;
-
 const SCHEMA = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -114,11 +108,6 @@ const SCHEMA = {
 export function Landing() {
   const { i18n, t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-  const [popupEntered, setPopupEntered] = useState(false);
-  const [popupExiting, setPopupExiting] = useState(false);
-  const popupExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const popupUnmountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     document.title = t('landing.seoTitle');
@@ -140,61 +129,6 @@ export function Landing() {
     }
     script.textContent = JSON.stringify(SCHEMA);
   }, [t, i18n.language]);
-
-  useEffect(() => {
-    const today = new Date().toDateString();
-    const storageKey = 'softfacture_popup_count';
-    const storageDateKey = 'softfacture_popup_date';
-    const storedDate = localStorage.getItem(storageDateKey);
-    const storedCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
-    if (storedDate !== today) {
-      localStorage.setItem(storageKey, '0');
-      localStorage.setItem(storageDateKey, today);
-    }
-    const currentCount = storedDate === today ? storedCount : 0;
-    if (currentCount < 2) {
-      const timer = setTimeout(() => {
-        setShowPopup(true);
-        localStorage.setItem(storageKey, String(currentCount + 1));
-        localStorage.setItem(storageDateKey, today);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showPopup) return;
-    setPopupEntered(false);
-    setPopupExiting(false);
-    const enterDelayMs = 30;
-    const slideMs = SOFTFACTURE_BANNER_SLIDE_MS;
-    const enterTimer = setTimeout(() => setPopupEntered(true), enterDelayMs);
-    const visibleMs = 5000;
-    popupExitTimerRef.current = setTimeout(() => setPopupExiting(true), enterDelayMs + slideMs + visibleMs);
-    popupUnmountTimerRef.current = setTimeout(() => {
-      setShowPopup(false);
-      setPopupExiting(false);
-      setPopupEntered(false);
-    }, enterDelayMs + slideMs + visibleMs + slideMs);
-    return () => {
-      clearTimeout(enterTimer);
-      if (popupExitTimerRef.current) clearTimeout(popupExitTimerRef.current);
-      if (popupUnmountTimerRef.current) clearTimeout(popupUnmountTimerRef.current);
-    };
-  }, [showPopup]);
-
-  const dismissSoftfactureBanner = () => {
-    if (popupExitTimerRef.current) clearTimeout(popupExitTimerRef.current);
-    if (popupUnmountTimerRef.current) clearTimeout(popupUnmountTimerRef.current);
-    setPopupExiting(true);
-    popupUnmountTimerRef.current = setTimeout(() => {
-      setShowPopup(false);
-      setPopupExiting(false);
-      setPopupEntered(false);
-    }, SOFTFACTURE_BANNER_SLIDE_MS);
-  };
-
-  const demoIsExternal = DEMO_URL.startsWith('http');
 
   return (
     <div className="min-h-screen bg-white">
@@ -307,14 +241,13 @@ export function Landing() {
                   <ArrowRight size={18} className="ml-2" />
                 </Button>
               </Link>
-              <a href={DEMO_URL} target={demoIsExternal ? '_blank' : undefined} rel="noreferrer">
+              <a href="#how-it-works">
                 <Button
                   size="lg"
                   variant="outline"
                   className="w-full border-[#BED6F6] px-8 text-base text-[#0071DD] hover:bg-[#e8f1fc] sm:w-auto"
                 >
-                  <Play size={16} className="mr-2 fill-current" />
-                  {t('landing.demo')}
+                  {t('landing.navFeatures')}
                 </Button>
               </a>
             </div>
@@ -351,7 +284,6 @@ export function Landing() {
       <LandingProofStats />
       <LandingProblem />
       <LandingSolution />
-      <LandingVideo />
 
       {/* Agents team */}
       <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white md:py-28">
@@ -399,48 +331,6 @@ export function Landing() {
       <LandingDataTrust />
       <LandingFinalCta />
       <LandingFooter />
-
-      {showPopup && (
-        <div
-          className={cn(
-            'fixed inset-y-0 left-0 z-[100] flex w-[min(19rem,88vw)] flex-col shadow-2xl',
-            'bg-gradient-to-b from-[#0071DD] via-[#016AEB] to-[#0a2540]',
-            'border-r border-white/20 ring-2 ring-brand-soft/40',
-            'transition-transform duration-500 ease-out',
-            popupExiting || !popupEntered ? '-translate-x-full' : 'translate-x-0'
-          )}
-          role="complementary"
-          aria-label="Softfacture"
-        >
-          <div className="relative flex flex-1 flex-col justify-center px-5 py-8 text-white">
-            <button
-              type="button"
-              onClick={dismissSoftfactureBanner}
-              className="absolute right-3 top-3 rounded-md p-1.5 text-white/80 hover:bg-white/15"
-              aria-label="Fermer"
-            >
-              <X size={18} />
-            </button>
-            <a
-              href="https://softfacture.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col gap-4 pr-6"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30">
-                <TrendingUp size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Softfacture</h3>
-                <p className="mt-2 text-sm text-white/95">Facturation intelligente et automatisée</p>
-              </div>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#BED6F6] group-hover:text-white">
-                Découvrir <ArrowRight size={16} />
-              </span>
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
