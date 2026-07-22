@@ -1,6 +1,8 @@
 import type { AgentEvent } from '@prisma/client';
 import { prisma } from '../../db/prisma.js';
+import { findApproximateMatchByCompany } from './companyMatch.js';
 import { findOrCreateContact } from './contactService.js';
+import { normalizeEmail, normalizePhone, normalizeWhatsapp } from './normalize.js';
 import {
   MAX_RESOLUTION_ATTEMPTS,
   RESCAN_DEBOUNCE_MS,
@@ -20,9 +22,76 @@ type MatchHints = {
   whatsappNormalized: string | null;
 };
 
-function extractHintsFromEvent(event: AgentEvent): MatchHints {
-  // Phase 1 : matching via sourceRef metadata ou champs futurs.
-  // Pour l'instant, pas de clés dans l'event sans contact — NEEDS_REVIEW jusqu'à rescan org.
+type EventContext = MatchHints & {
+  phone?: string | null;
+  email?: string | null;
+  whatsappId?: string | null;
+  companyName?: string | null;
+  createdVia?: 'HUNT' | 'GMAIL' | 'SCOUT';
+};
+
+async function loadEventContext(event: AgentEvent): Promise<EventContext> {
+  if (event.source === 'HUNT' && event.sourceRef) {
+    const prospectId = event.sourceRef.replace(/^hunt:(found|priority|outreach|reply):/, '').split(':')[0];
+    const prospect = await prisma.aiProspect.findFirst({
+      where: { id: prospectId, organizationId: event.organizationId },
+      select: { phone: true, email: true, companyName: true },
+    });
+    if (prospect) {
+      return {
+        phone: prospect.phone,
+        email: prospect.email,
+        phoneNormalized: normalizePhone(prospect.phone),
+        emailNormalized: normalizeEmail(prospect.email),
+        whatsappNormalized: normalizeWhatsapp(prospect.phone),
+        companyName: prospect.companyName,
+        createdVia: 'HUNT',
+      };
+    }
+  }
+
+  if (event.source === 'GMAIL' && event.sourceRef) {
+    const msg = await prisma.gmailAiProcessedMessage.findFirst({
+      where: {
+        organizationId: event.organizationId,
+        providerMessageId: event.sourceRef,
+      },
+      select: { fromEmail: true },
+    });
+    if (msg?.fromEmail) {
+      return {
+        email: msg.fromEmail,
+        phoneNormalized: null,
+        emailNormalized: normalizeEmail(msg.fromEmail),
+        whatsappNormalized: null,
+        createdVia: 'GMAIL',
+      };
+    }
+  }
+
+  if (event.source === 'SCOUT' && event.sourceRef) {
+    const opp = await prisma.scoutOpportunity.findFirst({
+      where: { id: event.sourceRef, organizationId: event.organizationId },
+      select: { rawData: true, title: true },
+    });
+    const raw = (opp?.rawData || {}) as {
+      contactEmail?: string;
+      contactPhone?: string;
+      companyName?: string;
+    };
+    const email = raw.contactEmail || null;
+    const phone = raw.contactPhone || null;
+    return {
+      phone,
+      email,
+      phoneNormalized: normalizePhone(phone),
+      emailNormalized: normalizeEmail(email),
+      whatsappNormalized: normalizeWhatsapp(phone),
+      companyName: raw.companyName || opp?.title || null,
+      createdVia: 'SCOUT',
+    };
+  }
+
   return { phoneNormalized: null, emailNormalized: null, whatsappNormalized: null };
 }
 
@@ -61,8 +130,28 @@ export async function resolveEventContact(eventId: string): Promise<void> {
   const now = new Date();
   if (event.resolutionNextRetryAt && event.resolutionNextRetryAt > now) return;
 
-  const hints = extractHintsFromEvent(event);
-  const contactId = await tryMatchContact(event.organizationId, hints);
+  const hints = await loadEventContext(event);
+  let contactId = await tryMatchContact(event.organizationId, hints);
+
+  if (!contactId && hints.companyName) {
+    const approx = await findApproximateMatchByCompany(event.organizationId, hints.companyName);
+    if (approx?.exact) contactId = approx.contact.id;
+  }
+
+  if (!contactId && (hints.phone || hints.email || hints.whatsappId) && hints.createdVia) {
+    const contact = await findOrCreateContact({
+      organizationId: event.organizationId,
+      createdVia: hints.createdVia,
+      phone: hints.phone,
+      email: hints.email,
+      whatsappId: hints.whatsappId,
+      companyName: hints.companyName,
+      conflictSource: event.source,
+      conflictSourceRef: event.sourceRef,
+      skipRescan: true,
+    });
+    contactId = contact.id;
+  }
 
   if (contactId) {
     await prisma.agentEvent.update({

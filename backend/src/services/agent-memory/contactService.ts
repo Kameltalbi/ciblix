@@ -15,6 +15,8 @@ export type FindOrCreateContactInput = {
   conflictSourceRef?: string | null;
   /** Réservé scripts/admin — jamais exposé via API publique */
   allowManualImport?: boolean;
+  /** Évite un rescan org par contact lors d'imports Hunt en lot */
+  skipRescan?: boolean;
 };
 
 function assertWritableVia(createdVia: ContactCreatedVia, allowManualImport?: boolean): void {
@@ -65,11 +67,17 @@ async function applyNameConflictHandling(
   input: FindOrCreateContactInput,
   incomingName: string | null
 ): Promise<Contact> {
+  const updates: Prisma.ContactUpdateInput = {};
+  if (!existing.companyName && input.companyName?.trim()) {
+    updates.companyName = input.companyName.trim();
+  }
+
+  if (!existing.name?.trim() && incomingName) {
+    updates.name = incomingName;
+    return prisma.contact.update({ where: { id: existing.id }, data: updates });
+  }
+
   if (!incomingName || !namesConflict(existing.name, incomingName)) {
-    const updates: Prisma.ContactUpdateInput = {};
-    if (!existing.companyName && input.companyName?.trim()) {
-      updates.companyName = input.companyName.trim();
-    }
     if (Object.keys(updates).length === 0) return existing;
     return prisma.contact.update({ where: { id: existing.id }, data: updates });
   }
@@ -148,7 +156,7 @@ export async function findOrCreateContact(input: FindOrCreateContactInput): Prom
   });
 
   void import('./contactResolution.js').then(({ scheduleOrgRescan }) => {
-    scheduleOrgRescan(input.organizationId);
+    if (!input.skipRescan) scheduleOrgRescan(input.organizationId);
   });
 
   return created;

@@ -1,7 +1,11 @@
 import { prisma } from '../../db/prisma.js';
 import { gmailService } from '../gmail.js';
 import { consumeAgentQuota, AgentQuotaExceededError } from '../agentUsage.js';
-import { buildDraftBody, generateSummaryAndReply } from './summarize.js';
+import {
+  buildDraftBody,
+  generateSummaryAndReply,
+} from './summarize.js';
+import { recordGmailInboundEmail } from '../agent-memory/agentIntegrations.js';
 import {
   REVIEW_LABEL_NAME,
   extractEmailAddress,
@@ -191,6 +195,17 @@ async function processOneMessage(opts: {
         draftId: draftId || null,
         status: 'PROCESSED',
       },
+    });
+
+    void recordGmailInboundEmail({
+      organizationId: opts.organizationId,
+      userId: opts.userId,
+      fromEmail: fromEmail || '',
+      fromName: fromHeader,
+      summary: ai.summary,
+      gmailMessageId: opts.messageId,
+    }).catch((err) => {
+      console.warn('[gmail-ai] agent-memory write failed', opts.messageId, err);
     });
 
     return 'processed';

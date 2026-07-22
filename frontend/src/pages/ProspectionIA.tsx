@@ -411,9 +411,9 @@ export function ProspectionIA() {
 
   const addPipeline = useMutation({
     mutationFn: (id: string) => api.post(`/prospecting/prospects/${id}/add-to-pipeline`).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      setResults((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'IN_PIPELINE' as const } : p)));
       void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
-      void qc.invalidateQueries({ queryKey: ['leads'] });
     },
   });
 

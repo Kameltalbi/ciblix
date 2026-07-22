@@ -10,6 +10,11 @@ import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
 import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
 import { importProspectsFromSearch } from '../services/prospecting/importProspectsFromSearch.js';
 import type { CompanySearchCriteria, CompanySearchHit, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
+import {
+  recordHuntOutreachDraft,
+  recordHuntPriority,
+  recordHuntProspectFound,
+} from '../services/agent-memory/agentIntegrations.js';
 
 type LeadQualificationLike = Awaited<ReturnType<typeof qualifyCompanyHit>>;
 
@@ -431,7 +436,11 @@ async function runProspectingSearch(req: AuthRequest, res: Response, next: NextF
       120,
       Math.max(10, Number(process.env.PROSPECTING_IMPORT_MAX) || 80)
     );
-    const result = await importProspectsFromSearch(req.organizationId!, criteria, { refresh, importMax });
+    const result = await importProspectsFromSearch(req.organizationId!, criteria, {
+      refresh,
+      importMax,
+      userId: req.userId!,
+    });
     res.json({
       providerUsed: result.providerUsed,
       fromCache: result.fromCache,
@@ -490,6 +499,19 @@ prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => 
           },
         });
         updated.push(u);
+        void recordHuntProspectFound({
+          organizationId: req.organizationId!,
+          userId: req.userId!,
+          prospect: {
+            id: u.id,
+            companyName: u.companyName,
+            phone: u.phone,
+            email: u.email,
+            score: u.score,
+            lastSearchQuery: u.lastSearchQuery,
+            aiSummary: u.aiSummary,
+          },
+        }).catch((err) => console.warn('[hunt] qualify-batch memory', u.id, err));
       } catch (err) {
         console.error('[prospecting] qualify-batch', row.id, err);
       }
@@ -560,6 +582,19 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
         status: 'QUALIFIED',
       },
     });
+    void recordHuntProspectFound({
+      organizationId: req.organizationId!,
+      userId: req.userId!,
+      prospect: {
+        id: updated.id,
+        companyName: updated.companyName,
+        phone: updated.phone,
+        email: updated.email,
+        score: updated.score,
+        lastSearchQuery: updated.lastSearchQuery,
+        aiSummary: updated.aiSummary,
+      },
+    }).catch((err) => console.warn('[hunt] qualify memory', updated.id, err));
     res.json(updated);
   } catch (e) {
     next(e);
@@ -591,6 +626,26 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       companySize: row.companySize,
     };
     const { body, source } = await generateOutreachMessage(hit, messageType as OutreachMessageType, tone);
+
+    const channel: 'EMAIL' | 'WHATSAPP' | 'NOTE' =
+      messageType === 'WHATSAPP' ? 'WHATSAPP' : messageType === 'LINKEDIN' ? 'NOTE' : 'EMAIL';
+
+    void recordHuntOutreachDraft({
+      organizationId: req.organizationId!,
+      userId: req.userId!,
+      prospect: {
+        id: row.id,
+        companyName: row.companyName,
+        phone: row.phone,
+        email: row.email,
+        score: row.score,
+        lastSearchQuery: row.lastSearchQuery,
+      },
+      messageType,
+      channel,
+      messageSummary: body.slice(0, 400),
+    }).catch((err) => console.warn('[hunt] outreach memory', row.id, err));
+
     res.json({
       disclaimer: 'Message généré à titre d’aide — relisez et validez avant tout envoi.',
       messageType,
@@ -621,7 +676,7 @@ prospectingRoutes.post('/prospects/:id/ignore', async (req: AuthRequest, res, ne
   }
 });
 
-// ─── Ajouter au pipeline (lead) ─────────────────────────────────
+// ─── Marquer comme prioritaire (socle AgentEvent, plus de Lead legacy) ───
 prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, async (req: AuthRequest, res, next) => {
   try {
     const id = req.params.id as string;
@@ -629,47 +684,28 @@ prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, asy
       where: { id, organizationId: req.organizationId!, deletedAt: null },
     });
     if (!row) return res.status(404).json({ error: 'Prospect introuvable' });
-    if (row.leadId) {
-      return res.status(400).json({ error: 'Déjà lié à un lead', leadId: row.leadId });
+    if (row.status === 'IN_PIPELINE') {
+      return res.status(400).json({ error: 'Déjà marqué comme prioritaire' });
     }
-
-    const notes = [
-      'Créé depuis Prospection IA',
-      `Score IA : ${row.score}/100 — Niveau : ${row.potentialLevel || '—'}`,
-      row.aiSummary ? `Résumé IA :\n${row.aiSummary}` : '',
-      row.scoreReason ? `Pourquoi ce score :\n${row.scoreReason}` : '',
-      row.commercialAngle ? `Angle d'approche :\n${row.commercialAngle}` : '',
-      row.probableBusinessProblem ? `Problème métier probable :\n${row.probableBusinessProblem}` : '',
-      row.suggestedOffer ? `Offre suggérée :\n${row.suggestedOffer}` : '',
-      row.websiteTitle ? `Site — ${row.websiteTitle}` : '',
-      row.websiteDescription ? `Description site :\n${String(row.websiteDescription).slice(0, 500)}` : '',
-      row.digitalPresenceLevel ? `Présence digitale : ${row.digitalPresenceLevel}` : '',
-      row.seoScore != null ? `Score SEO (heuristique) : ${row.seoScore}/100` : '',
-    ]
-      .filter(Boolean)
-      .join('\n\n');
-
-    const lead = await prisma.lead.create({
-      data: {
-        organizationId: req.organizationId!,
-        createdById: req.userId,
-        name: row.companyName,
-        company: row.companyName,
-        email: row.email || undefined,
-        phone: row.phone || undefined,
-        source: 'AI_PROSPECTION',
-        status: 'NEW',
-        score: row.score,
-        notes,
-      },
-    });
 
     const updated = await prisma.aiProspect.update({
       where: { id },
       data: {
-        leadId: lead.id,
         status: 'IN_PIPELINE',
         lastContactAt: new Date(),
+      },
+    });
+
+    const agentEvent = await recordHuntPriority({
+      organizationId: req.organizationId!,
+      userId: req.userId!,
+      prospect: {
+        id: updated.id,
+        companyName: updated.companyName,
+        phone: updated.phone,
+        email: updated.email,
+        score: updated.score,
+        lastSearchQuery: updated.lastSearchQuery,
       },
     });
 
@@ -678,22 +714,12 @@ prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, asy
         organizationId: req.organizationId!,
         aiProspectId: id,
         type: 'SYSTEM',
-        title: 'Ajout au pipeline CRM',
-        metadata: { leadId: lead.id } as object,
+        title: 'Marqué comme prioritaire',
+        metadata: { agentEventId: agentEvent?.id || null } as object,
       },
     });
 
-    await prisma.leadActivite.create({
-      data: {
-        organizationId: req.organizationId!,
-        leadId: lead.id,
-        type: 'NOTE',
-        title: 'Import Prospection IA',
-        content: `Prospect IA #${row.id} — score ${row.score}. Enrichissement et résumé IA dans les notes du lead.`,
-      },
-    });
-
-    res.status(201).json({ lead, aiProspect: updated });
+    res.status(201).json({ aiProspect: updated, prioritized: true, agentEventId: agentEvent?.id || null });
   } catch (e) {
     next(e);
   }

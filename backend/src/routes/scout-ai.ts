@@ -4,6 +4,7 @@ import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
+import { recordScoutOpportunity } from '../services/agent-memory/agentIntegrations.js';
 
 export const scoutAiRoutes = Router();
 
@@ -99,6 +100,9 @@ async function analyzeWithAI(
   deadline: string | null;
   location: string | null;
   budget: string | null;
+  companyName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
 }>> {
   if (rawResults.length === 0) return [];
 
@@ -121,8 +125,11 @@ Pour chaque résultat pertinent, extrais:
 - deadline: date limite si applicable (format DD/MM/YYYY) ou null
 - location: lieu si mentionné ou null
 - budget: montant si mentionné ou null
+- companyName: nom d'entreprise si identifiable clairement, sinon null
+- contactEmail: email de contact si présent dans l'extrait, sinon null
+- contactPhone: téléphone si présent, sinon null
 
-Réponds en JSON: [{"index": 1, "relevanceScore": 85, "aiSummary": "...", "deadline": null, "location": "Tunis", "budget": null}]
+Réponds en JSON: [{"index": 1, "relevanceScore": 85, "aiSummary": "...", "deadline": null, "location": "Tunis", "budget": null, "companyName": null, "contactEmail": null, "contactPhone": null}]
 Ne retourne que les résultats avec relevanceScore >= 25.`;
 
   const prompt = `Catégorie: ${category}\nMots-clés: ${keywords.join(', ')}\nSecteurs: ${sectors.join(', ')}\n\nRésultats:\n${resultsText}`;
@@ -135,8 +142,41 @@ Ne retourne que les résultats avec relevanceScore >= 25.`;
   } catch {
     return rawResults.map((_, i) => ({
       index: i + 1, relevanceScore: 40, aiSummary: '', deadline: null, location: null, budget: null,
+      companyName: null, contactEmail: null, contactPhone: null,
     }));
   }
+}
+
+async function persistScoutMemory(opts: {
+  organizationId: string;
+  userId: string;
+  opportunity: {
+    id: string;
+    title: string;
+    snippet?: string | null;
+    aiSummary?: string | null;
+    relevanceScore: number;
+    rawData?: unknown;
+  };
+}) {
+  const raw = (opts.opportunity.rawData || {}) as {
+    companyName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  };
+  await recordScoutOpportunity({
+    organizationId: opts.organizationId,
+    userId: opts.userId,
+    opportunityId: opts.opportunity.id,
+    title: opts.opportunity.title,
+    description: opts.opportunity.aiSummary || opts.opportunity.snippet || '',
+    hints: {
+      companyName: raw.companyName,
+      contactEmail: raw.contactEmail,
+      contactPhone: raw.contactPhone,
+      highConfidence: opts.opportunity.relevanceScore >= 70,
+    },
+  }).catch((err) => console.warn('[scout] agent-memory', opts.opportunity.id, err));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -235,6 +275,11 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
           budget: a.budget || null,
           searchQuery: queries[0],
           status: 'NEW',
+          rawData: {
+            companyName: a.companyName || null,
+            contactEmail: a.contactEmail || null,
+            contactPhone: a.contactPhone || null,
+          },
         };
       })
       .sort((a, b) => b.relevanceScore - a.relevanceScore);
@@ -248,12 +293,30 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
       if (existing) {
         const updated = await prisma.scoutOpportunity.update({
           where: { id: existing.id },
-          data: { relevanceScore: opp.relevanceScore, aiSummary: opp.aiSummary },
+          data: {
+            relevanceScore: opp.relevanceScore,
+            aiSummary: opp.aiSummary,
+            rawData: opp.rawData,
+          },
         });
         saved.push(updated);
+        if (req.userId) {
+          void persistScoutMemory({
+            organizationId: orgId,
+            userId: req.userId,
+            opportunity: updated,
+          });
+        }
       } else {
         const created = await prisma.scoutOpportunity.create({ data: opp as any });
         saved.push(created);
+        if (req.userId) {
+          void persistScoutMemory({
+            organizationId: orgId,
+            userId: req.userId,
+            opportunity: created,
+          });
+        }
       }
     }
 
@@ -320,9 +383,21 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
               relevanceScore: Math.min(100, Math.max(0, a.relevanceScore)),
               deadline: a.deadline, location: a.location, budget: a.budget,
               searchQuery: queries[0], status: 'NEW',
+              rawData: {
+                companyName: a.companyName || null,
+                contactEmail: a.contactEmail || null,
+                contactPhone: a.contactPhone || null,
+              },
             },
           });
           allResults.push(created);
+          if (req.userId) {
+            void persistScoutMemory({
+              organizationId: orgId,
+              userId: req.userId,
+              opportunity: created,
+            });
+          }
         }
       }
     }

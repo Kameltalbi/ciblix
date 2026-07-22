@@ -2,6 +2,8 @@ import { prisma } from '../../db/prisma.js';
 import { searchCompaniesWithCache } from './index.js';
 import { emptyWebEnrichment } from './websiteEnrichment.js';
 import type { CompanySearchCriteria, CompanySearchHit, WebEnrichmentResult } from './types.js';
+import { recordHuntProspectFound } from '../agent-memory/agentIntegrations.js';
+import { scheduleOrgRescan } from '../agent-memory/contactResolution.js';
 
 function enrichmentPersistFields(e: WebEnrichmentResult) {
   return {
@@ -64,7 +66,7 @@ export type ImportProspectsResult = {
 export async function importProspectsFromSearch(
   organizationId: string,
   criteria: CompanySearchCriteria,
-  options?: { refresh?: boolean; importMax?: number }
+  options?: { refresh?: boolean; importMax?: number; userId?: string }
 ): Promise<ImportProspectsResult> {
   const refresh = Boolean(options?.refresh);
   const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(organizationId, criteria, { refresh });
@@ -103,6 +105,26 @@ export async function importProspectsFromSearch(
       },
     });
     created.push(row);
+
+    if (options?.userId) {
+      void recordHuntProspectFound({
+        organizationId,
+        userId: options.userId,
+        prospect: {
+          id: row.id,
+          companyName: row.companyName,
+          phone: row.phone,
+          email: row.email,
+          score: row.score,
+          lastSearchQuery: row.lastSearchQuery,
+        },
+        skipRescan: true,
+      }).catch((err) => console.warn('[hunt] agent-memory prospect found', row.id, err));
+    }
+  }
+
+  if (options?.userId && created.length > 0) {
+    scheduleOrgRescan(organizationId);
   }
 
   return {
