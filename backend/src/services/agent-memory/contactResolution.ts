@@ -168,6 +168,12 @@ export async function resolveEventContact(eventId: string): Promise<void> {
         console.warn('[agent-memory] pipeline recalc after resolve failed', contactId, err);
       })
     );
+    void import('../suggestions/suggestionService.js').then(({ evaluateSuggestionsForEvent }) =>
+      prisma.agentEvent
+        .findUnique({ where: { id: eventId } })
+        .then((ev) => (ev ? evaluateSuggestionsForEvent(ev) : null))
+        .catch((err) => console.warn('[agent-memory] suggestions after resolve failed', eventId, err))
+    );
     return;
   }
 

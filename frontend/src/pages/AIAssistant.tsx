@@ -72,6 +72,7 @@ interface ConversationResult {
   actionsSuggerees?: string[];
   scoreDetail?: Record<string, string | number>;
   signauxAchat?: string[];
+  contactId?: string | null;
 }
 
 export function AIAssistant() {
@@ -403,12 +404,25 @@ export function AIAssistant() {
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2">
+                  {analysisResult.contactId ? (
+                    <Link to={`/contacts/${analysisResult.contactId}`}>
+                      <Button size="sm" variant="default" className="gap-1.5">
+                        Voir la fiche contact
+                      </Button>
+                    </Link>
+                  ) : null}
                   <Link to="/agents/gmail-ai">
                     <Button size="sm" variant="secondary" className="gap-1.5">
                       <Mail size={14} /> Créer relance (Gmail IA)
                     </Button>
                   </Link>
-                  <Link to="/agents/offre-bot">
+                  <Link
+                    to={
+                      analysisResult.contactId
+                        ? `/agents/offre-bot?contactId=${analysisResult.contactId}`
+                        : '/agents/offre-bot'
+                    }
+                  >
                     <Button size="sm" variant="outline" className="gap-1.5">
                       <FileText size={14} /> Rédiger une offre
                     </Button>

@@ -9,6 +9,8 @@ export async function recalculateForContact(contactId: string): Promise<void> {
   const contact = await prisma.contact.findUnique({ where: { id: contactId } });
   if (!contact || contact.erasedAt) return;
 
+  const previousStatus = contact.pipelineStatus;
+
   const org = await prisma.organization.findUnique({
     where: { id: contact.organizationId },
     select: { pipelineThresholds: true },
@@ -24,7 +26,7 @@ export async function recalculateForContact(contactId: string): Promise<void> {
 
   const { status, score } = computePipelineStatus(events, new Date(), thresholds);
 
-  await prisma.contact.update({
+  const updated = await prisma.contact.update({
     where: { id: contactId },
     data: {
       pipelineStatus: status,
@@ -32,6 +34,14 @@ export async function recalculateForContact(contactId: string): Promise<void> {
       pipelineStatusAt: new Date(),
     },
   });
+
+  if (previousStatus !== status) {
+    void import('../suggestions/suggestionService.js').then(({ checkCoolingDown }) =>
+      checkCoolingDown(updated, previousStatus, status).catch((err) =>
+        console.warn('[pipeline] cooling suggestion failed', contactId, err)
+      )
+    );
+  }
 }
 
 export async function recalculateStaleContacts(

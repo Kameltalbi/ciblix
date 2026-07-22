@@ -4,6 +4,8 @@ import auth, { AuthRequest } from '../middleware/auth.js';
 import { getContactById, listContacts } from '../services/agent-memory/contactService.js';
 import { listEventsForContact } from '../services/agent-memory/agentEventService.js';
 import { getPipelineStatusExplanation } from '../services/agent-memory/pipelineStatusService.js';
+import { listContactSuggestionsHandler } from './suggestions.js';
+import { listSuggestionsForContact } from '../services/suggestions/suggestionService.js';
 
 export const contactsRoutes = Router();
 
@@ -60,18 +62,21 @@ contactsRoutes.get('/:id/events', async (req: AuthRequest, res: Response, next: 
   }
 });
 
+contactsRoutes.get('/:id/suggestions', listContactSuggestionsHandler);
+
 contactsRoutes.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const contactId = String(req.params.id);
     const contact = await getContactById(req.organizationId!, contactId);
     if (!contact) return res.status(404).json({ error: 'Contact introuvable' });
 
-    const [events, pipeline] = await Promise.all([
+    const [events, pipeline, suggestions] = await Promise.all([
       listEventsForContact(req.organizationId!, contactId, { take: 50 }),
       getPipelineStatusExplanation(contactId, req.organizationId!),
+      listSuggestionsForContact(req.organizationId!, contactId, 'PENDING'),
     ]);
 
-    res.json({ contact, pipeline, events: events.items });
+    res.json({ contact, pipeline, events: events.items, suggestions });
   } catch (err) {
     next(err);
   }

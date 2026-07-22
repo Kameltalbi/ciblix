@@ -29,6 +29,72 @@ async function eventExists(source: AgentEventSource, organizationId: string, sou
   return Boolean(existing);
 }
 
+/** Résout le Contact lié à un AiProspect via les AgentEvent HUNT (sourceRef contient l'id). */
+export async function getContactIdForHuntProspect(
+  organizationId: string,
+  prospectId: string
+): Promise<string | null> {
+  const event = await prisma.agentEvent.findFirst({
+    where: {
+      organizationId,
+      source: 'HUNT',
+      contactId: { not: null },
+      sourceRef: { contains: prospectId },
+    },
+    select: { contactId: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  return event?.contactId ?? null;
+}
+
+export async function mapContactIdsForHuntProspects(
+  organizationId: string,
+  prospectIds: string[]
+): Promise<Record<string, string>> {
+  const ids = [...new Set(prospectIds.filter(Boolean))];
+  if (ids.length === 0) return {};
+
+  const events = await prisma.agentEvent.findMany({
+    where: {
+      organizationId,
+      source: 'HUNT',
+      contactId: { not: null },
+      OR: ids.map((id) => ({ sourceRef: { contains: id } })),
+    },
+    select: { contactId: true, sourceRef: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const map: Record<string, string> = {};
+  for (const ev of events) {
+    if (!ev.contactId || !ev.sourceRef) continue;
+    for (const id of ids) {
+      if (map[id]) continue;
+      if (ev.sourceRef.includes(id)) map[id] = ev.contactId;
+    }
+  }
+  return map;
+}
+
+async function ensureHuntContactId(
+  organizationId: string,
+  prospect: HuntProspectLike,
+  skipRescan?: boolean
+): Promise<string | null> {
+  if (!(prospect.phone?.trim() || prospect.email?.trim())) return null;
+  const contact = await findOrCreateContact({
+    organizationId,
+    createdVia: 'HUNT',
+    phone: prospect.phone,
+    email: prospect.email,
+    companyName: prospect.companyName,
+    conflictSource: 'HUNT',
+    conflictSourceRef: prospect.id,
+    skipRescan,
+  });
+  return contact.id;
+}
+
 export async function recordHuntProspectFound(opts: {
   organizationId: string;
   userId: string;
@@ -39,21 +105,25 @@ export async function recordHuntProspectFound(opts: {
   if (!hasExploitableIdentity(prospect)) return null;
 
   const dedupeKey = `hunt:found:${prospect.id}`;
-  if (await eventExists('HUNT', opts.organizationId, dedupeKey)) return null;
+  const contactId = await ensureHuntContactId(opts.organizationId, prospect, opts.skipRescan);
 
-  let contactId: string | null = null;
-  if (prospect.phone?.trim() || prospect.email?.trim()) {
-    const contact = await findOrCreateContact({
-      organizationId: opts.organizationId,
-      createdVia: 'HUNT',
-      phone: prospect.phone,
-      email: prospect.email,
-      companyName: prospect.companyName,
-      conflictSource: 'HUNT',
-      conflictSourceRef: prospect.id,
-      skipRescan: opts.skipRescan,
-    });
-    contactId = contact.id;
+  if (await eventExists('HUNT', opts.organizationId, dedupeKey)) {
+    if (contactId) {
+      await prisma.agentEvent.updateMany({
+        where: {
+          organizationId: opts.organizationId,
+          source: 'HUNT',
+          sourceRef: dedupeKey,
+          contactId: null,
+        },
+        data: {
+          contactId,
+          resolutionStatus: 'RESOLVED',
+          resolutionNextRetryAt: null,
+        },
+      });
+    }
+    return null;
   }
 
   const criteria = prospect.lastSearchQuery?.trim() || prospect.companyName;
@@ -78,19 +148,7 @@ export async function recordHuntPriority(opts: {
   if (await eventExists('HUNT', opts.organizationId, dedupeKey)) return null;
   if (!hasExploitableIdentity(opts.prospect)) return null;
 
-  let contactId: string | null = null;
-  if (opts.prospect.phone?.trim() || opts.prospect.email?.trim()) {
-    const contact = await findOrCreateContact({
-      organizationId: opts.organizationId,
-      createdVia: 'HUNT',
-      phone: opts.prospect.phone,
-      email: opts.prospect.email,
-      companyName: opts.prospect.companyName,
-      conflictSource: 'HUNT',
-      conflictSourceRef: opts.prospect.id,
-    });
-    contactId = contact.id;
-  }
+  const contactId = await ensureHuntContactId(opts.organizationId, opts.prospect);
 
   return createAgentEvent({
     organizationId: opts.organizationId,
@@ -116,19 +174,7 @@ export async function recordHuntOutreachDraft(opts: {
   if (await eventExists('HUNT', opts.organizationId, dedupeKey)) return null;
   if (!hasExploitableIdentity(opts.prospect)) return null;
 
-  let contactId: string | null = null;
-  if (opts.prospect.phone?.trim() || opts.prospect.email?.trim()) {
-    const contact = await findOrCreateContact({
-      organizationId: opts.organizationId,
-      createdVia: 'HUNT',
-      phone: opts.prospect.phone,
-      email: opts.prospect.email,
-      companyName: opts.prospect.companyName,
-      conflictSource: 'HUNT',
-      conflictSourceRef: opts.prospect.id,
-    });
-    contactId = contact.id;
-  }
+  const contactId = await ensureHuntContactId(opts.organizationId, opts.prospect);
 
   const type: AgentEventType =
     opts.channel === 'WHATSAPP' ? 'WHATSAPP' : opts.channel === 'EMAIL' ? 'EMAIL' : 'NOTE';
@@ -156,19 +202,7 @@ export async function recordHuntReply(opts: {
   if (await eventExists('HUNT', opts.organizationId, dedupeKey)) return null;
   if (!hasExploitableIdentity(opts.prospect)) return null;
 
-  let contactId: string | null = null;
-  if (opts.prospect.phone?.trim() || opts.prospect.email?.trim()) {
-    const contact = await findOrCreateContact({
-      organizationId: opts.organizationId,
-      createdVia: 'HUNT',
-      phone: opts.prospect.phone,
-      email: opts.prospect.email,
-      companyName: opts.prospect.companyName,
-      conflictSource: 'HUNT',
-      conflictSourceRef: opts.prospect.id,
-    });
-    contactId = contact.id;
-  }
+  const contactId = await ensureHuntContactId(opts.organizationId, opts.prospect);
 
   return createAgentEvent({
     organizationId: opts.organizationId,

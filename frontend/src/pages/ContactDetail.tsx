@@ -1,10 +1,16 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Bot } from 'lucide-react';
+import { ArrowLeft, Bot, ExternalLink } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+  ContactTimeline,
+  CrossAgentBanner,
+  type AgentEventItem,
+} from '@/components/contact/ContactTimeline';
+import { SuggestionBanner, type SuggestionItem } from '@/components/contact/SuggestionBanner';
 
 type PipelineStatus = 'NOUVEAU' | 'CHAUD' | 'TIEDE' | 'A_RELANCER' | 'FROID' | 'ARCHIVE';
 
@@ -46,11 +52,28 @@ export function ContactDetail() {
     return <p className="text-sm text-destructive p-4">Contact introuvable.</p>;
   }
 
-  const { contact, pipeline, events } = data;
-  const status = contact.pipelineStatus as PipelineStatus;
+  const { contact, pipeline, events, suggestions } = data as {
+    contact: {
+      id: string;
+      name?: string | null;
+      companyName?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      whatsappId?: string | null;
+      whatsappConsentAt?: string | null;
+      pipelineStatus: PipelineStatus;
+      pipelineStatusScore?: number | null;
+    };
+    pipeline?: { explanation?: string | null };
+    events: AgentEventItem[];
+    suggestions?: SuggestionItem[];
+  };
+  const status = contact.pipelineStatus;
+  const timelineEvents = events || [];
+  const pendingSuggestions = suggestions || [];
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Link to="/contacts">
           <Button variant="outline" size="sm" className="gap-1.5">
@@ -103,7 +126,7 @@ export function ContactDetail() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Link to={`/agents/offre-bot?contactId=${contact.id}`}>
           <Button variant="secondary" size="sm">
             Générer une offre
@@ -114,33 +137,21 @@ export function ContactDetail() {
             <Bot size={14} /> Ouvrir Copilot
           </Button>
         </Link>
+        <Link to="/agents/gmail-ai">
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <ExternalLink size={14} /> Gmail IA
+          </Button>
+        </Link>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Historique AgentEvent</CardTitle>
+          <CardTitle className="text-base">Historique</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {(events || []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun événement enregistré.</p>
-          ) : (
-            events.map((e: {
-              id: string;
-              source: string;
-              type: string;
-              resume?: string | null;
-              score?: number | null;
-              createdAt: string;
-            }) => (
-              <div key={e.id} className="rounded-lg border p-3 text-sm">
-                <p className="text-xs text-muted-foreground mb-1">
-                  {e.source} · {e.type} · {new Date(e.createdAt).toLocaleString('fr-FR')}
-                  {e.score != null ? ` · score ${e.score}` : ''}
-                </p>
-                <p className="whitespace-pre-wrap">{e.resume || '—'}</p>
-              </div>
-            ))
-          )}
+        <CardContent>
+          <SuggestionBanner contactId={contact.id} suggestions={pendingSuggestions} />
+          <CrossAgentBanner events={timelineEvents} />
+          <ContactTimeline events={timelineEvents} />
         </CardContent>
       </Card>
     </div>

@@ -15,6 +15,8 @@ import {
   recordHuntOutreachDraft,
   recordHuntPriority,
   recordHuntProspectFound,
+  mapContactIdsForHuntProspects,
+  getContactIdForHuntProspect,
 } from '../services/agent-memory/agentIntegrations.js';
 
 type LeadQualificationLike = Awaited<ReturnType<typeof qualifyCompanyHit>>;
@@ -357,7 +359,29 @@ prospectingRoutes.get('/prospects', async (req: AuthRequest, res, next) => {
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
-    res.json({ data: rows });
+    const contactMap = await mapContactIdsForHuntProspects(
+      req.organizationId!,
+      rows.map((r) => r.id)
+    );
+    res.json({
+      data: rows.map((r) => ({ ...r, contactId: contactMap[r.id] ?? null })),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ─── Contact unifié lié au prospect (via AgentEvent HUNT) ───────
+prospectingRoutes.get('/prospects/:id/contact', async (req: AuthRequest, res, next) => {
+  try {
+    const id = req.params.id as string;
+    const row = await prisma.aiProspect.findFirst({
+      where: { id, organizationId: req.organizationId!, deletedAt: null },
+      select: { id: true },
+    });
+    if (!row) return res.status(404).json({ error: 'Prospect introuvable' });
+    const contactId = await getContactIdForHuntProspect(req.organizationId!, id);
+    res.json({ contactId });
   } catch (e) {
     next(e);
   }
@@ -500,7 +524,7 @@ prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => 
           },
         });
         updated.push(u);
-        void recordHuntProspectFound({
+        await recordHuntProspectFound({
           organizationId: req.organizationId!,
           userId: req.userId!,
           prospect: {
@@ -527,9 +551,18 @@ prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => 
       },
     });
 
+    const contactMap = await mapContactIdsForHuntProspects(
+      req.organizationId!,
+      (updated as { id: string }[]).map((u) => u.id)
+    );
+    const prospectsWithContact = (updated as { id: string }[]).map((u) => ({
+      ...u,
+      contactId: contactMap[u.id] ?? null,
+    }));
+
     res.json({
       qualified: updated.length,
-      prospects: updated,
+      prospects: prospectsWithContact,
       remainingFound: remainingInBatch,
     });
   } catch (e) {
@@ -583,7 +616,7 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
         status: 'QUALIFIED',
       },
     });
-    void recordHuntProspectFound({
+    await recordHuntProspectFound({
       organizationId: req.organizationId!,
       userId: req.userId!,
       prospect: {
@@ -596,7 +629,8 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
         aiSummary: updated.aiSummary,
       },
     }).catch((err) => console.warn('[hunt] qualify memory', updated.id, err));
-    res.json(updated);
+    const contactId = await getContactIdForHuntProspect(req.organizationId!, updated.id);
+    res.json({ ...updated, contactId });
   } catch (e) {
     next(e);
   }
@@ -671,7 +705,7 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
     const channel: 'EMAIL' | 'WHATSAPP' | 'NOTE' =
       messageType === 'WHATSAPP' ? 'WHATSAPP' : messageType === 'LINKEDIN' ? 'NOTE' : 'EMAIL';
 
-    void recordHuntOutreachDraft({
+    const outreachEvent = await recordHuntOutreachDraft({
       organizationId: req.organizationId!,
       userId: req.userId!,
       prospect: {
@@ -685,7 +719,13 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       messageType,
       channel,
       messageSummary: body.slice(0, 400),
-    }).catch((err) => console.warn('[hunt] outreach memory', row.id, err));
+    }).catch((err) => {
+      console.warn('[hunt] outreach memory', row.id, err);
+      return null;
+    });
+
+    const contactId =
+      outreachEvent?.contactId || (await getContactIdForHuntProspect(req.organizationId!, row.id));
 
     res.json({
       disclaimer: 'Message généré à titre d’aide — relisez et validez avant tout envoi.',
@@ -697,6 +737,7 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       tone,
       body,
       source,
+      contactId,
     });
   } catch (e) {
     next(e);
@@ -764,7 +805,12 @@ prospectingRoutes.post('/prospects/:id/add-to-pipeline', checkProspectLimit, asy
       },
     });
 
-    res.status(201).json({ aiProspect: updated, prioritized: true, agentEventId: agentEvent?.id || null });
+    res.status(201).json({
+      aiProspect: updated,
+      prioritized: true,
+      agentEventId: agentEvent?.id || null,
+      contactId: agentEvent?.contactId || null,
+    });
   } catch (e) {
     next(e);
   }

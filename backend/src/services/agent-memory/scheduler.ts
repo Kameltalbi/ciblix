@@ -40,6 +40,13 @@ async function tickOnce(): Promise<void> {
       console.warn('[agent-memory-scheduler] pipeline stale recalc', err);
     }
     try {
+      const { expireOldSuggestions } = await import('../suggestions/suggestionService.js');
+      const expired = await expireOldSuggestions(14);
+      if (expired > 0) console.log('[agent-memory-scheduler] suggestions expired', expired);
+    } catch (err) {
+      console.warn('[agent-memory-scheduler] suggestions expire', err);
+    }
+    try {
       const { checkExpiredTrials, sendTrialReminders } = await import('../billing/trialService.js');
       const expired = await checkExpiredTrials();
       const reminders = await sendTrialReminders();

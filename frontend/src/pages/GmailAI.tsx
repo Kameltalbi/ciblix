@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
@@ -60,6 +60,7 @@ interface ProcessedItem {
   status: 'PROCESSED' | 'SKIPPED' | 'ERROR';
   errorMessage: string | null;
   createdAt: string;
+  contactId?: string | null;
 }
 
 interface GmailStats {
@@ -349,14 +350,24 @@ export function GmailAI() {
                       {item.actionRequested && (
                         <p className="text-xs font-medium text-foreground">Action : {item.actionRequested}</p>
                       )}
-                      <a
-                        href={`https://mail.google.com/mail/u/0/#all/${item.threadId}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
-                      >
-                        Ouvrir dans Gmail <ExternalLink size={12} />
-                      </a>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <a
+                          href={`https://mail.google.com/mail/u/0/#all/${item.threadId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          Ouvrir dans Gmail <ExternalLink size={12} />
+                        </a>
+                        {item.contactId ? (
+                          <Link
+                            to={`/contacts/${item.contactId}`}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
+                          >
+                            Voir la fiche contact →
+                          </Link>
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}

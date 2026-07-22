@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   FileSignature,
@@ -340,6 +340,14 @@ export function OffreBot() {
                   <p className="text-xs text-muted-foreground mt-1">
                     L&apos;offre est générée à partir de l&apos;historique AgentEvent du contact.
                   </p>
+                  {selectedContactId ? (
+                    <Link
+                      to={`/contacts/${selectedContactId}`}
+                      className="inline-flex items-center gap-1 text-xs text-primary mt-2 hover:underline"
+                    >
+                      Voir la fiche contact →
+                    </Link>
+                  ) : null}
                 </div>
               ) : (
               <>

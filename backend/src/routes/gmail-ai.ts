@@ -250,7 +250,34 @@ async function listMessages(req: AuthRequest, res: Response, next: NextFunction)
       orderBy: { createdAt: 'desc' },
       take,
     });
-    res.json({ items: rows, labelName: REVIEW_LABEL_NAME, neverAutoSend: true });
+
+    const providerIds = rows.map((r) => r.providerMessageId).filter(Boolean);
+    const contactByProvider =
+      providerIds.length === 0
+        ? []
+        : await prisma.agentEvent.findMany({
+            where: {
+              organizationId: req.organizationId!,
+              source: 'GMAIL',
+              contactId: { not: null },
+              sourceRef: { in: providerIds },
+            },
+            select: { sourceRef: true, contactId: true },
+          });
+    const contactMap = Object.fromEntries(
+      contactByProvider
+        .filter((e) => e.sourceRef && e.contactId)
+        .map((e) => [e.sourceRef!, e.contactId!])
+    );
+
+    res.json({
+      items: rows.map((r) => ({
+        ...r,
+        contactId: contactMap[r.providerMessageId] ?? null,
+      })),
+      labelName: REVIEW_LABEL_NAME,
+      neverAutoSend: true,
+    });
   } catch (err) {
     next(err);
   }

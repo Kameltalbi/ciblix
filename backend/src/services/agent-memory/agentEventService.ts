@@ -77,13 +77,72 @@ export async function createAgentEvent(input: CreateAgentEventInput): Promise<Ag
         console.warn('[agent-memory] pipeline recalc failed', input.contactId, err);
       })
     );
+    void import('../suggestions/suggestionService.js').then(({ evaluateSuggestionsForEvent }) =>
+      evaluateSuggestionsForEvent(event).catch((err) => {
+        console.warn('[agent-memory] suggestions eval failed', event.id, err);
+      })
+    );
   }
 
   void import('../integrations/outboundWebhookService.js').then(({ enqueueOutboundWebhook }) =>
     enqueueOutboundWebhook(event.id)
   );
 
+  if (input.contactId) {
+    void notifyIfCrossAgentEnrichment(event).catch((err) =>
+      console.warn('[agent-memory] cross-agent notify failed', event.id, err)
+    );
+  }
+
   return event;
+}
+
+const AGENT_SOURCE_LABELS: Record<string, string> = {
+  HUNT: 'Chasseur IA',
+  COPILOT: 'Assistant IA',
+  GMAIL: 'Gmail IA',
+  SCOUT: 'Veilleur IA',
+  OFFREBOT: "Rédacteur d'offres",
+  FACTCHECK: 'Vérificateur IA',
+};
+
+async function notifyIfCrossAgentEnrichment(event: AgentEvent): Promise<void> {
+  if (!event.contactId) return;
+
+  const previous = await prisma.agentEvent.findMany({
+    where: {
+      contactId: event.contactId,
+      organizationId: event.organizationId,
+      id: { not: event.id },
+    },
+    select: { source: true },
+    take: 50,
+  });
+  if (previous.length === 0) return;
+
+  const previousSources = new Set(previous.map((e) => e.source));
+  if (previousSources.has(event.source)) return;
+
+  const contact = await prisma.contact.findFirst({
+    where: { id: event.contactId, organizationId: event.organizationId },
+    select: { name: true, companyName: true },
+  });
+  if (!contact) return;
+
+  const label = AGENT_SOURCE_LABELS[event.source] || event.source;
+  const via = [...previousSources].map((s) => AGENT_SOURCE_LABELS[s] || s).join(', ');
+  const who = contact.name || contact.companyName || 'un contact';
+
+  await prisma.notification.create({
+    data: {
+      organizationId: event.organizationId,
+      userId: event.userId,
+      type: 'RAPPEL',
+      title: `${label} a enrichi une fiche partagée`,
+      content: `${label} a mis à jour la fiche de ${who} (déjà connue via ${via}).`,
+      link: `/contacts/${event.contactId}`,
+    },
+  });
 }
 
 export async function getAgentEventForOrg(organizationId: string, eventId: string) {
@@ -204,5 +263,15 @@ export async function assignEventToContact(
   });
 
   scheduleOrgRescan(organizationId);
+  void import('../suggestions/suggestionService.js').then(({ evaluateSuggestionsForEvent }) =>
+    evaluateSuggestionsForEvent(updated).catch((err) =>
+      console.warn('[agent-memory] suggestions after assign failed', eventId, err)
+    )
+  );
+  void import('./pipelineStatusService.js').then(({ recalculateForContact }) =>
+    recalculateForContact(contactId).catch((err) =>
+      console.warn('[agent-memory] pipeline after assign failed', contactId, err)
+    )
+  );
   return updated;
 }

@@ -78,6 +78,7 @@ interface AiProspectRow {
   scoreReason?: string | null;
   suggestedPitch?: string | null;
   commercialAngle?: string | null;
+  contactId?: string | null;
   aiSummary?: string | null;
   potentialLevel?: Potential;
   interestProbability?: number | null;
@@ -178,7 +179,15 @@ function cardHeatClass(score: number) {
 
 function mergeProspectUpdates(prev: AiProspectRow[], updates: AiProspectRow[]): AiProspectRow[] {
   const byId = new Map(updates.map((u) => [u.id, u]));
-  return prev.map((p) => byId.get(p.id) ?? p);
+  return prev.map((p) => {
+    const next = byId.get(p.id);
+    if (!next) return p;
+    return {
+      ...p,
+      ...next,
+      contactId: next.contactId ?? p.contactId ?? null,
+    };
+  });
 }
 
 function ScoreRing({ score, pending }: { score: number; pending?: boolean }) {
@@ -416,8 +425,14 @@ export function ProspectionIA() {
 
   const addPipeline = useMutation({
     mutationFn: (id: string) => api.post(`/prospecting/prospects/${id}/add-to-pipeline`).then((r) => r.data),
-    onSuccess: (_data, id) => {
-      setResults((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'IN_PIPELINE' as const } : p)));
+    onSuccess: (data: { contactId?: string | null }, id) => {
+      setResults((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? { ...p, status: 'IN_PIPELINE' as const, contactId: data.contactId ?? p.contactId }
+            : p
+        )
+      );
       void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
     },
   });
@@ -451,13 +466,22 @@ export function ProspectionIA() {
   const messageMutation = useMutation({
     mutationFn: (args: { id: string; messageType: string; tone?: string }) =>
       api.post(`/prospecting/prospects/${args.id}/generate-message`, args).then((r) => r.data),
-    onSuccess: (data: {
-      body: string;
-      disclaimer?: string;
-      messageType?: string;
-      signatureWarning?: boolean;
-      signatureWarningText?: string;
-    }) => {
+    onSuccess: (
+      data: {
+        body: string;
+        disclaimer?: string;
+        messageType?: string;
+        signatureWarning?: boolean;
+        signatureWarningText?: string;
+        contactId?: string | null;
+      },
+      args
+    ) => {
+      if (data.contactId) {
+        setResults((prev) =>
+          prev.map((p) => (p.id === args.id ? { ...p, contactId: data.contactId } : p))
+        );
+      }
       setPreview({
         open: true,
         title: 'Aperçu du message (validation humaine)',
@@ -1143,6 +1167,13 @@ export function ProspectionIA() {
                       >
                         <Clock size={14} /> Activité
                       </Button>
+                      {p.contactId ? (
+                        <Button size="sm" variant="secondary" className="rounded-lg gap-1.5" asChild>
+                          <Link to={`/contacts/${p.contactId}`}>
+                            <ExternalLink size={14} /> Voir la fiche complète
+                          </Link>
+                        </Button>
+                      ) : null}
                       <Button
                         size="sm"
                         variant="ghost"
