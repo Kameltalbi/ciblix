@@ -13,6 +13,8 @@ export function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedPlan = (searchParams.get('plan') || '').toUpperCase();
+  const selectedTier = (searchParams.get('tier') || '').toUpperCase();
+  const selectedCurrency = (searchParams.get('currency') || 'TND').toUpperCase();
   const trialDays = searchParams.get('trial');
   const dir = i18n.dir();
   const [email, setEmail] = useState('');
@@ -30,8 +32,13 @@ export function Register() {
     setLoading(true);
     try {
       const payload: Record<string, string> = { email, password, name, organizationName, phone };
-      if (['BASIC', 'BUSINESS', 'ENTERPRISE'].includes(selectedPlan)) {
+      if (['DECOUVERTE', 'CROISSANCE', 'PRO', 'ENTERPRISE'].includes(selectedTier)) {
+        payload.tier = selectedTier;
+      } else if (['BASIC', 'BUSINESS', 'ENTERPRISE'].includes(selectedPlan)) {
         payload.plan = selectedPlan;
+      }
+      if (['TND', 'EUR', 'USD'].includes(selectedCurrency)) {
+        payload.currency = selectedCurrency;
       }
       const { data } = await api.post('/auth/register', payload);
       localStorage.setItem('accessToken', data.accessToken);

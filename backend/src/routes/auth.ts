@@ -76,6 +76,8 @@ const registerSchema = z.object({
   organizationName: z.string().min(1),
   phone: z.string().optional(),
   plan: z.enum(['FREE', 'BASIC', 'BUSINESS', 'ENTERPRISE']).optional(),
+  tier: z.enum(['DECOUVERTE', 'CROISSANCE', 'PRO', 'ENTERPRISE']).optional(),
+  currency: z.enum(['TND', 'EUR', 'USD']).optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -94,7 +96,8 @@ const changePasswordSchema = z.object({
 
 authRoutes.post('/register', async (req, res, next) => {
   try {
-    const { email, password, name, organizationName, phone, plan: requestedPlan } = registerSchema.parse(req.body);
+    const { email, password, name, organizationName, phone, plan: requestedPlan, tier: requestedTier, currency } =
+      registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -102,7 +105,26 @@ authRoutes.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const plan: PlanType = requestedPlan ? normalizePlan(requestedPlan) : 'FREE';
+
+    const tierFromPlan =
+      requestedPlan === 'ENTERPRISE'
+        ? 'ENTERPRISE'
+        : requestedPlan === 'BUSINESS'
+          ? 'PRO'
+          : requestedPlan === 'BASIC'
+            ? 'CROISSANCE'
+            : requestedPlan === 'FREE'
+              ? 'DECOUVERTE'
+              : null;
+
+    const billingTier = (requestedTier || tierFromPlan || 'CROISSANCE') as
+      | 'DECOUVERTE'
+      | 'CROISSANCE'
+      | 'PRO'
+      | 'ENTERPRISE';
+
+    const { TIER_TO_PLAN } = await import('../config/billingTiers.js');
+    const plan: PlanType = normalizePlan(TIER_TO_PLAN[billingTier]);
 
     // Create organization first
     const organization = await prisma.organization.create({
@@ -115,7 +137,10 @@ authRoutes.post('/register', async (req, res, next) => {
     });
 
     await seedDefaultEmailTemplates(organization.id);
-    await seedTrialSubscriptionForOrganization(organization);
+    await seedTrialSubscriptionForOrganization(organization, {
+      tier: billingTier,
+      currency: currency || 'TND',
+    });
     await bootstrapOrganizationAgents(organization);
 
     // Create user with organization
@@ -139,10 +164,13 @@ authRoutes.post('/register', async (req, res, next) => {
       action: AuditAction.CREATE,
       entityType: 'User',
       entityId: user.id,
-      newValues: { email: user.email, name: user.name, role: user.role },
+      newValues: { email: user.email, name: user.name, role: user.role, tier: billingTier },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
+
+    const { sendTrialEmail } = await import('../services/mail/trialMailer.js');
+    void sendTrialEmail({ kind: 'welcome', toEmail: email, orgName: organizationName });
 
     res.status(201).json({
       accessToken,
@@ -155,6 +183,7 @@ authRoutes.post('/register', async (req, res, next) => {
         organizationId: user.organizationId,
       },
       paymentStatus: organization.paymentStatus,
+      trial: { tier: billingTier, days: 7 },
     });
   } catch (e) {
     next(e);

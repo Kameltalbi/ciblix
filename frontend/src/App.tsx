@@ -26,7 +26,7 @@ const LandingSales = lazy(() =>
 );
 const Legal = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Legal })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
-const Pricing = lazy(() => import('./pages/Pricing').then((m) => ({ default: m.Pricing })));
+const Tarifs = lazy(() => import('./pages/Tarifs').then((m) => ({ default: m.Tarifs })));
 const AIAssistant = lazy(() =>
   import('./pages/AIAssistant').then((m) => ({ default: m.AIAssistant }))
 );
@@ -119,7 +119,8 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/legal/:type" element={<Legal />} />
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/pricing" element={<Tarifs />} />
+          <Route path="/tarifs" element={<Tarifs />} />
           <Route path="/agent/hunt-ai" element={<HuntAIPage />} />
           <Route path="/agent/copilot-ia" element={<CopilotIAPage />} />
           <Route path="/agent/scout-ai" element={<ScoutAIPage />} />

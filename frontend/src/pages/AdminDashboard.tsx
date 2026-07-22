@@ -183,15 +183,24 @@ function DashboardTab() {
 }
 
 function OrganizationsTab() {
+  const [trialFilter, setTrialFilter] = useState<'all' | 'expiring' | 'expired'>('all');
+  const [extendOrg, setExtendOrg] = useState<any | null>(null);
+  const [extendDays, setExtendDays] = useState(7);
+  const [extendReason, setExtendReason] = useState('');
   const { data: orgs } = useQuery({
-    queryKey: ['admin-organizations'],
-    queryFn: () => api.get('/superadmin/organizations').then(r => r.data),
+    queryKey: ['admin-organizations', trialFilter],
+    queryFn: () =>
+      api
+        .get('/superadmin/organizations', {
+          params: trialFilter === 'all' ? undefined : { trialFilter },
+        })
+        .then((r) => r.data),
     refetchInterval: 15000,
   });
   const queryClient = useQueryClient();
 
   const updateOrganizationCache = (organization: any) => {
-    queryClient.setQueryData(['admin-organizations'], (current: any) => {
+    queryClient.setQueryData(['admin-organizations', trialFilter], (current: any) => {
       if (!Array.isArray(current)) return current;
       return current.map((org) =>
         org.id === organization.id
@@ -212,6 +221,28 @@ function OrganizationsTab() {
     queryClient.refetchQueries({ queryKey: ['superadmin-subscriptions'], type: 'all' });
     queryClient.refetchQueries({ queryKey: ['superadmin-stats'], type: 'all' });
   };
+
+  const extendTrialMutation = useMutation({
+    mutationFn: ({ id, additionalDays, reason }: { id: string; additionalDays: number; reason: string }) =>
+      api.post(`/superadmin/organizations/${id}/extend-trial`, { additionalDays, reason }),
+    onSuccess: () => {
+      setExtendOrg(null);
+      setExtendReason('');
+      setExtendDays(7);
+      refreshOrganizations();
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || error.message || 'Impossible de prolonger l’essai');
+    },
+  });
+
+  const activateSubMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/superadmin/organizations/${id}/activate-subscription`, { reason: 'Activation manuelle superadmin' }),
+    onSuccess: () => refreshOrganizations(),
+    onError: (error: any) => {
+      alert(error.response?.data?.error || error.message || 'Impossible d’activer l’abonnement');
+    },
+  });
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, paymentStatus }: { id: string; paymentStatus: 'PENDING' | 'APPROVED' | 'REJECTED' }) =>
@@ -401,6 +432,27 @@ function OrganizationsTab() {
             <span>{org.suspended ? 'Réactiver' : 'Suspendre'}</span>
           </DropdownMenuItemStyled>
           <DropdownMenuItemStyled
+            onClick={() => setExtendOrg(org)}
+            className={itemClassName}
+          >
+            <Clock className={iconClassName} />
+            <span>Prolonger l’essai</span>
+          </DropdownMenuItemStyled>
+          {org.billingSubscription?.status !== 'ACTIVE' && (
+            <DropdownMenuItemStyled
+              onClick={() => {
+                if (confirm(`Passer "${org.name}" en abonnement actif manuellement ?`)) {
+                  activateSubMutation.mutate(org.id);
+                }
+              }}
+              disabled={activateSubMutation.isPending}
+              className={itemClassName}
+            >
+              <CheckCircle className="h-4 w-4 shrink-0 text-green-600" />
+              <span>Passer en actif</span>
+            </DropdownMenuItemStyled>
+          )}
+          <DropdownMenuItemStyled
             onClick={() => {
               if (confirm(`Supprimer définitivement l'organisation "${org.name}" et toutes ses données ?`)) {
                 deleteMutation.mutate(org.id);
@@ -419,7 +471,27 @@ function OrganizationsTab() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Entreprises</h2>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold">Entreprises</h2>
+        <div className="flex gap-2">
+          {(
+            [
+              { id: 'all', label: 'Tous' },
+              { id: 'expiring', label: 'Essais ≤ 3 jours' },
+              { id: 'expired', label: 'Essais expirés' },
+            ] as const
+          ).map((f) => (
+            <Button
+              key={f.id}
+              size="sm"
+              variant={trialFilter === f.id ? 'default' : 'outline'}
+              onClick={() => setTrialFilter(f.id)}
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
+      </div>
       <Card>
         <CardContent className="p-0">
           <div className="md:hidden space-y-3 p-3">
@@ -434,17 +506,26 @@ function OrganizationsTab() {
                     <div className="flex flex-col items-end gap-1">
                       {planBadge(org.plan || 'FREE')}
                       {paymentStatusBadge(org.paymentStatus)}
+                      {org.trialBadge ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {org.trialBadge}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     <p>Tél: {org.phone || '-'}</p>
                     <p>Utilisateurs: {org._count.users} • Clients: {org._count.clients} • Affaires: {org._count.affaires}</p>
                     <p>Activité: {new Date(org.createdAt).toLocaleDateString('fr-FR')}</p>
+                    {org.billingSubscription?.trialEndsAt ? (
+                      <p>
+                        Fin essai:{' '}
+                        {new Date(org.billingSubscription.trialEndsAt).toLocaleDateString('fr-FR')}
+                      </p>
+                    ) : null}
                     {org.suspended ? <span className="text-red-600 font-medium">Suspendu</span> : null}
                   </div>
-                  <div className="flex justify-end">
-                    {renderOrganizationActions(org)}
-                  </div>
+                  <div className="flex justify-end">{renderOrganizationActions(org)}</div>
                 </CardContent>
               </Card>
             ))}
@@ -456,14 +537,12 @@ function OrganizationsTab() {
                 <tr>
                   <th className="text-left p-4 font-medium">Entreprise</th>
                   <th className="text-left p-4 font-medium">Email</th>
-                  <th className="text-left p-4 font-medium">Téléphone</th>
                   <th className="text-left p-4 font-medium">Plan</th>
+                  <th className="text-left p-4 font-medium">Abonnement</th>
                   <th className="text-left p-4 font-medium">Statut paiement</th>
                   <th className="text-left p-4 font-medium">Statut</th>
                   <th className="text-center p-4 font-medium">Utilisateurs</th>
-                  <th className="text-center p-4 font-medium">Clients</th>
-                  <th className="text-center p-4 font-medium">Affaires</th>
-                  <th className="text-left p-4 font-medium">Dernière activité</th>
+                  <th className="text-left p-4 font-medium">Créée</th>
                   <th className="text-right p-4 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -472,17 +551,24 @@ function OrganizationsTab() {
                   <tr key={org.id} className="hover:bg-gray-50">
                     <td className="p-4 font-medium">{org.name}</td>
                     <td className="p-4">{org.email || '-'}</td>
-                    <td className="p-4">{org.phone || '-'}</td>
                     <td className="p-4">{planBadge(org.plan || 'FREE')}</td>
+                    <td className="p-4">
+                      {org.trialBadge ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                          {org.trialBadge}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                      {org.billingSubscription?.tier ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{org.billingSubscription.tier}</p>
+                      ) : null}
+                    </td>
                     <td className="p-4">{paymentStatusBadge(org.paymentStatus)}</td>
                     <td className="p-4">{suspendedBadge(org.suspended)}</td>
                     <td className="p-4 text-center">{org._count.users}</td>
-                    <td className="p-4 text-center">{org._count.clients}</td>
-                    <td className="p-4 text-center">{org._count.affaires}</td>
                     <td className="p-4 text-muted-foreground">{new Date(org.createdAt).toLocaleDateString('fr-FR')}</td>
-                    <td className="p-4 flex justify-end">
-                      {renderOrganizationActions(org)}
-                    </td>
+                    <td className="p-4 flex justify-end">{renderOrganizationActions(org)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -490,6 +576,57 @@ function OrganizationsTab() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!extendOrg} onOpenChange={(open) => !open && setExtendOrg(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Prolonger l’essai — {extendOrg?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Jours à ajouter</Label>
+              <Input
+                type="number"
+                min={1}
+                max={365}
+                value={extendDays}
+                onChange={(e) => setExtendDays(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label>Raison (obligatoire)</Label>
+              <Input
+                value={extendReason}
+                onChange={(e) => setExtendReason(e.target.value)}
+                placeholder="Ex. accord commercial +14 jours"
+              />
+            </div>
+            {extendOrg?.billingSubscription?.trialEndsAt ? (
+              <p className="text-xs text-muted-foreground">
+                Fin actuelle : {new Date(extendOrg.billingSubscription.trialEndsAt).toLocaleString('fr-FR')} ·
+                Prolongations : {extendOrg.billingSubscription.trialExtensionCount || 0}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendOrg(null)}>
+              Annuler
+            </Button>
+            <Button
+              disabled={!extendReason.trim() || extendTrialMutation.isPending}
+              onClick={() =>
+                extendTrialMutation.mutate({
+                  id: extendOrg.id,
+                  additionalDays: extendDays,
+                  reason: extendReason,
+                })
+              }
+            >
+              Prolonger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

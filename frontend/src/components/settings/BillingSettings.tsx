@@ -16,6 +16,8 @@ export function BillingSettings() {
     tier: string;
     tierLabel: string;
     status: string;
+    trialEndsAt?: string;
+    readOnly?: boolean;
     usage: { used: number; limit: number; overLimit: boolean; softCap: boolean };
   }>({
     queryKey: ['billing-status'],
@@ -50,7 +52,15 @@ export function BillingSettings() {
         <CardTitle className="text-base">Facturation</CardTitle>
         <p className="text-xs text-muted-foreground">
           Palier actuel : <strong>{data?.tierLabel}</strong> ({data?.status})
+          {data?.trialEndsAt && data.status === 'TRIALING' ? (
+            <> · fin d&apos;essai : {new Date(data.trialEndsAt).toLocaleDateString('fr-FR')}</>
+          ) : null}
         </p>
+        {data?.readOnly ? (
+          <p className="text-xs text-amber-700 bg-amber-50 rounded-md px-2 py-1 mt-2">
+            Essai terminé — lecture seule. Ajoutez un moyen de paiement pour relancer les agents.
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
         <div>

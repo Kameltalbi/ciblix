@@ -68,27 +68,39 @@ Cordialement`,
   });
 }
 
-export async function seedTrialSubscriptionForOrganization(organization: Organization): Promise<void> {
+export async function seedTrialSubscriptionForOrganization(
+  organization: Organization,
+  options?: { tier?: import('@prisma/client').BillingTier; currency?: import('@prisma/client').BillingCurrency }
+): Promise<void> {
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + 7);
 
-  const tier = normalizePlan(organization.plan);
+  const billingTier =
+    options?.tier ||
+    (normalizePlan(organization.plan) === 'ENTERPRISE'
+      ? 'ENTERPRISE'
+      : normalizePlan(organization.plan) === 'BUSINESS'
+        ? 'PRO'
+        : normalizePlan(organization.plan) === 'BASIC'
+          ? 'CROISSANCE'
+          : 'DECOUVERTE');
+
   const trialPrice =
-    tier === 'ENTERPRISE'
-      ? 2100
-      : tier === 'BUSINESS'
-        ? 980
-        : tier === 'BASIC'
-          ? 480
-          : 0;
+    billingTier === 'ENTERPRISE'
+      ? 0
+      : billingTier === 'PRO'
+        ? 299
+        : billingTier === 'CROISSANCE'
+          ? 149
+          : 49;
 
   await prisma.subscription.create({
     data: {
       organizationId: organization.id,
-      plan: tier,
+      plan: normalizePlan(organization.plan),
       price: trialPrice,
-      billingPeriod: 'YEARLY',
+      billingPeriod: 'MONTHLY',
       paymentMethod: 'VIREMENT',
       paymentStatus: 'PENDING',
       startDate,
@@ -96,20 +108,21 @@ export async function seedTrialSubscriptionForOrganization(organization: Organiz
     },
   });
 
-  const { ensureBillingSubscription, ensureUsageQuota } = await import('./billing/billingService.js');
-  const billingTier =
-    tier === 'ENTERPRISE'
-      ? 'ENTERPRISE'
-      : tier === 'BUSINESS'
-        ? 'PRO'
-        : tier === 'BASIC'
-          ? 'CROISSANCE'
-          : 'DECOUVERTE';
-  const sub = await ensureBillingSubscription(organization.id, billingTier as import('@prisma/client').BillingTier);
-  await ensureUsageQuota(organization.id, sub.tier);
+  const { startTrialSubscription } = await import('./billing/trialService.js');
+  await startTrialSubscription({
+    organizationId: organization.id,
+    tier: billingTier as import('@prisma/client').BillingTier,
+    currency: options?.currency || 'TND',
+  });
 }
 
 export async function bootstrapOrganizationAgents(organization: Organization): Promise<void> {
+  const billing = await prisma.billingSubscription.findUnique({ where: { organizationId: organization.id } });
+  if (billing) {
+    const { syncAgentsForTier } = await import('./billing/trialService.js');
+    await syncAgentsForTier(organization.id, billing.tier);
+    return;
+  }
   await syncAgentsForPlan(organization.id, normalizePlan(organization.plan));
 }
 

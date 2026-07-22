@@ -16,6 +16,12 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     return res.status(409).json({ error: 'Conflit : entrée en double' });
   }
 
+  const statusCode = (err as Error & { statusCode?: number }).statusCode;
+  const code = (err as Error & { code?: string }).code;
+  if (statusCode && statusCode >= 400 && statusCode < 600) {
+    return res.status(statusCode).json({ error: err.message, code });
+  }
+
   res.status(500).json({
     error: process.env.NODE_ENV === 'production' ? 'Erreur serveur' : err.message,
   });

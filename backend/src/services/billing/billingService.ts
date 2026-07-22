@@ -1,14 +1,17 @@
 import type { BillingCurrency, BillingTier } from '@prisma/client';
 import { prisma } from '../../db/prisma.js';
 import {
+  addDays,
   currentMonthKey,
   stripePriceId,
+  TRIAL_DAYS,
   TIER_ACTION_LIMITS,
   TIER_OVERAGE_ALLOWED,
   TIER_TO_PLAN,
 } from '../../config/billingTiers.js';
-import { normalizePlan, syncAgentsForPlan } from '../../config/agentPlans.js';
+import { normalizePlan } from '../../config/agentPlans.js';
 import { structuredLog } from '../../lib/structuredLog.js';
+import { assertAgentActionsAllowed, syncAgentsForTier } from './trialService.js';
 
 export type QuotaCheckResult = {
   used: number;
@@ -24,12 +27,15 @@ export async function ensureBillingSubscription(organizationId: string, tier: Bi
   const existing = await prisma.billingSubscription.findUnique({ where: { organizationId } });
   if (existing) return existing;
 
+  const now = new Date();
   return prisma.billingSubscription.create({
     data: {
       organizationId,
       tier,
       currency: 'TND',
-      status: 'trialing',
+      status: 'TRIALING',
+      trialStartedAt: now,
+      trialEndsAt: addDays(now, TRIAL_DAYS),
     },
   });
 }
@@ -66,6 +72,8 @@ export async function checkQuota(organizationId: string): Promise<QuotaCheckResu
 
 /** Soft-cap : on incrémente toujours, on log si dépassement mais on ne bloque pas. */
 export async function consumeAgentAction(organizationId: string, units = 1): Promise<QuotaCheckResult> {
+  await assertAgentActionsAllowed(organizationId);
+
   const { sub, quota } = await getBillingContext(organizationId);
   const updated = await prisma.usageQuota.update({
     where: { id: quota.id },
@@ -96,10 +104,17 @@ export async function consumeAgentAction(organizationId: string, units = 1): Pro
 }
 
 export async function changeTier(organizationId: string, newTier: BillingTier) {
+  const now = new Date();
   const sub = await prisma.billingSubscription.upsert({
     where: { organizationId },
-    create: { organizationId, tier: newTier, status: 'active' },
-    update: { tier: newTier, status: 'active' },
+    create: {
+      organizationId,
+      tier: newTier,
+      status: 'ACTIVE',
+      trialStartedAt: now,
+      trialEndsAt: addDays(now, TRIAL_DAYS),
+    },
+    update: { tier: newTier, status: 'ACTIVE' },
   });
 
   const month = currentMonthKey();
@@ -122,7 +137,7 @@ export async function changeTier(organizationId: string, newTier: BillingTier) {
     where: { id: organizationId },
     data: { plan },
   });
-  await syncAgentsForPlan(organizationId, plan);
+  await syncAgentsForTier(organizationId, newTier);
 
   return sub;
 }
@@ -201,18 +216,21 @@ export async function handleStripeWebhookEvent(event: {
     const orgId = String(obj.client_reference_id || meta.organizationId || '');
     const tier = String(meta.tier || 'DECOUVERTE') as BillingTier;
     if (orgId) {
+      const now = new Date();
       await prisma.billingSubscription.upsert({
         where: { organizationId: orgId },
         create: {
           organizationId: orgId,
           tier,
-          status: 'active',
+          status: 'ACTIVE',
+          trialStartedAt: now,
+          trialEndsAt: addDays(now, TRIAL_DAYS),
           stripeCustomerId: obj.customer ? String(obj.customer) : null,
           stripeSubscriptionId: obj.subscription ? String(obj.subscription) : null,
         },
         update: {
           tier,
-          status: 'active',
+          status: 'ACTIVE',
           stripeCustomerId: obj.customer ? String(obj.customer) : undefined,
           stripeSubscriptionId: obj.subscription ? String(obj.subscription) : undefined,
         },
@@ -224,7 +242,17 @@ export async function handleStripeWebhookEvent(event: {
 
   if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
     const subId = String(obj.id || '');
-    const status = String(obj.status || 'canceled');
+    const raw = String(obj.status || 'canceled').toLowerCase();
+    const status =
+      raw === 'active'
+        ? 'ACTIVE'
+        : raw === 'past_due'
+          ? 'PAST_DUE'
+          : raw === 'canceled' || raw === 'unpaid'
+            ? 'CANCELED'
+            : raw === 'trialing'
+              ? 'TRIALING'
+              : 'PAST_DUE';
     const existing = await prisma.billingSubscription.findFirst({
       where: { stripeSubscriptionId: subId },
     });
@@ -246,7 +274,7 @@ export async function handleStripeWebhookEvent(event: {
     if (!customerId) return;
     await prisma.billingSubscription.updateMany({
       where: { stripeCustomerId: customerId },
-      data: { status: 'active' },
+      data: { status: 'ACTIVE' },
     });
   }
 }

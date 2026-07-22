@@ -39,6 +39,14 @@ async function tickOnce(): Promise<void> {
     } catch (err) {
       console.warn('[agent-memory-scheduler] pipeline stale recalc', err);
     }
+    try {
+      const { checkExpiredTrials, sendTrialReminders } = await import('../billing/trialService.js');
+      const expired = await checkExpiredTrials();
+      const reminders = await sendTrialReminders();
+      console.log('[agent-memory-scheduler] trials', expired, 'reminders', reminders);
+    } catch (err) {
+      console.warn('[agent-memory-scheduler] trial tick', err);
+    }
   }
 
   if (now - lastWeeklyRetry > 7 * DAY_MS) {

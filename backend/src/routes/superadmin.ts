@@ -114,19 +114,64 @@ superadminRoutes.get('/organizations', async (req: AuthRequest, res, next) => {
             createdAt: true,
           },
         },
+        billingSubscription: {
+          select: {
+            id: true,
+            tier: true,
+            status: true,
+            currency: true,
+            trialStartedAt: true,
+            trialEndsAt: true,
+            trialExtensionCount: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(organizations.map((org) => {
+
+    const filter = String(req.query.trialFilter || '');
+    const now = new Date();
+    const in3Days = new Date(now.getTime() + 3 * 86_400_000);
+
+    const mapped = organizations.map((org) => {
       const latestSubscription = getAuthoritativeSubscription(org.subscriptions);
+      const billing = org.billingSubscription;
+      let trialBadge: string | null = null;
+      if (billing) {
+        if (billing.status === 'TRIALING') {
+          const daysLeft = Math.ceil((billing.trialEndsAt.getTime() - now.getTime()) / 86_400_000);
+          trialBadge = daysLeft >= 0 ? `Essai (J-${daysLeft})` : 'Essai (expiré)';
+        } else if (billing.status === 'ACTIVE') trialBadge = 'Actif';
+        else if (billing.status === 'TRIAL_EXPIRED') trialBadge = 'Essai expiré';
+        else if (billing.status === 'PAST_DUE') trialBadge = 'Impayé';
+        else if (billing.status === 'CANCELED') trialBadge = 'Annulé';
+      }
       return {
         ...org,
         plan: latestSubscription ? toOrganizationPlan(latestSubscription.plan) : org.plan,
-        paymentStatus: latestSubscription ? toOrganizationPaymentStatus(latestSubscription.paymentStatus) : org.paymentStatus,
+        paymentStatus: latestSubscription
+          ? toOrganizationPaymentStatus(latestSubscription.paymentStatus)
+          : org.paymentStatus,
         latestSubscription,
+        billingSubscription: billing,
+        trialBadge,
         subscriptions: undefined,
       };
-    }));
+    });
+
+    const filtered =
+      filter === 'expiring'
+        ? mapped.filter(
+            (o) =>
+              o.billingSubscription?.status === 'TRIALING' &&
+              o.billingSubscription.trialEndsAt <= in3Days &&
+              o.billingSubscription.trialEndsAt >= now
+          )
+        : filter === 'expired'
+          ? mapped.filter((o) => o.billingSubscription?.status === 'TRIAL_EXPIRED')
+          : mapped;
+
+    res.json(filtered);
   } catch (e) { next(e); }
 });
 
@@ -146,6 +191,14 @@ superadminRoutes.get('/organizations/:id', async (req: AuthRequest, res, next) =
             createdAt: true,
           },
         },
+        billingSubscription: {
+          include: {
+            extensionLogs: {
+              orderBy: { createdAt: 'desc' },
+              take: 50,
+            },
+          },
+        },
         _count: {
           select: {
             clients: true,
@@ -160,6 +213,48 @@ superadminRoutes.get('/organizations/:id', async (req: AuthRequest, res, next) =
     }
     res.json(organization);
   } catch (e) { next(e); }
+});
+
+superadminRoutes.post('/organizations/:id/extend-trial', async (req: AuthRequest, res, next) => {
+  try {
+    const body = z
+      .object({
+        additionalDays: z.number().int().min(1).max(365),
+        reason: z.string().min(3).max(2000),
+      })
+      .parse(req.body);
+    const { extendTrial } = await import('../services/billing/trialService.js');
+    const sub = await extendTrial({
+      organizationId: req.params.id as string,
+      additionalDays: body.additionalDays,
+      reason: body.reason,
+      superadminUserId: req.user!.id,
+    });
+    res.json({
+      status: sub.status,
+      trialEndsAt: sub.trialEndsAt,
+      trialExtensionCount: sub.trialExtensionCount,
+    });
+  } catch (e: any) {
+    if (e?.statusCode) return res.status(e.statusCode).json({ error: e.message });
+    next(e);
+  }
+});
+
+superadminRoutes.post('/organizations/:id/activate-subscription', async (req: AuthRequest, res, next) => {
+  try {
+    const body = z.object({ reason: z.string().max(2000).optional() }).parse(req.body || {});
+    const { activateSubscriptionManually } = await import('../services/billing/trialService.js');
+    const sub = await activateSubscriptionManually({
+      organizationId: req.params.id as string,
+      superadminUserId: req.user!.id,
+      reason: body.reason,
+    });
+    res.json({ status: sub.status });
+  } catch (e: any) {
+    if (e?.statusCode) return res.status(e.statusCode).json({ error: e.message });
+    next(e);
+  }
 });
 
 // DELETE organization

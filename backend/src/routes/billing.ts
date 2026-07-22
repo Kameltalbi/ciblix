@@ -33,7 +33,11 @@ billingRoutes.get('/status', async (req: AuthRequest, res, next) => {
       tierLabel: TIER_LABELS[sub.tier],
       currency: sub.currency,
       status: sub.status,
+      trialStartedAt: sub.trialStartedAt,
+      trialEndsAt: sub.trialEndsAt,
+      trialExtensionCount: sub.trialExtensionCount,
       currentPeriodEnd: sub.currentPeriodEnd,
+      readOnly: sub.status === 'TRIAL_EXPIRED' || sub.status === 'CANCELED' || sub.status === 'PAST_DUE',
       usage: {
         used: quota.agentActionsUsed,
         limit: quota.agentActionsLimit,

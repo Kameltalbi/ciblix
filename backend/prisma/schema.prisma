@@ -1702,21 +1702,49 @@ enum BillingCurrency {
   USD
 }
 
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  TRIAL_EXPIRED
+  CANCELED
+}
+
 model BillingSubscription {
-  id                   String          @id @default(cuid())
-  organizationId       String          @unique
-  tier                 BillingTier     @default(DECOUVERTE)
-  currency             BillingCurrency @default(TND)
+  id                   String             @id @default(cuid())
+  organizationId       String             @unique
+  tier                 BillingTier        @default(DECOUVERTE)
+  currency             BillingCurrency    @default(TND)
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  status               String          @default("trialing")
+  status               SubscriptionStatus @default(TRIALING)
+  trialStartedAt       DateTime           @default(now())
+  trialEndsAt          DateTime
+  trialExtendedBy      String?
+  trialExtensionCount  Int                @default(0)
   currentPeriodEnd     DateTime?
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  extensionLogs    TrialExtensionLog[]
 
+  @@index([status, trialEndsAt])
   @@map("billing_subscriptions")
+}
+
+model TrialExtensionLog {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  extendedBy     String
+  additionalDays Int
+  reason         String   @db.Text
+  createdAt      DateTime @default(now())
+
+  subscription BillingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, createdAt])
+  @@map("trial_extension_logs")
 }
 
 model UsageQuota {

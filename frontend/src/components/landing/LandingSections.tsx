@@ -300,7 +300,7 @@ const PRICING_TIERS = [
     highlight: false,
     featuresKeys: ['landingHome.tierDecouverteF1', 'landingHome.tierDecouverteF2', 'landingHome.tierDecouverteF3'] as const,
     ctaKey: 'landingHome.tierDecouverteCta',
-    to: '/register',
+    to: '/register?tier=DECOUVERTE&trial=7',
   },
   {
     id: 'CROISSANCE',
@@ -310,7 +310,7 @@ const PRICING_TIERS = [
     highlight: true,
     featuresKeys: ['landingHome.tierCroissanceF1', 'landingHome.tierCroissanceF2', 'landingHome.tierCroissanceF3'] as const,
     ctaKey: 'landingHome.tierCroissanceCta',
-    to: '/register',
+    to: '/register?tier=CROISSANCE&trial=7',
   },
   {
     id: 'PRO',
@@ -320,7 +320,7 @@ const PRICING_TIERS = [
     highlight: false,
     featuresKeys: ['landingHome.tierProF1', 'landingHome.tierProF2', 'landingHome.tierProF3'] as const,
     ctaKey: 'landingHome.tierProCta',
-    to: '/register',
+    to: '/register?tier=PRO&trial=7',
   },
   {
     id: 'ENTERPRISE',
