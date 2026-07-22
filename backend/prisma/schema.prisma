@@ -67,6 +67,11 @@ model Organization {
   brandApiKeys    BrandApiKey[]
   gmailAiSyncStates GmailAiSyncState[]
   gmailAiProcessedMessages GmailAiProcessedMessage[]
+  contacts              Contact[]
+  agentEvents           AgentEvent[]
+  contactDedupConflicts ContactDedupConflict[]
+  /// TTL transcription brute (jours) — appliqué par le job de purge S3
+  agentEventRawRetentionDays Int @default(90)
 
   @@map("organizations")
 }
@@ -108,6 +113,7 @@ model User {
   auditLogs        AuditLog[]
   salesObjectives  SalesObjective[]
   permissions      UserPermission[]
+  agentEvents      AgentEvent[]
 
   @@index([organizationId])
   @@map("users")
@@ -1396,4 +1402,138 @@ model BrandApiKey {
   @@index([organizationId])
   @@index([keyPrefix])
   @@map("brand_api_keys")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOCLE AGENTS — Contact + AgentEvent (mémoire partagée, Phase 1)
+//  Écriture uniquement via contactService / agentEventService.
+// ═══════════════════════════════════════════════════════════════
+
+enum ContactCreatedVia {
+  HUNT
+  COPILOT
+  GMAIL
+  SCOUT
+  MANUAL_IMPORT // scripts/admin uniquement — pas d'API publique
+}
+
+enum AgentEventSource {
+  HUNT
+  COPILOT
+  GMAIL
+  SCOUT
+  OFFREBOT
+  FACTCHECK
+}
+
+enum AgentEventType {
+  APPEL
+  WHATSAPP
+  EMAIL
+  NOTE
+  OPPORTUNITE
+}
+
+enum AgentEventResolutionStatus {
+  PENDING
+  RESOLVED
+  NEEDS_REVIEW
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  name           String?
+  companyName    String?
+
+  phone          String?
+  email          String?
+  whatsappId     String?
+
+  phoneNormalized    String?
+  emailNormalized    String?
+  whatsappNormalized String?
+
+  aliases        String[] @default([])
+
+  createdVia     ContactCreatedVia
+  erasedAt       DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  events         AgentEvent[]
+  dedupConflicts ContactDedupConflict[] @relation("ExistingContact")
+
+  @@index([organizationId])
+  @@index([organizationId, phoneNormalized])
+  @@index([organizationId, emailNormalized])
+  @@index([organizationId, whatsappNormalized])
+  @@index([organizationId, companyName])
+  @@map("contacts")
+}
+
+model AgentEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+
+  contactId      String?
+  source         AgentEventSource
+  type           AgentEventType
+
+  contenuBrutRef       String?
+  contenuBrutExpiresAt DateTime?
+
+  resume              String?  @db.Text
+  score               Float?
+  actionsSuggerees    String[] @default([])
+
+  consentConfirmedBy  String?
+  consentConfirmedAt  DateTime?
+
+  resolutionStatus    AgentEventResolutionStatus @default(PENDING)
+  resolutionAttempts  Int                        @default(0)
+  resolutionLastAt    DateTime?
+  resolutionNextRetryAt DateTime?
+
+  sourceRef           String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, contactId, createdAt])
+  @@index([userId, createdAt])
+  @@index([resolutionStatus, resolutionAttempts])
+  @@index([resolutionStatus, resolutionNextRetryAt])
+  @@index([source, sourceRef])
+  @@map("agent_events")
+}
+
+model ContactDedupConflict {
+  id                String   @id @default(cuid())
+  organizationId    String
+  existingContactId String
+
+  attemptedName     String?
+  attemptedPhone    String?
+  attemptedEmail    String?
+  attemptedWhatsapp String?
+  source            AgentEventSource
+  sourceRef         String?
+
+  createdAt         DateTime @default(now())
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  existingContact   Contact      @relation("ExistingContact", fields: [existingContactId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@map("contact_dedup_conflicts")
 }

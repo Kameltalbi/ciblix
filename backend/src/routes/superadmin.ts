@@ -786,3 +786,63 @@ superadminRoutes.put('/settings', async (req: AuthRequest, res, next) => {
     });
   } catch (e) { next(e); }
 });
+
+// ─── Agent memory (Phase 1) ───────────────────────────────────
+
+superadminRoutes.get('/agent-events', async (req: AuthRequest, res, next) => {
+  try {
+    const status =
+      typeof req.query.resolutionStatus === 'string'
+        ? req.query.resolutionStatus
+        : 'NEEDS_REVIEW';
+    const organizationId =
+      typeof req.query.organizationId === 'string' ? req.query.organizationId : null;
+
+    const { listUnresolvedEvents } = await import('../services/agent-memory/agentEventService.js');
+    const items = await listUnresolvedEvents(organizationId, status as any, {
+      take: Math.min(Number(req.query.limit) || 50, 200),
+    });
+    res.json({ items });
+  } catch (e) {
+    next(e);
+  }
+});
+
+superadminRoutes.post('/agent-events/:id/resolve', async (req: AuthRequest, res, next) => {
+  try {
+    const { contactId, organizationId } = req.body as {
+      contactId?: string;
+      organizationId?: string;
+    };
+    if (!contactId || !organizationId) {
+      return res.status(400).json({ error: 'contactId et organizationId requis' });
+    }
+
+    const { assignEventToContact } = await import('../services/agent-memory/agentEventService.js');
+    const event = await assignEventToContact(String(req.params.id), contactId, organizationId);
+    res.json({ event });
+  } catch (e) {
+    next(e);
+  }
+});
+
+superadminRoutes.post('/contacts/:id/erase', async (req: AuthRequest, res, next) => {
+  try {
+    const { organizationId } = req.body as { organizationId?: string };
+    if (!organizationId) {
+      return res.status(400).json({ error: 'organizationId requis' });
+    }
+
+    const { eraseContactData } = await import('../services/agent-memory/contactErasure.js');
+    await eraseContactData({
+      organizationId,
+      contactId: String(req.params.id),
+      actorUserId: req.userId!,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
