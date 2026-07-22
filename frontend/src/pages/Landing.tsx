@@ -34,7 +34,6 @@ import {
   LandingPricing,
   LandingDataTrust,
   LandingFinalCta,
-  HeroPipelineIllustration,
 } from '@/components/landing/LandingSections';
 
 const LANDING_AGENTS = [
@@ -364,7 +363,15 @@ export function Landing() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <HeroPipelineIllustration />
+            <img
+              src="/hero-dashboard.png"
+              alt="Tableau de bord Ciblix — pipeline commercial et agents IA"
+              className="h-auto w-full max-w-[560px] object-contain drop-shadow-xl lg:max-w-none"
+              width={1024}
+              height={1024}
+              decoding="async"
+              fetchPriority="high"
+            />
           </motion.div>
         </div>
       </section>
