@@ -6,14 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContentWrapper, DropdownMenuItemStyled } from '@/components/ui/form-controls';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, Building2, CreditCard, Activity, CheckCircle, Clock, AlertTriangle, LogOut, LayoutDashboard, Receipt, Shield, DollarSign, TrendingUp, TrendingDown, Eye, EyeOff, Settings as SettingsIcon, Key, UserCheck, UserX, Plus, Edit, Trash2, MessageSquare, Send } from 'lucide-react';
+import { Users, Building2, CreditCard, Activity, CheckCircle, Clock, AlertTriangle, LogOut, LayoutDashboard, Receipt, Shield, Eye, EyeOff, Settings as SettingsIcon, Key, UserCheck, UserX, Plus, Edit, Trash2, MessageSquare, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'organizations', label: 'Entreprises', icon: Building2 },
+  { id: 'dashboard', label: 'Vue d’ensemble', icon: LayoutDashboard },
+  { id: 'organizations', label: 'Organisations', icon: Building2 },
   { id: 'subscriptions', label: 'Abonnements', icon: CreditCard },
   { id: 'payments', label: 'Paiements', icon: Receipt },
   { id: 'users', label: 'Utilisateurs', icon: Users },
@@ -21,14 +20,22 @@ const TABS = [
   { id: 'settings', label: 'Paramètres', icon: SettingsIcon },
 ];
 
+export type OrgListFilter = 'all' | 'expiring' | 'expired' | 'past_due' | 'trialing' | 'inactive30';
+
 export function AdminDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [orgFilter, setOrgFilter] = useState<OrgListFilter>('all');
   const navigate = useNavigate();
   const logout = useAuth((s) => s.logout);
   const queryClient = useQueryClient();
 
   const handleLogout = async () => { await logout(); navigate('/login'); };
+
+  const goToOrganizations = (filter: OrgListFilter = 'all') => {
+    setOrgFilter(filter);
+    setActiveTab('organizations');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,8 +63,10 @@ export function AdminDashboard() {
           ))}
         </div>
 
-        {activeTab === 'dashboard' && <DashboardTab />}
-        {activeTab === 'organizations' && <OrganizationsTab />}
+        {activeTab === 'dashboard' && <DashboardTab onNavigateOrgs={goToOrganizations} />}
+        {activeTab === 'organizations' && (
+          <OrganizationsTab initialFilter={orgFilter} onFilterChange={setOrgFilter} />
+        )}
         {activeTab === 'subscriptions' && <SubscriptionsTab />}
         {activeTab === 'payments' && <PaymentsTab queryClient={queryClient} />}
         {activeTab === 'users' && <UsersTab />}
@@ -68,131 +77,364 @@ export function AdminDashboard() {
   );
 }
 
-function DashboardTab() {
-  const { data: stats } = useQuery({ queryKey: ['superadmin-stats'], queryFn: () => api.get('/superadmin/stats').then(r => r.data) });
+type OverviewItem = {
+  organizationId: string;
+  organizationName: string;
+  organizationEmail?: string | null;
+  statusLabel: string;
+  dueLabel: string;
+  kind: string;
+  actions: string[];
+  suspended?: boolean;
+};
 
-  // Dummy data for charts
-  const revenueData = [
-    { month: 'Jan', revenue: 12000 },
-    { month: 'Fév', revenue: 19000 },
-    { month: 'Mar', revenue: 15000 },
-    { month: 'Avr', revenue: 22000 },
-    { month: 'Mai', revenue: 28000 },
-    { month: 'Juin', revenue: 32000 },
+function DashboardTab({ onNavigateOrgs }: { onNavigateOrgs: (filter: OrgListFilter) => void }) {
+  const queryClient = useQueryClient();
+  const [extendItem, setExtendItem] = useState<OverviewItem | null>(null);
+  const [extendDays, setExtendDays] = useState(7);
+  const [extendReason, setExtendReason] = useState('');
+
+  const { data: overview, isLoading } = useQuery({
+    queryKey: ['superadmin-overview'],
+    queryFn: () => api.get('/superadmin/overview').then((r) => r.data),
+    refetchInterval: 20000,
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['superadmin-overview'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-organizations'] });
+    queryClient.invalidateQueries({ queryKey: ['superadmin-stats'] });
+  };
+
+  const extendTrialMutation = useMutation({
+    mutationFn: ({ id, additionalDays, reason }: { id: string; additionalDays: number; reason: string }) =>
+      api.post(`/superadmin/organizations/${id}/extend-trial`, { additionalDays, reason }),
+    onSuccess: () => {
+      setExtendItem(null);
+      setExtendReason('');
+      setExtendDays(7);
+      refresh();
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.error || error.message || 'Impossible de prolonger l’essai');
+    },
+  });
+
+  const activateSubMutation = useMutation({
+    mutationFn: (id: string) =>
+      api.post(`/superadmin/organizations/${id}/activate-subscription`, {
+        reason: 'Réactivation depuis la file À traiter',
+      }),
+    onSuccess: () => refresh(),
+    onError: (error: any) => {
+      alert(error.response?.data?.error || error.message || 'Impossible d’activer l’abonnement');
+    },
+  });
+
+  const suspendMutation = useMutation({
+    mutationFn: (id: string) => api.put(`/superadmin/organizations/${id}/suspend`, { suspended: true }),
+    onSuccess: () => refresh(),
+    onError: (error: any) => {
+      alert(error.response?.data?.error || error.message || 'Impossible de suspendre');
+    },
+  });
+
+  const cards = [
+    {
+      id: 'trialing' as OrgListFilter,
+      label: 'Essais actifs',
+      value: overview?.cards?.activeTrials ?? '—',
+      icon: Clock,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+    },
+    {
+      id: 'expiring' as OrgListFilter,
+      label: 'Essais expirant (3 j)',
+      value: overview?.cards?.expiringIn3Days ?? '—',
+      icon: AlertTriangle,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50',
+    },
+    {
+      id: 'past_due' as OrgListFilter,
+      label: 'Impayés',
+      value: overview?.cards?.pastDue ?? '—',
+      icon: CreditCard,
+      color: 'text-red-600',
+      bg: 'bg-red-50',
+    },
+    {
+      id: 'all' as OrgListFilter,
+      label: 'Nouveaux (7 j)',
+      value: overview?.cards?.newOrgs7d ?? '—',
+      icon: Building2,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50',
+      note: 'Liste complète des organisations',
+    },
   ];
 
-  const clientsData = [
-    { month: 'Jan', clients: 5 },
-    { month: 'Fév', clients: 8 },
-    { month: 'Mar', clients: 12 },
-    { month: 'Avr', clients: 15 },
-    { month: 'Mai', clients: 20 },
-    { month: 'Juin', clients: 25 },
-  ];
-
-  const kpiCards = [
-    { label: 'MRR Mensuel', value: `${stats?.mrr || 32000} DT`, icon: DollarSign, color: 'text-purple-600', trend: '+12%', trendUp: true },
-    { label: 'Clients Actifs', value: stats?.organizations?.approved || 25, icon: Building2, color: 'text-blue-600', trend: '+5', trendUp: true },
-    { label: 'Nouveaux Clients', value: stats?.newClientsThisMonth || 5, icon: Users, color: 'text-green-600', trend: '+2', trendUp: true },
-    { label: 'Taux de Churn', value: `${stats?.churnRate || 2.5}%`, icon: TrendingDown, color: 'text-red-600', trend: '-0.5%', trendUp: true },
-    { label: 'Paiements en attente', value: stats?.organizations?.pending || 3, icon: Clock, color: 'text-yellow-600', trend: '+1', trendUp: false },
-    { label: 'Utilisateurs Actifs (30j)', value: stats?.activeUsers || 45, icon: Activity, color: 'text-sky-600', trend: '+8', trendUp: true },
-  ];
+  const queue: OverviewItem[] = overview?.actionQueue || [];
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
-      
-      {/* KPI Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {kpiCards.map((card) => (
-          <Card key={card.label}>
-            <CardContent className="flex items-center gap-4 p-6">
-              <card.icon className={`${card.color} flex-shrink-0`} size={28} />
-              <div className="flex-1">
-                <p className="text-2xl font-bold">{card.value}</p>
-                <p className="text-sm text-muted-foreground">{card.label}</p>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">Vue d’ensemble</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Qui a besoin d’attention maintenant — agissez sans quitter cette page.
+        </p>
+      </div>
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((card) => (
+          <button
+            key={card.label}
+            type="button"
+            onClick={() => onNavigateOrgs(card.id)}
+            className="rounded-xl border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-leaf/40 hover:shadow-md"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${card.bg}`}>
+                <card.icon className={card.color} size={20} />
               </div>
-              <div className={`flex items-center gap-1 text-xs ${card.trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                {card.trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {card.trend}
-              </div>
-            </CardContent>
-          </Card>
+              {isLoading ? (
+                <span className="text-sm text-muted-foreground">…</span>
+              ) : (
+                <span className="text-3xl font-bold tracking-tight">{card.value}</span>
+              )}
+            </div>
+            <p className="text-sm font-medium text-foreground">{card.label}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Voir la liste filtrée →</p>
+          </button>
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Évolution du Revenu (MRR)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Croissance des Nouveaux Clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={clientsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="clients" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* System Info */}
-      <Card>
-        <CardHeader><CardTitle className="text-lg">Informations Système</CardTitle></CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
+      <Card className="mb-8">
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-3">
           <div>
-            <p className="text-muted-foreground">Total Utilisateurs</p>
-            <p className="text-lg font-bold">{stats?.users || 0}</p>
+            <CardTitle className="text-lg">À traiter</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Essais urgents, expirés et impayés — actions en un clic
+            </p>
           </div>
-          <div>
-            <p className="text-muted-foreground">Total Clients</p>
-            <p className="text-lg font-bold">{stats?.clients || 0}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Total Opportunités</p>
-            <p className="text-lg font-bold">{stats?.affaires || 0}</p>
-          </div>
+          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+            {queue.length} élément{queue.length === 1 ? '' : 's'}
+          </span>
+        </CardHeader>
+        <CardContent className="p-0">
+          {queue.length === 0 && !isLoading ? (
+            <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+              Rien à traiter pour le moment. Les essais et impayés apparaîtront ici.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-gray-50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">Organisation</th>
+                    <th className="px-4 py-3 font-medium">Statut</th>
+                    <th className="px-4 py-3 font-medium">Échéance</th>
+                    <th className="px-4 py-3 font-medium text-right">Action rapide</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {queue.map((item) => (
+                    <tr key={`${item.organizationId}-${item.kind}`} className="border-b last:border-0">
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{item.organizationName}</p>
+                        {item.organizationEmail ? (
+                          <p className="text-xs text-muted-foreground">{item.organizationEmail}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            item.kind === 'PAST_DUE'
+                              ? 'bg-red-100 text-red-700'
+                              : item.kind === 'TRIAL_EXPIRED' || item.kind === 'TRIAL_OVERDUE'
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {item.statusLabel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{item.dueLabel}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {item.actions.includes('extend') ? (
+                            <Button size="sm" variant="outline" onClick={() => setExtendItem(item)}>
+                              Prolonger
+                            </Button>
+                          ) : null}
+                          {item.actions.includes('activate') ? (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Réactiver "${item.organizationName}" en abonnement actif ?`)) {
+                                  activateSubMutation.mutate(item.organizationId);
+                                }
+                              }}
+                              disabled={activateSubMutation.isPending}
+                            >
+                              Réactiver
+                            </Button>
+                          ) : null}
+                          {item.actions.includes('contact') && item.organizationEmail ? (
+                            <Button size="sm" variant="outline" asChild>
+                              <a href={`mailto:${item.organizationEmail}?subject=${encodeURIComponent(`Ciblix — ${item.organizationName}`)}`}>
+                                Contacter
+                              </a>
+                            </Button>
+                          ) : null}
+                          {item.actions.includes('suspend') ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-amber-700"
+                              onClick={() => {
+                                if (confirm(`Suspendre "${item.organizationName}" ?`)) {
+                                  suspendMutation.mutate(item.organizationId);
+                                }
+                              }}
+                              disabled={suspendMutation.isPending}
+                            >
+                              Suspendre
+                            </Button>
+                          ) : null}
+                          {item.actions.includes('detail') ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onNavigateOrgs('past_due')}
+                            >
+                              Voir
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                onNavigateOrgs(
+                                  item.kind === 'TRIAL_EXPIRED' || item.kind === 'TRIAL_OVERDUE'
+                                    ? 'expired'
+                                    : 'expiring'
+                                )
+                              }
+                            >
+                              Voir
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {overview?.tierBreakdown?.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Répartition par palier</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {overview.tierBreakdown.map((row: { tier: string; count: number }) => (
+                <div key={row.tier} className="rounded-lg border bg-gray-50 px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{row.tier}</p>
+                  <p className="mt-1 text-2xl font-bold">{row.count}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Dialog open={!!extendItem} onOpenChange={(open) => !open && setExtendItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Prolonger l’essai — {extendItem?.organizationName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Jours à ajouter</Label>
+              <Input
+                type="number"
+                min={1}
+                max={90}
+                value={extendDays}
+                onChange={(e) => setExtendDays(Number(e.target.value) || 7)}
+              />
+            </div>
+            <div>
+              <Label>Raison (obligatoire)</Label>
+              <Input
+                value={extendReason}
+                onChange={(e) => setExtendReason(e.target.value)}
+                placeholder="Ex. accord commercial J+7"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendItem(null)}>
+              Annuler
+            </Button>
+            <Button
+              disabled={!extendReason.trim() || extendTrialMutation.isPending}
+              onClick={() => {
+                if (!extendItem) return;
+                extendTrialMutation.mutate({
+                  id: extendItem.organizationId,
+                  additionalDays: extendDays,
+                  reason: extendReason.trim(),
+                });
+              }}
+            >
+              Prolonger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function OrganizationsTab() {
-  const [trialFilter, setTrialFilter] = useState<'all' | 'expiring' | 'expired'>('all');
+function OrganizationsTab({
+  initialFilter = 'all',
+  onFilterChange,
+}: {
+  initialFilter?: OrgListFilter;
+  onFilterChange?: (f: OrgListFilter) => void;
+}) {
+  const [trialFilter, setTrialFilter] = useState<OrgListFilter>(initialFilter);
+  const [search, setSearch] = useState('');
   const [extendOrg, setExtendOrg] = useState<any | null>(null);
   const [extendDays, setExtendDays] = useState(7);
   const [extendReason, setExtendReason] = useState('');
+
+  useEffect(() => {
+    setTrialFilter(initialFilter);
+  }, [initialFilter]);
+
+  const setFilter = (f: OrgListFilter) => {
+    setTrialFilter(f);
+    onFilterChange?.(f);
+  };
+
   const { data: orgs } = useQuery({
-    queryKey: ['admin-organizations', trialFilter],
+    queryKey: ['admin-organizations', trialFilter, search],
     queryFn: () =>
       api
         .get('/superadmin/organizations', {
-          params: trialFilter === 'all' ? undefined : { trialFilter },
+          params: {
+            ...(trialFilter === 'all' ? {} : { trialFilter }),
+            ...(search.trim() ? { q: search.trim() } : {}),
+          },
         })
         .then((r) => r.data),
     refetchInterval: 15000,
@@ -200,7 +442,7 @@ function OrganizationsTab() {
   const queryClient = useQueryClient();
 
   const updateOrganizationCache = (organization: any) => {
-    queryClient.setQueryData(['admin-organizations', trialFilter], (current: any) => {
+    queryClient.setQueryData(['admin-organizations', trialFilter, search], (current: any) => {
       if (!Array.isArray(current)) return current;
       return current.map((org) =>
         org.id === organization.id
@@ -471,21 +713,32 @@ function OrganizationsTab() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold">Entreprises</h2>
-        <div className="flex gap-2">
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold">Organisations</h2>
+          <Input
+            className="max-w-xs"
+            placeholder="Rechercher nom / email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
           {(
             [
               { id: 'all', label: 'Tous' },
               { id: 'expiring', label: 'Essais ≤ 3 jours' },
               { id: 'expired', label: 'Essais expirés' },
+              { id: 'past_due', label: 'Impayés' },
+              { id: 'trialing', label: 'Essais en cours' },
+              { id: 'inactive30', label: 'Aucune activité 30 j' },
             ] as const
           ).map((f) => (
             <Button
               key={f.id}
               size="sm"
               variant={trialFilter === f.id ? 'default' : 'outline'}
-              onClick={() => setTrialFilter(f.id)}
+              onClick={() => setFilter(f.id)}
             >
               {f.label}
             </Button>

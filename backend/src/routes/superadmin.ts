@@ -130,8 +130,12 @@ superadminRoutes.get('/organizations', async (req: AuthRequest, res, next) => {
     });
 
     const filter = String(req.query.trialFilter || '');
+    const statusFilter = String(req.query.status || '');
+    const tierFilter = String(req.query.tier || '');
+    const q = String(req.query.q || '').trim().toLowerCase();
     const now = new Date();
     const in3Days = new Date(now.getTime() + 3 * 86_400_000);
+    const inactiveSince = new Date(now.getTime() - 30 * 86_400_000);
 
     const mapped = organizations.map((org) => {
       const latestSubscription = getAuthoritativeSubscription(org.subscriptions);
@@ -159,17 +163,46 @@ superadminRoutes.get('/organizations', async (req: AuthRequest, res, next) => {
       };
     });
 
-    const filtered =
-      filter === 'expiring'
-        ? mapped.filter(
-            (o) =>
-              o.billingSubscription?.status === 'TRIALING' &&
-              o.billingSubscription.trialEndsAt <= in3Days &&
-              o.billingSubscription.trialEndsAt >= now
-          )
-        : filter === 'expired'
-          ? mapped.filter((o) => o.billingSubscription?.status === 'TRIAL_EXPIRED')
-          : mapped;
+    let filtered = mapped;
+
+    if (filter === 'expiring' || statusFilter === 'expiring') {
+      filtered = filtered.filter(
+        (o) =>
+          o.billingSubscription?.status === 'TRIALING' &&
+          o.billingSubscription.trialEndsAt <= in3Days &&
+          o.billingSubscription.trialEndsAt >= now
+      );
+    } else if (filter === 'expired' || statusFilter === 'expired' || statusFilter === 'TRIAL_EXPIRED') {
+      filtered = filtered.filter((o) => o.billingSubscription?.status === 'TRIAL_EXPIRED');
+    } else if (filter === 'past_due' || statusFilter === 'past_due' || statusFilter === 'PAST_DUE') {
+      filtered = filtered.filter((o) => o.billingSubscription?.status === 'PAST_DUE');
+    } else if (
+      filter === 'trialing' ||
+      statusFilter === 'TRIALING' ||
+      statusFilter === 'trialing'
+    ) {
+      filtered = filtered.filter((o) => o.billingSubscription?.status === 'TRIALING');
+    } else if (statusFilter === 'ACTIVE' || statusFilter === 'active') {
+      filtered = filtered.filter((o) => o.billingSubscription?.status === 'ACTIVE');
+    } else if (statusFilter === 'CANCELED' || statusFilter === 'canceled') {
+      filtered = filtered.filter((o) => o.billingSubscription?.status === 'CANCELED');
+    } else if (filter === 'inactive30' || statusFilter === 'inactive30') {
+      filtered = filtered.filter((o) => o.createdAt < inactiveSince);
+    }
+
+    if (tierFilter && tierFilter !== 'all') {
+      const tier = tierFilter.toUpperCase();
+      filtered = filtered.filter((o) => o.billingSubscription?.tier === tier);
+    }
+
+    if (q) {
+      filtered = filtered.filter(
+        (o) =>
+          o.name.toLowerCase().includes(q) ||
+          (o.email || '').toLowerCase().includes(q) ||
+          (o.users?.[0]?.email || '').toLowerCase().includes(q)
+      );
+    }
 
     res.json(filtered);
   } catch (e) { next(e); }
@@ -692,6 +725,139 @@ superadminRoutes.put('/subscriptions/:id', async (req: AuthRequest, res, next) =
   } catch (e) { next(e); }
 });
 
+// GET overview — cards + prioritized action queue
+superadminRoutes.get('/overview', async (req: AuthRequest, res, next) => {
+  try {
+    const now = new Date();
+    const in3Days = new Date(now.getTime() + 3 * 86_400_000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86_400_000);
+
+    const [activeTrials, expiringIn3Days, pastDue, newOrgs7d, tierBreakdown] = await Promise.all([
+      prisma.billingSubscription.count({ where: { status: 'TRIALING' } }),
+      prisma.billingSubscription.count({
+        where: {
+          status: 'TRIALING',
+          trialEndsAt: { gte: now, lte: in3Days },
+        },
+      }),
+      prisma.billingSubscription.count({ where: { status: 'PAST_DUE' } }),
+      prisma.organization.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      prisma.billingSubscription.groupBy({
+        by: ['tier'],
+        _count: { _all: true },
+      }),
+    ]);
+
+    const attentionSubs = await prisma.billingSubscription.findMany({
+      where: {
+        OR: [
+          { status: 'PAST_DUE' },
+          { status: 'TRIAL_EXPIRED' },
+          {
+            status: 'TRIALING',
+            trialEndsAt: { lte: in3Days },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        status: true,
+        tier: true,
+        trialEndsAt: true,
+        organization: {
+          select: { id: true, name: true, email: true, suspended: true },
+        },
+      },
+      take: 80,
+    });
+
+    const dayMs = 86_400_000;
+    const priority = (status: string, trialEndsAt: Date) => {
+      if (status === 'PAST_DUE') return 0;
+      if (status === 'TRIALING' && trialEndsAt < now) return 1;
+      if (status === 'TRIALING') return 2;
+      if (status === 'TRIAL_EXPIRED') return 3;
+      return 9;
+    };
+
+    const formatDue = (status: string, trialEndsAt: Date) => {
+      if (status === 'PAST_DUE' || status === 'TRIAL_EXPIRED') {
+        return { dueAt: null as string | null, dueLabel: '—' };
+      }
+      const days = Math.ceil((trialEndsAt.getTime() - now.getTime()) / dayMs);
+      if (days <= 0) return { dueAt: trialEndsAt.toISOString(), dueLabel: 'Expiré' };
+      if (days === 1) return { dueAt: trialEndsAt.toISOString(), dueLabel: 'Demain' };
+      return { dueAt: trialEndsAt.toISOString(), dueLabel: `Dans ${days} j` };
+    };
+
+    const actionQueue = attentionSubs
+      .map((sub) => {
+        const { dueAt, dueLabel } = formatDue(sub.status, sub.trialEndsAt);
+        let kind: 'TRIAL_EXPIRING' | 'TRIAL_OVERDUE' | 'TRIAL_EXPIRED' | 'PAST_DUE';
+        let statusLabel: string;
+        let actions: string[];
+
+        if (sub.status === 'PAST_DUE') {
+          kind = 'PAST_DUE';
+          statusLabel = 'Impayé';
+          actions = ['contact', 'detail', 'suspend'];
+        } else if (sub.status === 'TRIAL_EXPIRED') {
+          kind = 'TRIAL_EXPIRED';
+          statusLabel = 'Essai expiré';
+          actions = ['activate', 'extend'];
+        } else if (sub.trialEndsAt < now) {
+          kind = 'TRIAL_OVERDUE';
+          const daysLate = Math.ceil((now.getTime() - sub.trialEndsAt.getTime()) / dayMs);
+          statusLabel = `Essai (expiré depuis ${daysLate} j)`;
+          actions = ['activate', 'extend'];
+        } else {
+          kind = 'TRIAL_EXPIRING';
+          const daysLeft = Math.max(0, Math.ceil((sub.trialEndsAt.getTime() - now.getTime()) / dayMs));
+          statusLabel = `Essai (J-${daysLeft})`;
+          actions = ['extend', 'contact'];
+        }
+
+        return {
+          organizationId: sub.organization.id,
+          organizationName: sub.organization.name,
+          organizationEmail: sub.organization.email,
+          suspended: sub.organization.suspended,
+          subscriptionId: sub.id,
+          tier: sub.tier,
+          kind,
+          status: sub.status,
+          statusLabel,
+          trialEndsAt: sub.trialEndsAt.toISOString(),
+          dueAt,
+          dueLabel,
+          actions,
+          _priority: priority(sub.status, sub.trialEndsAt),
+          _sortDate: sub.trialEndsAt.getTime(),
+        };
+      })
+      .sort((a, b) => a._priority - b._priority || a._sortDate - b._sortDate)
+      .slice(0, 25)
+      .map(({ _priority, _sortDate, ...rest }) => rest);
+
+    res.json({
+      cards: {
+        activeTrials,
+        expiringIn3Days,
+        pastDue,
+        newOrgs7d,
+      },
+      actionQueue,
+      tierBreakdown: tierBreakdown.map((row) => ({
+        tier: row.tier,
+        count: row._count._all,
+      })),
+      generatedAt: now.toISOString(),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // GET statistics
 superadminRoutes.get('/stats', async (req: AuthRequest, res, next) => {
   try {
@@ -705,35 +871,39 @@ superadminRoutes.get('/stats', async (req: AuthRequest, res, next) => {
     const rejectedPayments = await prisma.organization.count({
       where: { paymentStatus: 'REJECTED' },
     });
-    
+
     const totalUsers = await prisma.user.count();
     const totalClients = await prisma.client.count();
     const totalAffaires = await prisma.affaire.count();
-    
-    // Calculate MRR (Monthly Recurring Revenue) - simplified
-    // In production, this would be calculated from actual subscriptions
-    const mrr = 32000; // Placeholder value
-    
-    // Calculate churn rate (simplified)
-    const churnRate = 2.5; // Placeholder - would need historical data
-    
-    // New clients this month
+
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const newClientsThisMonth = await prisma.organization.count({
-      where: {
-        createdAt: { gte: firstDayOfMonth },
-      },
-    });
-    
-    // Active users in last 30 days
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const activeUsers = await prisma.user.count({
-      where: {
-        updatedAt: { gte: thirtyDaysAgo },
-      },
-    });
-    
+    const in3Days = new Date(now.getTime() + 3 * 86_400_000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86_400_000);
+
+    const [
+      newClientsThisMonth,
+      activeUsers,
+      activeTrials,
+      expiringIn3Days,
+      pastDue,
+      newOrgs7d,
+    ] = await Promise.all([
+      prisma.organization.count({ where: { createdAt: { gte: firstDayOfMonth } } }),
+      prisma.user.count({
+        where: { updatedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      }),
+      prisma.billingSubscription.count({ where: { status: 'TRIALING' } }),
+      prisma.billingSubscription.count({
+        where: {
+          status: 'TRIALING',
+          trialEndsAt: { gte: now, lte: in3Days },
+        },
+      }),
+      prisma.billingSubscription.count({ where: { status: 'PAST_DUE' } }),
+      prisma.organization.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    ]);
+
     res.json({
       organizations: {
         total: totalOrganizations,
@@ -744,12 +914,20 @@ superadminRoutes.get('/stats', async (req: AuthRequest, res, next) => {
       users: totalUsers,
       clients: totalClients,
       affaires: totalAffaires,
-      mrr,
-      churnRate,
+      mrr: null,
+      churnRate: null,
       newClientsThisMonth,
       activeUsers,
+      billing: {
+        activeTrials,
+        expiringIn3Days,
+        pastDue,
+        newOrgs7d,
+      },
     });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // USERS MANAGEMENT

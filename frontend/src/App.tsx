@@ -27,6 +27,11 @@ const LandingSales = lazy(() =>
 const Legal = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Legal })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const Tarifs = lazy(() => import('./pages/Tarifs').then((m) => ({ default: m.Tarifs })));
+const Fonctionnalites = lazy(() =>
+  import('./pages/Fonctionnalites').then((m) => ({ default: m.Fonctionnalites }))
+);
+const Solutions = lazy(() => import('./pages/Solutions').then((m) => ({ default: m.Solutions })));
+const Ressources = lazy(() => import('./pages/Ressources').then((m) => ({ default: m.Ressources })));
 const AIAssistant = lazy(() =>
   import('./pages/AIAssistant').then((m) => ({ default: m.AIAssistant }))
 );
@@ -124,6 +129,11 @@ export default function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/pricing" element={<Tarifs />} />
           <Route path="/tarifs" element={<Tarifs />} />
+          <Route path="/fonctionnalites" element={<Fonctionnalites />} />
+          <Route path="/features" element={<Fonctionnalites />} />
+          <Route path="/solutions" element={<Solutions />} />
+          <Route path="/ressources" element={<Ressources />} />
+          <Route path="/resources" element={<Ressources />} />
           <Route path="/agent/hunt-ai" element={<HuntAIPage />} />
           <Route path="/agent/copilot-ia" element={<CopilotIAPage />} />
           <Route path="/agent/scout-ai" element={<ScoutAIPage />} />

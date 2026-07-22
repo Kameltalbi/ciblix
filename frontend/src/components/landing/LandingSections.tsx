@@ -10,12 +10,14 @@ import {
   CheckCircle2,
   ClipboardList,
   FileSignature,
+  Globe2,
   Lock,
   Mail,
   MessageCircle,
   PhoneCall,
   Play,
   Radar,
+  Rocket,
   Scale,
   Shield,
   ShieldCheck,
@@ -126,10 +128,11 @@ export function LandingProblem() {
 
 export function LandingSolution() {
   const { t } = useTranslation();
-  const steps = [1, 2, 3, 4, 5, 6].map((n) => ({
+  const steps = [1, 2, 3, 4].map((n) => ({
     title: t(`landingHome.timeline${n}Title`),
     body: t(`landingHome.timeline${n}Body`),
   }));
+  const isExternal = DEMO_URL.startsWith('http');
 
   return (
     <section id="how-it-works" className="bg-[#f7faff] py-20 md:py-28">
@@ -161,6 +164,53 @@ export function LandingSolution() {
                   <h3 className="mb-1 text-base font-semibold md:text-lg">{step.title}</h3>
                   <p className="text-sm text-muted-foreground">{step.body}</p>
                 </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+        <Reveal delay={0.2}>
+          <div className="mt-4 text-center">
+            <a
+              href={DEMO_URL}
+              target={isExternal ? '_blank' : undefined}
+              rel={isExternal ? 'noreferrer' : undefined}
+              className="inline-flex items-center gap-2 text-base font-semibold text-[#0071DD] transition hover:text-[#016AEB]"
+            >
+              {t('landingHome.howCta')}
+              <ArrowRight size={16} />
+            </a>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+export function LandingDifferentiation() {
+  const { t } = useTranslation();
+  const points = [
+    { title: t('landingHome.diff1Title'), body: t('landingHome.diff1Body'), icon: Globe2 },
+    { title: t('landingHome.diff2Title'), body: t('landingHome.diff2Body'), icon: MessageCircle },
+    { title: t('landingHome.diff3Title'), body: t('landingHome.diff3Body'), icon: Rocket },
+  ];
+
+  return (
+    <section id="differentiation" className="bg-white py-20 md:py-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <Reveal>
+          <h2 className="mx-auto mb-14 max-w-3xl text-center font-serif text-3xl font-bold tracking-tight md:text-5xl">
+            {t('landingHome.diffTitle')}
+          </h2>
+        </Reveal>
+        <div className="grid gap-6 md:grid-cols-3">
+          {points.map((p, i) => (
+            <Reveal key={p.title} delay={i * 0.08}>
+              <div className="h-full rounded-3xl border border-[#BED6F6]/40 bg-[#f7faff] p-7 transition hover:border-[#016AEB]/30 hover:bg-white hover:shadow-lg">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eef4fc] text-[#016AEB]">
+                  <p.icon size={22} />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">{p.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{p.body}</p>
               </div>
             </Reveal>
           ))}
@@ -291,116 +341,25 @@ export function LandingUseCases() {
   );
 }
 
-const PRICING_TIERS = [
-  {
-    id: 'DECOUVERTE',
-    nameKey: 'landingHome.tierDecouverte',
-    priceTnd: '49',
-    priceEur: '19',
-    highlight: false,
-    featuresKeys: ['landingHome.tierDecouverteF1', 'landingHome.tierDecouverteF2', 'landingHome.tierDecouverteF3'] as const,
-    ctaKey: 'landingHome.tierDecouverteCta',
-    to: '/register?tier=DECOUVERTE&trial=7',
-  },
-  {
-    id: 'CROISSANCE',
-    nameKey: 'landingHome.tierCroissance',
-    priceTnd: '149',
-    priceEur: '49',
-    highlight: true,
-    featuresKeys: ['landingHome.tierCroissanceF1', 'landingHome.tierCroissanceF2', 'landingHome.tierCroissanceF3'] as const,
-    ctaKey: 'landingHome.tierCroissanceCta',
-    to: '/register?tier=CROISSANCE&trial=7',
-  },
-  {
-    id: 'PRO',
-    nameKey: 'landingHome.tierPro',
-    priceTnd: '299',
-    priceEur: '99',
-    highlight: false,
-    featuresKeys: ['landingHome.tierProF1', 'landingHome.tierProF2', 'landingHome.tierProF3'] as const,
-    ctaKey: 'landingHome.tierProCta',
-    to: '/register?tier=PRO&trial=7',
-  },
-  {
-    id: 'ENTERPRISE',
-    nameKey: 'landingHome.tierEnterprise',
-    priceTnd: null as string | null,
-    priceEur: null as string | null,
-    highlight: false,
-    featuresKeys: ['landingHome.tierEnterpriseF1', 'landingHome.tierEnterpriseF2', 'landingHome.tierEnterpriseF3'] as const,
-    ctaKey: 'landingHome.tierEnterpriseCta',
-    to: EXPERT_MAIL,
-    external: true,
-  },
-] as const;
-
 export function LandingPricing() {
   const { t } = useTranslation();
 
   return (
     <section id="pricing" className="bg-[#0a2540] py-20 text-white md:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
         <Reveal>
-          <h2 className="mb-4 text-center font-serif text-3xl font-bold tracking-tight md:text-5xl">
+          <h2 className="mb-6 font-serif text-3xl font-bold tracking-tight md:text-5xl">
             {t('landingHome.pricingTitle')}
           </h2>
-          <p className="mx-auto mb-14 max-w-xl text-center text-white/70">{t('landingHome.pricingSubtitle')}</p>
+          <p className="mb-4 text-lg text-white/80 md:text-xl">{t('landingHome.pricingTeaser')}</p>
+          <p className="mx-auto mb-10 max-w-xl text-base text-[#BED6F6]">{t('landingHome.pricingPopular')}</p>
+          <Link to="/tarifs">
+            <Button size="lg" className="bg-white px-8 text-base text-[#016AEB] shadow-glow hover:bg-white/90">
+              {t('landingHome.pricingCta')}
+              <ArrowRight size={18} className="ml-2" />
+            </Button>
+          </Link>
         </Reveal>
-        <div className="grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PRICING_TIERS.map((tier, i) => (
-            <Reveal key={tier.id} delay={i * 0.06} className={tier.highlight ? 'lg:-mt-4 lg:mb-4' : undefined}>
-              <div
-                className={cn(
-                  'relative flex h-full flex-col rounded-3xl border p-6 transition',
-                  tier.highlight
-                    ? 'border-[#BED6F6] bg-white/15 shadow-2xl ring-2 ring-[#BED6F6]/40'
-                    : 'border-white/10 bg-white/5 hover:bg-white/10'
-                )}
-              >
-                {tier.highlight ? (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#016AEB] px-3 py-1 text-xs font-semibold shadow-lg">
-                    {t('landingHome.tierPopular')}
-                  </span>
-                ) : null}
-                <h3 className="mb-2 text-xl font-bold">{t(tier.nameKey)}</h3>
-                {tier.priceTnd ? (
-                  <p className="mb-5">
-                    <span className="text-4xl font-bold tracking-tight">{tier.priceTnd}</span>
-                    <span className="text-sm text-white/70"> TND/mois</span>
-                    <span className="mt-1 block text-sm text-white/50">({tier.priceEur} €)</span>
-                  </p>
-                ) : (
-                  <p className="mb-5 text-3xl font-bold">{t('landingHome.tierCustom')}</p>
-                )}
-                <ul className="mb-8 flex-1 space-y-2.5 text-sm text-white/80">
-                  {tier.featuresKeys.map((fk) => (
-                    <li key={fk} className="flex gap-2">
-                      <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#BED6F6]" />
-                      {t(fk)}
-                    </li>
-                  ))}
-                </ul>
-                {'external' in tier && tier.external ? (
-                  <a href={tier.to} className="mt-auto block">
-                    <Button className="w-full bg-white text-[#016AEB] hover:bg-white/90">{t(tier.ctaKey)}</Button>
-                  </a>
-                ) : (
-                  <Link to={tier.to} className="mt-auto block">
-                    <Button
-                      className={cn(
-                        'w-full',
-                        tier.highlight ? 'bg-white text-[#016AEB] hover:bg-white/90' : 'bg-[#016AEB] hover:bg-[#0071DD]'
-                      )}
-                    >
-                      {t(tier.ctaKey)}
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </Reveal>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -484,16 +443,16 @@ export function LandingFooter() {
   const { t } = useTranslation();
 
   const product = [
-    { label: t('landing.navFeatures'), href: '#how-it-works' },
-    { label: t('landing.navPricing'), href: '#pricing' },
-    { label: t('landing.footerIntegrations'), href: '#how-it-works' },
+    { label: t('landing.navFeatures'), href: '/fonctionnalites', isRoute: true },
+    { label: t('landing.navSolutions'), href: '/solutions', isRoute: true },
+    { label: t('landing.navPricing'), href: '/tarifs', isRoute: true },
     { label: t('landing.footerSecurity'), href: '#resources' },
   ];
   const resources = [
-    { label: t('landing.footerBlog'), href: 'mailto:contact@ciblix.com?subject=Blog%20Ciblix' },
-    { label: t('landing.footerDocs'), href: 'mailto:contact@ciblix.com?subject=Documentation%20Ciblix' },
-    { label: t('landing.footerHelp'), href: 'mailto:contact@ciblix.com?subject=Centre%20d%27aide%20Ciblix' },
-    { label: t('landing.footerFaq'), href: '#resources' },
+    { label: t('landing.navResources'), href: '/ressources', isRoute: true },
+    { label: t('landing.footerBlog'), href: '/ressources', isRoute: true },
+    { label: t('landing.footerDocs'), href: '/ressources', isRoute: true },
+    { label: t('landing.footerFaq'), href: '/ressources', isRoute: true },
   ];
   const company = [
     { label: t('landing.footerAbout'), href: 'mailto:contact@ciblix.com?subject=%C3%80%20propos%20de%20Ciblix' },
@@ -522,9 +481,15 @@ export function LandingFooter() {
             <ul className="space-y-3">
               {product.map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className={footerLinkClass}>
-                    {item.label}
-                  </a>
+                  {'isRoute' in item && item.isRoute ? (
+                    <Link to={item.href} className={footerLinkClass}>
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a href={item.href} className={footerLinkClass}>
+                      {item.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -535,9 +500,15 @@ export function LandingFooter() {
             <ul className="space-y-3">
               {resources.map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className={footerLinkClass}>
-                    {item.label}
-                  </a>
+                  {'isRoute' in item && item.isRoute ? (
+                    <Link to={item.href} className={footerLinkClass}>
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a href={item.href} className={footerLinkClass}>
+                      {item.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

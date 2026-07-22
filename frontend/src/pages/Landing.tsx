@@ -19,11 +19,10 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  LandingProofStats,
+  DEMO_URL,
   LandingProblem,
   LandingSolution,
-  LandingCompare,
-  LandingUseCases,
+  LandingDifferentiation,
   LandingPricing,
   LandingDataTrust,
   LandingFinalCta,
@@ -34,56 +33,38 @@ const LANDING_AGENTS = [
   {
     icon: Radio,
     nameKey: 'agents.huntAi.name',
-    descKey: 'agents.huntAi.desc',
     memoryKey: 'landingHome.agentMemoryHunt',
     iconBg: 'bg-orange-500/20',
-    iconColor: 'text-orange-600',
-    to: '/agent/hunt-ai',
   },
   {
     icon: Bot,
     nameKey: 'agents.copilotIa.name',
-    descKey: 'agents.copilotIa.desc',
     memoryKey: 'landingHome.agentMemoryCopilot',
     iconBg: 'bg-blue-500/20',
-    iconColor: 'text-blue-600',
-    to: '/agent/copilot-ia',
   },
   {
     icon: Radar,
     nameKey: 'agents.scoutAi.name',
-    descKey: 'agents.scoutAi.desc',
     memoryKey: 'landingHome.agentMemoryScout',
     iconBg: 'bg-indigo-500/20',
-    iconColor: 'text-indigo-600',
-    to: '/agent/scout-ai',
   },
   {
     icon: FileSignature,
     nameKey: 'agents.offreBot.name',
-    descKey: 'agents.offreBot.desc',
     memoryKey: 'landingHome.agentMemoryOffre',
     iconBg: 'bg-violet-500/20',
-    iconColor: 'text-violet-600',
-    to: '/agent/offre-bot',
   },
   {
     icon: Mail,
     nameKey: 'agents.gmailAi.name',
-    descKey: 'agents.gmailAi.desc',
     memoryKey: 'landingHome.agentMemoryGmail',
     iconBg: 'bg-sky-500/20',
-    iconColor: 'text-sky-600',
-    to: '/register',
   },
   {
     icon: ShieldCheck,
     nameKey: 'agents.factCheckAi.name',
-    descKey: 'agents.factCheckAi.desc',
     memoryKey: 'landingHome.agentMemoryFact',
     iconBg: 'bg-emerald-500/20',
-    iconColor: 'text-emerald-600',
-    to: '/agent/factcheck-ai',
   },
 ] as const;
 
@@ -135,28 +116,30 @@ export function Landing() {
       <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20">
-            <Link to="/" className="transition-opacity hover:opacity-80">
-              <img
-                src="/logo-ciblix.png"
-                alt="CIBLIX"
-                className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
-              />
-            </Link>
-            <nav className="ml-auto hidden items-center gap-7 md:flex">
-              <a href="#how-it-works" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
-                {t('landing.navFeatures')}
-              </a>
-              <a href="#use-cases" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
-                {t('landing.navSolutions')}
-              </a>
-              <a href="#pricing" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
-                {t('landing.navPricing')}
-              </a>
-              <a href="#resources" className="text-sm font-semibold text-foreground/70 hover:text-[#0071DD]">
-                {t('landing.navResources')}
-              </a>
-            </nav>
-            <div className="flex items-center gap-2 sm:gap-3 md:ml-6">
+            <div className="flex min-w-0 items-center gap-8 lg:gap-10">
+              <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
+                <img
+                  src="/logo-ciblix.png"
+                  alt="CIBLIX"
+                  className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
+                />
+              </Link>
+              <nav className="hidden items-center gap-6 md:flex lg:gap-8">
+                <Link to="/fonctionnalites" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
+                  {t('landing.navFeatures')}
+                </Link>
+                <Link to="/solutions" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
+                  {t('landing.navSolutions')}
+                </Link>
+                <Link to="/tarifs" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
+                  {t('landing.navPricing')}
+                </Link>
+                <Link to="/ressources" className="text-sm font-bold text-foreground/80 hover:text-[#0071DD]">
+                  {t('landing.navResources')}
+                </Link>
+              </nav>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -179,11 +162,11 @@ export function Landing() {
               <div className="hidden items-center gap-2 md:flex">
                 <Link to="/login">
                   <Button variant="outline" className="border-[#BED6F6] text-[#0071DD] hover:bg-[#e8f1fc]">
-                    {t('auth.signIn')}
+                    {t('landing.headerLogin')}
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button className="shadow-glow">{t('landing.cta')}</Button>
+                  <Button className="shadow-glow">{t('landing.headerRegister')}</Button>
                 </Link>
               </div>
             </div>
@@ -192,25 +175,41 @@ export function Landing() {
         {mobileMenuOpen && (
           <div className="border-t bg-white md:hidden">
             <div className="space-y-3 px-4 py-4">
-              <a href="#how-it-works" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+              <Link
+                to="/fonctionnalites"
+                className="block text-lg font-bold text-foreground/80"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 {t('landing.navFeatures')}
-              </a>
-              <a href="#use-cases" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+              </Link>
+              <Link
+                to="/solutions"
+                className="block text-lg font-bold text-foreground/80"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 {t('landing.navSolutions')}
-              </a>
-              <a href="#pricing" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+              </Link>
+              <Link
+                to="/tarifs"
+                className="block text-lg font-bold text-foreground/80"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 {t('landing.navPricing')}
-              </a>
-              <a href="#resources" className="block text-lg text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+              </Link>
+              <Link
+                to="/ressources"
+                className="block text-lg font-bold text-foreground/80"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 {t('landing.navResources')}
-              </a>
+              </Link>
               <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="outline" className="mt-2 w-full border-[#BED6F6] text-[#0071DD]">
-                  {t('auth.signIn')}
+                  {t('landing.headerLogin')}
                 </Button>
               </Link>
               <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full shadow-glow">{t('landing.cta')}</Button>
+                <Button className="w-full shadow-glow">{t('landing.headerRegister')}</Button>
               </Link>
             </div>
           </div>
@@ -228,8 +227,11 @@ export function Landing() {
               <Sparkles size={16} className="text-[#016AEB]" />
               {t('landing.badge')}
             </div>
-            <h1 className="mb-5 font-serif text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
-              {t('landing.heroTitle')}
+            <h1 className="mb-5 font-serif text-4xl font-bold leading-[1.12] tracking-tight sm:text-5xl lg:text-[3.25rem]">
+              <span className="block bg-gradient-to-r from-[#0a66c2] via-[#016AEB] to-[#38bdf8] bg-clip-text text-transparent drop-shadow-sm">
+                {t('landing.heroTitle1')}
+              </span>
+              <span className="mt-1 block text-foreground">{t('landing.heroTitle2')}</span>
             </h1>
             <p className="mb-8 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
               {t('landing.heroSubtitle')}
@@ -241,13 +243,17 @@ export function Landing() {
                   <ArrowRight size={18} className="ml-2" />
                 </Button>
               </Link>
-              <a href="#how-it-works">
+              <a
+                href={DEMO_URL}
+                target={DEMO_URL.startsWith('http') ? '_blank' : undefined}
+                rel={DEMO_URL.startsWith('http') ? 'noreferrer' : undefined}
+              >
                 <Button
                   size="lg"
                   variant="outline"
                   className="w-full border-[#BED6F6] px-8 text-base text-[#0071DD] hover:bg-[#e8f1fc] sm:w-auto"
                 >
-                  {t('landing.navFeatures')}
+                  {t('landing.ctaDemo')}
                 </Button>
               </a>
             </div>
@@ -281,11 +287,10 @@ export function Landing() {
         </div>
       </section>
 
-      <LandingProofStats />
       <LandingProblem />
       <LandingSolution />
 
-      {/* Agents team */}
+      {/* Agents teaser → /solutions */}
       <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white md:py-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,113,221,0.28),transparent_65%)]" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -294,39 +299,38 @@ export function Landing() {
             <h2 className="mb-4 font-serif text-3xl font-bold tracking-tight md:text-5xl">{t('landing.agentsSectionTitle')}</h2>
             <p className="mx-auto max-w-2xl text-lg text-white/70">{t('landing.agentsIntro')}</p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {LANDING_AGENTS.map((agent) => (
               <Link
                 key={agent.nameKey}
-                to={agent.to}
-                className="group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 hover:shadow-xl"
+                to="/solutions"
+                className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/10"
               >
-                <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-2xl', agent.iconBg)}>
-                  <agent.icon size={22} className="text-white" />
+                <div className="flex items-start gap-4">
+                  <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', agent.iconBg)}>
+                    <agent.icon size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="mb-1 text-lg font-bold">{t(agent.nameKey)}</h3>
+                    <p className="text-sm leading-relaxed text-white/65">{t(agent.memoryKey)}</p>
+                  </div>
                 </div>
-                <h3 className="mb-1 text-xl font-bold">{t(agent.nameKey)}</h3>
-                <p className="mb-2 text-sm text-white/65">{t(agent.descKey)}</p>
-                <p className="mb-5 text-xs leading-relaxed text-[#BED6F6]">{t(agent.memoryKey)}</p>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#BED6F6] group-hover:text-white">
-                  {t('landing.learnMore')}
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </span>
               </Link>
             ))}
           </div>
           <div className="mt-12 text-center">
-            <Link to="/register">
-              <Button size="lg" className="bg-white text-[#016AEB] shadow-glow hover:bg-white/90">
-                {t('landing.cta')}
-                <ArrowRight size={16} className="ml-2" />
-              </Button>
+            <Link
+              to="/solutions"
+              className="inline-flex items-center gap-2 text-base font-semibold text-[#BED6F6] transition hover:text-white"
+            >
+              {t('landing.agentsSeeAll')}
+              <ArrowRight size={16} />
             </Link>
           </div>
         </div>
       </section>
 
-      <LandingCompare />
-      <LandingUseCases />
+      <LandingDifferentiation />
       <LandingPricing />
       <LandingDataTrust />
       <LandingFinalCta />
