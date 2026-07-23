@@ -6,6 +6,7 @@ import { prisma } from '../db/prisma.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { recordScoutOpportunity } from '../services/agent-memory/agentIntegrations.js';
 import { isPastScoutOpportunity } from '../services/scout/scoutFreshness.js';
+import { fitsScoutCategory, keywordsForCategory } from '../services/scout/scoutCategoryFit.js';
 
 export const scoutAiRoutes = Router();
 
@@ -220,7 +221,8 @@ function buildSearchQueries(
   category: 'TENDER' | 'EVENT' | 'NEWS'
 ): string[] {
   // Requêtes courtes = bien plus de hits CSE qu'une phrase surchargée
-  const kw = keywords.slice(0, 2).join(' ') || 'entreprise';
+  const kwList = keywordsForCategory(keywords, category);
+  const kw = kwList.slice(0, 2).join(' ') || 'entreprise';
   const sec = sectors.slice(0, 1).join(' ');
   const geo = geoZones.slice(0, 2).join(' ');
   const year = new Date().getFullYear();
@@ -228,14 +230,17 @@ function buildSearchQueries(
   const queries: string[] = [];
   switch (category) {
     case 'TENDER':
-      queries.push(`appel d'offres ${kw} ${geo}`.trim());
-      queries.push(`marché public ${kw} ${geo || sec}`.trim());
+      // Forcer le vocabulaire AO — éviter les pages « formation »
+      queries.push(`"appel d'offres" ${kw} ${geo}`.trim());
+      queries.push(`"marché public" ${kw} ${geo || sec}`.trim());
+      queries.push(`consultation ${kw} ${geo} ${year}`.trim());
       if (/tunisie|tunis|sfax|sousse|nabeul/i.test(geo)) {
         queries.push(`${kw} site:marchespublics.gov.tn`);
+        queries.push(`"appel d'offres" ${kw} Tunisie ${year}`);
       } else if (/france|paris|lyon/i.test(geo)) {
-        queries.push(`${kw} appel d'offres site:boamp.fr OR site:marches-publics.gouv.fr`);
+        queries.push(`${kw} "appel d'offres" site:boamp.fr OR site:marches-publics.gouv.fr`);
       } else {
-        queries.push(`appel d'offres ${kw} ${sec} ${geo} ${year}`.trim());
+        queries.push(`"appel d'offres" ${kw} ${sec} ${geo} ${year}`.trim());
       }
       break;
     case 'EVENT':
@@ -252,13 +257,14 @@ function buildSearchQueries(
   return [...new Set(queries.filter((q) => q.replace(/\s+/g, ' ').trim().length > 3))];
 }
 
-/** Événement / AO déjà passé → à jeter (AI score bas ou date détectée dans le texte). */
+/** Hors catégorie, date passée, ou score trop bas → à jeter. */
 function isStaleAnalyzedHit(
   category: string,
   raw: { title: string; snippet: string },
   a: { relevanceScore: number; deadline: string | null; aiSummary: string },
 ): boolean {
   if (a.relevanceScore < 15) return true;
+  if (!fitsScoutCategory(category, raw.title, raw.snippet, a.aiSummary)) return true;
   return isPastScoutOpportunity({
     category,
     title: raw.title,
@@ -317,15 +323,19 @@ async function analyzeWithAI(
     category === 'EVENT'
       ? `Règle STRICTE (aujourd'hui = ${todayIso}): si l'événement a déjà eu lieu (date dans le titre/extrait avant aujourd'hui), mets relevanceScore à 0 et deadline à la date de fin (YYYY-MM-DD). Ne valorise que les événements à venir.`
       : category === 'TENDER'
-        ? `Règle STRICTE (aujourd'hui = ${todayIso}): si la date limite de réponse est déjà dépassée, mets relevanceScore à 0. Extrais la deadline en YYYY-MM-DD.`
-        : `Aujourd'hui = ${todayIso}. Pour les actualités, une date passée est normale.`;
+        ? `Règle STRICTE (aujourd'hui = ${todayIso}):
+- Ne garde QUE les vrais appels d'offres / marchés publics / consultations.
+- Si c'est une formation, bootcamp, atelier, salon ou conférence (sans marché public), mets relevanceScore à 0.
+- Si la date limite de réponse est déjà dépassée, mets relevanceScore à 0.
+- Extrais la deadline en YYYY-MM-DD.`
+        : `Aujourd'hui = ${todayIso}. Si c'est une simple pub de formation/salon déjà passé, score 0. Sinon une date passée d'article d'actualité est acceptable.`;
 
   const systemPrompt = `Tu es Scout AI, spécialisé dans la veille d'opportunités commerciales pour ${market}.
 Tu analyses des résultats de recherche pour identifier les ${categoryLabels[category] || 'opportunités'}.
 
 ${freshnessRule}
 
-Pour chaque résultat, donne un score même s'il est moyen — ne sois pas trop strict (sauf règle de fraîcheur ci-dessus).
+Pour chaque résultat, donne un score même s'il est moyen — ne sois pas trop strict (sauf règles STRICTES ci-dessus).
 Extrais:
 - relevanceScore: 0-100
 - aiSummary: résumé actionnable en 2-3 phrases
@@ -334,7 +344,7 @@ Extrais:
 
 Réponds UNIQUEMENT en JSON array:
 [{"index": 1, "relevanceScore": 70, "aiSummary": "...", "deadline": null, "location": null, "budget": null, "companyName": null, "contactEmail": null, "contactPhone": null}]
-Inclus les résultats avec relevanceScore >= 15 (les périmés doivent être à 0).`;
+Inclus les résultats avec relevanceScore >= 15 (les hors-sujet et périmés doivent être à 0).`;
 
   const prompt = `Marché: ${market}\nCatégorie: ${category}\nMots-clés: ${keywords.join(', ')}\nSecteurs: ${sectors.join(', ')}\n\nRésultats:\n${resultsText}`;
 
@@ -676,6 +686,7 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
     // Masque + archive les événements / AO déjà passés (scans précédents)
     const staleIds: string[] = [];
     const opportunities = rawOpportunities.filter((o) => {
+      const wrongCat = !fitsScoutCategory(o.category, o.title, o.snippet, o.aiSummary);
       const stale = isPastScoutOpportunity({
         category: o.category,
         title: o.title,
@@ -683,8 +694,8 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
         aiSummary: o.aiSummary,
         deadline: o.deadline,
       });
-      if (stale && o.status === 'NEW') staleIds.push(o.id);
-      return !stale;
+      if ((wrongCat || stale) && o.status === 'NEW') staleIds.push(o.id);
+      return !wrongCat && !stale;
     }).slice(0, limit);
 
     if (staleIds.length > 0) {

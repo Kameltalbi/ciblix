@@ -63,4 +63,14 @@ describe('isPastScoutOpportunity', () => {
       }),
     ).toBe(false);
   });
+
+  it('filters past training promo tagged as NEWS', () => {
+    expect(
+      isPastScoutOpportunity({
+        category: 'NEWS',
+        title: 'Bootcamp Décarbonation - Formation du 7 au 28 Février 2025',
+        now,
+      }),
+    ).toBe(true);
+  });
 });

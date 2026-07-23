@@ -109,7 +109,7 @@ const STATUS_CONFIG: Record<OppStatus, { icon: typeof Eye; label: string; color:
 };
 
 const SUGGESTED_KEYWORDS = [
-  'bilan carbone', 'environnement', 'formation professionnelle', 'conseil',
+  'bilan carbone', 'environnement', 'conseil',
   'audit énergétique', 'RSE', 'développement durable', 'ISO 14001',
   'informatique', 'digital', 'BTP', 'agroalimentaire',
 ];
@@ -700,8 +700,11 @@ export function ScoutAI() {
           <CardContent className="space-y-5">
             <TagInput
               label="Mots-clés métier" tags={keywords} setTags={setKeywords}
-              suggestions={SUGGESTED_KEYWORDS} placeholder="Ex: bilan carbone, formation..."
+              suggestions={SUGGESTED_KEYWORDS} placeholder="Ex: bilan carbone, audit énergétique..."
             />
+            <p className="text-xs text-muted-foreground -mt-3">
+              Pour les appels d&apos;offres, évitez des mots comme « formation » ou « bootcamp » — le Veilleur irait chercher des stages au lieu de marchés publics.
+            </p>
             <TagInput
               label="Secteurs d'activité" tags={sectors} setTags={setSectors}
               suggestions={SUGGESTED_SECTORS} placeholder="Ex: IT & Digital, BTP..." maxTags={10}
@@ -738,6 +741,9 @@ export function ScoutAI() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-foreground">Catégories à surveiller</label>
+              <p className="mb-2 text-xs text-muted-foreground">
+                Activez uniquement ce dont vous avez besoin. « Appels d&apos;offres » ≠ formations / salons (cochez Événements pour ça).
+              </p>
               <div className="flex flex-wrap gap-3">
                 {([
                   { key: 'tender', label: "Appels d'offres", icon: FileText, enabled: tenderEnabled, toggle: setTenderEnabled },

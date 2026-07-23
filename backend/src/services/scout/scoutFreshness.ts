@@ -83,10 +83,10 @@ export function isPastScoutOpportunity(opts: {
   aiSummary?: string | null;
   deadline?: string | null;
   now?: Date;
+  /** Si true, traite une actu type formation/salon datée comme un événement. */
+  treatDatedPromoNewsAsEvent?: boolean;
 }): boolean {
   const cat = opts.category;
-  if (cat !== 'EVENT' && cat !== 'TENDER') return false;
-
   const blob = [opts.deadline, opts.title, opts.snippet, opts.aiSummary]
     .filter(Boolean)
     .join('\n');
@@ -94,5 +94,14 @@ export function isPastScoutOpportunity(opts: {
   const latest = extractLatestDateFromText(blob);
   if (!latest) return false;
 
-  return latest < startOfToday(opts.now);
+  const isPast = latest < startOfToday(opts.now);
+
+  if (cat === 'EVENT' || cat === 'TENDER') return isPast;
+
+  // Actualités = pubs de formation / salon déjà passées → à écarter
+  if (cat === 'NEWS' && opts.treatDatedPromoNewsAsEvent !== false && isPast) {
+    return /formation|bootcamp|salon\b|conf[eé]rence|forum\b|atelier\b|session\s+de\s+formation/i.test(blob);
+  }
+
+  return false;
 }
