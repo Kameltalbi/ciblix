@@ -444,7 +444,8 @@ export function ScoutAI() {
   const queryClient = useQueryClient();
 
   // ─── Profile state ───────────────────────────────────────
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false); // legacy — remplacé par mainView
+  const [mainView, setMainView] = useState<'opportunities' | 'mission' | 'analyzer'>('opportunities');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [sectors, setSectors] = useState<string[]>([]);
   const [geoZones, setGeoZones] = useState<string[]>([]);
@@ -475,7 +476,7 @@ export function ScoutAI() {
   const [activeTab, setActiveTab] = useState<Category | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<OppStatus | 'ALL'>('ALL');
   const [analyzeUrl, setAnalyzeUrl] = useState('');
-  const [showAnalyzer, setShowAnalyzer] = useState(false);
+  // showAnalyzer removed — onglet analyzer
 
   // ─── Queries ─────────────────────────────────────────────
 
@@ -548,13 +549,18 @@ export function ScoutAI() {
   const zoneSuggestions = ZONES_BY_MARKET[market] || ZONES_BY_MARKET.FR;
   const marketMeta = MARKETS.find((m) => m.id === market) || MARKETS[0];
 
-  // Auto-open profile config if no profile exists
+  // Auto-open mission tab if no profile exists
   useEffect(() => {
     if (profileQuery.isSuccess && !profileQuery.data) {
-      setProfileOpen(true);
+      setMainView('mission');
       setSetupView('converse');
     }
   }, [profileQuery.isSuccess, profileQuery.data]);
+
+  // Sync legacy profileOpen helpers
+  useEffect(() => {
+    setProfileOpen(mainView === 'mission');
+  }, [mainView]);
 
   // ─── Mutations ───────────────────────────────────────────
 
@@ -683,7 +689,7 @@ export function ScoutAI() {
       return api.post('/scout-ai/scan-all').then((r) => r.data);
     },
     onSuccess: () => {
-      setProfileOpen(false);
+      setMainView('opportunities');
       setSetupView('converse');
       void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
       void queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
@@ -753,244 +759,185 @@ export function ScoutAI() {
   }, [activeTab, visibleCategories]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200">
-            <Radar size={22} strokeWidth={2} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Scout AI</h1>
-            <p className="text-sm text-muted-foreground">Veille & détection d'opportunités</p>
-          </div>
+    <div className="relative min-h-[70vh]">
+      {/* Atmosphere légère — marque bleue, pas de mauve */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-6 h-56 bg-[radial-gradient(ellipse_at_top,_rgba(1,106,235,0.10),_transparent_65%)]"
+      />
+
+      <div className="relative space-y-6">
+      {/* Header agent */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#016AEB]">Agent IA</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Veilleur</h1>
+          <p className="mt-1 max-w-xl text-sm text-slate-500">
+            Surveille les AO et sources choisies, filtre le bruit, alerte sur les pistes utiles.
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAnalyzer(!showAnalyzer)}>
-            <Link2 size={14} /> Analyser URL
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => {
-              if (!profileOpen) setSetupView(hasProfile ? 'review' : 'converse');
-              setProfileOpen(!profileOpen);
-            }}
-          >
-            <Sparkles size={14} /> {hasProfile ? 'Mission' : 'Créer l’agent'}
-            {profileOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {hasProfile && (
+            <span className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
+              autoScanEnabled
+                ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
+                : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
+            )}>
+              <span className={cn('h-1.5 w-1.5 rounded-full', autoScanEnabled ? 'bg-emerald-500' : 'bg-slate-400')} />
+              {autoScanEnabled ? `Actif · scan ${scanIntervalH}h` : 'Mission en pause'}
+            </span>
+          )}
           {hasProfile && (
             <Button
-              size="sm" className="gap-1.5"
+              size="sm"
+              className="gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
               onClick={() => scanAllMutation.mutate()}
               disabled={isScanning}
             >
               {scanAllMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <ScanLine size={14} />}
-              Scanner tout
+              Lancer un scan
             </Button>
           )}
         </div>
       </div>
 
-      {/* Stats bar */}
-      {stats && hasProfile && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-white">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Total opportunités</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
-                </div>
-                <BarChart3 size={20} className="text-blue-300" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-emerald-100 bg-gradient-to-br from-emerald-50 to-white">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Nouvelles</p>
-                  <p className="text-2xl font-bold text-emerald-700">{stats.newCount}</p>
-                </div>
-                <TrendingUp size={20} className="text-emerald-300" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-amber-100 bg-gradient-to-br from-amber-50 to-white">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Sauvegardées</p>
-                  <p className="text-2xl font-bold text-amber-700">{stats.savedCount}</p>
-                </div>
-                <Bookmark size={20} className="text-amber-300" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-gray-100">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Dernier scan</p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {stats.lastScanAt ? new Date(stats.lastScanAt).toLocaleString('fr-TN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Jamais'}
-                  </p>
-                </div>
-                <Clock size={20} className="text-gray-300" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Onglets principaux — la page opportunités reste centrale */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {([
+          { id: 'opportunities' as const, label: 'Opportunités', show: true },
+          { id: 'mission' as const, label: hasProfile ? 'Mission' : 'Briefer l’agent', show: true },
+          { id: 'analyzer' as const, label: 'Analyser une URL', show: true },
+        ]).filter((t) => t.show).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              setMainView(tab.id);
+              if (tab.id === 'mission') setSetupView(hasProfile && keywords.length ? 'review' : 'converse');
+            }}
+            className={cn(
+              '-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors',
+              mainView === tab.id
+                ? 'border-[#016AEB] text-[#016AEB]'
+                : 'border-transparent text-slate-500 hover:text-slate-800',
+            )}
+          >
+            {tab.label}
+            {tab.id === 'opportunities' && hasProfile ? ` (${totalAll})` : ''}
+          </button>
+        ))}
+      </div>
+
+      {/* Status strip — visible sur l’onglet opportunités */}
+      {stats && hasProfile && mainView === 'opportunities' && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
+          <span><strong className="text-slate-900">{stats.total}</strong> opportunités</span>
+          <span><strong className="text-slate-900">{stats.newCount}</strong> nouvelles</span>
+          <span><strong className="text-slate-900">{stats.savedCount}</strong> sauvegardées</span>
+          <span className="text-slate-400">
+            Dernier scan · {stats.lastScanAt
+              ? new Date(stats.lastScanAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+              : 'jamais'}
+          </span>
         </div>
       )}
 
-      {/* Mission active — récap compact */}
-      {hasProfile && !profileOpen && (
-        <Card className="border-[#BED6F6]/70 bg-[#f7faff]">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#016AEB]">
-                {missionTitle || 'Mission de veille active'}
-              </p>
-              <p className="text-sm text-foreground">
-                <span className="font-medium">Marché :</span> {marketMeta.label}
-                {geoZones.length > 0 ? ` · ${geoZones.slice(0, 4).join(', ')}${geoZones.length > 4 ? '…' : ''}` : ''}
-                {autoScanEnabled ? ` · Auto ${scanIntervalH}h` : ''}
-                {alertEmailEnabled ? ` · Alertes ≥${alertMinScore}` : ''}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {keywords.length > 0 ? keywords.join(' · ') : 'Aucun mot-clé'}
-                {watchSites.length > 0 ? ` · Sites: ${watchSites.map((id) => WATCH_SITE_PRESETS.find((s) => s.id === id)?.shortLabel || id).join(', ')}` : ''}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 gap-1.5"
-              onClick={() => {
-                setSetupView('converse');
-                setProfileOpen(true);
-              }}
-            >
-              <MessageSquare size={14} /> Nouvelle mission
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* Onglet Mission */}
+      {mainView === 'mission' && (
+        <div className="mx-auto max-w-3xl space-y-8">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+              {hasProfile ? 'Ajuster la mission' : 'Briefer le Veilleur'}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              Une phrase claire suffit. L&apos;agent en déduit les sources, le marché et les mots-clés — vous validez avant activation.
+            </p>
+          </div>
 
-      {/* Création agent — flux conversationnel (mockup 3 étapes, couleurs marque) */}
-      {profileOpen && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">
-                Création d&apos;un agent de veille IA
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Décrivez votre besoin — l&apos;IA construit le profil, vous validez, l&apos;agent se lance.
-              </p>
-            </div>
-
-            {/* Étape 1 */}
-            <section className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#016AEB] text-xs font-bold text-white">1</span>
-                <h3 className="text-base font-semibold text-foreground">Expliquez ce que vous recherchez</h3>
-              </div>
-              <p className="mb-3 text-sm text-muted-foreground">
-                Une phrase suffit. Ex. pays, type d&apos;opportunités, secteurs, mots-clés.
-              </p>
-              <div className="relative">
-                <textarea
-                  value={briefText}
-                  onChange={(e) => setBriefText(e.target.value)}
-                  rows={4}
-                  placeholder="Ex : Je recherche des appels d'offres de bilan carbone, audit énergétique et ESG en France, pour les banques, industriels et collectivités."
-                  className="w-full resize-none rounded-xl border border-[#BED6F6] bg-[#f7faff]/50 px-4 py-3 pr-4 pb-14 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#016AEB]/40"
-                />
-                <div className="absolute bottom-3 right-3">
-                  <Button
-                    type="button"
-                    className="gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
-                    disabled={briefText.trim().length < 8 || interpretBriefMutation.isPending}
-                    onClick={() => interpretBriefMutation.mutate(briefText.trim())}
-                  >
-                    {interpretBriefMutation.isPending
-                      ? <Loader2 size={14} className="animate-spin" />
-                      : <Sparkles size={14} />}
-                    Analyser avec l&apos;IA
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {EXAMPLE_BRIEFS.map((ex) => (
+          <div className="space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Votre brief</label>
+            <textarea
+              value={briefText}
+              onChange={(e) => setBriefText(e.target.value)}
+              rows={4}
+              placeholder="Ex. : Surveille les appels d’offres UNDP, UNIDO et UNGM (sites + LinkedIn) sur bilan carbone et ESG."
+              className="w-full resize-none border-0 border-b border-slate-200 bg-transparent px-0 py-2 text-base leading-relaxed text-slate-900 placeholder:text-slate-300 focus:border-[#016AEB] focus:outline-none focus:ring-0"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {EXAMPLE_BRIEFS.slice(0, 2).map((ex) => (
                   <button
                     key={ex}
                     type="button"
                     onClick={() => setBriefText(ex)}
-                    className="rounded-full border border-[#BED6F6] bg-white px-3 py-1 text-left text-[11px] text-[#016AEB] transition-colors hover:bg-[#eef5ff]"
+                    className="max-w-full truncate text-left text-xs text-slate-400 transition-colors hover:text-[#016AEB]"
                   >
-                    {ex}
+                    {ex.length > 72 ? `${ex.slice(0, 72)}…` : ex}
                   </button>
                 ))}
               </div>
-              {interpretBriefMutation.isError && (
-                <p className="mt-2 flex items-center gap-1.5 text-sm text-red-600">
-                  <AlertCircle size={14} /> Impossible d&apos;analyser le brief. Réessayez.
-                </p>
-              )}
-            </section>
+              <Button
+                type="button"
+                className="gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
+                disabled={briefText.trim().length < 8 || interpretBriefMutation.isPending}
+                onClick={() => interpretBriefMutation.mutate(briefText.trim())}
+              >
+                {interpretBriefMutation.isPending
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Sparkles size={14} />}
+                Analyser
+              </Button>
+            </div>
+            {interpretBriefMutation.isError && (
+              <p className="flex items-center gap-1.5 text-sm text-red-600">
+                <AlertCircle size={14} /> Impossible d&apos;analyser le brief. Réessayez.
+              </p>
+            )}
+          </div>
 
-            {/* Étape 2 — visible après analyse ou si déjà des tags */}
-            {(setupView === 'review' || setupView === 'manual' || keywords.length > 0) && (
-              <section className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#016AEB] text-xs font-bold text-white">2</span>
-                  <h3 className="text-base font-semibold text-foreground">
-                    Voici ce que votre agent va rechercher
-                  </h3>
-                </div>
-                {missionSummary ? (
-                  <p className="mb-4 text-sm text-muted-foreground">{missionSummary}</p>
-                ) : (
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Ajustez les propositions si besoin avant d&apos;activer.
-                  </p>
+          {(setupView === 'review' || setupView === 'manual' || keywords.length > 0) && (
+            <div className="space-y-6 border-t border-slate-200 pt-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#016AEB]">Proposition de l&apos;agent</p>
+                <h3 className="mt-1 text-xl font-semibold text-slate-900">
+                  {missionTitle || 'Mission de veille'}
+                </h3>
+                {missionSummary && (
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{missionSummary}</p>
                 )}
+              </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">Types d&apos;opportunités</p>
-                    <div className="flex flex-wrap gap-2">
-                      {([
-                        { key: 'tender' as const, label: "Appels d'offres", on: tenderEnabled, set: setTenderEnabled },
-                        { key: 'event' as const, label: 'Événements', on: eventEnabled, set: setEventEnabled },
-                        { key: 'news' as const, label: 'Actualités', on: newsEnabled, set: setNewsEnabled },
-                      ]).map((c) => (
-                        <button
-                          key={c.key}
-                          type="button"
-                          onClick={() => c.set(!c.on)}
-                          className={cn(
-                            'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                            c.on
-                              ? 'border-blue-300 bg-white text-blue-800'
-                              : 'border-transparent bg-blue-100/50 text-blue-400 line-through',
-                          )}
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-sky-100 bg-sky-50/70 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-sky-800">Pays / zone</p>
+              <dl className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wider text-slate-400">À surveiller</dt>
+                  <dd className="mt-2 flex flex-wrap gap-2">
+                    {([
+                      { key: 'tender' as const, label: "Appels d'offres", on: tenderEnabled, set: setTenderEnabled },
+                      { key: 'event' as const, label: 'Événements', on: eventEnabled, set: setEventEnabled },
+                      { key: 'news' as const, label: 'Actualités', on: newsEnabled, set: setNewsEnabled },
+                    ]).map((c) => (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => c.set(!c.on)}
+                        className={cn(
+                          'border-b-2 pb-0.5 text-sm transition-colors',
+                          c.on
+                            ? 'border-[#016AEB] font-medium text-slate-900'
+                            : 'border-transparent text-slate-300 line-through',
+                        )}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wider text-slate-400">Marché</dt>
+                  <dd className="mt-2">
                     <Select value={market} onValueChange={(v) => selectMarket(v as MarketId)}>
-                      <SelectTrigger className="h-9 bg-white">
+                      <SelectTrigger className="h-9 w-full max-w-xs border-slate-200 bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -999,328 +946,183 @@ export function ScoutAI() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="mt-2 text-xs text-sky-900/70">
-                      {geoZones.slice(0, 3).join(' · ') || marketMeta.label}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-[#BED6F6] bg-[#f7faff] p-4 sm:col-span-2">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#016AEB]">
-                      Sites AO internationaux
-                    </p>
-                    <p className="mb-3 text-xs text-muted-foreground">
-                      Portails officiels (UNDP, UNIDO, UNGM…) à scanner.
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {WATCH_SITE_PRESETS.filter((s) => s.kind === 'portal').map((site) => {
-                        const on = watchSites.includes(site.id);
-                        return (
-                          <button
-                            key={site.id}
-                            type="button"
-                            onClick={() =>
-                              setWatchSites((prev) =>
-                                on ? prev.filter((id) => id !== site.id) : [...prev, site.id],
-                              )
-                            }
-                            className={cn(
-                              'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
-                              on
-                                ? 'border-[#016AEB] bg-[#016AEB] text-white'
-                                : 'border-[#BED6F6] bg-white text-[#016AEB] hover:bg-[#eef5ff]',
-                            )}
-                            title={site.org}
-                          >
-                            {site.shortLabel}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-[#016AEB]">
-                      Pages LinkedIn institutions
-                    </p>
-                    <p className="mb-3 text-xs text-muted-foreground">
-                      Suivre les annonces AO / procurement publiées sur LinkedIn (pages publiques indexées).
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {WATCH_SITE_PRESETS.filter((s) => s.kind === 'linkedin').map((site) => {
-                        const on = watchSites.includes(site.id);
-                        return (
-                          <button
-                            key={site.id}
-                            type="button"
-                            onClick={() =>
-                              setWatchSites((prev) =>
-                                on ? prev.filter((id) => id !== site.id) : [...prev, site.id],
-                              )
-                            }
-                            className={cn(
-                              'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
-                              on
-                                ? 'border-[#016AEB] bg-[#016AEB] text-white'
-                                : 'border-[#BED6F6] bg-white text-[#016AEB] hover:bg-[#eef5ff]',
-                            )}
-                          >
-                            {site.shortLabel}
-                          </button>
-                        );
-                      })}
-                      {watchSites
-                        .filter((id) => id.startsWith('li-custom-') || /linkedin\.com\/company\//i.test(id))
-                        .map((id) => {
-                          const label = id.replace(/^li-custom-/, 'LI · ');
-                          return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => setWatchSites((prev) => prev.filter((x) => x !== id))}
-                              className="rounded-full border border-[#016AEB] bg-[#016AEB] px-3 py-1.5 text-xs font-semibold text-white"
-                              title="Cliquer pour retirer"
-                            >
-                              {label} ×
-                            </button>
-                          );
-                        })}
-                    </div>
-                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <input
-                        type="url"
-                        value={linkedinUrlDraft}
-                        onChange={(e) => setLinkedinUrlDraft(e.target.value)}
-                        placeholder="https://www.linkedin.com/company/…"
-                        className="min-w-0 flex-1 rounded-lg border border-[#BED6F6] bg-white px-3 py-2 text-sm"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="shrink-0 border-[#016AEB]/40 text-[#016AEB]"
-                        disabled={!/linkedin\.com\/company\//i.test(linkedinUrlDraft)}
-                        onClick={() => {
-                          const url = linkedinUrlDraft.trim();
-                          if (!url) return;
-                          setWatchSites((prev) => (prev.includes(url) ? prev : [...prev, url]));
-                          setLinkedinUrlDraft('');
-                        }}
-                      >
-                        Ajouter la page
-                      </Button>
-                    </div>
-
-                    {watchSites.length === 0 && (
-                      <button
-                        type="button"
-                        className="mt-3 text-xs font-medium text-[#016AEB] underline-offset-2 hover:underline"
-                        onClick={() => setWatchSites(['ungm', 'undp', 'unido', 'li-undp', 'li-unido', 'li-ungm'])}
-                      >
-                        Sélectionner UNDP + UNIDO + UNGM (sites + LinkedIn)
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="rounded-xl border border-teal-100 bg-teal-50/60 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-800">Secteurs ciblés</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {sectors.length > 0 ? sectors.map((s) => (
-                        <span key={s} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-xs text-teal-900 border border-teal-100">
-                          {s}
-                          <button type="button" className="text-teal-400 hover:text-teal-700" onClick={() => setSectors((p) => p.filter((x) => x !== s))}>&times;</button>
-                        </span>
-                      )) : (
-                        <span className="text-xs text-teal-700/60">Aucun — ajoutez en paramètres avancés</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">Mots-clés principaux</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {keywords.map((k) => (
-                        <span key={k} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-xs text-amber-950 border border-amber-100">
-                          {k}
-                          <button type="button" className="text-amber-400 hover:text-amber-700" onClick={() => setKeywords((p) => p.filter((x) => x !== k))}>&times;</button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  </dd>
                 </div>
-
-                <button
-                  type="button"
-                  className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[#016AEB]"
-                  onClick={() => setSetupView(setupView === 'manual' ? 'review' : 'manual')}
-                >
-                  {setupView === 'manual' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  Paramètres avancés
-                </button>
-
-                {setupView === 'manual' && (
-                  <div className="mt-4 space-y-4 rounded-xl border border-dashed border-[#BED6F6] bg-[#f7faff]/40 p-4">
-                    <TagInput
-                      label="Mots-clés" tags={keywords} setTags={setKeywords}
-                      suggestions={SUGGESTED_KEYWORDS} placeholder="Ajouter un mot-clé…"
-                    />
-                    <TagInput
-                      label="Secteurs" tags={sectors} setTags={setSectors}
-                      suggestions={SUGGESTED_SECTORS} placeholder="Ajouter un secteur…" maxTags={10}
-                    />
-                    <TagInput
-                      label={`Zones (${marketMeta.label})`}
-                      tags={geoZones}
-                      setTags={setGeoZones}
-                      suggestions={zoneSuggestions}
-                      placeholder="Ville ou région…"
-                      maxTags={10}
-                    />
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium uppercase tracking-wider text-slate-400">Mots-clés</dt>
+                  <dd className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-800">
+                    {keywords.map((k) => (
+                      <span key={k} className="inline-flex items-center gap-1">
+                        {k}
+                        <button type="button" className="text-slate-300 hover:text-slate-600" onClick={() => setKeywords((p) => p.filter((x) => x !== k))}>&times;</button>
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+                {sectors.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-medium uppercase tracking-wider text-slate-400">Secteurs</dt>
+                    <dd className="mt-2 text-sm text-slate-700">{sectors.join(' · ')}</dd>
                   </div>
                 )}
-              </section>
-            )}
+              </dl>
 
-            {/* Étape 3 */}
-            {(setupView === 'review' || setupView === 'manual' || keywords.length > 0) && (
-              <section className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#016AEB] text-xs font-bold text-white">3</span>
-                  <h3 className="text-base font-semibold text-foreground">Activez votre agent de veille</h3>
+              <div className="space-y-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Sources prioritaires</p>
+                <div className="flex flex-wrap gap-2">
+                  {WATCH_SITE_PRESETS.filter((s) => s.kind === 'portal').map((site) => {
+                    const on = watchSites.includes(site.id);
+                    return (
+                      <button
+                        key={site.id}
+                        type="button"
+                        onClick={() =>
+                          setWatchSites((prev) =>
+                            on ? prev.filter((id) => id !== site.id) : [...prev, site.id],
+                          )
+                        }
+                        className={cn(
+                          'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                          on ? 'bg-[#016AEB] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200',
+                        )}
+                      >
+                        {site.shortLabel}
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  L&apos;agent enregistre la mission, lance un premier scan, puis peut travailler en continu et vous alerter.
-                </p>
+                <p className="pt-1 text-xs font-medium uppercase tracking-wider text-slate-400">Pages LinkedIn</p>
+                <div className="flex flex-wrap gap-2">
+                  {WATCH_SITE_PRESETS.filter((s) => s.kind === 'linkedin').map((site) => {
+                    const on = watchSites.includes(site.id);
+                    return (
+                      <button
+                        key={site.id}
+                        type="button"
+                        onClick={() =>
+                          setWatchSites((prev) =>
+                            on ? prev.filter((id) => id !== site.id) : [...prev, site.id],
+                          )
+                        }
+                        className={cn(
+                          'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                          on ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200',
+                        )}
+                      >
+                        {site.shortLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="url"
+                    value={linkedinUrlDraft}
+                    onChange={(e) => setLinkedinUrlDraft(e.target.value)}
+                    placeholder="Coller une URL linkedin.com/company/…"
+                    className="min-w-0 flex-1 border-0 border-b border-slate-200 bg-transparent py-1.5 text-sm focus:border-[#016AEB] focus:outline-none"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-[#016AEB]"
+                    disabled={!/linkedin\.com\/company\//i.test(linkedinUrlDraft)}
+                    onClick={() => {
+                      const url = linkedinUrlDraft.trim();
+                      if (!url) return;
+                      setWatchSites((prev) => (prev.includes(url) ? prev : [...prev, url]));
+                      setLinkedinUrlDraft('');
+                    }}
+                  >
+                    Ajouter
+                  </Button>
+                </div>
+                {watchSites.length === 0 && (
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-[#016AEB] hover:underline"
+                    onClick={() => setWatchSites(['ungm', 'undp', 'unido', 'li-undp', 'li-unido', 'li-ungm'])}
+                  >
+                    Préremplir ONU (UNDP + UNIDO + UNGM)
+                  </button>
+                )}
+              </div>
 
-                <div className="mb-5 space-y-3 rounded-xl border border-[#BED6F6] bg-[#f7faff]/60 p-4">
-                  <label className="flex cursor-pointer items-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-[#016AEB]"
-                      checked={autoScanEnabled}
-                      onChange={(e) => setAutoScanEnabled(e.target.checked)}
-                    />
-                    <span>
-                      <span className="block text-sm font-medium text-foreground">Scan automatique</span>
-                      <span className="text-xs text-muted-foreground">
-                        L&apos;agent relance la veille sans intervention (recommandé).
-                      </span>
-                    </span>
-                  </label>
-                  {autoScanEnabled && (
-                    <div className="ml-7 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Fréquence</span>
-                      <select
-                        value={scanIntervalH}
-                        onChange={(e) => setScanIntervalH(Number(e.target.value))}
-                        className="rounded-lg border border-[#BED6F6] bg-white px-2 py-1.5 text-sm"
-                      >
-                        <option value={6}>Toutes les 6 h</option>
-                        <option value={12}>Toutes les 12 h</option>
-                        <option value={24}>Tous les jours</option>
-                        <option value={48}>Tous les 2 jours</option>
+              <button
+                type="button"
+                className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-700"
+                onClick={() => setSetupView(setupView === 'manual' ? 'review' : 'manual')}
+              >
+                {setupView === 'manual' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                Ajuster mots-clés / zones
+              </button>
+              {setupView === 'manual' && (
+                <div className="space-y-4 border border-slate-200 p-4">
+                  <TagInput label="Mots-clés" tags={keywords} setTags={setKeywords} suggestions={SUGGESTED_KEYWORDS} placeholder="Ajouter…" />
+                  <TagInput label="Secteurs" tags={sectors} setTags={setSectors} suggestions={SUGGESTED_SECTORS} placeholder="Ajouter…" maxTags={10} />
+                  <TagInput label={`Zones (${marketMeta.label})`} tags={geoZones} setTags={setGeoZones} suggestions={zoneSuggestions} placeholder="Ville…" maxTags={10} />
+                </div>
+              )}
+
+              <div className="space-y-4 border-t border-slate-200 pt-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" className="rounded border-slate-300 text-[#016AEB]" checked={autoScanEnabled} onChange={(e) => setAutoScanEnabled(e.target.checked)} />
+                    Scan automatique
+                    {autoScanEnabled && (
+                      <select value={scanIntervalH} onChange={(e) => setScanIntervalH(Number(e.target.value))} className="ml-1 rounded border border-slate-200 px-2 py-0.5 text-xs">
+                        <option value={6}>6 h</option>
+                        <option value={12}>12 h</option>
+                        <option value={24}>24 h</option>
+                        <option value={48}>48 h</option>
                       </select>
-                    </div>
-                  )}
-                  <label className="flex cursor-pointer items-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-[#016AEB]"
-                      checked={alertEmailEnabled}
-                      onChange={(e) => setAlertEmailEnabled(e.target.checked)}
-                    />
-                    <span>
-                      <span className="block text-sm font-medium text-foreground">Alerte email</span>
-                      <span className="text-xs text-muted-foreground">
-                        Recevoir un email dès qu&apos;une opportunité dépasse le score minimum.
-                      </span>
-                    </span>
+                    )}
                   </label>
-                  {alertEmailEnabled && (
-                    <div className="ml-7 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Score minimum</span>
-                      <select
-                        value={alertMinScore}
-                        onChange={(e) => setAlertMinScore(Number(e.target.value))}
-                        className="rounded-lg border border-[#BED6F6] bg-white px-2 py-1.5 text-sm"
-                      >
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" className="rounded border-slate-300 text-[#016AEB]" checked={alertEmailEnabled} onChange={(e) => setAlertEmailEnabled(e.target.checked)} />
+                    Alerte email
+                    {alertEmailEnabled && (
+                      <select value={alertMinScore} onChange={(e) => setAlertMinScore(Number(e.target.value))} className="ml-1 rounded border border-slate-200 px-2 py-0.5 text-xs">
                         <option value={50}>≥ 50</option>
                         <option value={60}>≥ 60</option>
-                        <option value={70}>≥ 70 (recommandé)</option>
+                        <option value={70}>≥ 70</option>
                         <option value={80}>≥ 80</option>
                       </select>
-                    </div>
-                  )}
+                    )}
+                  </label>
                 </div>
-
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     type="button"
                     size="lg"
-                    className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                    className="gap-2 bg-[#016AEB] hover:bg-[#0158c7]"
                     disabled={keywords.length === 0 || activateAgentMutation.isPending}
                     onClick={() => activateAgentMutation.mutate()}
                   >
-                    {activateAgentMutation.isPending
-                      ? <Loader2 size={16} className="animate-spin" />
-                      : <Wand2 size={16} />}
-                    Activer mon agent IA
+                    {activateAgentMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                    Activer l&apos;agent
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     disabled={keywords.length === 0 || saveProfileMutation.isPending}
                     onClick={() => {
                       saveProfileMutation.mutate();
-                      setProfileOpen(false);
+                      setMainView('opportunities');
                     }}
-                    className="gap-1.5"
                   >
-                    <Save size={14} /> Enregistrer sans scanner
+                    Enregistrer sans scanner
                   </Button>
-                  {hasProfile && (
-                    <button
-                      type="button"
-                      className="text-sm text-muted-foreground hover:text-foreground"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      Annuler
-                    </button>
-                  )}
                 </div>
-              </section>
-            )}
-          </div>
-
-          {/* Panneau droit */}
-          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-            <div className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
-              <h3 className="mb-3 text-sm font-semibold text-foreground">Ce que votre agent IA va faire</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                {[
-                  'Scanne les sources d’appels d’offres et d’événements du marché choisi',
-                  'Filtre les formations hors sujet et les dates déjà passées',
-                  'Ne garde que les opportunités alignées avec votre brief',
-                  'Scan auto + alerte email dès qu’un AO à fort score apparaît',
-                ].map((line) => (
-                  <li key={line} className="flex gap-2">
-                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#016AEB]" />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-2xl border border-[#BED6F6]/80 bg-gradient-to-br from-[#eef5ff] to-white p-5 shadow-sm">
-              <h3 className="mb-2 text-sm font-semibold text-foreground">Aperçu de votre veille</h3>
-              <p className="text-2xl font-bold text-[#016AEB]">{stats?.total ?? 0}</p>
-              <p className="text-xs text-muted-foreground">opportunités déjà détectées</p>
-              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700">
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                Prêt à activer · marché {marketMeta.label}
               </div>
             </div>
-          </aside>
+          )}
         </div>
       )}
 
-      {/* URL Analyzer (collapsible) */}
-      {showAnalyzer && (
+      {/* Onglet Analyser URL */}
+      {mainView === 'analyzer' && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -1331,7 +1133,7 @@ export function ScoutAI() {
             <div className="flex gap-2">
               <input
                 type="url" value={analyzeUrl} onChange={(e) => setAnalyzeUrl(e.target.value)}
-                placeholder="https://www.marchespublics.gov.tn/..."
+                placeholder="https://www.ungm.org/… ou boamp.fr/…"
                 className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               <Button
@@ -1356,31 +1158,6 @@ export function ScoutAI() {
                     <h4 className="font-semibold text-sm">{analyzeUrlMutation.data.analysis.title}</h4>
                   </div>
                   <p className="text-sm text-muted-foreground">{analyzeUrlMutation.data.analysis.summary}</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    {analyzeUrlMutation.data.analysis.deadline && (
-                      <span className="inline-flex items-center gap-1"><Calendar size={12} /> {analyzeUrlMutation.data.analysis.deadline}</span>
-                    )}
-                    {analyzeUrlMutation.data.analysis.location && (
-                      <span className="inline-flex items-center gap-1"><MapPin size={12} /> {analyzeUrlMutation.data.analysis.location}</span>
-                    )}
-                    {analyzeUrlMutation.data.analysis.budget && (
-                      <span className="inline-flex items-center gap-1"><Banknote size={12} /> {analyzeUrlMutation.data.analysis.budget}</span>
-                    )}
-                  </div>
-                  {analyzeUrlMutation.data.analysis.organizer && (
-                    <p className="text-xs"><strong>Organisme:</strong> {analyzeUrlMutation.data.analysis.organizer}</p>
-                  )}
-                  {analyzeUrlMutation.data.analysis.relevance && (
-                    <p className="text-xs"><strong>Pertinence:</strong> {analyzeUrlMutation.data.analysis.relevance}</p>
-                  )}
-                  {analyzeUrlMutation.data.analysis.actionItems?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium mb-1">Actions recommandées:</p>
-                      <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
-                        {analyzeUrlMutation.data.analysis.actionItems.map((a, i) => <li key={i}>{a}</li>)}
-                      </ul>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             )}
@@ -1388,38 +1165,60 @@ export function ScoutAI() {
         </Card>
       )}
 
-      {/* No profile empty state */}
-      {!hasProfile && !profileOpen && profileQuery.isSuccess && (
-        <Card className="border-dashed border-2 border-blue-200">
-          <CardContent className="py-12 text-center">
-            <Sparkles size={40} className="mx-auto mb-3 text-[#016AEB]/50" />
-            <h3 className="text-lg font-semibold text-foreground">Créez votre agent de veille IA</h3>
-            <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
-              Décrivez votre besoin en une phrase — l&apos;IA construit le profil et lance la veille.
-            </p>
-            <Button
-              className="mt-4 gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
+      {/* Onglet Opportunités — page principale */}
+      {mainView === 'opportunities' && (
+        <>
+          {!hasProfile && profileQuery.isSuccess && (
+            <div className="border border-dashed border-slate-200 py-16 text-center">
+              <h3 className="text-lg font-semibold text-slate-900">Aucune mission active</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                Briefez l&apos;agent pour commencer la veille, puis les opportunités apparaîtront ici.
+              </p>
+              <Button
+                className="mt-4 gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
+                onClick={() => {
+                  setSetupView('converse');
+                  setMainView('mission');
+                }}
+              >
+                <MessageSquare size={14} /> Briefer l&apos;agent
+              </Button>
+            </div>
+          )}
+
+          {hasProfile && (
+            <>
+          {/* Mission strip compact */}
+          <div className="flex flex-col gap-2 border-l-2 border-[#016AEB] pl-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900">{missionTitle || 'Mission en cours'}</p>
+              <p className="truncate text-xs text-slate-500">
+                {marketMeta.label}
+                {watchSites.length > 0
+                  ? ` · ${watchSites.slice(0, 4).map((id) => WATCH_SITE_PRESETS.find((s) => s.id === id)?.shortLabel || id).join(', ')}`
+                  : ''}
+                {keywords.length > 0 ? ` · ${keywords.slice(0, 4).join(', ')}` : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 text-sm font-medium text-[#016AEB] hover:underline"
               onClick={() => {
-                setSetupView('converse');
-                setProfileOpen(true);
+                setSetupView(keywords.length ? 'review' : 'converse');
+                setMainView('mission');
               }}
             >
-              <MessageSquare size={14} /> Décrire ma mission
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              Modifier la mission
+            </button>
+          </div>
 
-      {/* Main content: tabs + opportunities */}
-      {hasProfile && !profileOpen && (
-        <>
           {/* Category tabs */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button" onClick={() => setActiveTab('ALL')}
                 className={cn('rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors',
-                  activeTab === 'ALL' ? 'border-gray-400 bg-gray-100 text-foreground' : 'border-gray-200 text-muted-foreground hover:bg-gray-50'
+                  activeTab === 'ALL' ? 'border-slate-400 bg-slate-100 text-foreground' : 'border-slate-200 text-muted-foreground hover:bg-slate-50'
                 )}
               >
                 Tout ({totalAll})
@@ -1432,30 +1231,27 @@ export function ScoutAI() {
                   <button
                     key={cat} type="button" onClick={() => setActiveTab(cat)}
                     className={cn('inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors',
-                      activeTab === cat ? `${config.bg} ${config.color}` : 'border-gray-200 text-muted-foreground hover:bg-gray-50'
+                      activeTab === cat ? `${config.bg} ${config.color}` : 'border-slate-200 text-muted-foreground hover:bg-slate-50'
                     )}
                   >
                     <CatIcon size={12} /> {config.label} ({count})
-                    {hasProfile && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); scanMutation.mutate(cat); }}
-                        disabled={isScanning}
-                        className="ml-1 rounded-full p-0.5 hover:bg-white/60 transition-colors"
-                        title={config.scanLabel}
-                      >
-                        {scanMutation.isPending && scanMutation.variables === cat
-                          ? <Loader2 size={11} className="animate-spin" />
-                          : <RefreshCw size={11} />
-                        }
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); scanMutation.mutate(cat); }}
+                      disabled={isScanning}
+                      className="ml-1 rounded-full p-0.5 hover:bg-white/60 transition-colors"
+                      title={config.scanLabel}
+                    >
+                      {scanMutation.isPending && scanMutation.variables === cat
+                        ? <Loader2 size={11} className="animate-spin" />
+                        : <RefreshCw size={11} />
+                      }
+                    </button>
                   </button>
                 );
               })}
             </div>
 
-            {/* Status filter */}
             <div className="flex gap-1">
               {(['ALL', 'NEW', 'SAVED', 'APPLIED', 'DISMISSED'] as const).map((s) => {
                 const cfg = s === 'ALL' ? { label: 'Tout', color: 'text-foreground', icon: Eye } : STATUS_CONFIG[s];
@@ -1464,7 +1260,7 @@ export function ScoutAI() {
                   <button
                     key={s} type="button" onClick={() => setStatusFilter(s)}
                     className={cn('rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors',
-                      statusFilter === s ? 'bg-gray-100 text-foreground' : 'text-muted-foreground hover:bg-gray-50'
+                      statusFilter === s ? 'bg-slate-100 text-foreground' : 'text-muted-foreground hover:bg-slate-50'
                     )}
                   >
                     {cfg.label}
@@ -1506,9 +1302,9 @@ export function ScoutAI() {
                   size="sm"
                   variant="outline"
                   className="shrink-0 border-amber-300 bg-white"
-                  onClick={() => setProfileOpen(true)}
+                  onClick={() => setMainView('mission')}
                 >
-                  Modifier mes choix
+                  Modifier la mission
                 </Button>
               ) : null}
             </div>
@@ -1556,8 +1352,8 @@ export function ScoutAI() {
                   villes ou mots-clés, puis relancez un scan.
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  <Button type="button" variant="outline" className="gap-1.5" onClick={() => setProfileOpen(true)}>
-                    <Settings2 size={14} /> Modifier mes choix
+                  <Button type="button" variant="outline" className="gap-1.5" onClick={() => setMainView('mission')}>
+                    <Settings2 size={14} /> Modifier la mission
                   </Button>
                   <Button
                     type="button"
@@ -1571,8 +1367,11 @@ export function ScoutAI() {
               </CardContent>
             </Card>
           )}
+            </>
+          )}
         </>
       )}
+      </div>
     </div>
   );
 }
