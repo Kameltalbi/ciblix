@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Radar,
@@ -137,20 +137,51 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
+function normalizeTags(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((v) => String(v).trim()).filter(Boolean);
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 function TagInput({
-  label, tags, setTags, suggestions, placeholder, maxTags = 20,
+  label,
+  tags,
+  setTags,
+  suggestions,
+  placeholder,
+  maxTags = 20,
 }: {
-  label: string; tags: string[]; setTags: (t: string[]) => void;
-  suggestions: string[]; placeholder: string; maxTags?: number;
+  label: string;
+  tags: string[];
+  setTags: (t: string[] | ((prev: string[]) => string[])) => void;
+  suggestions: string[];
+  placeholder: string;
+  maxTags?: number;
 }) {
   const [inputValue, setInputValue] = useState('');
 
-  const addTag = (val: string) => {
-    const trimmed = val.trim();
-    if (trimmed && !tags.includes(trimmed) && tags.length < maxTags) {
-      setTags([...tags, trimmed]);
-    }
+  const commit = (raw: string) => {
+    const parts = raw
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length === 0) return false;
+    setTags((prev) => {
+      const next = [...prev];
+      for (const part of parts) {
+        if (!next.includes(part) && next.length < maxTags) next.push(part);
+      }
+      return next;
+    });
     setInputValue('');
+    return true;
   };
 
   return (
@@ -161,31 +192,66 @@ function TagInput({
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(inputValue); } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+              e.preventDefault();
+              e.stopPropagation();
+              commit(inputValue);
+            }
+          }}
           placeholder={placeholder}
-          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
-        <Button onClick={() => addTag(inputValue)} variant="outline" size="sm" disabled={!inputValue.trim()}>+</Button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => commit(inputValue)}
+          disabled={!inputValue.trim()}
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-brand-soft/80 bg-white px-3 text-sm font-semibold text-brand-accent disabled:opacity-50"
+        >
+          Ajouter
+        </button>
       </div>
-      {tags.length > 0 && (
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Écrivez un mot, puis cliquez <strong>Ajouter</strong> (ou Entrée). Les pastilles bleues doivent apparaître.
+      </p>
+      {tags.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {tags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200">
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
+            >
               {tag}
-              <button type="button" onClick={() => setTags(tags.filter((t) => t !== tag))} className="ml-0.5 text-blue-400 hover:text-blue-700">&times;</button>
+              <button
+                type="button"
+                onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                className="ml-0.5 text-blue-400 hover:text-blue-700"
+                aria-label={`Retirer ${tag}`}
+              >
+                &times;
+              </button>
             </span>
           ))}
         </div>
+      ) : (
+        <p className="mt-2 text-xs text-amber-700">Aucun tag pour l’instant.</p>
       )}
       <div className="mt-2 flex flex-wrap gap-1">
-        {suggestions.filter((s) => !tags.includes(s)).slice(0, 8).map((s) => (
-          <button
-            key={s} type="button" onClick={() => addTag(s)}
-            className="rounded-full border border-dashed border-gray-300 px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-          >
-            + {s}
-          </button>
-        ))}
+        {suggestions
+          .filter((s) => !tags.includes(s))
+          .slice(0, 8)
+          .map((s) => (
+            <button
+              key={s}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => commit(s)}
+              className="rounded-full border border-dashed border-gray-300 px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            >
+              + {s}
+            </button>
+          ))}
       </div>
     </div>
   );
@@ -327,16 +393,17 @@ export function ScoutAI() {
     },
   });
 
-  // Sync profile to local state when loaded
+  // Sync profile to local state once when loaded (ne pas écraser les tags en cours d'édition)
+  const profileHydratedRef = useRef(false);
   useEffect(() => {
-    if (profileQuery.data) {
-      setKeywords(profileQuery.data.keywords);
-      setSectors(profileQuery.data.sectors);
-      setGeoZones(profileQuery.data.geoZones);
-      setTenderEnabled(profileQuery.data.tenderEnabled);
-      setEventEnabled(profileQuery.data.eventEnabled);
-      setNewsEnabled(profileQuery.data.newsEnabled);
-    }
+    if (!profileQuery.data || profileHydratedRef.current) return;
+    profileHydratedRef.current = true;
+    setKeywords(normalizeTags(profileQuery.data.keywords));
+    setSectors(normalizeTags(profileQuery.data.sectors));
+    setGeoZones(normalizeTags(profileQuery.data.geoZones));
+    setTenderEnabled(profileQuery.data.tenderEnabled);
+    setEventEnabled(profileQuery.data.eventEnabled);
+    setNewsEnabled(profileQuery.data.newsEnabled);
   }, [profileQuery.data]);
 
   // Auto-open profile config if no profile exists
@@ -350,9 +417,24 @@ export function ScoutAI() {
 
   const saveProfileMutation = useMutation({
     mutationFn: () =>
-      api.post('/scout-ai/profile', { keywords, sectors, geoZones, tenderEnabled, eventEnabled, newsEnabled }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
+      api.post('/scout-ai/profile', {
+        keywords,
+        sectors,
+        geoZones,
+        tenderEnabled,
+        eventEnabled,
+        newsEnabled,
+      }),
+    onSuccess: (res) => {
+      const saved = res.data?.profile as ScoutProfile | undefined;
+      if (saved) {
+        profileHydratedRef.current = true;
+        setKeywords(normalizeTags(saved.keywords));
+        setSectors(normalizeTags(saved.sectors));
+        setGeoZones(normalizeTags(saved.geoZones));
+      }
+      void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
+      void queryClient.invalidateQueries({ queryKey: ['scout-stats'] });
     },
   });
 
@@ -524,7 +606,7 @@ export function ScoutAI() {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Button
                 onClick={() => saveProfileMutation.mutate()}
                 disabled={keywords.length === 0 || saveProfileMutation.isPending}
@@ -533,8 +615,15 @@ export function ScoutAI() {
                 {saveProfileMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 Sauvegarder le profil
               </Button>
+              {keywords.length === 0 ? (
+                <span className="text-sm text-amber-700">
+                  Ajoutez au moins 1 mot-clé (Entrée ou +) pour pouvoir sauvegarder.
+                </span>
+              ) : null}
               {saveProfileMutation.isSuccess && (
-                <span className="flex items-center gap-1 text-sm text-emerald-600"><CheckCircle2 size={14} /> Profil sauvegardé</span>
+                <span className="flex items-center gap-1 text-sm text-emerald-600">
+                  <CheckCircle2 size={14} /> Profil sauvegardé — vous pouvez lancer un scan
+                </span>
               )}
             </div>
           </CardContent>
