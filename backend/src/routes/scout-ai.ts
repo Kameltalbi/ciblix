@@ -8,6 +8,11 @@ import { recordScoutOpportunity } from '../services/agent-memory/agentIntegratio
 import { isPastScoutOpportunity } from '../services/scout/scoutFreshness.js';
 import { fitsScoutCategory, keywordsForCategory } from '../services/scout/scoutCategoryFit.js';
 import { fitsScoutMarket, inferMarketCode, marketLabel, type ScoutMarketCode } from '../services/scout/scoutMarketFit.js';
+import {
+  INTERNATIONAL_TENDER_SITES,
+  isWatchedHost,
+  resolveWatchSites,
+} from '../services/scout/internationalTenderSites.js';
 
 export const scoutAiRoutes = Router();
 
@@ -200,23 +205,31 @@ function buildSearchQueries(
   geoZones: string[],
   category: 'TENDER' | 'EVENT' | 'NEWS',
   market: ScoutMarketCode = '',
+  watchSiteIds: string[] = [],
 ): string[] {
   const kwList = keywordsForCategory(keywords, category);
   const kw = kwList.slice(0, 2).join(' ') || 'entreprise';
   const sec = sectors.slice(0, 1).join(' ');
   const country = marketLabel(market);
-  // Prefer country name over mixed city list to avoid Tunis leaking into France queries
   const geo = country !== 'marché ciblé'
     ? country
     : geoZones.slice(0, 2).join(' ');
   const year = new Date().getFullYear();
   const m = market || inferMarketCode(geoZones);
+  const watched = resolveWatchSites(watchSiteIds);
 
   const queries: string[] = [];
   switch (category) {
     case 'TENDER':
-      queries.push(`"appel d'offres" ${kw} ${geo}`.trim());
-      queries.push(`"marché public" ${kw} ${geo || sec}`.trim());
+      // Sites internationaux prioritaires (UNDP, UNIDO, UNGM…)
+      for (const site of watched.slice(0, 6)) {
+        queries.push(`${kw} ${site.queryHint}`.trim());
+        if (kwList[1]) queries.push(`${kwList[1]} ${site.queryHint}`.trim());
+      }
+      if (watched.length === 0 || m) {
+        queries.push(`"appel d'offres" ${kw} ${geo}`.trim());
+        queries.push(`"marché public" ${kw} ${geo || sec}`.trim());
+      }
       if (m === 'tn') {
         queries.push(`${kw} site:marchespublics.gov.tn`);
         queries.push(`"appel d'offres" ${kw} Tunisie ${year}`);
@@ -228,8 +241,12 @@ function buildSearchQueries(
         queries.push(`"appel d'offres" ${kw} Maroc ${year}`);
       } else if (m === 'dz') {
         queries.push(`"appel d'offres" ${kw} Algérie ${year}`);
-      } else {
+      } else if (!watched.length) {
         queries.push(`"appel d'offres" ${kw} ${sec} ${geo} ${year}`.trim());
+      }
+      // AO internationaux génériques si sites ONU sélectionnés
+      if (watched.some((s) => s.org === 'ONU')) {
+        queries.push(`${kw} UNDP OR UNIDO OR UNGM tender OR RFP ${year}`.trim());
       }
       break;
     case 'EVENT':
@@ -243,7 +260,7 @@ function buildSearchQueries(
       queries.push(`investissement ${kw} ${geo || sec}`.trim());
       break;
   }
-  return [...new Set(queries.filter((q) => q.replace(/\s+/g, ' ').trim().length > 3))];
+  return [...new Set(queries.filter((q) => q.replace(/\s+/g, ' ').trim().length > 3))].slice(0, 12);
 }
 
 /** Hors catégorie, mauvais pays, date passée, ou score trop bas → à jeter. */
@@ -252,10 +269,18 @@ function isStaleAnalyzedHit(
   raw: { title: string; link: string; snippet: string },
   a: { relevanceScore: number; deadline: string | null; aiSummary: string; location?: string | null },
   market: ScoutMarketCode,
+  watchSiteIds: string[] = [],
 ): boolean {
   if (a.relevanceScore < 15) return true;
   if (!fitsScoutCategory(category, raw.title, raw.snippet, a.aiSummary)) return true;
-  if (!fitsScoutMarket({
+
+  const watched = resolveWatchSites(watchSiteIds);
+  let host = '';
+  try { host = new URL(raw.link).hostname; } catch { /* ignore */ }
+  const onWatchList = isWatchedHost(host, watched);
+
+  // Sites explicitement surveillés (UNDP…) : ne pas rejeter pour « mauvais pays »
+  if (!onWatchList && !fitsScoutMarket({
     market,
     url: raw.link,
     title: raw.title,
@@ -263,6 +288,7 @@ function isStaleAnalyzedHit(
     aiSummary: a.aiSummary,
     location: a.location,
   })) return true;
+
   return isPastScoutOpportunity({
     category,
     title: raw.title,
@@ -402,6 +428,7 @@ const profileSchema = z.object({
   keywords: z.array(z.string()).min(1).max(20),
   sectors: z.array(z.string()).max(10).optional().default([]),
   geoZones: z.array(z.string()).max(10).optional().default([]),
+  watchSites: z.array(z.string()).max(20).optional().default([]),
   tenderEnabled: z.boolean().optional().default(true),
   eventEnabled: z.boolean().optional().default(true),
   newsEnabled: z.boolean().optional().default(true),
@@ -413,6 +440,19 @@ const profileSchema = z.object({
 
 const interpretBriefSchema = z.object({
   brief: z.string().min(8).max(1200),
+});
+
+scoutAiRoutes.get('/watch-sites', (_req, res) => {
+  res.json({
+    sites: INTERNATIONAL_TENDER_SITES.map((s) => ({
+      id: s.id,
+      label: s.label,
+      shortLabel: s.shortLabel,
+      url: s.url,
+      domain: s.domain,
+      org: s.org,
+    })),
+  });
 });
 
 /**
@@ -429,15 +469,16 @@ Construis un profil de veille STRICT et actionnable.
 
 Règles:
 - marketCountry: un seul code parmi TN, FR, DZ, MA, BE, CA, SN, CI, INT
-- geoZones: 1 à 4 zones (inclure le nom du pays + éventuellement "X entière" ou 1-2 villes)
-- keywords: 3 à 8 mots-clés métier CONCRETS (pas de verbes vagues). Si la mission est des appels d'offres, N'inclus PAS "formation", "bootcamp", "cours" — ce sont des événements/formations, pas des AO.
+- geoZones: 1 à 4 zones (inclure le nom du pays + éventuellement "X entière" ou 1-2 villes). Si AO internationaux ONU / banques → marketCountry INT et geoZones ["International"]
+- keywords: 3 à 8 mots-clés métier CONCRETS (pas de verbes vagues). Si la mission est des appels d'offres, N'inclus PAS "formation", "bootcamp", "cours".
 - sectors: 1 à 4 secteurs
-- tenderEnabled / eventEnabled / newsEnabled: selon l'intention. Par défaut AO=true. Formations/salons → eventEnabled=true, tenderEnabled=false sauf si AO aussi demandés. Actualités seulement si explicitement demandé.
+- tenderEnabled / eventEnabled / newsEnabled: selon l'intention. Par défaut AO=true.
+- watchSites: ids parmi ungm, undp, unido, unops, unicef, worldbank, afdb, ted, dgmarket — si l'utilisateur mentionne ONU, UNDP, UNIDO, UNGM, banques de développement, AO internationaux, inclus les ids pertinents (au minimum undp+unido+ungm pour ONU).
 - summary: 1-2 phrases qui reformulent la mission
 - missionTitle: titre court (max 8 mots)
 
 Réponds UNIQUEMENT en JSON:
-{"missionTitle":"...","summary":"...","marketCountry":"FR","geoZones":["France","France entière"],"keywords":["..."],"sectors":["..."],"tenderEnabled":true,"eventEnabled":false,"newsEnabled":false}`;
+{"missionTitle":"...","summary":"...","marketCountry":"INT","geoZones":["International"],"keywords":["..."],"sectors":["..."],"tenderEnabled":true,"eventEnabled":false,"newsEnabled":false,"watchSites":["ungm","undp","unido"]}`;
 
     let parsed: {
       missionTitle?: string;
@@ -449,6 +490,7 @@ Réponds UNIQUEMENT en JSON:
       tenderEnabled?: boolean;
       eventEnabled?: boolean;
       newsEnabled?: boolean;
+      watchSites?: string[];
     } | null = null;
 
     try {
@@ -459,10 +501,13 @@ Réponds UNIQUEMENT en JSON:
       console.warn('[scout-ai] interpret-brief AI', err);
     }
 
+    const lower = brief.toLowerCase();
+    const wantsIntl =
+      /undp|unido|ungm|unops|unicef|onu|united nations|international|world bank|afdb|banque mondiale/.test(lower);
+
     // Fallback heuristique si l'IA échoue
     if (!parsed?.keywords?.length) {
-      const lower = brief.toLowerCase();
-      let marketCountry = 'FR';
+      let marketCountry = wantsIntl ? 'INT' : 'FR';
       if (/tunisie|tunis/.test(lower)) marketCountry = 'TN';
       else if (/algérie|algerie|alger/.test(lower)) marketCountry = 'DZ';
       else if (/maroc|casablanca/.test(lower)) marketCountry = 'MA';
@@ -473,14 +518,14 @@ Réponds UNIQUEMENT en JSON:
       else if (/france|paris|lyon/.test(lower)) marketCountry = 'FR';
 
       const wantEvents = /salon|conférence|forum|formation|bootcamp|événement|evenement/.test(lower);
-      const wantTender = /appel d['']offre|marché public|ao\b|tender|consultation/.test(lower) || !wantEvents;
+      const wantTender = /appel d['']offre|marché public|ao\b|tender|consultation|undp|unido|ungm|procurement/.test(lower) || !wantEvents;
       const wantNews = /actualité|actu\b|veille media|presse/.test(lower);
 
       parsed = {
-        missionTitle: 'Mission de veille',
+        missionTitle: wantsIntl ? 'Veille AO internationaux' : 'Mission de veille',
         summary: brief.slice(0, 220),
         marketCountry,
-        geoZones: [],
+        geoZones: wantsIntl ? ['International'] : [],
         keywords: brief
           .split(/[\s,;]+/)
           .map((w) => w.trim())
@@ -490,17 +535,30 @@ Réponds UNIQUEMENT en JSON:
         tenderEnabled: wantTender,
         eventEnabled: wantEvents,
         newsEnabled: wantNews,
+        watchSites: wantsIntl ? ['ungm', 'undp', 'unido'] : [],
       };
     }
 
-    const marketCountry = String(parsed.marketCountry || 'FR').toUpperCase();
+    // Enrichir watchSites si brief international
+    let watchSites = Array.isArray(parsed.watchSites) ? parsed.watchSites.map(String) : [];
+    if (wantsIntl && watchSites.length === 0) watchSites = ['ungm', 'undp', 'unido'];
+    if (/undp/.test(lower) && !watchSites.includes('undp')) watchSites.push('undp');
+    if (/unido/.test(lower) && !watchSites.includes('unido')) watchSites.push('unido');
+    if (/ungm/.test(lower) && !watchSites.includes('ungm')) watchSites.push('ungm');
+    watchSites = [...new Set(watchSites)].filter((id) =>
+      INTERNATIONAL_TENDER_SITES.some((s) => s.id === id),
+    ).slice(0, 10);
+
+    const marketCountry = String(parsed.marketCountry || (wantsIntl ? 'INT' : 'FR')).toUpperCase();
     const marketNames: Record<string, string> = {
       TN: 'Tunisie', FR: 'France', DZ: 'Algérie', MA: 'Maroc',
-      BE: 'Belgique', CA: 'Canada', SN: 'Sénégal', CI: "Côte d'Ivoire", INT: '',
+      BE: 'Belgique', CA: 'Canada', SN: 'Sénégal', CI: "Côte d'Ivoire", INT: 'International',
     };
     const country = marketNames[marketCountry] || 'France';
     let geoZones = Array.isArray(parsed.geoZones) ? parsed.geoZones.map(String).filter(Boolean).slice(0, 6) : [];
-    if (country) {
+    if (marketCountry === 'INT') {
+      geoZones = geoZones.length ? geoZones : ['International'];
+    } else if (country) {
       if (geoZones.length === 0) {
         if (country === 'France') geoZones = ['France', 'France entière'];
         else if (country === 'Tunisie') geoZones = ['Tunisie', 'Tunisie entière'];
@@ -514,11 +572,10 @@ Réponds UNIQUEMENT en JSON:
     const tenderEnabled = parsed.tenderEnabled !== false;
     const eventEnabled = Boolean(parsed.eventEnabled);
     const newsEnabled = Boolean(parsed.newsEnabled);
-    // Si AO seuls : retirer les mots « formation » qui polluent
     if (tenderEnabled && !eventEnabled) {
       keywords = keywords.filter((k) => !/formation|bootcamp|cours|atelier/i.test(k));
     }
-    if (keywords.length === 0) keywords = ['opportunité commerciale'];
+    if (keywords.length === 0) keywords = ['procurement', 'tender'];
 
     res.json({
       proposal: {
@@ -531,6 +588,7 @@ Réponds UNIQUEMENT en JSON:
         tenderEnabled,
         eventEnabled,
         newsEnabled,
+        watchSites,
       },
     });
   } catch (err) { next(err); }
@@ -610,19 +668,24 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
     const keywords = profile.keywords as string[];
     const sectors = profile.sectors as string[];
     const geoZones = profile.geoZones as string[];
+    const watchSites = ((profile as { watchSites?: unknown }).watchSites as string[]) || [];
     const market = inferMarketCode(geoZones);
-    const gl = market || inferSearchGl(geoZones);
+    // Pas de biais pays Google quand on cible des portails internationaux
+    const gl = watchSites.length > 0 ? '' : (market || '');
 
-    const queries = buildSearchQueries(keywords, sectors, geoZones, category, market);
+    const queries = buildSearchQueries(keywords, sectors, geoZones, category, market, watchSites);
 
     const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
     const seenUrls = new Set<string>();
+    const watched = resolveWatchSites(watchSites);
 
     for (const q of queries) {
       const results = await searchWeb(q, 8, gl);
       for (const r of results) {
         if (seenUrls.has(r.link)) continue;
-        if (!fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+        let host = '';
+        try { host = new URL(r.link).hostname; } catch { /* */ }
+        if (!isWatchedHost(host, watched) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
         seenUrls.add(r.link);
         allRaw.push(r);
       }
@@ -633,13 +696,15 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
       keywords,
       sectors,
       category,
-      marketLabel(market),
+      watched.length
+        ? `AO internationaux (${watched.map((s) => s.shortLabel).join(', ')})`
+        : marketLabel(market),
     );
 
     const opportunities = analyzed
       .filter((a) => {
         const raw = allRaw[a.index - 1];
-        return raw && !isStaleAnalyzedHit(category, raw, a, market);
+        return raw && !isStaleAnalyzedHit(category, raw, a, market, watchSites);
       })
       .map((a) => {
         const raw = allRaw[a.index - 1];
@@ -757,9 +822,11 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       const keywords = profile.keywords as string[];
       const sectors = profile.sectors as string[];
       const geoZones = profile.geoZones as string[];
+      const watchSites = ((profile as { watchSites?: unknown }).watchSites as string[]) || [];
       const market = inferMarketCode(geoZones);
-      const gl = market || inferSearchGl(geoZones);
-      const queries = buildSearchQueries(keywords, sectors, geoZones, cat, market);
+      const gl = watchSites.length > 0 ? '' : (market || '');
+      const queries = buildSearchQueries(keywords, sectors, geoZones, cat, market, watchSites);
+      const watched = resolveWatchSites(watchSites);
 
       const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
       const seenUrls = new Set<string>();
@@ -768,7 +835,9 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
         const results = await searchWeb(q, 8, gl);
         for (const r of results) {
           if (seenUrls.has(r.link)) continue;
-          if (!fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+          let host = '';
+          try { host = new URL(r.link).hostname; } catch { /* */ }
+          if (!isWatchedHost(host, watched) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
           seenUrls.add(r.link);
           allRaw.push(r);
         }
@@ -780,12 +849,14 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
         keywords,
         sectors,
         cat,
-        marketLabel(market),
+        watched.length
+          ? `AO internationaux (${watched.map((s) => s.shortLabel).join(', ')})`
+          : marketLabel(market),
       );
 
       for (const a of analyzed) {
         const raw = allRaw[a.index - 1];
-        if (!raw || isStaleAnalyzedHit(cat, raw, a, market)) continue;
+        if (!raw || isStaleAnalyzedHit(cat, raw, a, market, watchSites)) continue;
         const existing = await prisma.scoutOpportunity.findFirst({ where: { organizationId: orgId, url: raw.link } });
         if (!existing) {
           const created = await prisma.scoutOpportunity.create({
@@ -892,12 +963,17 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
     ]);
 
     const market = profile ? inferMarketCode(profile.geoZones as string[]) : '';
+    const watchSites = ((profile as { watchSites?: unknown } | null)?.watchSites as string[]) || [];
+    const watched = resolveWatchSites(watchSites);
 
     // Masque + archive hors-sujet / mauvais pays / dates passées
     const staleIds: string[] = [];
     const opportunities = rawOpportunities.filter((o) => {
       const wrongCat = !fitsScoutCategory(o.category, o.title, o.snippet, o.aiSummary);
-      const wrongMarket = !fitsScoutMarket({
+      let host = '';
+      try { host = new URL(o.url).hostname; } catch { /* */ }
+      const onWatch = isWatchedHost(host, watched);
+      const wrongMarket = !onWatch && !fitsScoutMarket({
         market,
         url: o.url,
         title: o.title,

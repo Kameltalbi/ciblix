@@ -50,6 +50,7 @@ interface ScoutProfile {
   keywords: string[];
   sectors: string[];
   geoZones: string[];
+  watchSites?: string[];
   tenderEnabled: boolean;
   eventEnabled: boolean;
   newsEnabled: boolean;
@@ -187,10 +188,23 @@ function inferMarketFromZones(zones: string[]): MarketId {
 const MARKET_STORAGE_KEY = 'ciblix.scout.marketCountry';
 
 const EXAMPLE_BRIEFS = [
+  "Je cherche des appels d'offres UNDP, UNIDO et UNGM sur le bilan carbone et l'ESG",
+  "Veille AO internationaux environnement et énergie sur les portails ONU",
   "Je cherche des appels d'offres bilan carbone et RSE en France",
-  'Veille AO audit énergétique et environnement en Tunisie',
-  'Salons et conférences BTP / construction à Paris et Lyon',
-  "Appels d'offres digital et informatique en Belgique",
+  'Veille AO audit énergétique en Tunisie',
+];
+
+/** Portails AO internationaux (miroir backend). */
+const WATCH_SITE_PRESETS: Array<{ id: string; shortLabel: string; org: string }> = [
+  { id: 'ungm', shortLabel: 'UNGM', org: 'ONU' },
+  { id: 'undp', shortLabel: 'UNDP', org: 'ONU' },
+  { id: 'unido', shortLabel: 'UNIDO', org: 'ONU' },
+  { id: 'unops', shortLabel: 'UNOPS', org: 'ONU' },
+  { id: 'unicef', shortLabel: 'UNICEF', org: 'ONU' },
+  { id: 'worldbank', shortLabel: 'World Bank', org: 'Banque' },
+  { id: 'afdb', shortLabel: 'AfDB', org: 'Banque' },
+  { id: 'ted', shortLabel: 'TED Europa', org: 'UE' },
+  { id: 'dgmarket', shortLabel: 'dgMarket', org: 'Agrégateur' },
 ];
 
 type SetupView = 'converse' | 'review' | 'manual';
@@ -437,6 +451,7 @@ export function ScoutAI() {
   const [tenderEnabled, setTenderEnabled] = useState(true);
   const [eventEnabled, setEventEnabled] = useState(true);
   const [newsEnabled, setNewsEnabled] = useState(true);
+  const [watchSites, setWatchSites] = useState<string[]>([]);
   const [setupView, setSetupView] = useState<SetupView>('converse');
   const [briefText, setBriefText] = useState('');
   const [missionTitle, setMissionTitle] = useState('');
@@ -489,6 +504,7 @@ export function ScoutAI() {
     setTenderEnabled(profileQuery.data.tenderEnabled);
     setEventEnabled(profileQuery.data.eventEnabled);
     setNewsEnabled(profileQuery.data.newsEnabled);
+    setWatchSites(normalizeTags(profileQuery.data.watchSites));
     const inferred = inferMarketFromZones(zones);
     setMarket(inferred);
     try {
@@ -534,9 +550,10 @@ export function ScoutAI() {
     tenderEnabled?: boolean;
     eventEnabled?: boolean;
     newsEnabled?: boolean;
+    watchSites?: string[];
   }) => {
     const mid = (proposal.marketCountry || 'FR').toUpperCase() as MarketId;
-    const marketId = MARKETS.some((m) => m.id === mid) ? mid : 'FR';
+    const marketId = MARKETS.some((m) => m.id === mid) ? mid : (mid === 'INT' ? 'INT' : 'FR');
     setMarket(marketId);
     try {
       localStorage.setItem(MARKET_STORAGE_KEY, marketId);
@@ -544,6 +561,7 @@ export function ScoutAI() {
     setKeywords(normalizeTags(proposal.keywords));
     setSectors(normalizeTags(proposal.sectors));
     setGeoZones(normalizeTags(proposal.geoZones));
+    setWatchSites(normalizeTags(proposal.watchSites));
     setTenderEnabled(proposal.tenderEnabled !== false);
     setEventEnabled(Boolean(proposal.eventEnabled));
     setNewsEnabled(Boolean(proposal.newsEnabled));
@@ -562,6 +580,7 @@ export function ScoutAI() {
           geoZones: string[];
           keywords: string[];
           sectors: string[];
+          watchSites: string[];
           tenderEnabled: boolean;
           eventEnabled: boolean;
           newsEnabled: boolean;
@@ -583,6 +602,7 @@ export function ScoutAI() {
         keywords,
         sectors,
         geoZones: zones,
+        watchSites,
         tenderEnabled,
         eventEnabled,
         newsEnabled,
@@ -596,6 +616,7 @@ export function ScoutAI() {
         setKeywords(normalizeTags(saved.keywords));
         setSectors(normalizeTags(saved.sectors));
         setGeoZones(normalizeTags(saved.geoZones));
+        setWatchSites(normalizeTags(saved.watchSites));
         setTenderEnabled(saved.tenderEnabled);
         setEventEnabled(saved.eventEnabled);
         setNewsEnabled(saved.newsEnabled);
@@ -616,6 +637,7 @@ export function ScoutAI() {
       keywords,
       sectors,
       geoZones: zones,
+      watchSites,
       tenderEnabled,
       eventEnabled,
       newsEnabled,
@@ -808,7 +830,7 @@ export function ScoutAI() {
               </p>
               <p className="truncate text-xs text-muted-foreground">
                 {keywords.length > 0 ? keywords.join(' · ') : 'Aucun mot-clé'}
-                {sectors.length > 0 ? ` · ${sectors.slice(0, 3).join(', ')}` : ''}
+                {watchSites.length > 0 ? ` · Sites: ${watchSites.map((id) => WATCH_SITE_PRESETS.find((s) => s.id === id)?.shortLabel || id).join(', ')}` : ''}
               </p>
             </div>
             <Button
@@ -948,6 +970,49 @@ export function ScoutAI() {
                     <p className="mt-2 text-xs text-sky-900/70">
                       {geoZones.slice(0, 3).join(' · ') || marketMeta.label}
                     </p>
+                  </div>
+
+                  <div className="rounded-xl border border-[#BED6F6] bg-[#f7faff] p-4 sm:col-span-2">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#016AEB]">
+                      Sites AO internationaux
+                    </p>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      Portails ONU / banques à surveiller (UNDP, UNIDO, UNGM…). Cochez ceux à scanner.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {WATCH_SITE_PRESETS.map((site) => {
+                        const on = watchSites.includes(site.id);
+                        return (
+                          <button
+                            key={site.id}
+                            type="button"
+                            onClick={() =>
+                              setWatchSites((prev) =>
+                                on ? prev.filter((id) => id !== site.id) : [...prev, site.id],
+                              )
+                            }
+                            className={cn(
+                              'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+                              on
+                                ? 'border-[#016AEB] bg-[#016AEB] text-white'
+                                : 'border-[#BED6F6] bg-white text-[#016AEB] hover:bg-[#eef5ff]',
+                            )}
+                            title={site.org}
+                          >
+                            {site.shortLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {watchSites.length === 0 && (
+                      <button
+                        type="button"
+                        className="mt-3 text-xs font-medium text-[#016AEB] underline-offset-2 hover:underline"
+                        onClick={() => setWatchSites(['ungm', 'undp', 'unido'])}
+                      >
+                        Sélectionner UNDP + UNIDO + UNGM
+                      </button>
+                    )}
                   </div>
 
                   <div className="rounded-xl border border-teal-100 bg-teal-50/60 p-4">

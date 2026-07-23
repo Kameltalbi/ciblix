@@ -28,6 +28,7 @@ export function inferMarketCode(geoZones: string[]): ScoutMarketCode {
   if (/\bcanada\b/i.test(hay)) return 'ca';
   if (/\bsénégal\b|\bsenegal\b/i.test(hay)) return 'sn';
   if (/côte d|cote d/i.test(hay)) return 'ci';
+  if (/\binternational\b|\bmonde\b|\beurope\b/i.test(hay)) return '';
   for (const { re, code } of MARKET_FROM_ZONE) {
     if (re.test(hay)) return code;
   }

@@ -1200,6 +1200,7 @@ model ScoutProfile {
   keywords       Json     // string[] — mots-clés métier
   sectors        Json     // string[] — secteurs d'activité
   geoZones       Json     // string[] — zones géographiques
+  watchSites     Json     @default("[]") // string[] — ids presets (ungm, undp…) ou URLs
   tenderEnabled  Boolean  @default(true)
   eventEnabled   Boolean  @default(true)
   newsEnabled    Boolean  @default(true)
