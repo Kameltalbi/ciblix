@@ -530,14 +530,41 @@ export function ScoutAI() {
         setKeywords(normalizeTags(saved.keywords));
         setSectors(normalizeTags(saved.sectors));
         setGeoZones(normalizeTags(saved.geoZones));
+        setTenderEnabled(saved.tenderEnabled);
+        setEventEnabled(saved.eventEnabled);
+        setNewsEnabled(saved.newsEnabled);
       }
       void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
       void queryClient.invalidateQueries({ queryKey: ['scout-stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
     },
   });
 
+  const persistProfile = async () => {
+    const country = marketMeta.countryLabel;
+    const zones =
+      country && !geoZones.some((z) => z.toLowerCase().includes(country.toLowerCase()))
+        ? [...geoZones, country]
+        : geoZones;
+    await api.post('/scout-ai/profile', {
+      keywords,
+      sectors,
+      geoZones: zones,
+      tenderEnabled,
+      eventEnabled,
+      newsEnabled,
+      marketCountry: market,
+    });
+    void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
+    void queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
+  };
+
   const scanMutation = useMutation({
-    mutationFn: (category: Category) => api.post('/scout-ai/scan', { category }).then((r) => r.data),
+    mutationFn: async (category: Category) => {
+      // Toujours synchroniser les catégories cochées avant de scanner
+      if (keywords.length > 0) await persistProfile();
+      return api.post('/scout-ai/scan', { category }).then((r) => r.data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
       queryClient.invalidateQueries({ queryKey: ['scout-stats'] });
@@ -545,7 +572,10 @@ export function ScoutAI() {
   });
 
   const scanAllMutation = useMutation({
-    mutationFn: () => api.post('/scout-ai/scan-all').then((r) => r.data),
+    mutationFn: async () => {
+      if (keywords.length > 0) await persistProfile();
+      return api.post('/scout-ai/scan-all').then((r) => r.data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
       queryClient.invalidateQueries({ queryKey: ['scout-stats'] });
@@ -573,7 +603,23 @@ export function ScoutAI() {
   const catCounts = opportunitiesQuery.data?.categoryCounts || {};
   const statusCounts = opportunitiesQuery.data?.statusCounts || {};
   const stats = statsQuery.data;
-  const totalAll = (catCounts['TENDER'] || 0) + (catCounts['EVENT'] || 0) + (catCounts['NEWS'] || 0);
+  const enabledCategories = (opportunitiesQuery.data as { enabledCategories?: Category[] } | undefined)?.enabledCategories
+    ?? ([
+      ...(tenderEnabled ? (['TENDER'] as const) : []),
+      ...(eventEnabled ? (['EVENT'] as const) : []),
+      ...(newsEnabled ? (['NEWS'] as const) : []),
+    ] as Category[]);
+  const visibleCategories = (['TENDER', 'EVENT', 'NEWS'] as const).filter((c) =>
+    enabledCategories.includes(c),
+  );
+  const totalAll = visibleCategories.reduce((sum, c) => sum + (catCounts[c] || 0), 0);
+
+  useEffect(() => {
+    if (activeTab === 'ALL') return;
+    if (!visibleCategories.includes(activeTab as Category)) {
+      setActiveTab(visibleCategories.length === 1 ? visibleCategories[0] : 'ALL');
+    }
+  }, [activeTab, visibleCategories]);
 
   return (
     <div className="space-y-6">
@@ -886,7 +932,7 @@ export function ScoutAI() {
               >
                 Tout ({totalAll})
               </button>
-              {(['TENDER', 'EVENT', 'NEWS'] as const).map((cat) => {
+              {visibleCategories.map((cat) => {
                 const config = CATEGORY_CONFIG[cat];
                 const count = catCounts[cat] || 0;
                 const CatIcon = config.icon;

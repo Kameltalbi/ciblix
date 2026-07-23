@@ -430,6 +430,23 @@ scoutAiRoutes.post('/profile', async (req: AuthRequest, res: Response, next: Nex
       update: data,
       create: { organizationId: req.organizationId!, ...data },
     });
+
+    // Archive les résultats des catégories désactivées (ex. formations en « Actualités »)
+    const disabled: string[] = [];
+    if (!profile.tenderEnabled) disabled.push('TENDER');
+    if (!profile.eventEnabled) disabled.push('EVENT');
+    if (!profile.newsEnabled) disabled.push('NEWS');
+    if (disabled.length > 0) {
+      await prisma.scoutOpportunity.updateMany({
+        where: {
+          organizationId: req.organizationId!,
+          category: { in: disabled },
+          status: { in: ['NEW', 'SAVED'] },
+        },
+        data: { status: 'DISMISSED' },
+      });
+    }
+
     res.json({ profile });
   } catch (err) { next(err); }
 });
@@ -554,6 +571,22 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
       data: { lastScanAt: new Date() },
     });
 
+    // Nettoyer les catégories désactivées même après un scan ciblé
+    const disabled: string[] = [];
+    if (!profile.tenderEnabled) disabled.push('TENDER');
+    if (!profile.eventEnabled) disabled.push('EVENT');
+    if (!profile.newsEnabled) disabled.push('NEWS');
+    if (disabled.length > 0) {
+      await prisma.scoutOpportunity.updateMany({
+        where: {
+          organizationId: orgId,
+          category: { in: disabled },
+          status: { in: ['NEW', 'SAVED'] },
+        },
+        data: { status: 'DISMISSED' },
+      });
+    }
+
     res.json({
       opportunities: saved,
       meta: { totalRaw: allRaw.length, totalSaved: saved.length, category, scannedAt: new Date().toISOString() },
@@ -650,6 +683,22 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       data: { lastScanAt: new Date() },
     });
 
+    // Après scan : ranger les catégories non activées (anciens résultats)
+    const disabled: string[] = [];
+    if (!profile.tenderEnabled) disabled.push('TENDER');
+    if (!profile.eventEnabled) disabled.push('EVENT');
+    if (!profile.newsEnabled) disabled.push('NEWS');
+    if (disabled.length > 0) {
+      await prisma.scoutOpportunity.updateMany({
+        where: {
+          organizationId: orgId,
+          category: { in: disabled },
+          status: { in: ['NEW', 'SAVED'] },
+        },
+        data: { status: 'DISMISSED' },
+      });
+    }
+
     res.json({
       newOpportunities: allResults.length,
       categories,
@@ -671,9 +720,31 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
     const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
     const offset = Math.max(0, Number(req.query.offset) || 0);
 
-    const where: any = { organizationId: orgId };
-    if (category && ['TENDER', 'EVENT', 'NEWS'].includes(category)) where.category = category;
+    const profile = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
+    const enabledCats: string[] = [];
+    if (!profile || profile.tenderEnabled) enabledCats.push('TENDER');
+    if (!profile || profile.eventEnabled) enabledCats.push('EVENT');
+    if (!profile || profile.newsEnabled) enabledCats.push('NEWS');
+
+    const where: any = {
+      organizationId: orgId,
+      category: { in: enabledCats },
+    };
+    if (category && ['TENDER', 'EVENT', 'NEWS'].includes(category)) {
+      if (!enabledCats.includes(category)) {
+        res.json({
+          opportunities: [],
+          total: 0,
+          categoryCounts: Object.fromEntries(enabledCats.map((c) => [c, 0])),
+          statusCounts: {},
+          enabledCategories: enabledCats,
+        });
+        return;
+      }
+      where.category = category;
+    }
     if (status && ['NEW', 'SAVED', 'DISMISSED', 'APPLIED'].includes(status)) where.status = status;
+    else where.status = { not: 'DISMISSED' };
 
     const [rawOpportunities, total] = await Promise.all([
       prisma.scoutOpportunity.findMany({
@@ -683,7 +754,7 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
       prisma.scoutOpportunity.count({ where }),
     ]);
 
-    // Masque + archive les événements / AO déjà passés (scans précédents)
+    // Masque + archive hors-sujet / dates passées
     const staleIds: string[] = [];
     const opportunities = rawOpportunities.filter((o) => {
       const wrongCat = !fitsScoutCategory(o.category, o.title, o.snippet, o.aiSummary);
@@ -694,7 +765,7 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
         aiSummary: o.aiSummary,
         deadline: o.deadline,
       });
-      if ((wrongCat || stale) && o.status === 'NEW') staleIds.push(o.id);
+      if (wrongCat || stale) staleIds.push(o.id);
       return !wrongCat && !stale;
     }).slice(0, limit);
 
@@ -705,15 +776,20 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
       }).catch((err) => console.warn('[scout-ai] dismiss stale', err));
     }
 
+    // Compteurs uniquement sur catégories actives + non dismiss
     const counts = await prisma.scoutOpportunity.groupBy({
       by: ['category'],
-      where: { organizationId: orgId, status: { not: 'DISMISSED' } },
+      where: {
+        organizationId: orgId,
+        category: { in: enabledCats },
+        status: { not: 'DISMISSED' },
+      },
       _count: { id: true },
     });
 
     const statusCounts = await prisma.scoutOpportunity.groupBy({
       by: ['status'],
-      where: { organizationId: orgId },
+      where: { organizationId: orgId, category: { in: enabledCats } },
       _count: { id: true },
     });
 
@@ -721,6 +797,7 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
       opportunities, total,
       categoryCounts: Object.fromEntries(counts.map((c) => [c.category, c._count.id])),
       statusCounts: Object.fromEntries(statusCounts.map((c) => [c.status, c._count.id])),
+      enabledCategories: enabledCats,
     });
   } catch (err) { next(err); }
 });
