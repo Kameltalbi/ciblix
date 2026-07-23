@@ -15,6 +15,9 @@ const TIERS: Array<{
   id: TierId;
   name: string;
   prices: Record<Currency, number | null>;
+  users: string;
+  agentsLabel: string;
+  agents: string[];
   highlight?: boolean;
   features: string[];
   cta: string;
@@ -22,17 +25,34 @@ const TIERS: Array<{
   {
     id: 'DECOUVERTE',
     name: 'Découverte',
-    prices: { TND: 49, EUR: 19, USD: 21 },
-    features: ['1 agent au choix', 'Quota découverte', 'Essai 7 jours inclus'],
+    prices: { TND: 29, EUR: 9, USD: 10 },
+    users: '1 utilisateur',
+    agentsLabel: '1 agent au choix',
+    agents: [
+      'Chasseur IA',
+      'Assistant IA',
+      'Veilleur IA',
+      'Rédacteur d’offres',
+      'Gmail IA',
+      'Vérificateur IA',
+    ],
+    features: [
+      '1 utilisateur inclus',
+      'Quota découverte (50 actions/mois)',
+      'Essai 7 jours inclus',
+    ],
     cta: 'Essai gratuit',
   },
   {
     id: 'CROISSANCE',
     name: 'Croissance',
-    prices: { TND: 149, EUR: 49, USD: 55 },
+    prices: { TND: 85, EUR: 28, USD: 30 },
+    users: '3 utilisateurs',
+    agentsLabel: '3 agents inclus',
+    agents: ['Chasseur IA', 'Assistant IA', 'Gmail IA'],
     highlight: true,
     features: [
-      '3 agents cœur (Chasseur, Assistant, Gmail)',
+      'Jusqu’à 3 utilisateurs',
       'Mémoire partagée active',
       'Pipeline inféré',
       'Essai 7 jours inclus',
@@ -42,15 +62,42 @@ const TIERS: Array<{
   {
     id: 'PRO',
     name: 'Pro',
-    prices: { TND: 299, EUR: 99, USD: 109 },
-    features: ['Les 6 agents complets', 'Scoring avancé', 'Webhook CRM externe', 'Essai 7 jours inclus'],
+    prices: { TND: 149, EUR: 49, USD: 55 },
+    users: '10 utilisateurs',
+    agentsLabel: '6 agents inclus',
+    agents: [
+      'Chasseur IA',
+      'Assistant IA',
+      'Gmail IA',
+      'Veilleur IA',
+      'Rédacteur d’offres',
+      'Vérificateur IA',
+    ],
+    features: [
+      'Jusqu’à 10 utilisateurs',
+      'Scoring avancé',
+      'Webhook CRM externe',
+      'Essai 7 jours inclus',
+    ],
     cta: 'Essai gratuit',
   },
   {
     id: 'ENTERPRISE',
-    name: 'Enterprise',
+    name: 'Entreprise',
     prices: { TND: null, EUR: null, USD: null },
-    features: ['Tout Pro + multi-users', 'SLA dédié', 'Config sectorielle dédiée'],
+    users: 'Utilisateurs illimités',
+    agentsLabel: '6 agents + options',
+    agents: [
+      'Tous les agents Pro',
+      'BrandPulse AI (sur demande)',
+      'Agents / config sectorielle',
+    ],
+    features: [
+      'Utilisateurs illimités',
+      'Tout Pro + multi-équipes',
+      'SLA dédié',
+      'Config sectorielle dédiée',
+    ],
     cta: 'Nous contacter',
   },
 ];
@@ -68,7 +115,7 @@ const COMPARE_ROWS: Array<{ label: string; values: [Cell, Cell, Cell, Cell] }> =
   { label: 'Webhook CRM externe', values: [false, false, true, true] },
   { label: 'Scoring personnalisé', values: [false, 'basique', 'avancé', 'avancé'] },
   { label: 'Support', values: ['email', 'email + chat', 'prioritaire', 'dédié'] },
-  { label: 'Utilisateurs', values: ['1', '3', '10', 'illimité'] },
+  { label: 'Utilisateurs inclus', values: ['1', '3', '10', 'Illimité'] },
 ];
 
 const REASSURANCE = [
@@ -214,13 +261,34 @@ export function Tarifs() {
                 ) : null}
                 <h2 className="mb-2 text-xl font-bold">{tier.name}</h2>
                 {tier.prices[currency] != null ? (
-                  <p className="mb-5">
+                  <p className="mb-2">
                     <span className="text-4xl font-bold tracking-tight">{tier.prices[currency]}</span>
                     <span className="text-sm text-muted-foreground"> {symbol}/mois</span>
                   </p>
                 ) : (
-                  <p className="mb-5 text-3xl font-bold">Sur devis</p>
+                  <p className="mb-2 text-3xl font-bold">Sur devis</p>
                 )}
+                <p className="mb-3 inline-flex w-fit rounded-full bg-[#eef5ff] px-3 py-1 text-xs font-semibold text-[#016AEB]">
+                  {tier.users}
+                </p>
+                <div className="mb-5 rounded-2xl border border-[#BED6F6]/60 bg-[#f7faff] p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#1E72B9]">
+                    Agents IA · {tier.agentsLabel}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {tier.agents.map((agent) => (
+                      <li key={agent} className="flex gap-2 text-sm text-foreground/80">
+                        <Check size={14} className="mt-0.5 shrink-0 text-[#016AEB]" />
+                        {agent}
+                      </li>
+                    ))}
+                  </ul>
+                  {tier.id === 'DECOUVERTE' ? (
+                    <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                      Vous choisissez 1 agent à garder après l’essai.
+                    </p>
+                  ) : null}
+                </div>
                 <ul className="mb-8 flex-1 space-y-2 text-sm text-muted-foreground">
                   {tier.features.map((f) => (
                     <li key={f} className="flex gap-2">

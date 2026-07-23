@@ -34,7 +34,7 @@ export const PLAN_LIMITS = {
   },
   BASIC: {
     maxProspects: Infinity,
-    maxUsers: 5,
+    maxUsers: 3,
     features: {
       objectives: true,
       expenses: false,
@@ -46,7 +46,7 @@ export const PLAN_LIMITS = {
   },
   BUSINESS: {
     maxProspects: Infinity,
-    maxUsers: 20,
+    maxUsers: 10,
     features: {
       objectives: true,
       expenses: false,
@@ -58,7 +58,7 @@ export const PLAN_LIMITS = {
   },
   ENTERPRISE: {
     maxProspects: Infinity,
-    maxUsers: 50,
+    maxUsers: Infinity,
     features: {
       objectives: true,
       expenses: true,

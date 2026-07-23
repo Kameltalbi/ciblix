@@ -4,10 +4,38 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const TIERS = [
-  { id: 'DECOUVERTE', label: 'Découverte', limit: 50 },
-  { id: 'CROISSANCE', label: 'Croissance', limit: 200 },
-  { id: 'PRO', label: 'Pro', limit: 1000 },
-  { id: 'ENTERPRISE', label: 'Enterprise', limit: 5000 },
+  {
+    id: 'DECOUVERTE',
+    label: 'Découverte',
+    priceTnd: 29,
+    users: 1,
+    limit: 50,
+    agents: '1 agent au choix parmi les 6',
+  },
+  {
+    id: 'CROISSANCE',
+    label: 'Croissance',
+    priceTnd: 85,
+    users: 3,
+    limit: 200,
+    agents: 'Chasseur IA, Assistant IA, Gmail IA',
+  },
+  {
+    id: 'PRO',
+    label: 'Pro',
+    priceTnd: 149,
+    users: 10,
+    limit: 1000,
+    agents: 'Les 6 agents (Chasseur, Assistant, Gmail, Veilleur, Rédacteur, Vérificateur)',
+  },
+  {
+    id: 'ENTERPRISE',
+    label: 'Entreprise',
+    priceTnd: null as number | null,
+    users: null as number | null,
+    limit: 5000,
+    agents: 'Tous les agents Pro + BrandPulse / config sectorielle',
+  },
 ] as const;
 
 export function BillingSettings() {
@@ -90,6 +118,12 @@ export function BillingSettings() {
           {TIERS.map((t) => (
             <div key={t.id} className="border rounded-lg p-3 text-sm">
               <p className="font-medium">{t.label}</p>
+              <p className="text-xs text-muted-foreground">
+                {t.priceTnd != null ? `${t.priceTnd} TND/mois` : 'Sur devis'}
+                {' · '}
+                {t.users != null ? `${t.users} utilisateur${t.users > 1 ? 's' : ''}` : 'utilisateurs illimités'}
+              </p>
+              <p className="text-xs text-muted-foreground">{t.agents}</p>
               <p className="text-xs text-muted-foreground">{t.limit} actions / mois</p>
               <div className="flex gap-2 mt-2">
                 {t.id === 'DECOUVERTE' ? (

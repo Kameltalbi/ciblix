@@ -36,17 +36,25 @@ export const TIER_AGENTS: Record<BillingTier, AgentSlug[]> = {
 };
 
 export const TIER_PRICES: Record<BillingTier, { TND: number | null; EUR: number | null; USD: number | null }> = {
-  DECOUVERTE: { TND: 49, EUR: 19, USD: 21 },
-  CROISSANCE: { TND: 149, EUR: 49, USD: 55 },
-  PRO: { TND: 299, EUR: 99, USD: 109 },
+  DECOUVERTE: { TND: 29, EUR: 9, USD: 10 },
+  CROISSANCE: { TND: 85, EUR: 28, USD: 30 },
+  PRO: { TND: 149, EUR: 49, USD: 55 },
   ENTERPRISE: { TND: null, EUR: null, USD: null },
+};
+
+/** Nombre max d’utilisateurs inclus par palier (null = sur devis / illimité). */
+export const TIER_MAX_USERS: Record<BillingTier, number | null> = {
+  DECOUVERTE: 1,
+  CROISSANCE: 3,
+  PRO: 10,
+  ENTERPRISE: null,
 };
 
 export const TIER_LABELS: Record<BillingTier, string> = {
   DECOUVERTE: 'Découverte',
   CROISSANCE: 'Croissance',
   PRO: 'Pro',
-  ENTERPRISE: 'Enterprise',
+  ENTERPRISE: 'Entreprise',
 };
 
 /** @deprecated Prefer TRIAL_DURATION_DAYS from config/trial.ts */

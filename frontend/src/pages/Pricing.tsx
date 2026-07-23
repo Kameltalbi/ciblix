@@ -105,51 +105,49 @@ const PACK_CARDS = [
 const PAID_PLANS: PricingPlanRow[] = [
   {
     slug: 'BASIC',
-    name: 'Basic',
+    name: 'Croissance',
     packKey: 'pricingPage.packEssentiel',
     packDescKey: 'pricingPage.packEssentielDesc',
-    monthlyPrice: 40,
-    annualPrice: 480,
+    monthlyPrice: 85,
+    annualPrice: 1020,
     features: [
-      'Jusqu\'à 5 utilisateurs',
-      'Hunt AI — prospection intelligente (150/mois)',
-      'Copilot IA — assistant commercial (80/mois)',
-      'Accès marketplace agents',
+      "Jusqu'à 3 utilisateurs",
+      'Agents : Chasseur IA, Assistant IA, Gmail IA',
+      'Mémoire partagée & pipeline',
+      'Essai 7 jours inclus',
     ],
-    cta: 'Démarrer l\'essai gratuit',
+    cta: "Démarrer l'essai gratuit",
   },
   {
     slug: 'BUSINESS',
-    name: 'Business',
+    name: 'Pro',
     packKey: 'pricingPage.packBusiness',
     packDescKey: 'pricingPage.packBusinessDesc',
-    monthlyPrice: 98,
-    annualPrice: 980,
+    monthlyPrice: 149,
+    annualPrice: 1788,
     features: [
-      'Tout le plan Basic',
-      'Jusqu\'à 20 utilisateurs',
-      'Scout AI — veille d\'opportunités (30/mois)',
-      'OffreBot — propositions commerciales (25/mois)',
-      'Quotas Hunt 400 · Copilot 200 / mois',
+      'Tout le plan Croissance',
+      "Jusqu'à 10 utilisateurs",
+      'Agents : Chasseur, Assistant, Gmail, Veilleur, Rédacteur, Vérificateur',
+      'Scoring avancé & webhook CRM',
     ],
-    cta: 'Démarrer l\'essai gratuit',
+    cta: "Démarrer l'essai gratuit",
     popular: true,
   },
   {
     slug: 'ENTERPRISE',
-    name: 'Professionnel',
+    name: 'Entreprise',
     packKey: 'pricingPage.packPro',
     packDescKey: 'pricingPage.packProDesc',
-    monthlyPrice: 175,
-    annualPrice: 2100,
+    monthlyPrice: 0,
+    annualPrice: 0,
     features: [
-      'Tout le plan Business',
-      'Jusqu\'à 50 utilisateurs',
-      'BrandPulse AI — marque & blog SEO (8/mois)',
-      'FactCheck AI — vérification d\'infos (25/mois)',
-      'Quotas Hunt 800 · Copilot 400 / mois',
+      'Tout le plan Pro',
+      'Utilisateurs illimités',
+      'Agents : tous les agents Pro + BrandPulse / config sectorielle',
+      'Tarif sur devis',
     ],
-    cta: 'Démarrer l\'essai gratuit',
+    cta: 'Nous contacter',
   },
 ];
 
@@ -226,7 +224,17 @@ export function Pricing() {
           )}
           {plan.slug === 'BASIC' && (
             <span className="inline-block mt-3 rounded-full bg-sky-100 text-sky-900 text-xs font-medium px-3 py-1">
-              Jusqu&apos;à 5 utilisateurs
+              Jusqu&apos;à 3 utilisateurs
+            </span>
+          )}
+          {plan.slug === 'BUSINESS' && (
+            <span className="inline-block mt-3 rounded-full bg-emerald-100 text-emerald-900 text-xs font-medium px-3 py-1">
+              Jusqu&apos;à 10 utilisateurs
+            </span>
+          )}
+          {plan.slug === 'ENTERPRISE' && (
+            <span className="inline-block mt-3 rounded-full bg-violet-100 text-violet-900 text-xs font-medium px-3 py-1">
+              Utilisateurs illimités · sur devis
             </span>
           )}
         </div>
