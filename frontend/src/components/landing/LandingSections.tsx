@@ -1,12 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, useInView } from 'framer-motion';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDown,
   ArrowRight,
   Briefcase,
   Building2,
+  Calendar,
+  Check,
   CheckCircle2,
   ClipboardList,
   FileSignature,
@@ -16,6 +18,7 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  Phone,
   PhoneCall,
   Play,
   Radar,
@@ -28,9 +31,13 @@ import {
   Users,
   X,
   XCircle,
+  Bot,
+  Megaphone,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
 
 export const DEMO_URL = (import.meta.env.VITE_DEMO_VIDEO_URL as string | undefined) || '#demo';
 export const EXPERT_MAIL = 'mailto:contact@ciblix.com?subject=Parler%20%C3%A0%20un%20expert%20Ciblix';
@@ -199,93 +206,313 @@ export function LandingProofStats() {
 export function LandingProblem() {
   const { t } = useTranslation();
   const pains = [
-    { title: t('landingHome.problemCard1Title'), body: t('landingHome.problemCard1Body'), icon: ClipboardList },
-    { title: t('landingHome.problemCard2Title'), body: t('landingHome.problemCard2Body'), icon: PhoneCall },
-    { title: t('landingHome.problemCard3Title'), body: t('landingHome.problemCard3Body'), icon: XCircle },
+    t('landingHome.problemPain1'),
+    t('landingHome.problemPain2'),
+    t('landingHome.problemPain3'),
+    t('landingHome.problemPain4'),
   ];
 
   return (
-    <section id="problem" className="bg-white py-20 md:py-28">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <Reveal>
-          <h2 className="mx-auto mb-4 max-w-2xl text-center font-serif text-3xl font-bold tracking-tight text-foreground md:text-5xl">
-            {t('landingHome.problemTitle')}
-          </h2>
-          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground md:text-lg">
-            {t('landingHome.problemLead')}
-          </p>
-        </Reveal>
-        <div className="grid gap-6 md:grid-cols-3">
-          {pains.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.08}>
-              <div className="h-full rounded-3xl border border-[#BED6F6]/40 bg-[#f7faff] p-7 transition hover:border-[#016AEB]/30 hover:bg-white hover:shadow-lg">
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
-                  <p.icon size={22} />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-foreground">{p.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-              </div>
-            </Reveal>
-          ))}
+    <section id="problem" className="relative overflow-hidden bg-white py-20 md:py-28">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(190,214,246,0.35),transparent_55%)]" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <Reveal>
+            <h2 className="mb-4 font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-[2.75rem] lg:leading-[1.15]">
+              {t('landingHome.problemTitle')}
+            </h2>
+            <p className="mb-8 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
+              {t('landingHome.problemLead')}
+            </p>
+            <ul className="space-y-3">
+              {pains.map((pain, i) => (
+                <motion.li
+                  key={pain}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.08 * i, duration: 0.4 }}
+                  className="flex items-center gap-3 text-sm font-medium text-foreground/90 md:text-base"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-500">
+                    <X size={14} strokeWidth={2.5} />
+                  </span>
+                  {pain}
+                </motion.li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal delay={0.12}>
+            <UnifiedMemoryIllustration />
+          </Reveal>
         </div>
       </div>
     </section>
   );
 }
 
-export function LandingSolution() {
+function UnifiedMemoryIllustration() {
   const { t } = useTranslation();
-  const steps = [1, 2, 3, 4].map((n) => ({
-    title: t(`landingHome.timeline${n}Title`),
-    body: t(`landingHome.timeline${n}Body`),
-  }));
-  const isExternal = DEMO_URL.startsWith('http');
+  const tools: { label: string; Icon: LucideIcon; color: string }[] = [
+    { label: 'Gmail', Icon: Mail, color: '#EA4335' },
+    { label: 'WhatsApp', Icon: MessageCircle, color: '#25D366' },
+    { label: t('landingHome.illusPhone'), Icon: Phone, color: '#016AEB' },
+    { label: 'CRM', Icon: Building2, color: '#6366F1' },
+    { label: t('landingHome.illusCalendar'), Icon: Calendar, color: '#F59E0B' },
+    { label: 'IA', Icon: Sparkles, color: '#0071DD' },
+  ];
+
+  const checks = [
+    t('landingHome.illusCheck1'),
+    t('landingHome.illusCheck2'),
+    t('landingHome.illusCheck3'),
+    t('landingHome.illusCheck4'),
+    t('landingHome.illusCheck5'),
+    t('landingHome.illusCheck6'),
+  ];
+
+  // Positions around the hub (percent)
+  const positions = [
+    { left: '8%', top: '10%' },
+    { left: '72%', top: '6%' },
+    { left: '2%', top: '48%' },
+    { left: '80%', top: '42%' },
+    { left: '14%', top: '78%' },
+    { left: '70%', top: '76%' },
+  ];
 
   return (
-    <section id="how-it-works" className="bg-[#f7faff] py-20 md:py-28">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+    <div className="relative mx-auto aspect-[1.05] w-full max-w-lg">
+      <div className="absolute inset-0 rounded-[1.25rem] bg-gradient-to-br from-[#f7faff] via-white to-[#e8f1fc] shadow-[0_20px_50px_-20px_rgba(1,106,235,0.25)] ring-1 ring-[#BED6F6]/60" />
+
+      {/* Connection lines */}
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden>
+        {positions.map((pos, i) => {
+          const x = parseFloat(pos.left) + 6;
+          const y = parseFloat(pos.top) + 6;
+          return (
+            <motion.line
+              key={i}
+              x1={x}
+              y1={y}
+              x2={50}
+              y2={50}
+              stroke="#016AEB"
+              strokeWidth="0.35"
+              strokeLinecap="round"
+              initial={{ pathLength: 0, opacity: 0.15 }}
+              whileInView={{ pathLength: 1, opacity: 0.35 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.1, delay: 0.15 * i, ease: 'easeOut' }}
+            />
+          );
+        })}
+        {positions.map((pos, i) => {
+          const x = parseFloat(pos.left) + 6;
+          const y = parseFloat(pos.top) + 6;
+          return (
+            <motion.circle
+              key={`pulse-${i}`}
+              r="0.9"
+              fill="#016AEB"
+              initial={{ cx: x, cy: y, opacity: 0 }}
+              animate={{
+                cx: [x, 50],
+                cy: [y, 50],
+                opacity: [0, 0.9, 0],
+              }}
+              transition={{
+                duration: 2.4,
+                delay: i * 0.35,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Satellite tools */}
+      {tools.map((tool, i) => (
+        <motion.div
+          key={tool.label}
+          className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: positions[i].left, top: positions[i].top }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 * i, duration: 0.4 }}
+          whileHover={{ scale: 1.08, y: -2 }}
+        >
+          <div className="flex items-center gap-2 rounded-2xl border border-white/80 bg-white/95 px-2.5 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur-md">
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-xl"
+              style={{ backgroundColor: `${tool.color}18`, color: tool.color }}
+            >
+              <tool.Icon size={15} />
+            </span>
+            <span className="pr-1 text-xs font-semibold text-slate-700">{tool.label}</span>
+          </div>
+        </motion.div>
+      ))}
+
+      {/* Center prospect card */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 z-20 w-[58%] max-w-[240px] -translate-x-1/2 -translate-y-1/2"
+        initial={{ opacity: 0, scale: 0.92 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.25, duration: 0.5 }}
+      >
+        <div className="rounded-2xl border border-[#016AEB]/20 bg-white p-4 shadow-[0_16px_40px_rgba(1,106,235,0.18)]">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#016AEB] to-[#38bdf8] text-white shadow-md">
+              <Users size={16} />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#016AEB]">
+                {t('landingHome.illusProspectBadge')}
+              </p>
+              <p className="text-sm font-bold text-foreground">{t('landingHome.illusProspectName')}</p>
+            </div>
+          </div>
+          <ul className="space-y-1.5">
+            {checks.map((c, i) => (
+              <motion.li
+                key={c}
+                className="flex items-center gap-2 text-[11px] font-medium text-slate-600"
+                initial={{ opacity: 0, x: 6 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.35 + i * 0.07 }}
+              >
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <Check size={10} strokeWidth={3} />
+                </span>
+                {c}
+              </motion.li>
+            ))}
+          </ul>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+const PRODUCT_AGENTS: Array<{
+  id: string;
+  Icon: LucideIcon;
+  nameKey: string;
+  roleKey: string;
+  whenKey: string;
+  accent: string;
+}> = [
+  {
+    id: 'hunt',
+    Icon: Radio,
+    nameKey: 'landingHome.agentHuntName',
+    roleKey: 'landingHome.agentHuntRole',
+    whenKey: 'landingHome.agentHuntWhen',
+    accent: '#0EA5E9',
+  },
+  {
+    id: 'copilot',
+    Icon: Bot,
+    nameKey: 'landingHome.agentCopilotName',
+    roleKey: 'landingHome.agentCopilotRole',
+    whenKey: 'landingHome.agentCopilotWhen',
+    accent: '#016AEB',
+  },
+  {
+    id: 'scout',
+    Icon: Radar,
+    nameKey: 'landingHome.agentScoutName',
+    roleKey: 'landingHome.agentScoutRole',
+    whenKey: 'landingHome.agentScoutWhen',
+    accent: '#1E72B9',
+  },
+  {
+    id: 'offre',
+    Icon: FileSignature,
+    nameKey: 'landingHome.agentOffreName',
+    roleKey: 'landingHome.agentOffreRole',
+    whenKey: 'landingHome.agentOffreWhen',
+    accent: '#D97706',
+  },
+  {
+    id: 'gmail',
+    Icon: Mail,
+    nameKey: 'landingHome.agentGmailName',
+    roleKey: 'landingHome.agentGmailRole',
+    whenKey: 'landingHome.agentGmailWhen',
+    accent: '#DC2626',
+  },
+  {
+    id: 'fact',
+    Icon: ShieldCheck,
+    nameKey: 'landingHome.agentFactName',
+    roleKey: 'landingHome.agentFactRole',
+    whenKey: 'landingHome.agentFactWhen',
+    accent: '#059669',
+  },
+  {
+    id: 'brand',
+    Icon: Megaphone,
+    nameKey: 'landingHome.agentBrandName',
+    roleKey: 'landingHome.agentBrandRole',
+    whenKey: 'landingHome.agentBrandWhen',
+    accent: '#BE123C',
+  },
+];
+
+/** Post-hero: explain what each real product agent is for. */
+export function LandingSolution() {
+  const { t } = useTranslation();
+
+  return (
+    <section id="agents" className="relative overflow-hidden bg-[#f7faff] py-20 md:py-28">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(1,106,235,0.08),transparent_55%)]" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <h2 className="mb-4 text-center font-serif text-3xl font-bold tracking-tight md:text-5xl">
-            {t('landingHome.howTitle')}
-          </h2>
-          <p className="mx-auto mb-14 max-w-2xl text-center text-muted-foreground md:text-lg">
-            {t('landingHome.howLead')}
-          </p>
+          <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
+            <h2 className="mb-4 font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-[2.75rem]">
+              {t('landingHome.howTitle')}
+            </h2>
+            <p className="text-base text-muted-foreground md:text-lg">{t('landingHome.howLead')}</p>
+          </div>
         </Reveal>
-        <div className="relative space-y-0">
-          {steps.map((step, i) => (
-            <Reveal key={step.title} delay={i * 0.05}>
-              <div className="relative flex gap-4 pb-2 md:gap-6">
-                <div className="flex flex-col items-center">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0071DD] text-sm font-bold text-white shadow-glow">
-                    {i + 1}
-                  </div>
-                  {i < steps.length - 1 ? (
-                    <div className="my-1 flex flex-1 flex-col items-center text-[#BED6F6]">
-                      <div className="h-full min-h-[28px] w-px bg-gradient-to-b from-[#016AEB] to-[#BED6F6]" />
-                      <ArrowDown size={16} className="text-[#016AEB]" />
-                    </div>
-                  ) : null}
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {PRODUCT_AGENTS.map((agent, i) => (
+            <Reveal key={agent.id} delay={i * 0.05}>
+              <article className="flex h-full flex-col rounded-[1.1rem] border border-[#BED6F6]/60 bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-[#016AEB]/30 hover:shadow-md">
+                <div
+                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: `${agent.accent}18`, color: agent.accent }}
+                >
+                  <agent.Icon size={20} />
                 </div>
-                <div className="mb-6 flex-1 rounded-2xl border border-[#BED6F6]/50 bg-white/80 p-5 shadow-sm backdrop-blur-sm transition hover:shadow-md md:p-6">
-                  <h3 className="mb-1 text-base font-semibold md:text-lg">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">{step.body}</p>
-                </div>
-              </div>
+                <h3 className="mb-1 text-base font-bold text-foreground">{t(agent.nameKey)}</h3>
+                <p className="mb-3 text-sm font-semibold text-[#016AEB]">{t(agent.roleKey)}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  <span className="font-medium text-foreground/80">{t('landingHome.agentWhenLabel')} </span>
+                  {t(agent.whenKey)}
+                </p>
+              </article>
             </Reveal>
           ))}
         </div>
+
         <Reveal delay={0.2}>
-          <div className="mt-4 text-center">
-            <a
-              href={DEMO_URL}
-              target={isExternal ? '_blank' : undefined}
-              rel={isExternal ? 'noreferrer' : undefined}
+          <div className="mt-12 text-center">
+            <Link
+              to="/register"
               className="inline-flex items-center gap-2 text-base font-semibold text-[#0071DD] transition hover:text-[#016AEB]"
             >
               {t('landingHome.howCta')}
               <ArrowRight size={16} />
-            </a>
+            </Link>
           </div>
         </Reveal>
       </div>

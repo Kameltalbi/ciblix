@@ -51,7 +51,10 @@
     "notifications": "Notifications",
     "support": "Support",
     "sectionOverview": "Home",
-    "sectionAgents": "AI agents",
+    "sectionCommand": "Command",
+    "sectionAgents": "Agents",
+    "sectionResults": "Results",
+    "sectionMore": "More",
     "sectionCrm": "Workspace",
     "sectionWorkspace": "Workspace",
     "sectionEnterprise": "Performance & finance",
@@ -66,7 +69,7 @@
     "agentGmail": "Gmail AI",
     "agentFactCheck": "AI Fact-Checker",
     "agentBrandPulse": "BrandPulse AI",
-    "agentsMarketplace": "Agents Home"
+    "agentsMarketplace": "Agent fleet"
   },
   "gmailAi": {
     "badge": "Gmail AI Agent",
@@ -661,16 +664,81 @@
     "statPipeline": "Automated pipeline",
     "statChannels": "WhatsApp + Gmail",
     "statLang": "Multilingual",
-    "problemTitle": "Your sales tools don't talk to each other. Neither do most AI agents.",
-    "problemLead": "Ciblix automatically connects everything your agents learn — on one thread, with no manual entry.",
+    "problemTitle": "Your sales tools each work on their own.",
+    "problemLead": "Email, calls, WhatsApp, CRM and AI each store a piece of the picture. Teams lose time and opportunities.",
+    "problemPain1": "Fragmented customer history",
+    "problemPain2": "Double data entry",
+    "problemPain3": "Forgotten follow-ups",
+    "problemPain4": "AI with no shared memory",
     "problemCard1Title": "Isolated channels",
     "problemCard1Body": "An email handled here, a call noted elsewhere, a prospect qualified somewhere else — nobody sees the full picture.",
     "problemCard2Title": "CRM to fill in",
     "problemCard2Body": "Classic CRMs demand data entry nobody has time for.",
     "problemCard3Title": "Lost opportunities",
     "problemCard3Body": "Not from lack of tools — because they don't communicate.",
-    "howTitle": "One prospect. Six agents. One memory.",
-    "howLead": "From discovery to proposal, every step enriches the same thread — no jargon, no typing.",
+    "illusPhone": "Phone",
+    "illusCalendar": "Calendar",
+    "illusProspectBadge": "Prospect record",
+    "illusProspectName": "Ciblix prospect",
+    "illusCheck1": "Emails synced",
+    "illusCheck2": "Calls summarized by AI",
+    "illusCheck3": "WhatsApp synced",
+    "illusCheck4": "Opportunity created",
+    "illusCheck5": "Next action",
+    "illusCheck6": "Shared history",
+    "howTitle": "Each agent has a clear job.",
+    "howLead": "You don’t need to turn everything on at once: pick the agent for today’s job. They share the same prospect memory.",
+    "howCta": "Start free trial →",
+    "agentWhenLabel": "Use when:",
+    "agentHuntName": "AI Hunter",
+    "agentHuntRole": "Find new customers",
+    "agentHuntWhen": "you want a list of companies to contact (sector + city), scored and ready to follow up.",
+    "agentCopilotName": "AI Assistant",
+    "agentCopilotRole": "Coach your sales day",
+    "agentCopilotWhen": "you want to know who to follow up, draft an email, or ask for advice in plain language.",
+    "agentScoutName": "AI Scout",
+    "agentScoutRole": "Spot market opportunities",
+    "agentScoutWhen": "you want alerts on tenders, trade shows, or signals related to your business.",
+    "agentOffreName": "Offer Writer",
+    "agentOffreRole": "Draft a commercial proposal",
+    "agentOffreWhen": "a prospect is ready and you need a proposal fast, without starting from scratch.",
+    "agentGmailName": "Gmail AI",
+    "agentGmailRole": "Save time on email",
+    "agentGmailWhen": "your inbox is overflowing and you want summaries + drafts to approve before sending.",
+    "agentFactName": "AI Fact-Checker",
+    "agentFactRole": "Verify a claim before you use it",
+    "agentFactWhen": "a figure or statement must be validated before a proposal or pitch.",
+    "agentBrandName": "BrandPulse AI",
+    "agentBrandRole": "Grow your online presence",
+    "agentBrandWhen": "you want to measure your brand and publish SEO content to be found more easily.",
+    "demoProspectLabel": "Shared memory",
+    "demoLiveBadge": "Live",
+    "demoScoreLabel": "AI score",
+    "demoUpdating": "is enriching the record",
+    "demoLive1": "Prospect detected automatically",
+    "demoLive2": "Company, sector and contacts added",
+    "demoLive3": "Score 92/100 · high priority",
+    "demoLive4": "Opportunity created in pipeline",
+    "demoLive5": "Email + WhatsApp follow-up scheduled",
+    "demoLive6": "Manager forecasts updated",
+    "demoAgent1Name": "Hunter AI",
+    "demoAgent1Desc": "Finds prospects automatically.",
+    "demoAgent1Status": "Prospects detected",
+    "demoAgent2Name": "Enrichment AI",
+    "demoAgent2Desc": "Company, sector, size, contacts, LinkedIn.",
+    "demoAgent2Status": "Data enriched",
+    "demoAgent3Name": "Qualification AI",
+    "demoAgent3Desc": "Score, potential and priority — automatic.",
+    "demoAgent3Status": "Score 92/100",
+    "demoAgent4Name": "Sales AI",
+    "demoAgent4Desc": "Opportunity, pipeline, next action.",
+    "demoAgent4Status": "Opportunity created",
+    "demoAgent5Name": "Follow-up AI",
+    "demoAgent5Desc": "Email, WhatsApp and meeting ready.",
+    "demoAgent5Status": "Follow-up scheduled",
+    "demoAgent6Name": "Manager AI",
+    "demoAgent6Desc": "Forecasts, conversion, performance.",
+    "demoAgent6Status": "Forecasts updated",
     "timeline1Title": "Hunt AI finds a prospect",
     "timeline1Body": "They appear automatically in your pipeline — nothing to enter.",
     "timeline2Title": "Assistant AI listens to a call or WhatsApp",
@@ -679,7 +747,6 @@
     "timeline3Body": "No matter which agent captured the info — it's the same prospect.",
     "timeline4Title": "Proposal Writer in one click",
     "timeline4Body": "A proposal based on what was actually said in conversation.",
-    "howCta": "See a concrete example →",
     "diffTitle": "Built for markets where classic CRM isn't enough",
     "diff1Title": "Native multilingual",
     "diff1Body": "Transcription and analysis in French, Arabic and dialects — not English only.",
@@ -805,32 +872,32 @@
   "agents": {
     "huntAi": {
       "name": "AI Hunter",
-      "desc": "Smart prospecting"
+      "desc": "Find new companies to contact"
     },
     "copilotIa": {
       "name": "AI Assistant",
-      "desc": "Commercial assistant"
+      "desc": "Prioritize and write every day"
     },
     "scoutAi": {
       "name": "AI Scout",
-      "desc": "Opportunity monitoring"
+      "desc": "Spot tenders and market signals"
     },
     "offreBot": {
       "name": "Offer Writer",
-      "desc": "Proposal generation"
+      "desc": "Draft a commercial proposal"
     },
     "offreBotSubtitle": "Personalized commercial proposals in seconds",
     "factCheckAi": {
       "name": "AI Fact-Checker",
-      "desc": "Information verification"
+      "desc": "Verify a claim before you use it"
     },
     "gmailAi": {
       "name": "Gmail AI",
-      "desc": "Smart email summaries and drafts"
+      "desc": "Summarize and draft email replies"
     },
     "brandPulse": {
       "name": "BrandPulse AI",
-      "desc": "Online brand & SEO blog"
+      "desc": "Grow online presence and SEO"
     }
   },
   "pricingPage": {

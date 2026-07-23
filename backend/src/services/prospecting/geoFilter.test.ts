@@ -38,7 +38,7 @@ describe('geoFilter', () => {
     ).toBe(false);
   });
 
-  it('keeps Tunisian hits', () => {
+  it('keeps Tunisian hits with explicit country', () => {
     const criteria = { country: 'Tunisie', city: 'Nabeul' };
     expect(
       hitMatchesSearchCountry(
@@ -53,14 +53,56 @@ describe('geoFilter', () => {
     ).toBe(true);
   });
 
+  it('keeps local TN address without the word Tunisie (Places often omits country)', () => {
+    const criteria = { country: 'Tunisie', city: 'Nabeul' };
+    expect(
+      hitMatchesSearchCountry(
+        {
+          country: 'Nabeul',
+          city: 'Avenue Habib Bourguiba',
+          phone: '72 286 000',
+          formattedAddress: 'Avenue Habib Bourguiba, Nabeul',
+        },
+        criteria
+      )
+    ).toBe(true);
+
+    expect(
+      hitMatchesSearchCountry(
+        {
+          country: '8000',
+          city: 'Nabeul',
+          formattedAddress: '8000 Nabeul',
+        },
+        criteria
+      )
+    ).toBe(true);
+  });
+
+  it('keeps national TN phone without +216', () => {
+    const criteria = { country: 'Tunisie', city: 'Nabeul' };
+    expect(
+      hitMatchesSearchCountry(
+        {
+          country: null,
+          city: null,
+          phone: '98 123 456',
+          formattedAddress: null,
+        },
+        criteria
+      )
+    ).toBe(true);
+  });
+
   it('filters a mixed list', () => {
     const filtered = filterHitsBySearchLocation(
       [
         { companyName: 'OK', country: 'Tunisie', city: 'Nabeul' },
+        { companyName: 'Local', country: 'Nabeul', city: 'Korba', formattedAddress: 'Korba, Nabeul' } as never,
         { companyName: 'Paris', country: 'France', city: 'Paris' },
       ],
       { country: 'Tunisie', city: 'Nabeul' }
     );
-    expect(filtered.map((h) => h.companyName)).toEqual(['OK']);
+    expect(filtered.map((h) => h.companyName)).toEqual(['OK', 'Local']);
   });
 });

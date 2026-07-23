@@ -41,32 +41,31 @@ type NavItem = {
 };
 
 /**
- * Sidebar — plateforme Agents IA uniquement.
- * Agents · Hunt, Copilot, Scout, OffreBot, FactCheck, BrandPulse
- * Aide · support
+ * Centre de commandement IA — navigation agents-first.
+ * Accueil · agents principaux · contacts · support
  */
 const NAV_STRUCTURE: NavItem[] = [
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'AGENTS' },
-  { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'AGENTS' },
-  { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'AGENTS' },
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'COMMAND' },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   { to: '/agents/offre-bot', labelKey: 'nav.agentOffre', icon: FileSignature, page: 'offre-bot', section: 'AGENTS' },
   { to: '/agents/gmail-ai', labelKey: 'nav.agentGmail', icon: Mail, page: 'gmail-ai', section: 'AGENTS' },
-  { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'AGENTS' },
-  { to: '/agents/brand-pulse', labelKey: 'nav.agentBrandPulse', icon: Megaphone, page: 'brand-pulse', section: 'AGENTS' },
+  { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'RESULTS' },
+  { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'RESULTS' },
+  { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'MORE' },
+  { to: '/agents/brand-pulse', labelKey: 'nav.agentBrandPulse', icon: Megaphone, page: 'brand-pulse', section: 'MORE' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
 /** Ordre d’affichage des blocs sidebar (libellés i18n : nav.section*). */
-const SIDEBAR_SECTION_ORDER = [
-  'AGENTS',
-  'SUPPORT',
-] as const;
+const SIDEBAR_SECTION_ORDER = ['COMMAND', 'AGENTS', 'RESULTS', 'MORE', 'SUPPORT'] as const;
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
+  COMMAND: 'nav.sectionCommand',
   AGENTS: 'nav.sectionAgents',
+  RESULTS: 'nav.sectionResults',
+  MORE: 'nav.sectionMore',
   SUPPORT: 'nav.sectionSupport',
 };
 
@@ -245,7 +244,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Agent quick-nav — desktop only */}
         <nav className="hidden flex-1 items-center justify-center gap-1 px-4 md:flex">
           {filteredNav
-            .filter((item) => item.section === 'AGENTS' && item.page !== 'agents-marketplace')
+            .filter((item) => item.section === 'AGENTS' || item.section === 'COMMAND')
             .map((item) => {
               const Icon = item.icon;
               const isActive = pathMatchesNav(item.to, location.pathname);
@@ -254,14 +253,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                    'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
                     isActive
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
                   <Icon size={14} strokeWidth={2} />
-                  <span className="hidden lg:inline">{t(item.labelKey)}</span>
+                  <span className="hidden xl:inline">{t(item.labelKey)}</span>
                 </NavLink>
               );
             })}
@@ -561,8 +560,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        <main className="min-h-0 flex-1 overflow-auto bg-slate-50">
-          <div className="mx-auto max-w-[1600px] px-6 py-8 md:px-8 md:py-10 lg:px-10">{children}</div>
+        <main className="min-h-0 flex-1 overflow-auto bg-[#fafafa]">
+          <div className="mx-auto max-w-[1400px] px-5 py-6 md:px-8 md:py-8">{children}</div>
         </main>
       </div>
 

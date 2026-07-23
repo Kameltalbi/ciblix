@@ -262,6 +262,24 @@ class GmailService {
     });
   }
 
+  /**
+   * Retire des labels (ex. INBOX pour archiver hors boîte principale).
+   * Le brouillon de réponse reste visible sous le libellé « Réponse à valider ».
+   */
+  async removeLabelsFromMessage(
+    token: GmailToken,
+    messageId: string,
+    labelIds: string[]
+  ): Promise<void> {
+    if (!labelIds.length) return;
+    const gmail = await this.getGmailClient(token);
+    await gmail.users.messages.modify({
+      userId: 'me',
+      id: messageId,
+      requestBody: { removeLabelIds: labelIds },
+    });
+  }
+
   async sendMail(
     token: GmailToken,
     opts: {

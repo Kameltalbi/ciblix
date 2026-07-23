@@ -55,6 +55,7 @@ interface ProcessedItem {
   summary: string | null;
   actionRequested: string | null;
   analysis: string | null;
+  suggestedReply?: string | null;
   priority: 'HIGH' | 'MEDIUM' | 'LOW' | null;
   draftId: string | null;
   status: 'PROCESSED' | 'SKIPPED' | 'ERROR';
@@ -202,6 +203,22 @@ export function GmailAI() {
     },
   });
 
+  const createDraft = useMutation({
+    mutationFn: (id: string) =>
+      api.post(`/gmail-ai/messages/${id}/create-draft`).then((r) => r.data as { gmailUrl?: string }),
+    onSuccess: (data) => {
+      setToast('Brouillon créé dans Gmail — ouvrez le fil pour relire et envoyer.');
+      qc.invalidateQueries({ queryKey: ['gmail-ai-processed'] });
+      qc.invalidateQueries({ queryKey: ['gmail-ai-statistics'] });
+      if (data.gmailUrl) window.open(data.gmailUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => setToast(null), 5000);
+    },
+    onError: () => {
+      setToast('Impossible de créer le brouillon Gmail.');
+      setTimeout(() => setToast(null), 4000);
+    },
+  });
+
   const saveSettings = useMutation({
     mutationFn: () =>
       api
@@ -235,12 +252,14 @@ export function GmailAI() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-            <Mail size={14} />
-            {t('gmailAi.badge')}
+          <div className="mb-2 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <Mail size={12} />
+            Centre de validation
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('gmailAi.title')}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t('gmailAi.subtitle')}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('gmailAi.title')}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            L&apos;IA lit, résume et prépare — vous validez. Jamais d&apos;envoi automatique.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {status?.enabled ? (
@@ -318,7 +337,10 @@ export function GmailAI() {
         <Card className="border-0 shadow-sm ring-1 ring-black/5 xl:col-span-3">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Emails en attente de validation</CardTitle>
-            <CardDescription>Brouillons sous le libellé « {status?.labelName || 'Réponse à valider'} »</CardDescription>
+            <CardDescription>
+              Libellé « {status?.labelName || 'Réponse à valider'} » — réponses préparées dans Ciblix,
+              sans brouillon Gmail automatique (inbox propre).
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {listLoading || statusLoading ? (
@@ -327,7 +349,7 @@ export function GmailAI() {
               </div>
             ) : pending.length === 0 ? (
               <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                Aucun brouillon en attente. Envoyez un nouvel email de test après activation.
+                Aucune réponse à valider. Envoyez un nouvel email de test après activation.
               </div>
             ) : (
               <ul className="divide-y rounded-xl border">
@@ -350,7 +372,30 @@ export function GmailAI() {
                       {item.actionRequested && (
                         <p className="text-xs font-medium text-foreground">Action : {item.actionRequested}</p>
                       )}
+                      {item.suggestedReply ? (
+                        <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-xs text-foreground/90">
+                          {item.suggestedReply}
+                        </pre>
+                      ) : null}
                       <div className="flex flex-wrap items-center gap-3">
+                        {item.suggestedReply && !item.draftId ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8"
+                            disabled={createDraft.isPending}
+                            onClick={() => createDraft.mutate(item.id)}
+                          >
+                            {createDraft.isPending ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              'Créer le brouillon Gmail'
+                            )}
+                          </Button>
+                        ) : null}
+                        {item.draftId ? (
+                          <span className="text-xs font-medium text-emerald-700">Brouillon Gmail prêt</span>
+                        ) : null}
                         <a
                           href={`https://mail.google.com/mail/u/0/#all/${item.threadId}`}
                           target="_blank"

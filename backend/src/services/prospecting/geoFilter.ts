@@ -17,12 +17,20 @@ export const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   hammamet: { lat: 36.4, lng: 10.6167 },
   medenine: { lat: 33.3549, lng: 10.5055 },
   kasserine: { lat: 35.1672, lng: 8.8365 },
+  'la marsa': { lat: 36.8782, lng: 10.3247 },
+  carthage: { lat: 36.8528, lng: 10.3236 },
+  kelibia: { lat: 36.8476, lng: 11.0939 },
+  korba: { lat: 36.5786, lng: 10.8586 },
+  'dar chaabane': { lat: 36.4697, lng: 10.7517 },
   alger: { lat: 36.7538, lng: 3.0588 },
   oran: { lat: 35.6969, lng: -0.6331 },
   casablanca: { lat: 33.5731, lng: -7.5898 },
   rabat: { lat: 34.0209, lng: -6.8416 },
   paris: { lat: 48.8566, lng: 2.3522 },
 };
+
+/** Villes hors Tunisie dans CITY_COORDS (ne doivent pas servir de signal TN). */
+const FOREIGN_CITY_KEYS = new Set(['alger', 'oran', 'casablanca', 'rabat', 'paris']);
 
 export function normalizeGeoText(value: string): string {
   return value
@@ -79,6 +87,34 @@ function countryAliases(regionOrName: string): string[] {
   return [normalizeGeoText(regionOrName)];
 }
 
+function haystackMentionsCountryCity(haystack: string, region: string | null): boolean {
+  if (!region || !haystack) return false;
+  if (region === 'TN') {
+    for (const key of Object.keys(CITY_COORDS)) {
+      if (FOREIGN_CITY_KEYS.has(key)) continue;
+      if (haystack.includes(key)) return true;
+    }
+    // Codes postaux tunisiens (4 chiffres, souvent dans l'adresse Places)
+    if (/\b[1-9]\d{3}\b/.test(haystack)) return true;
+  }
+  return false;
+}
+
+function phoneMatchesRegion(phoneRaw: string, region: string | null): boolean {
+  if (!region || !phoneRaw) return false;
+  const phone = phoneRaw.replace(/[\s().-]/g, '');
+  if (region === 'TN') {
+    if (phone.startsWith('+216') || phone.startsWith('00216') || phone.startsWith('216')) return true;
+    // Numéro national TN : 8 chiffres, préfixe 2–9 (ex. 72 286 000)
+    const digits = phone.replace(/\D/g, '');
+    if (/^[2-9]\d{7}$/.test(digits)) return true;
+  }
+  if (region === 'FR' && (phone.startsWith('+33') || phone.startsWith('0033'))) return true;
+  if (region === 'DZ' && (phone.startsWith('+213') || phone.startsWith('00213'))) return true;
+  if (region === 'MA' && (phone.startsWith('+212') || phone.startsWith('00212'))) return true;
+  return false;
+}
+
 /** True if address/country/phone look like the requested country. */
 export function hitMatchesSearchCountry(
   hit: Pick<CompanySearchHit, 'country' | 'city' | 'phone' | 'raw'> & { formattedAddress?: string | null },
@@ -97,23 +133,29 @@ export function hitMatchesSearchCountry(
 
   if (aliases.some((a) => haystack.includes(a))) return true;
 
-  // Phone country hint
-  const phone = (hit.phone || '').replace(/\s/g, '');
-  if (region === 'TN' && (phone.startsWith('+216') || phone.startsWith('00216'))) return true;
-  if (region === 'FR' && (phone.startsWith('+33') || phone.startsWith('0033'))) return true;
-  if (region === 'DZ' && (phone.startsWith('+213') || phone.startsWith('00213'))) return true;
-  if (region === 'MA' && (phone.startsWith('+212') || phone.startsWith('00212'))) return true;
+  if (phoneMatchesRegion(hit.phone || '', region)) return true;
 
   // Explicit foreign country in address → reject
   const foreignSignals =
     region === 'TN'
-      ? ['france', 'paris', 'lyon', 'marseille', 'noisy le sec', 'belgium', 'belgique', 'canada']
+      ? ['france', 'paris', 'lyon', 'marseille', 'noisy le sec', 'belgium', 'belgique', 'canada', 'algerie', 'algeria', 'maroc', 'morocco']
       : [];
   if (foreignSignals.some((f) => haystack.includes(f))) return false;
 
-  // No country signal at all: keep only if we have a location bias and no clear foreign mark
-  if (!hit.country?.trim() && !haystack) return true;
-  if (!hit.country?.trim()) return false;
+  // Adresse locale sans « Tunisie » (très fréquent sur Places) : Nabeul, 8000, etc.
+  if (haystackMentionsCountryCity(haystack, region)) return true;
+
+  // Ville recherchée présente dans l'adresse (ex. critères city=Nabeul)
+  const wantedCity = criteria.city?.trim();
+  if (wantedCity && haystack.includes(normalizeGeoText(wantedCity))) return true;
+
+  // Pas d'adresse du tout → garder (Places a déjà appliqué regionCode / locationBias)
+  if (!haystack) return true;
+
+  // Adresse ambiguë sans marque étrangère : garder seulement si un biais ville est actif
+  // (Places locationBias). Sinon exiger un signal pays positif (alias / téléphone / ville TN).
+  // Ancien comportement : return false → catastrophe (ex. "Avenue X, Nabeul" sans le mot Tunisie).
+  if (wantedCity && getCityCoords(wantedCity)) return true;
 
   return false;
 }

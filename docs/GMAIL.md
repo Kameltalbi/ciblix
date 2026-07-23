@@ -24,7 +24,9 @@ Pour pouvoir envoyer des emails depuis le CRM, il faut créer une application OA
    - `https://www.googleapis.com/auth/gmail.readonly` (lecture)
    - `https://www.googleapis.com/auth/gmail.modify` (brouillons + libellés)
 
-> L’agent Gmail IA crée des **brouillons** sous le libellé « Réponse à valider » et **n’envoie jamais** automatiquement (`messages.send` n’est pas utilisé dans ce flux).
+> L’agent Gmail IA **prépare** une réponse (stockée dans Ciblix) et applique le libellé « Réponse à valider ».
+> Il **n’envoie jamais** automatiquement et **ne crée plus de brouillon Gmail automatiquement** (sinon Gmail affiche « Brouillon » partout dans la boîte).
+> Depuis Ciblix → Gmail IA, validez puis cliquez **Créer le brouillon Gmail** quand vous êtes prêt à répondre.
 5. Utilisateurs de test : ajoute ton email (pendant la phase de dev)
 
 ## 3. Créer des credentials OAuth

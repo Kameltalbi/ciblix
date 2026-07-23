@@ -89,6 +89,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     );
     if (coords) {
       // Bias fort autour de la ville demandée (ex. Nabeul) pour éviter Paris/FR
+      // Note: locationRestriction n'accepte qu'un viewport rectangulaire, pas un cercle.
       body.locationBias = {
         circle: {
           center: { latitude: coords.lat, longitude: coords.lng },
@@ -105,7 +106,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': this.apiKey,
       'X-Goog-FieldMask':
-        'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.internationalPhoneNumber,places.websiteUri,places.nationalPhoneNumber',
+        'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.internationalPhoneNumber,places.websiteUri,places.nationalPhoneNumber',
     };
 
     console.log(
@@ -130,6 +131,11 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
           id?: string;
           displayName?: { text?: string };
           formattedAddress?: string;
+          addressComponents?: Array<{
+            longText?: string;
+            shortText?: string;
+            types?: string[];
+          }>;
           location?: { lat?: number; lng?: number };
           types?: string[];
           internationalPhoneNumber?: string;
@@ -201,8 +207,21 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
 
       const addr = r.formattedAddress || '';
       const parts = addr.split(',').map((s: string) => s.trim()).filter(Boolean);
-      const countryGuess = parts.length >= 1 ? parts[parts.length - 1] : null;
-      const cityGuess = parts.length >= 2 ? parts[parts.length - 2] : parts[0] || null;
+      const components: Array<{ longText?: string; shortText?: string; types?: string[] }> =
+        Array.isArray(r.addressComponents) ? r.addressComponents : [];
+      const countryFromComponents =
+        components.find((c) => c.types?.includes('country'))?.longText?.trim() ||
+        components.find((c) => c.types?.includes('country'))?.shortText?.trim() ||
+        null;
+      const localityFromComponents =
+        components.find((c) => c.types?.includes('locality'))?.longText?.trim() ||
+        components.find((c) => c.types?.includes('postal_town'))?.longText?.trim() ||
+        components.find((c) => c.types?.includes('administrative_area_level_2'))?.longText?.trim() ||
+        null;
+      // Prefer structured components; fall back to fragile comma-split of formattedAddress
+      const countryGuess = countryFromComponents || (parts.length >= 1 ? parts[parts.length - 1] : null);
+      const cityGuess =
+        localityFromComponents || (parts.length >= 2 ? parts[parts.length - 2] : parts[0] || null);
 
       hits.push({
         companyName: name,

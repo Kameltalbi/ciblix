@@ -1,20 +1,9 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  CheckCircle2,
-  ArrowRight,
-  Mail,
-  Radio,
-  Bot,
-  Radar,
-  FileSignature,
-  ShieldCheck,
-  Sparkles,
-} from 'lucide-react';
+import { CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
   DEMO_URL,
   LandingHeader,
@@ -26,45 +15,6 @@ import {
   LandingFinalCta,
   LandingFooter,
 } from '@/components/landing/LandingSections';
-
-const LANDING_AGENTS = [
-  {
-    icon: Radio,
-    nameKey: 'agents.huntAi.name',
-    memoryKey: 'landingHome.agentMemoryHunt',
-    iconBg: 'bg-orange-500/20',
-  },
-  {
-    icon: Bot,
-    nameKey: 'agents.copilotIa.name',
-    memoryKey: 'landingHome.agentMemoryCopilot',
-    iconBg: 'bg-blue-500/20',
-  },
-  {
-    icon: Radar,
-    nameKey: 'agents.scoutAi.name',
-    memoryKey: 'landingHome.agentMemoryScout',
-    iconBg: 'bg-indigo-500/20',
-  },
-  {
-    icon: FileSignature,
-    nameKey: 'agents.offreBot.name',
-    memoryKey: 'landingHome.agentMemoryOffre',
-    iconBg: 'bg-violet-500/20',
-  },
-  {
-    icon: Mail,
-    nameKey: 'agents.gmailAi.name',
-    memoryKey: 'landingHome.agentMemoryGmail',
-    iconBg: 'bg-sky-500/20',
-  },
-  {
-    icon: ShieldCheck,
-    nameKey: 'agents.factCheckAi.name',
-    memoryKey: 'landingHome.agentMemoryFact',
-    iconBg: 'bg-emerald-500/20',
-  },
-] as const;
 
 const SCHEMA = {
   '@context': 'https://schema.org',
@@ -183,48 +133,8 @@ export function Landing() {
         </div>
       </section>
 
-      <LandingProblem />
       <LandingSolution />
-
-      {/* Agents teaser → /solutions */}
-      <section id="agents" className="relative overflow-hidden bg-gradient-to-b from-[#0a2540] to-[#0f3460] py-20 text-white md:py-28">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,113,221,0.28),transparent_65%)]" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-14 text-center">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#BED6F6]">{t('landing.agentsBadge')}</p>
-            <h2 className="mb-4 font-serif text-3xl font-bold tracking-tight md:text-5xl">{t('landing.agentsSectionTitle')}</h2>
-            <p className="mx-auto max-w-2xl text-lg text-white/70">{t('landing.agentsIntro')}</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {LANDING_AGENTS.map((agent) => (
-              <Link
-                key={agent.nameKey}
-                to="/solutions"
-                className="group rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/10"
-              >
-                <div className="flex items-start gap-4">
-                  <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', agent.iconBg)}>
-                    <agent.icon size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="mb-1 text-lg font-bold">{t(agent.nameKey)}</h3>
-                    <p className="text-sm leading-relaxed text-white/65">{t(agent.memoryKey)}</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Link
-              to="/solutions"
-              className="inline-flex items-center gap-2 text-base font-semibold text-[#BED6F6] transition hover:text-white"
-            >
-              {t('landing.agentsSeeAll')}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
+      <LandingProblem />
 
       <LandingDifferentiation />
       <LandingPricing />

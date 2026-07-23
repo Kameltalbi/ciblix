@@ -12,26 +12,6 @@ import {
 } from '@/components/contact/ContactTimeline';
 import { SuggestionBanner, type SuggestionItem } from '@/components/contact/SuggestionBanner';
 
-type PipelineStatus = 'NOUVEAU' | 'CHAUD' | 'TIEDE' | 'A_RELANCER' | 'FROID' | 'ARCHIVE';
-
-const STATUS_LABELS: Record<PipelineStatus, string> = {
-  NOUVEAU: 'Nouveau',
-  CHAUD: 'Chaud',
-  TIEDE: 'Tiède',
-  A_RELANCER: 'À relancer',
-  FROID: 'Froid',
-  ARCHIVE: 'Archivé',
-};
-
-const STATUS_CLASS: Record<PipelineStatus, string> = {
-  NOUVEAU: 'bg-slate-100 text-slate-700',
-  CHAUD: 'bg-emerald-100 text-emerald-800',
-  TIEDE: 'bg-sky-100 text-sky-800',
-  A_RELANCER: 'bg-amber-100 text-amber-800',
-  FROID: 'bg-rose-100 text-rose-800',
-  ARCHIVE: 'bg-gray-100 text-gray-600',
-};
-
 export function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
@@ -52,7 +32,7 @@ export function ContactDetail() {
     return <p className="text-sm text-destructive p-4">Contact introuvable.</p>;
   }
 
-  const { contact, pipeline, events, suggestions } = data as {
+  const { contact, events, suggestions } = data as {
     contact: {
       id: string;
       name?: string | null;
@@ -61,16 +41,17 @@ export function ContactDetail() {
       phone?: string | null;
       whatsappId?: string | null;
       whatsappConsentAt?: string | null;
-      pipelineStatus: PipelineStatus;
+      createdVia?: string;
       pipelineStatusScore?: number | null;
+      createdAt?: string;
     };
-    pipeline?: { explanation?: string | null };
     events: AgentEventItem[];
     suggestions?: SuggestionItem[];
   };
-  const status = contact.pipelineStatus;
   const timelineEvents = events || [];
   const pendingSuggestions = suggestions || [];
+  const score = contact.pipelineStatusScore;
+  const whyDetected = timelineEvents.find((e) => e.resume)?.resume;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -85,25 +66,44 @@ export function ContactDetail() {
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
-            <span>{contact.name || contact.companyName || 'Contact'}</span>
-            <span
-              className={cn('text-xs font-medium px-2 py-0.5 rounded-full', STATUS_CLASS[status])}
-              title={pipeline?.explanation || 'Statut inféré automatiquement'}
-            >
-              {STATUS_LABELS[status]}
-              {contact.pipelineStatusScore != null
-                ? ` · ${Math.round(contact.pipelineStatusScore)}/100`
-                : ''}
-            </span>
+            <span>{contact.companyName || contact.name || 'Résultat agent'}</span>
+            {score != null ? (
+              <span
+                className={cn(
+                  'text-xs font-semibold px-2 py-0.5 rounded-md tabular-nums',
+                  score >= 70
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : score >= 40
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-slate-100 text-slate-600'
+                )}
+              >
+                Score IA {Math.round(score)}
+              </span>
+            ) : null}
           </CardTitle>
-          {pipeline?.explanation ? (
-            <p className="text-xs text-muted-foreground">{pipeline.explanation}</p>
+          {whyDetected ? (
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              Pourquoi détecté : {whyDetected}
+            </p>
           ) : null}
         </CardHeader>
         <CardContent className="text-sm space-y-1 text-muted-foreground">
+          {contact.name ? <p>Contact : {contact.name}</p> : null}
           {contact.companyName ? <p>Entreprise : {contact.companyName}</p> : null}
           {contact.email ? <p>Email : {contact.email}</p> : null}
           {contact.phone ? <p>Téléphone : {contact.phone}</p> : null}
+          {contact.createdVia ? <p>Source : {contact.createdVia}</p> : null}
+          {contact.createdAt ? (
+            <p>
+              Détecté le{' '}
+              {new Date(contact.createdAt).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          ) : null}
           {contact.whatsappId ? (
             <p>
               WhatsApp : {contact.whatsappId}
@@ -122,7 +122,6 @@ export function ContactDetail() {
               )}
             </p>
           ) : null}
-          <p className="text-xs pt-2">Statut calculé automatiquement — non modifiable.</p>
         </CardContent>
       </Card>
 

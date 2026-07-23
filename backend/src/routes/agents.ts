@@ -18,8 +18,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'hunt-ai',
     name: 'Chasseur IA',
-    role: 'Prospection & qualification',
-    description: 'Recherche d\'entreprises ciblées par secteur et zone, scoring IA et messages de prospection personnalisés.',
+    role: 'Trouver de nouveaux clients',
+    whenToUse:
+      'Quand vous voulez une liste d’entreprises à contacter (secteur + ville), déjà scorées et prêtes à relancer.',
+    description:
+      'Cherche des sociétés sur votre zone, les qualifie avec l’IA, puis propose des messages de prospection. C’est votre agent pour remplir le pipeline.',
     icon: 'Radio',
     color: 'sky',
     features: ['Recherche par critères métier', 'Qualification automatique', 'Scoring IA', 'Messages de prospection', 'Automatisation périodique'],
@@ -29,8 +32,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'copilot-ia',
     name: 'Assistant IA',
-    role: 'Assistant commercial',
-    description: 'Briefing opérationnel, chat conversationnel, prédictions CA et recommandations commerciales.',
+    role: 'Coacher la journée commerciale',
+    whenToUse:
+      'Quand vous voulez savoir qui relancer aujourd’hui, rédiger un email, ou demander un conseil commercial en langage naturel.',
+    description:
+      'Votre copilote : briefing du jour, chat, brouillons de relances et recommandations. Il aide à décider et à écrire — pas à chercher des sociétés.',
     icon: 'Bot',
     color: 'violet',
     features: ['Briefing du jour', 'Chat IA conversationnel', 'Prédiction CA fin d\'année', 'Brouillons relances/emails', 'Scoring leads'],
@@ -40,8 +46,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'scout-ai',
     name: 'Veilleur IA',
-    role: 'Veille & détection d\'opportunités',
-    description: 'Surveille les appels d\'offres, détecte les événements et alerte sur les opportunités pertinentes.',
+    role: 'Repérer les opportunités du marché',
+    whenToUse:
+      'Quand vous voulez être alerté sur des appels d’offres, salons ou signaux marché liés à votre activité.',
+    description:
+      'Surveille le web pour détecter des opportunités (AO, événements) et vous les présente déjà analysées. Complète le Chasseur : opportunités entrantes vs prospection sortante.',
     icon: 'Radar',
     color: 'blue',
     features: ['Recherche appels d\'offres', 'Détection événements/salons', 'Analyse IA des résultats', 'Analyse d\'URL', 'Sauvegarde d\'opportunités'],
@@ -51,8 +60,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'offre-bot',
     name: 'Rédacteur d\'offres',
-    role: 'Préparation d\'offres commerciales',
-    description: 'Génère des propositions commerciales personnalisées à partir des données client et affaire.',
+    role: 'Rédiger une proposition commerciale',
+    whenToUse:
+      'Quand un prospect est prêt et que vous devez produire une offre / proposition rapidement, sans partir de zéro.',
+    description:
+      'Génère une proposition commerciale structurée à partir du contexte client. Idéal après le Chasseur ou une opportunité Scout.',
     icon: 'FileSignature',
     color: 'amber',
     features: ['Génération offre depuis affaire CRM', 'Ton personnalisable', 'Conditions générales auto', 'Export texte', 'Régénération par section'],
@@ -62,8 +74,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'gmail-ai',
     name: 'Gmail IA',
-    role: 'Résumés & brouillons Gmail',
-    description: 'Lit les nouveaux e-mails, prépare un résumé et un brouillon de réponse dans Gmail sous « Réponse à valider ». Aucun envoi automatique.',
+    role: 'Gagner du temps sur les emails',
+    whenToUse:
+      'Quand votre boîte Gmail déborde et que vous voulez des résumés + brouillons de réponse à valider avant envoi.',
+    description:
+      'Lit les nouveaux mails, résume et prépare une réponse. Rien n’est envoyé sans votre validation. Complète l’Assistant : focus inbox Gmail uniquement.',
     icon: 'Mail',
     color: 'red',
     features: [
@@ -79,8 +94,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'factcheck-ai',
     name: 'Vérificateur IA',
-    role: 'Vérification d\'informations',
-    description: 'Vérifie la fiabilité des informations en croisant plusieurs sources web.',
+    role: 'Vérifier une info avant de l’utiliser',
+    whenToUse:
+      'Quand un chiffre, une affirmation client ou une source web doit être validé avant une offre ou un argumentaire.',
+    description:
+      'Croise plusieurs sources web et donne un verdict avec niveau de confiance. Utile pour sécuriser ce que vous dites au client.',
     icon: 'ShieldCheck',
     color: 'emerald',
     features: ['Vérification d\'affirmations', 'Croisement multi-sources', 'Verdict avec confiance', 'Analyse fiabilité URL', 'Sources citées'],
@@ -90,8 +108,11 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'brand-pulse-ai',
     name: 'BrandPulse AI',
-    role: 'Marque en ligne & blog SEO',
-    description: 'Mesure votre marque sur 6 canaux, propose des sujets d\'articles prioritaires, rédige et valide le contenu blog avant publication CMS.',
+    role: 'Renforcer votre présence en ligne',
+    whenToUse:
+      'Quand vous voulez mesurer votre marque en ligne et publier du contenu SEO (blog) pour être trouvé plus facilement.',
+    description:
+      'Score votre présence digitale, propose des sujets d’articles, rédige et valide avant publication CMS. Marketing de contenu — pas de la vente directe.',
     icon: 'Megaphone',
     color: 'rose',
     features: ['Score marque /100', 'Audit SEO site', 'Sujets articles IA', 'Pipeline validation', 'Publication CMS'],

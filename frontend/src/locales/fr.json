@@ -51,7 +51,10 @@
     "notifications": "Notifications",
     "support": "Support",
     "sectionOverview": "Accueil",
-    "sectionAgents": "Agents IA",
+    "sectionCommand": "Commandement",
+    "sectionAgents": "Agents",
+    "sectionResults": "Résultats",
+    "sectionMore": "Plus",
     "sectionCrm": "Espace commercial",
     "sectionWorkspace": "Espace de travail",
     "sectionEnterprise": "Performance & finance",
@@ -66,7 +69,7 @@
     "agentGmail": "Gmail IA",
     "agentFactCheck": "Vérificateur IA",
     "agentBrandPulse": "BrandPulse AI",
-    "agentsMarketplace": "Accueil Agents"
+    "agentsMarketplace": "Flotte agents"
   },
   "gmailAi": {
     "badge": "Agent Gmail IA",
@@ -667,16 +670,81 @@
     "statPipeline": "Pipeline automatisé",
     "statChannels": "WhatsApp + Gmail",
     "statLang": "Multilingue",
-    "problemTitle": "Vos outils de vente ne se parlent pas. Vos agents IA non plus, d’habitude.",
-    "problemLead": "Ciblix connecte automatiquement tout ce que vos agents apprennent — sur un seul fil, sans rien saisir à la main.",
+    "problemTitle": "Vos outils de vente travaillent chacun de leur côté.",
+    "problemLead": "Emails, appels, WhatsApp, CRM et IA stockent chacun une partie de l'information. Les équipes perdent du temps et des opportunités.",
+    "problemPain1": "Historique client fragmenté",
+    "problemPain2": "Double saisie",
+    "problemPain3": "Relances oubliées",
+    "problemPain4": "IA sans mémoire commune",
     "problemCard1Title": "Canaux isolés",
     "problemCard1Body": "Un email traité ici, un appel noté ailleurs, un prospect qualifié ailleurs — personne ne voit le tableau complet.",
     "problemCard2Title": "CRM à remplir",
     "problemCard2Body": "Les CRM classiques demandent une saisie que personne n’a le temps de faire.",
     "problemCard3Title": "Opportunités perdues",
     "problemCard3Body": "Pas par manque d’outils — parce qu’ils ne communiquent pas entre eux.",
-    "howTitle": "Un prospect. Six agents. Une seule mémoire.",
-    "howLead": "De la découverte à l’offre, chaque étape enrichit le même fil — sans jargon, sans saisie.",
+    "illusPhone": "Téléphone",
+    "illusCalendar": "Calendrier",
+    "illusProspectBadge": "Fiche prospect",
+    "illusProspectName": "Prospect Ciblix",
+    "illusCheck1": "Emails synchronisés",
+    "illusCheck2": "Appels résumés par IA",
+    "illusCheck3": "WhatsApp synchronisé",
+    "illusCheck4": "Opportunité créée",
+    "illusCheck5": "Prochaine action",
+    "illusCheck6": "Historique partagé",
+    "howTitle": "Chaque agent a un rôle précis.",
+    "howLead": "Pas besoin de tout activer d’un coup : choisissez l’agent selon le job du jour. Ils partagent la même mémoire prospect.",
+    "howCta": "Essayer gratuitement →",
+    "agentWhenLabel": "À utiliser :",
+    "agentHuntName": "Chasseur IA",
+    "agentHuntRole": "Trouver de nouveaux clients",
+    "agentHuntWhen": "quand vous voulez une liste d’entreprises à contacter (secteur + ville), scorées et prêtes à relancer.",
+    "agentCopilotName": "Assistant IA",
+    "agentCopilotRole": "Coacher la journée commerciale",
+    "agentCopilotWhen": "quand vous voulez savoir qui relancer, rédiger un email ou demander un conseil en langage naturel.",
+    "agentScoutName": "Veilleur IA",
+    "agentScoutRole": "Repérer les opportunités du marché",
+    "agentScoutWhen": "quand vous voulez être alerté sur des appels d’offres, salons ou signaux liés à votre activité.",
+    "agentOffreName": "Rédacteur d’offres",
+    "agentOffreRole": "Rédiger une proposition commerciale",
+    "agentOffreWhen": "quand un prospect est prêt et que vous devez produire une offre rapidement, sans partir de zéro.",
+    "agentGmailName": "Gmail IA",
+    "agentGmailRole": "Gagner du temps sur les emails",
+    "agentGmailWhen": "quand votre boîte déborde et que vous voulez des résumés + brouillons à valider avant envoi.",
+    "agentFactName": "Vérificateur IA",
+    "agentFactRole": "Vérifier une info avant de l’utiliser",
+    "agentFactWhen": "quand un chiffre ou une affirmation doit être validé avant une offre ou un argumentaire.",
+    "agentBrandName": "BrandPulse AI",
+    "agentBrandRole": "Renforcer votre présence en ligne",
+    "agentBrandWhen": "quand vous voulez mesurer votre marque et publier du contenu SEO pour être trouvé plus facilement.",
+    "demoProspectLabel": "Mémoire partagée",
+    "demoLiveBadge": "Temps réel",
+    "demoScoreLabel": "Score IA",
+    "demoUpdating": "enrichit la fiche",
+    "demoLive1": "Prospect détecté automatiquement",
+    "demoLive2": "Entreprise, secteur et contacts ajoutés",
+    "demoLive3": "Score 92/100 · priorité haute",
+    "demoLive4": "Opportunité créée dans le pipeline",
+    "demoLive5": "Relance email + WhatsApp programmée",
+    "demoLive6": "Prévisions manager mises à jour",
+    "demoAgent1Name": "Chasseur IA",
+    "demoAgent1Desc": "Trouve automatiquement des prospects.",
+    "demoAgent1Status": "Prospects détectés",
+    "demoAgent2Name": "Enrichissement IA",
+    "demoAgent2Desc": "Entreprise, secteur, taille, contacts, LinkedIn.",
+    "demoAgent2Status": "Données enrichies",
+    "demoAgent3Name": "Qualification IA",
+    "demoAgent3Desc": "Score, potentiel et priorité automatiques.",
+    "demoAgent3Status": "Score 92/100",
+    "demoAgent4Name": "Commercial IA",
+    "demoAgent4Desc": "Opportunité, pipeline, prochaine action.",
+    "demoAgent4Status": "Opportunité créée",
+    "demoAgent5Name": "Relance IA",
+    "demoAgent5Desc": "Email, WhatsApp et rendez-vous prêts.",
+    "demoAgent5Status": "Relance programmée",
+    "demoAgent6Name": "Manager IA",
+    "demoAgent6Desc": "Prévisions, conversion, performances.",
+    "demoAgent6Status": "Prévisions mises à jour",
     "timeline1Title": "Chasseur IA trouve un prospect",
     "timeline1Body": "Il apparaît automatiquement dans votre pipeline, sans rien saisir.",
     "timeline2Title": "Assistant IA écoute un appel ou WhatsApp",
@@ -685,7 +753,6 @@
     "timeline3Body": "Peu importe quel agent a capté l’information — c’est le même prospect.",
     "timeline4Title": "Rédacteur d’offres en un clic",
     "timeline4Body": "Proposition basée sur ce qui a vraiment été dit en conversation.",
-    "howCta": "Voir un exemple concret →",
     "diffTitle": "Conçu pour les marchés où le CRM classique ne suffit pas",
     "diff1Title": "Multilingue natif",
     "diff1Body": "Transcription et analyse en français, arabe et dialectes — pas seulement en anglais.",
@@ -811,32 +878,32 @@
   "agents": {
     "huntAi": {
       "name": "Chasseur IA",
-      "desc": "Prospection intelligente"
+      "desc": "Trouver de nouveaux clients à contacter"
     },
     "copilotIa": {
       "name": "Assistant IA",
-      "desc": "Assistant commercial"
+      "desc": "Prioriser et rédiger au quotidien"
     },
     "scoutAi": {
       "name": "Veilleur IA",
-      "desc": "Veille d'opportunités"
+      "desc": "Repérer appels d'offres et signaux marché"
     },
     "offreBot": {
       "name": "Rédacteur d'offres",
-      "desc": "Génération de propositions"
+      "desc": "Produire une proposition commerciale"
     },
     "offreBotSubtitle": "Propositions commerciales personnalisées en quelques secondes",
     "factCheckAi": {
       "name": "Vérificateur IA",
-      "desc": "Vérification des informations"
+      "desc": "Valider une info avant de l'utiliser"
     },
     "gmailAi": {
       "name": "Gmail IA",
-      "desc": "Emails résumés et brouillons intelligents"
+      "desc": "Résumer et préparer les réponses email"
     },
     "brandPulse": {
       "name": "BrandPulse AI",
-      "desc": "Marque en ligne & blog SEO"
+      "desc": "Renforcer la présence web et le SEO"
     }
   },
   "pricingPage": {

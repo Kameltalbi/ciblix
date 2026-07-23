@@ -753,6 +753,8 @@ model GmailAiProcessedMessage {
   analysis          String?                @db.Text
   priority          GmailAiPriority?
   draftId           String?
+  /// Réponse préparée (stockée dans Ciblix — pas de brouillon Gmail auto sur le fil)
+  suggestedReply    String?                @db.Text
   status            GmailAiProcessedStatus
   errorMessage      String?
   createdAt         DateTime               @default(now())

@@ -12,7 +12,6 @@ import {
   extractPlainText,
   getHeader,
   isInboundMessage,
-  replySubject,
   shouldSkipByCategory,
 } from './messageUtils.js';
 
@@ -160,20 +159,11 @@ async function processOneMessage(opts: {
       signature: opts.signature,
     });
 
-    const messageIdHeader = getHeader(message, 'Message-ID') || getHeader(message, 'Message-Id');
-    const references = getHeader(message, 'References');
     const draftBody = buildDraftBody(ai, opts.signature);
 
-    const draftId = await gmailService.createReplyDraft(token, {
-      threadId,
-      to: fromEmail || fromHeader,
-      subject: replySubject(subject),
-      body: draftBody,
-      inReplyTo: messageIdHeader,
-      references: [references, messageIdHeader].filter(Boolean).join(' ').trim() || undefined,
-      labelIds: [opts.labelId],
-    });
-
+    // Pas de brouillon Gmail automatique sur le fil → évite le badge rouge « Brouillon »
+    // partout dans la boîte. La réponse reste dans Ciblix + libellé « Réponse à valider ».
+    // L’utilisateur crée le brouillon Gmail à la demande depuis l’UI (validation humaine).
     try {
       await gmailService.addLabelsToMessage(token, opts.messageId, [opts.labelId]);
     } catch {
@@ -192,7 +182,8 @@ async function processOneMessage(opts: {
         actionRequested: ai.actionRequested,
         analysis: ai.analysis,
         priority: ai.priority,
-        draftId: draftId || null,
+        suggestedReply: draftBody,
+        draftId: null,
         status: 'PROCESSED',
       },
     });

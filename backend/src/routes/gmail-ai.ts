@@ -5,7 +5,12 @@ import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 import { gmailService } from '../services/gmail.js';
 import { ensureGmailAiSyncState, syncGmailAiForUser } from '../services/gmail-ai/sync.js';
-import { REVIEW_LABEL_NAME } from '../services/gmail-ai/messageUtils.js';
+import {
+  REVIEW_LABEL_NAME,
+  extractEmailAddress,
+  getHeader,
+  replySubject,
+} from '../services/gmail-ai/messageUtils.js';
 
 export const gmailAiRoutes = Router();
 
@@ -285,6 +290,71 @@ async function listMessages(req: AuthRequest, res: Response, next: NextFunction)
 
 gmailAiRoutes.get('/messages', listMessages);
 gmailAiRoutes.get('/processed', listMessages);
+
+/**
+ * Crée le brouillon Gmail à la demande (après validation humaine).
+ * Ne s’exécute PAS automatiquement au sync — évite « Brouillon » dans l’inbox.
+ */
+gmailAiRoutes.post(
+  '/messages/:id/create-draft',
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const id = String(req.params.id);
+      const row = await prisma.gmailAiProcessedMessage.findFirst({
+        where: {
+          id,
+          userId: req.userId!,
+          organizationId: req.organizationId!,
+          status: 'PROCESSED',
+        },
+      });
+      if (!row) return res.status(404).json({ error: 'Message introuvable' });
+      if (!row.suggestedReply?.trim()) {
+        return res.status(400).json({ error: 'Aucune réponse préparée pour ce message' });
+      }
+      if (row.draftId) {
+        return res.json({
+          draftId: row.draftId,
+          alreadyExists: true,
+          gmailUrl: `https://mail.google.com/mail/u/0/#drafts?compose=${row.draftId}`,
+        });
+      }
+
+      const token = await prisma.gmailToken.findUnique({ where: { userId: req.userId! } });
+      if (!token) return res.status(400).json({ error: 'Gmail non connecté', code: 'GMAIL_NOT_CONNECTED' });
+
+      const message = await gmailService.getMessage(token, row.providerMessageId);
+      const subject = getHeader(message, 'Subject') || row.subject || '(sans objet)';
+      const fromHeader = getHeader(message, 'From') || '';
+      const fromEmail = extractEmailAddress(fromHeader) || row.fromEmail || '';
+      const messageIdHeader =
+        getHeader(message, 'Message-ID') || getHeader(message, 'Message-Id');
+      const references = getHeader(message, 'References');
+
+      const draftId = await gmailService.createReplyDraft(token, {
+        threadId: row.threadId,
+        to: fromEmail || fromHeader,
+        subject: replySubject(subject),
+        body: row.suggestedReply,
+        inReplyTo: messageIdHeader,
+        references: [references, messageIdHeader].filter(Boolean).join(' ').trim() || undefined,
+      });
+
+      const updated = await prisma.gmailAiProcessedMessage.update({
+        where: { id: row.id },
+        data: { draftId: draftId || null },
+      });
+
+      res.json({
+        draftId: updated.draftId,
+        alreadyExists: false,
+        gmailUrl: `https://mail.google.com/mail/u/0/#all/${row.threadId}`,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 gmailAiRoutes.get('/statistics', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
