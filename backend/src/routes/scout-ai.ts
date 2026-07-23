@@ -5,6 +5,7 @@ import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { prisma } from '../db/prisma.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { recordScoutOpportunity } from '../services/agent-memory/agentIntegrations.js';
+import { isPastScoutOpportunity } from '../services/scout/scoutFreshness.js';
 
 export const scoutAiRoutes = Router();
 
@@ -239,8 +240,8 @@ function buildSearchQueries(
       break;
     case 'EVENT':
       queries.push(`salon ${kw} ${geo} ${year}`.trim());
-      queries.push(`conférence ${kw} ${geo || sec}`.trim());
-      queries.push(`forum professionnel ${sec || kw} ${geo}`.trim());
+      queries.push(`conférence ${kw} ${geo || sec} ${year}`.trim());
+      queries.push(`forum professionnel ${sec || kw} ${geo} ${year} à venir`.trim());
       break;
     case 'NEWS':
       queries.push(`actualité ${kw} ${geo}`.trim());
@@ -249,6 +250,22 @@ function buildSearchQueries(
       break;
   }
   return [...new Set(queries.filter((q) => q.replace(/\s+/g, ' ').trim().length > 3))];
+}
+
+/** Événement / AO déjà passé → à jeter (AI score bas ou date détectée dans le texte). */
+function isStaleAnalyzedHit(
+  category: string,
+  raw: { title: string; snippet: string },
+  a: { relevanceScore: number; deadline: string | null; aiSummary: string },
+): boolean {
+  if (a.relevanceScore < 15) return true;
+  return isPastScoutOpportunity({
+    category,
+    title: raw.title,
+    snippet: raw.snippet,
+    aiSummary: a.aiSummary,
+    deadline: a.deadline,
+  });
 }
 
 async function analyzeWithAI(
@@ -294,19 +311,30 @@ async function analyzeWithAI(
   };
 
   const market = marketLabel || 'le marché ciblé';
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  const freshnessRule =
+    category === 'EVENT'
+      ? `Règle STRICTE (aujourd'hui = ${todayIso}): si l'événement a déjà eu lieu (date dans le titre/extrait avant aujourd'hui), mets relevanceScore à 0 et deadline à la date de fin (YYYY-MM-DD). Ne valorise que les événements à venir.`
+      : category === 'TENDER'
+        ? `Règle STRICTE (aujourd'hui = ${todayIso}): si la date limite de réponse est déjà dépassée, mets relevanceScore à 0. Extrais la deadline en YYYY-MM-DD.`
+        : `Aujourd'hui = ${todayIso}. Pour les actualités, une date passée est normale.`;
 
   const systemPrompt = `Tu es Scout AI, spécialisé dans la veille d'opportunités commerciales pour ${market}.
 Tu analyses des résultats de recherche pour identifier les ${categoryLabels[category] || 'opportunités'}.
 
-Pour chaque résultat, donne un score même s'il est moyen — ne sois pas trop strict.
+${freshnessRule}
+
+Pour chaque résultat, donne un score même s'il est moyen — ne sois pas trop strict (sauf règle de fraîcheur ci-dessus).
 Extrais:
 - relevanceScore: 0-100
 - aiSummary: résumé actionnable en 2-3 phrases
-- deadline, location, budget, companyName, contactEmail, contactPhone (ou null)
+- deadline: date limite ou date de fin d'événement en YYYY-MM-DD (ou null)
+- location, budget, companyName, contactEmail, contactPhone (ou null)
 
 Réponds UNIQUEMENT en JSON array:
 [{"index": 1, "relevanceScore": 70, "aiSummary": "...", "deadline": null, "location": null, "budget": null, "companyName": null, "contactEmail": null, "contactPhone": null}]
-Inclus tous les résultats avec relevanceScore >= 15.`;
+Inclus les résultats avec relevanceScore >= 15 (les périmés doivent être à 0).`;
 
   const prompt = `Marché: ${market}\nCatégorie: ${category}\nMots-clés: ${keywords.join(', ')}\nSecteurs: ${sectors.join(', ')}\n\nRésultats:\n${resultsText}`;
 
@@ -446,7 +474,10 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
     );
 
     const opportunities = analyzed
-      .filter((a) => a.relevanceScore >= 15 && allRaw[a.index - 1])
+      .filter((a) => {
+        const raw = allRaw[a.index - 1];
+        return raw && !isStaleAnalyzedHit(category, raw, a);
+      })
       .map((a) => {
         const raw = allRaw[a.index - 1];
         return {
@@ -573,8 +604,8 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       );
 
       for (const a of analyzed) {
-        if (a.relevanceScore < 15 || !allRaw[a.index - 1]) continue;
         const raw = allRaw[a.index - 1];
+        if (!raw || isStaleAnalyzedHit(cat, raw, a)) continue;
         const existing = await prisma.scoutOpportunity.findFirst({ where: { organizationId: orgId, url: raw.link } });
         if (!existing) {
           const created = await prisma.scoutOpportunity.create({
@@ -634,17 +665,38 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
     if (category && ['TENDER', 'EVENT', 'NEWS'].includes(category)) where.category = category;
     if (status && ['NEW', 'SAVED', 'DISMISSED', 'APPLIED'].includes(status)) where.status = status;
 
-    const [opportunities, total] = await Promise.all([
+    const [rawOpportunities, total] = await Promise.all([
       prisma.scoutOpportunity.findMany({
         where, orderBy: [{ relevanceScore: 'desc' }, { createdAt: 'desc' }],
-        take: limit, skip: offset,
+        take: Math.min(300, limit + 50), skip: offset,
       }),
       prisma.scoutOpportunity.count({ where }),
     ]);
 
+    // Masque + archive les événements / AO déjà passés (scans précédents)
+    const staleIds: string[] = [];
+    const opportunities = rawOpportunities.filter((o) => {
+      const stale = isPastScoutOpportunity({
+        category: o.category,
+        title: o.title,
+        snippet: o.snippet,
+        aiSummary: o.aiSummary,
+        deadline: o.deadline,
+      });
+      if (stale && o.status === 'NEW') staleIds.push(o.id);
+      return !stale;
+    }).slice(0, limit);
+
+    if (staleIds.length > 0) {
+      void prisma.scoutOpportunity.updateMany({
+        where: { id: { in: staleIds }, organizationId: orgId },
+        data: { status: 'DISMISSED' },
+      }).catch((err) => console.warn('[scout-ai] dismiss stale', err));
+    }
+
     const counts = await prisma.scoutOpportunity.groupBy({
       by: ['category'],
-      where: { organizationId: orgId },
+      where: { organizationId: orgId, status: { not: 'DISMISSED' } },
       _count: { id: true },
     });
 
