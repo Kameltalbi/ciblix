@@ -7,6 +7,7 @@ import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { recordScoutOpportunity } from '../services/agent-memory/agentIntegrations.js';
 import { isPastScoutOpportunity } from '../services/scout/scoutFreshness.js';
 import { fitsScoutCategory, keywordsForCategory } from '../services/scout/scoutCategoryFit.js';
+import { fitsScoutMarket, inferMarketCode, marketLabel, type ScoutMarketCode } from '../services/scout/scoutMarketFit.js';
 
 export const scoutAiRoutes = Router();
 
@@ -88,7 +89,7 @@ async function searchGoogleCse(query: string, num: number, gl: string): Promise<
   };
 
   let hits = await run(gl);
-  if (hits.length === 0 && gl) hits = await run('');
+  // Ne pas retomber sans gl : ça mélange les pays (ex. Tunisie dans un scan France)
   return hits;
 }
 
@@ -189,56 +190,44 @@ async function searchWeb(query: string, num = 10, gl = ''): Promise<SearchHit[]>
   return hits;
 }
 
-function inferSearchGl(geoZones: string[], marketCountry?: string | null): string {
-  const marketGl: Record<string, string> = {
-    TN: 'tn',
-    FR: 'fr',
-    DZ: 'dz',
-    MA: 'ma',
-    BE: 'be',
-    CA: 'ca',
-    SN: 'sn',
-    CI: 'ci',
-  };
-  if (marketCountry && marketGl[marketCountry]) return marketGl[marketCountry];
-
-  const hay = geoZones.join(' ').toLowerCase();
-  if (/tunis|nabeul|sfax|sousse|tunisie|hammamet|monastir/.test(hay)) return 'tn';
-  if (/paris|lyon|marseille|france|lille|toulouse/.test(hay)) return 'fr';
-  if (/alger|oran|algérie|algerie/.test(hay)) return 'dz';
-  if (/casablanca|rabat|maroc|marrakech/.test(hay)) return 'ma';
-  if (/bruxelles|belgique|anvers/.test(hay)) return 'be';
-  if (/montréal|montreal|canada|toronto|québec|quebec/.test(hay)) return 'ca';
-  if (/dakar|sénégal|senegal/.test(hay)) return 'sn';
-  if (/abidjan|côte d|cote d/.test(hay)) return 'ci';
-  return '';
+function inferSearchGl(geoZones: string[]): string {
+  return inferMarketCode(geoZones) || '';
 }
 
 function buildSearchQueries(
   keywords: string[],
   sectors: string[],
   geoZones: string[],
-  category: 'TENDER' | 'EVENT' | 'NEWS'
+  category: 'TENDER' | 'EVENT' | 'NEWS',
+  market: ScoutMarketCode = '',
 ): string[] {
-  // Requêtes courtes = bien plus de hits CSE qu'une phrase surchargée
   const kwList = keywordsForCategory(keywords, category);
   const kw = kwList.slice(0, 2).join(' ') || 'entreprise';
   const sec = sectors.slice(0, 1).join(' ');
-  const geo = geoZones.slice(0, 2).join(' ');
+  const country = marketLabel(market);
+  // Prefer country name over mixed city list to avoid Tunis leaking into France queries
+  const geo = country !== 'marché ciblé'
+    ? country
+    : geoZones.slice(0, 2).join(' ');
   const year = new Date().getFullYear();
+  const m = market || inferMarketCode(geoZones);
 
   const queries: string[] = [];
   switch (category) {
     case 'TENDER':
-      // Forcer le vocabulaire AO — éviter les pages « formation »
       queries.push(`"appel d'offres" ${kw} ${geo}`.trim());
       queries.push(`"marché public" ${kw} ${geo || sec}`.trim());
-      queries.push(`consultation ${kw} ${geo} ${year}`.trim());
-      if (/tunisie|tunis|sfax|sousse|nabeul/i.test(geo)) {
+      if (m === 'tn') {
         queries.push(`${kw} site:marchespublics.gov.tn`);
         queries.push(`"appel d'offres" ${kw} Tunisie ${year}`);
-      } else if (/france|paris|lyon/i.test(geo)) {
-        queries.push(`${kw} "appel d'offres" site:boamp.fr OR site:marches-publics.gouv.fr`);
+      } else if (m === 'fr') {
+        queries.push(`"${kw}" "appel d'offres" site:boamp.fr`);
+        queries.push(`"${kw}" marché public site:marches-publics.gouv.fr`);
+        queries.push(`"appel d'offres" ${kw} France ${year}`);
+      } else if (m === 'ma') {
+        queries.push(`"appel d'offres" ${kw} Maroc ${year}`);
+      } else if (m === 'dz') {
+        queries.push(`"appel d'offres" ${kw} Algérie ${year}`);
       } else {
         queries.push(`"appel d'offres" ${kw} ${sec} ${geo} ${year}`.trim());
       }
@@ -257,14 +246,23 @@ function buildSearchQueries(
   return [...new Set(queries.filter((q) => q.replace(/\s+/g, ' ').trim().length > 3))];
 }
 
-/** Hors catégorie, date passée, ou score trop bas → à jeter. */
+/** Hors catégorie, mauvais pays, date passée, ou score trop bas → à jeter. */
 function isStaleAnalyzedHit(
   category: string,
-  raw: { title: string; snippet: string },
-  a: { relevanceScore: number; deadline: string | null; aiSummary: string },
+  raw: { title: string; link: string; snippet: string },
+  a: { relevanceScore: number; deadline: string | null; aiSummary: string; location?: string | null },
+  market: ScoutMarketCode,
 ): boolean {
   if (a.relevanceScore < 15) return true;
   if (!fitsScoutCategory(category, raw.title, raw.snippet, a.aiSummary)) return true;
+  if (!fitsScoutMarket({
+    market,
+    url: raw.link,
+    title: raw.title,
+    snippet: raw.snippet,
+    aiSummary: a.aiSummary,
+    location: a.location,
+  })) return true;
   return isPastScoutOpportunity({
     category,
     title: raw.title,
@@ -424,30 +422,42 @@ scoutAiRoutes.get('/profile', async (req: AuthRequest, res: Response, next: Next
 
 scoutAiRoutes.post('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const orgId = req.organizationId!;
     const { marketCountry: _market, ...data } = profileSchema.parse(req.body);
+    const previous = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
+    const prevMarket = previous ? inferMarketCode(previous.geoZones as string[]) : '';
+    const nextMarket = inferMarketCode((data.geoZones || []) as string[]);
+
     const profile = await prisma.scoutProfile.upsert({
-      where: { organizationId: req.organizationId! },
+      where: { organizationId: orgId },
       update: data,
-      create: { organizationId: req.organizationId!, ...data },
+      create: { organizationId: orgId, ...data },
     });
 
-    // Archive les résultats des catégories désactivées (ex. formations en « Actualités »)
-    const disabled: string[] = [];
-    if (!profile.tenderEnabled) disabled.push('TENDER');
-    if (!profile.eventEnabled) disabled.push('EVENT');
-    if (!profile.newsEnabled) disabled.push('NEWS');
-    if (disabled.length > 0) {
+    // Changement de pays → tout archiver (évite Tunisie qui reste après un switch France)
+    if (previous && prevMarket && nextMarket && prevMarket !== nextMarket) {
       await prisma.scoutOpportunity.updateMany({
-        where: {
-          organizationId: req.organizationId!,
-          category: { in: disabled },
-          status: { in: ['NEW', 'SAVED'] },
-        },
+        where: { organizationId: orgId, status: { in: ['NEW', 'SAVED'] } },
         data: { status: 'DISMISSED' },
       });
+    } else {
+      const disabled: string[] = [];
+      if (!profile.tenderEnabled) disabled.push('TENDER');
+      if (!profile.eventEnabled) disabled.push('EVENT');
+      if (!profile.newsEnabled) disabled.push('NEWS');
+      if (disabled.length > 0) {
+        await prisma.scoutOpportunity.updateMany({
+          where: {
+            organizationId: orgId,
+            category: { in: disabled },
+            status: { in: ['NEW', 'SAVED'] },
+          },
+          data: { status: 'DISMISSED' },
+        });
+      }
     }
 
-    res.json({ profile });
+    res.json({ profile, marketReset: Boolean(previous && prevMarket !== nextMarket) });
   } catch (err) { next(err); }
 });
 
@@ -475,9 +485,10 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
     const keywords = profile.keywords as string[];
     const sectors = profile.sectors as string[];
     const geoZones = profile.geoZones as string[];
-    const gl = inferSearchGl(geoZones);
+    const market = inferMarketCode(geoZones);
+    const gl = market || inferSearchGl(geoZones);
 
-    const queries = buildSearchQueries(keywords, sectors, geoZones, category);
+    const queries = buildSearchQueries(keywords, sectors, geoZones, category, market);
 
     const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
     const seenUrls = new Set<string>();
@@ -485,10 +496,10 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
     for (const q of queries) {
       const results = await searchWeb(q, 8, gl);
       for (const r of results) {
-        if (!seenUrls.has(r.link)) {
-          seenUrls.add(r.link);
-          allRaw.push(r);
-        }
+        if (seenUrls.has(r.link)) continue;
+        if (!fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+        seenUrls.add(r.link);
+        allRaw.push(r);
       }
     }
 
@@ -497,13 +508,13 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
       keywords,
       sectors,
       category,
-      geoZones.slice(0, 2).join(', ') || 'marché ciblé'
+      marketLabel(market),
     );
 
     const opportunities = analyzed
       .filter((a) => {
         const raw = allRaw[a.index - 1];
-        return raw && !isStaleAnalyzedHit(category, raw, a);
+        return raw && !isStaleAnalyzedHit(category, raw, a, market);
       })
       .map((a) => {
         const raw = allRaw[a.index - 1];
@@ -621,8 +632,9 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       const keywords = profile.keywords as string[];
       const sectors = profile.sectors as string[];
       const geoZones = profile.geoZones as string[];
-      const gl = inferSearchGl(geoZones);
-      const queries = buildSearchQueries(keywords, sectors, geoZones, cat);
+      const market = inferMarketCode(geoZones);
+      const gl = market || inferSearchGl(geoZones);
+      const queries = buildSearchQueries(keywords, sectors, geoZones, cat, market);
 
       const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
       const seenUrls = new Set<string>();
@@ -630,10 +642,10 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       for (const q of queries) {
         const results = await searchWeb(q, 8, gl);
         for (const r of results) {
-          if (!seenUrls.has(r.link)) {
-            seenUrls.add(r.link);
-            allRaw.push(r);
-          }
+          if (seenUrls.has(r.link)) continue;
+          if (!fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+          seenUrls.add(r.link);
+          allRaw.push(r);
         }
       }
       totalRaw += allRaw.length;
@@ -643,12 +655,12 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
         keywords,
         sectors,
         cat,
-        geoZones.slice(0, 2).join(', ') || 'marché ciblé'
+        marketLabel(market),
       );
 
       for (const a of analyzed) {
         const raw = allRaw[a.index - 1];
-        if (!raw || isStaleAnalyzedHit(cat, raw, a)) continue;
+        if (!raw || isStaleAnalyzedHit(cat, raw, a, market)) continue;
         const existing = await prisma.scoutOpportunity.findFirst({ where: { organizationId: orgId, url: raw.link } });
         if (!existing) {
           const created = await prisma.scoutOpportunity.create({
@@ -754,10 +766,21 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
       prisma.scoutOpportunity.count({ where }),
     ]);
 
-    // Masque + archive hors-sujet / dates passées
+    const market = profile ? inferMarketCode(profile.geoZones as string[]) : '';
+
+    // Masque + archive hors-sujet / mauvais pays / dates passées
     const staleIds: string[] = [];
     const opportunities = rawOpportunities.filter((o) => {
       const wrongCat = !fitsScoutCategory(o.category, o.title, o.snippet, o.aiSummary);
+      const wrongMarket = !fitsScoutMarket({
+        market,
+        url: o.url,
+        title: o.title,
+        snippet: o.snippet,
+        aiSummary: o.aiSummary,
+        location: o.location,
+        source: o.source,
+      });
       const stale = isPastScoutOpportunity({
         category: o.category,
         title: o.title,
@@ -765,8 +788,8 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
         aiSummary: o.aiSummary,
         deadline: o.deadline,
       });
-      if (wrongCat || stale) staleIds.push(o.id);
-      return !wrongCat && !stale;
+      if (wrongCat || wrongMarket || stale) staleIds.push(o.id);
+      return !wrongCat && !wrongMarket && !stale;
     }).slice(0, limit);
 
     if (staleIds.length > 0) {

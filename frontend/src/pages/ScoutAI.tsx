@@ -485,8 +485,9 @@ export function ScoutAI() {
   const selectMarket = (id: MarketId) => {
     setMarket(id);
     const meta = MARKETS.find((m) => m.id === id);
-    // Changer de pays = nouvelles zones (évite Tunis sous Algérie)
+    // Changer de pays = nouvelles zones (évite Tunis sous Algérie) + reset onglet
     setGeoZones(meta?.countryLabel ? [meta.countryLabel] : []);
+    setActiveTab('ALL');
     try {
       localStorage.setItem(MARKET_STORAGE_KEY, id);
     } catch {
