@@ -411,6 +411,131 @@ const profileSchema = z.object({
   marketCountry: z.string().max(8).optional(),
 });
 
+const interpretBriefSchema = z.object({
+  brief: z.string().min(8).max(1200),
+});
+
+/**
+ * POST /api/scout-ai/interpret-brief
+ * Transforme une phrase métier en profil de veille structuré.
+ */
+scoutAiRoutes.post('/interpret-brief', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!(await tryConsumeAgentQuota(req.organizationId!, 'scout-ai', res))) return;
+    const { brief } = interpretBriefSchema.parse(req.body);
+
+    const systemPrompt = `Tu es Scout AI (Ciblix). L'utilisateur décrit une mission de veille commerciale en une phrase.
+Construis un profil de veille STRICT et actionnable.
+
+Règles:
+- marketCountry: un seul code parmi TN, FR, DZ, MA, BE, CA, SN, CI, INT
+- geoZones: 1 à 4 zones (inclure le nom du pays + éventuellement "X entière" ou 1-2 villes)
+- keywords: 3 à 8 mots-clés métier CONCRETS (pas de verbes vagues). Si la mission est des appels d'offres, N'inclus PAS "formation", "bootcamp", "cours" — ce sont des événements/formations, pas des AO.
+- sectors: 1 à 4 secteurs
+- tenderEnabled / eventEnabled / newsEnabled: selon l'intention. Par défaut AO=true. Formations/salons → eventEnabled=true, tenderEnabled=false sauf si AO aussi demandés. Actualités seulement si explicitement demandé.
+- summary: 1-2 phrases qui reformulent la mission
+- missionTitle: titre court (max 8 mots)
+
+Réponds UNIQUEMENT en JSON:
+{"missionTitle":"...","summary":"...","marketCountry":"FR","geoZones":["France","France entière"],"keywords":["..."],"sectors":["..."],"tenderEnabled":true,"eventEnabled":false,"newsEnabled":false}`;
+
+    let parsed: {
+      missionTitle?: string;
+      summary?: string;
+      marketCountry?: string;
+      geoZones?: string[];
+      keywords?: string[];
+      sectors?: string[];
+      tenderEnabled?: boolean;
+      eventEnabled?: boolean;
+      newsEnabled?: boolean;
+    } | null = null;
+
+    try {
+      const ai = await callOpenAI(`Mission: ${brief}`, systemPrompt);
+      const jsonMatch = ai.match(/\{[\s\S]*\}/);
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      console.warn('[scout-ai] interpret-brief AI', err);
+    }
+
+    // Fallback heuristique si l'IA échoue
+    if (!parsed?.keywords?.length) {
+      const lower = brief.toLowerCase();
+      let marketCountry = 'FR';
+      if (/tunisie|tunis/.test(lower)) marketCountry = 'TN';
+      else if (/algérie|algerie|alger/.test(lower)) marketCountry = 'DZ';
+      else if (/maroc|casablanca/.test(lower)) marketCountry = 'MA';
+      else if (/belgique|bruxelles/.test(lower)) marketCountry = 'BE';
+      else if (/canada|montréal|montreal/.test(lower)) marketCountry = 'CA';
+      else if (/sénégal|senegal|dakar/.test(lower)) marketCountry = 'SN';
+      else if (/ivoire|abidjan/.test(lower)) marketCountry = 'CI';
+      else if (/france|paris|lyon/.test(lower)) marketCountry = 'FR';
+
+      const wantEvents = /salon|conférence|forum|formation|bootcamp|événement|evenement/.test(lower);
+      const wantTender = /appel d['']offre|marché public|ao\b|tender|consultation/.test(lower) || !wantEvents;
+      const wantNews = /actualité|actu\b|veille media|presse/.test(lower);
+
+      parsed = {
+        missionTitle: 'Mission de veille',
+        summary: brief.slice(0, 220),
+        marketCountry,
+        geoZones: [],
+        keywords: brief
+          .split(/[\s,;]+/)
+          .map((w) => w.trim())
+          .filter((w) => w.length > 3)
+          .slice(0, 5),
+        sectors: [],
+        tenderEnabled: wantTender,
+        eventEnabled: wantEvents,
+        newsEnabled: wantNews,
+      };
+    }
+
+    const marketCountry = String(parsed.marketCountry || 'FR').toUpperCase();
+    const marketNames: Record<string, string> = {
+      TN: 'Tunisie', FR: 'France', DZ: 'Algérie', MA: 'Maroc',
+      BE: 'Belgique', CA: 'Canada', SN: 'Sénégal', CI: "Côte d'Ivoire", INT: '',
+    };
+    const country = marketNames[marketCountry] || 'France';
+    let geoZones = Array.isArray(parsed.geoZones) ? parsed.geoZones.map(String).filter(Boolean).slice(0, 6) : [];
+    if (country) {
+      if (geoZones.length === 0) {
+        if (country === 'France') geoZones = ['France', 'France entière'];
+        else if (country === 'Tunisie') geoZones = ['Tunisie', 'Tunisie entière'];
+        else geoZones = [country];
+      } else if (!geoZones.some((z) => z.toLowerCase().includes(country.toLowerCase()))) {
+        geoZones = [country, ...geoZones].slice(0, 6);
+      }
+    }
+
+    let keywords = (parsed.keywords || []).map(String).map((k) => k.trim()).filter(Boolean).slice(0, 10);
+    const tenderEnabled = parsed.tenderEnabled !== false;
+    const eventEnabled = Boolean(parsed.eventEnabled);
+    const newsEnabled = Boolean(parsed.newsEnabled);
+    // Si AO seuls : retirer les mots « formation » qui polluent
+    if (tenderEnabled && !eventEnabled) {
+      keywords = keywords.filter((k) => !/formation|bootcamp|cours|atelier/i.test(k));
+    }
+    if (keywords.length === 0) keywords = ['opportunité commerciale'];
+
+    res.json({
+      proposal: {
+        missionTitle: parsed.missionTitle || 'Mission de veille',
+        summary: parsed.summary || brief.slice(0, 220),
+        marketCountry,
+        geoZones,
+        keywords,
+        sectors: (parsed.sectors || []).map(String).filter(Boolean).slice(0, 6),
+        tenderEnabled,
+        eventEnabled,
+        newsEnabled,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 scoutAiRoutes.get('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const profile = await prisma.scoutProfile.findUnique({

@@ -30,6 +30,9 @@ import {
   ChevronDown,
   ChevronUp,
   BarChart3,
+  Sparkles,
+  MessageSquare,
+  Wand2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -182,6 +185,15 @@ function inferMarketFromZones(zones: string[]): MarketId {
 }
 
 const MARKET_STORAGE_KEY = 'ciblix.scout.marketCountry';
+
+const EXAMPLE_BRIEFS = [
+  "Je cherche des appels d'offres bilan carbone et RSE en France",
+  'Veille AO audit énergétique et environnement en Tunisie',
+  'Salons et conférences BTP / construction à Paris et Lyon',
+  "Appels d'offres digital et informatique en Belgique",
+];
+
+type SetupView = 'converse' | 'review' | 'manual';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -425,6 +437,10 @@ export function ScoutAI() {
   const [tenderEnabled, setTenderEnabled] = useState(true);
   const [eventEnabled, setEventEnabled] = useState(true);
   const [newsEnabled, setNewsEnabled] = useState(true);
+  const [setupView, setSetupView] = useState<SetupView>('converse');
+  const [briefText, setBriefText] = useState('');
+  const [missionTitle, setMissionTitle] = useState('');
+  const [missionSummary, setMissionSummary] = useState('');
 
   // ─── Tab / filter state ──────────────────────────────────
   const [activeTab, setActiveTab] = useState<Category | 'ALL'>('ALL');
@@ -502,10 +518,59 @@ export function ScoutAI() {
   useEffect(() => {
     if (profileQuery.isSuccess && !profileQuery.data) {
       setProfileOpen(true);
+      setSetupView('converse');
     }
   }, [profileQuery.isSuccess, profileQuery.data]);
 
   // ─── Mutations ───────────────────────────────────────────
+
+  const applyProposal = (proposal: {
+    missionTitle?: string;
+    summary?: string;
+    marketCountry?: string;
+    geoZones?: string[];
+    keywords?: string[];
+    sectors?: string[];
+    tenderEnabled?: boolean;
+    eventEnabled?: boolean;
+    newsEnabled?: boolean;
+  }) => {
+    const mid = (proposal.marketCountry || 'FR').toUpperCase() as MarketId;
+    const marketId = MARKETS.some((m) => m.id === mid) ? mid : 'FR';
+    setMarket(marketId);
+    try {
+      localStorage.setItem(MARKET_STORAGE_KEY, marketId);
+    } catch { /* ignore */ }
+    setKeywords(normalizeTags(proposal.keywords));
+    setSectors(normalizeTags(proposal.sectors));
+    setGeoZones(normalizeTags(proposal.geoZones));
+    setTenderEnabled(proposal.tenderEnabled !== false);
+    setEventEnabled(Boolean(proposal.eventEnabled));
+    setNewsEnabled(Boolean(proposal.newsEnabled));
+    setMissionTitle(proposal.missionTitle || 'Mission de veille');
+    setMissionSummary(proposal.summary || '');
+    setSetupView('review');
+  };
+
+  const interpretBriefMutation = useMutation({
+    mutationFn: (brief: string) =>
+      api.post('/scout-ai/interpret-brief', { brief }).then((r) => r.data as {
+        proposal: {
+          missionTitle: string;
+          summary: string;
+          marketCountry: string;
+          geoZones: string[];
+          keywords: string[];
+          sectors: string[];
+          tenderEnabled: boolean;
+          eventEnabled: boolean;
+          newsEnabled: boolean;
+        };
+      }),
+    onSuccess: (data) => {
+      if (data.proposal) applyProposal(data.proposal);
+    },
+  });
 
   const saveProfileMutation = useMutation({
     mutationFn: () => {
@@ -560,9 +625,22 @@ export function ScoutAI() {
     void queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
   };
 
+  const activateAgentMutation = useMutation({
+    mutationFn: async () => {
+      await persistProfile();
+      return api.post('/scout-ai/scan-all').then((r) => r.data);
+    },
+    onSuccess: () => {
+      setProfileOpen(false);
+      setSetupView('converse');
+      void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
+      void queryClient.invalidateQueries({ queryKey: ['scout-opportunities'] });
+      void queryClient.invalidateQueries({ queryKey: ['scout-stats'] });
+    },
+  });
+
   const scanMutation = useMutation({
     mutationFn: async (category: Category) => {
-      // Toujours synchroniser les catégories cochées avant de scanner
       if (keywords.length > 0) await persistProfile();
       return api.post('/scout-ai/scan', { category }).then((r) => r.data);
     },
@@ -639,8 +717,16 @@ export function ScoutAI() {
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAnalyzer(!showAnalyzer)}>
             <Link2 size={14} /> Analyser URL
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setProfileOpen(!profileOpen)}>
-            <Settings2 size={14} /> Profil
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              if (!profileOpen) setSetupView(hasProfile ? 'review' : 'converse');
+              setProfileOpen(!profileOpen);
+            }}
+          >
+            <Sparkles size={14} /> {hasProfile ? 'Mission' : 'Créer l’agent'}
             {profileOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </Button>
           {hasProfile && (
@@ -708,12 +794,14 @@ export function ScoutAI() {
         </div>
       )}
 
-      {/* Récap des choix — toujours visible même si le formulaire est replié */}
+      {/* Mission active — récap compact */}
       {hasProfile && !profileOpen && (
         <Card className="border-[#BED6F6]/70 bg-[#f7faff]">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0 space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#016AEB]">Vos choix de veille</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#016AEB]">
+                {missionTitle || 'Mission de veille active'}
+              </p>
               <p className="text-sm text-foreground">
                 <span className="font-medium">Marché :</span> {marketMeta.label}
                 {geoZones.length > 0 ? ` · ${geoZones.slice(0, 4).join(', ')}${geoZones.length > 4 ? '…' : ''}` : ''}
@@ -728,110 +816,277 @@ export function ScoutAI() {
               variant="outline"
               size="sm"
               className="shrink-0 gap-1.5"
-              onClick={() => setProfileOpen(true)}
+              onClick={() => {
+                setSetupView('converse');
+                setProfileOpen(true);
+              }}
             >
-              <Settings2 size={14} /> Modifier mes choix
+              <MessageSquare size={14} /> Nouvelle mission
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Profile config (collapsible) */}
+      {/* Création agent — flux conversationnel (mockup 3 étapes, couleurs marque) */}
       {profileOpen && (
-        <Card className="border-blue-200 bg-blue-50/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Settings2 size={16} /> Profil de veille
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <TagInput
-              label="Mots-clés métier" tags={keywords} setTags={setKeywords}
-              suggestions={SUGGESTED_KEYWORDS} placeholder="Ex: bilan carbone, audit énergétique..."
-            />
-            <p className="text-xs text-muted-foreground -mt-3">
-              Pour les appels d&apos;offres, évitez des mots comme « formation » ou « bootcamp » — le Veilleur irait chercher des stages au lieu de marchés publics.
-            </p>
-            <TagInput
-              label="Secteurs d'activité" tags={sectors} setTags={setSectors}
-              suggestions={SUGGESTED_SECTORS} placeholder="Ex: IT & Digital, BTP..." maxTags={10}
-            />
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-foreground" htmlFor="scout-market">
-                Pays / marché à surveiller
-              </label>
-              <p className="text-xs text-muted-foreground">
-                Choisissez le pays où chercher les opportunités (ex. France depuis la Tunisie, ou l’inverse).
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                Création d&apos;un agent de veille IA
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Décrivez votre besoin — l&apos;IA construit le profil, vous validez, l&apos;agent se lance.
               </p>
-              <Select value={market} onValueChange={(v) => selectMarket(v as MarketId)}>
-                <SelectTrigger id="scout-market" className="h-11 w-full max-w-md bg-white">
-                  <SelectValue placeholder="Choisir un pays…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MARKETS.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
-            <TagInput
-              label={`Villes / zones (${marketMeta.label})`}
-              tags={geoZones}
-              setTags={setGeoZones}
-              suggestions={zoneSuggestions}
-              placeholder={`Ex: ville ou région en ${marketMeta.label}…`}
-              maxTags={10}
-            />
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">Catégories à surveiller</label>
-              <p className="mb-2 text-xs text-muted-foreground">
-                Activez uniquement ce dont vous avez besoin. « Appels d&apos;offres » ≠ formations / salons (cochez Événements pour ça).
+            {/* Étape 1 */}
+            <section className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#016AEB] text-xs font-bold text-white">1</span>
+                <h3 className="text-base font-semibold text-foreground">Expliquez ce que vous recherchez</h3>
+              </div>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Une phrase suffit. Ex. pays, type d&apos;opportunités, secteurs, mots-clés.
               </p>
-              <div className="flex flex-wrap gap-3">
-                {([
-                  { key: 'tender', label: "Appels d'offres", icon: FileText, enabled: tenderEnabled, toggle: setTenderEnabled },
-                  { key: 'event', label: 'Événements', icon: PartyPopper, enabled: eventEnabled, toggle: setEventEnabled },
-                  { key: 'news', label: 'Actualités', icon: Newspaper, enabled: newsEnabled, toggle: setNewsEnabled },
-                ] as const).map((cat) => (
-                  <button
-                    key={cat.key} type="button" onClick={() => cat.toggle(!cat.enabled)}
-                    className={cn('flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all',
-                      cat.enabled ? 'border-blue-300 bg-blue-100 text-blue-800' : 'border-gray-200 bg-white text-gray-400'
-                    )}
+              <div className="relative">
+                <textarea
+                  value={briefText}
+                  onChange={(e) => setBriefText(e.target.value)}
+                  rows={4}
+                  placeholder="Ex : Je recherche des appels d'offres de bilan carbone, audit énergétique et ESG en France, pour les banques, industriels et collectivités."
+                  className="w-full resize-none rounded-xl border border-[#BED6F6] bg-[#f7faff]/50 px-4 py-3 pr-4 pb-14 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#016AEB]/40"
+                />
+                <div className="absolute bottom-3 right-3">
+                  <Button
+                    type="button"
+                    className="gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
+                    disabled={briefText.trim().length < 8 || interpretBriefMutation.isPending}
+                    onClick={() => interpretBriefMutation.mutate(briefText.trim())}
                   >
-                    <cat.icon size={16} /> {cat.label}
-                    {cat.enabled ? <CheckCircle2 size={14} className="text-blue-600" /> : <XCircle size={14} />}
+                    {interpretBriefMutation.isPending
+                      ? <Loader2 size={14} className="animate-spin" />
+                      : <Sparkles size={14} />}
+                    Analyser avec l&apos;IA
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {EXAMPLE_BRIEFS.map((ex) => (
+                  <button
+                    key={ex}
+                    type="button"
+                    onClick={() => setBriefText(ex)}
+                    className="rounded-full border border-[#BED6F6] bg-white px-3 py-1 text-left text-[11px] text-[#016AEB] transition-colors hover:bg-[#eef5ff]"
+                  >
+                    {ex}
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Button
-                onClick={() => saveProfileMutation.mutate()}
-                disabled={keywords.length === 0 || saveProfileMutation.isPending}
-                className="gap-1.5"
-              >
-                {saveProfileMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                Sauvegarder le profil
-              </Button>
-              {keywords.length === 0 ? (
-                <span className="text-sm text-amber-700">
-                  Ajoutez au moins 1 mot-clé (Entrée ou +) pour pouvoir sauvegarder.
-                </span>
-              ) : null}
-              {saveProfileMutation.isSuccess && (
-                <span className="flex items-center gap-1 text-sm text-emerald-600">
-                  <CheckCircle2 size={14} /> Profil sauvegardé — vous pouvez lancer un scan
-                </span>
+              {interpretBriefMutation.isError && (
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-red-600">
+                  <AlertCircle size={14} /> Impossible d&apos;analyser le brief. Réessayez.
+                </p>
               )}
+            </section>
+
+            {/* Étape 2 — visible après analyse ou si déjà des tags */}
+            {(setupView === 'review' || setupView === 'manual' || keywords.length > 0) && (
+              <section className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#016AEB] text-xs font-bold text-white">2</span>
+                  <h3 className="text-base font-semibold text-foreground">
+                    Voici ce que votre agent va rechercher
+                  </h3>
+                </div>
+                {missionSummary ? (
+                  <p className="mb-4 text-sm text-muted-foreground">{missionSummary}</p>
+                ) : (
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Ajustez les propositions si besoin avant d&apos;activer.
+                  </p>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">Types d&apos;opportunités</p>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { key: 'tender' as const, label: "Appels d'offres", on: tenderEnabled, set: setTenderEnabled },
+                        { key: 'event' as const, label: 'Événements', on: eventEnabled, set: setEventEnabled },
+                        { key: 'news' as const, label: 'Actualités', on: newsEnabled, set: setNewsEnabled },
+                      ]).map((c) => (
+                        <button
+                          key={c.key}
+                          type="button"
+                          onClick={() => c.set(!c.on)}
+                          className={cn(
+                            'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                            c.on
+                              ? 'border-blue-300 bg-white text-blue-800'
+                              : 'border-transparent bg-blue-100/50 text-blue-400 line-through',
+                          )}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-sky-100 bg-sky-50/70 p-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-sky-800">Pays / zone</p>
+                    <Select value={market} onValueChange={(v) => selectMarket(v as MarketId)}>
+                      <SelectTrigger className="h-9 bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MARKETS.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-2 text-xs text-sky-900/70">
+                      {geoZones.slice(0, 3).join(' · ') || marketMeta.label}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-teal-100 bg-teal-50/60 p-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-800">Secteurs ciblés</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {sectors.length > 0 ? sectors.map((s) => (
+                        <span key={s} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-xs text-teal-900 border border-teal-100">
+                          {s}
+                          <button type="button" className="text-teal-400 hover:text-teal-700" onClick={() => setSectors((p) => p.filter((x) => x !== s))}>&times;</button>
+                        </span>
+                      )) : (
+                        <span className="text-xs text-teal-700/60">Aucun — ajoutez en paramètres avancés</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">Mots-clés principaux</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {keywords.map((k) => (
+                        <span key={k} className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-xs text-amber-950 border border-amber-100">
+                          {k}
+                          <button type="button" className="text-amber-400 hover:text-amber-700" onClick={() => setKeywords((p) => p.filter((x) => x !== k))}>&times;</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="mt-4 flex items-center gap-1.5 text-sm font-medium text-[#016AEB]"
+                  onClick={() => setSetupView(setupView === 'manual' ? 'review' : 'manual')}
+                >
+                  {setupView === 'manual' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  Paramètres avancés
+                </button>
+
+                {setupView === 'manual' && (
+                  <div className="mt-4 space-y-4 rounded-xl border border-dashed border-[#BED6F6] bg-[#f7faff]/40 p-4">
+                    <TagInput
+                      label="Mots-clés" tags={keywords} setTags={setKeywords}
+                      suggestions={SUGGESTED_KEYWORDS} placeholder="Ajouter un mot-clé…"
+                    />
+                    <TagInput
+                      label="Secteurs" tags={sectors} setTags={setSectors}
+                      suggestions={SUGGESTED_SECTORS} placeholder="Ajouter un secteur…" maxTags={10}
+                    />
+                    <TagInput
+                      label={`Zones (${marketMeta.label})`}
+                      tags={geoZones}
+                      setTags={setGeoZones}
+                      suggestions={zoneSuggestions}
+                      placeholder="Ville ou région…"
+                      maxTags={10}
+                    />
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Étape 3 */}
+            {(setupView === 'review' || setupView === 'manual' || keywords.length > 0) && (
+              <section className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#016AEB] text-xs font-bold text-white">3</span>
+                  <h3 className="text-base font-semibold text-foreground">Activez votre agent de veille</h3>
+                </div>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  L&apos;agent enregistre la mission et lance un premier scan immédiatement.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                    disabled={keywords.length === 0 || activateAgentMutation.isPending}
+                    onClick={() => activateAgentMutation.mutate()}
+                  >
+                    {activateAgentMutation.isPending
+                      ? <Loader2 size={16} className="animate-spin" />
+                      : <Wand2 size={16} />}
+                    Activer mon agent IA
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={keywords.length === 0 || saveProfileMutation.isPending}
+                    onClick={() => {
+                      saveProfileMutation.mutate();
+                      setProfileOpen(false);
+                    }}
+                    className="gap-1.5"
+                  >
+                    <Save size={14} /> Enregistrer sans scanner
+                  </Button>
+                  {hasProfile && (
+                    <button
+                      type="button"
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Annuler
+                    </button>
+                  )}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Panneau droit */}
+          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+            <div className="rounded-2xl border border-[#BED6F6]/80 bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Ce que votre agent IA va faire</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                {[
+                  'Scanne les sources d’appels d’offres et d’événements du marché choisi',
+                  'Filtre les formations hors sujet et les dates déjà passées',
+                  'Ne garde que les opportunités alignées avec votre brief',
+                  'Vous alerte dès qu’une nouvelle piste apparaît',
+                ].map((line) => (
+                  <li key={line} className="flex gap-2">
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#016AEB]" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </CardContent>
-        </Card>
+            <div className="rounded-2xl border border-[#BED6F6]/80 bg-gradient-to-br from-[#eef5ff] to-white p-5 shadow-sm">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Aperçu de votre veille</h3>
+              <p className="text-2xl font-bold text-[#016AEB]">{stats?.total ?? 0}</p>
+              <p className="text-xs text-muted-foreground">opportunités déjà détectées</p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                Prêt à activer · marché {marketMeta.label}
+              </div>
+            </div>
+          </aside>
+        </div>
       )}
 
       {/* URL Analyzer (collapsible) */}
@@ -907,20 +1162,26 @@ export function ScoutAI() {
       {!hasProfile && !profileOpen && profileQuery.isSuccess && (
         <Card className="border-dashed border-2 border-blue-200">
           <CardContent className="py-12 text-center">
-            <Settings2 size={40} className="mx-auto mb-3 text-blue-300" />
-            <h3 className="text-lg font-semibold text-foreground">Configurez votre profil de veille</h3>
+            <Sparkles size={40} className="mx-auto mb-3 text-[#016AEB]/50" />
+            <h3 className="text-lg font-semibold text-foreground">Créez votre agent de veille IA</h3>
             <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">
-              Définissez vos mots-clés, secteurs et zones géographiques pour que Scout AI détecte les opportunités pertinentes.
+              Décrivez votre besoin en une phrase — l&apos;IA construit le profil et lance la veille.
             </p>
-            <Button className="mt-4 gap-1.5" onClick={() => setProfileOpen(true)}>
-              <Settings2 size={14} /> Créer mon profil
+            <Button
+              className="mt-4 gap-1.5 bg-[#016AEB] hover:bg-[#0158c7]"
+              onClick={() => {
+                setSetupView('converse');
+                setProfileOpen(true);
+              }}
+            >
+              <MessageSquare size={14} /> Décrire ma mission
             </Button>
           </CardContent>
         </Card>
       )}
 
       {/* Main content: tabs + opportunities */}
-      {hasProfile && (
+      {hasProfile && !profileOpen && (
         <>
           {/* Category tabs */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
