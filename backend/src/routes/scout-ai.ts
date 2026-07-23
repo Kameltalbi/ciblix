@@ -434,6 +434,8 @@ const profileSchema = z.object({
   newsEnabled: z.boolean().optional().default(true),
   autoScanEnabled: z.boolean().optional().default(false),
   scanIntervalH: z.number().min(6).max(168).optional().default(24),
+  alertEmailEnabled: z.boolean().optional().default(true),
+  alertMinScore: z.number().min(30).max(100).optional().default(70),
   /** Hint UI only — not persisted (country is reflected in geoZones). */
   marketCountry: z.string().max(8).optional(),
 });
@@ -813,6 +815,148 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
 });
 
 /**
+ * Scan complet (toutes catégories activées) — utiliséé par l'API et le scheduler auto.
+ */
+export async function executeScoutScanAll(
+  orgId: string,
+  opts?: { userId?: string },
+): Promise<{
+  newOpportunities: Array<{
+    id: string;
+    title: string;
+    url: string;
+    source: string;
+    relevanceScore: number;
+    category: string;
+    deadline: string | null;
+    aiSummary: string | null;
+  }>;
+  categories: string[];
+  totalRaw: number;
+}> {
+  const profile = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
+  if (!profile) {
+    throw new Error('PROFILE_REQUIRED');
+  }
+
+  const categories: Array<'TENDER' | 'EVENT' | 'NEWS'> = [];
+  if (profile.tenderEnabled) categories.push('TENDER');
+  if (profile.eventEnabled) categories.push('EVENT');
+  if (profile.newsEnabled) categories.push('NEWS');
+
+  const allResults: Array<{
+    id: string;
+    title: string;
+    url: string;
+    source: string;
+    relevanceScore: number;
+    category: string;
+    deadline: string | null;
+    aiSummary: string | null;
+  }> = [];
+  let totalRaw = 0;
+
+  for (const cat of categories) {
+    const keywords = profile.keywords as string[];
+    const sectors = profile.sectors as string[];
+    const geoZones = profile.geoZones as string[];
+    const watchSites = ((profile as { watchSites?: unknown }).watchSites as string[]) || [];
+    const market = inferMarketCode(geoZones);
+    const gl = watchSites.length > 0 ? '' : (market || '');
+    const queries = buildSearchQueries(keywords, sectors, geoZones, cat, market, watchSites);
+    const watched = resolveWatchSites(watchSites);
+
+    const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
+    const seenUrls = new Set<string>();
+
+    for (const q of queries) {
+      const results = await searchWeb(q, 8, gl);
+      for (const r of results) {
+        if (seenUrls.has(r.link)) continue;
+        let host = '';
+        try { host = new URL(r.link).hostname; } catch { /* */ }
+        if (!isWatchedHost(host, watched, r.link) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+        seenUrls.add(r.link);
+        allRaw.push(r);
+      }
+    }
+    totalRaw += allRaw.length;
+
+    const analyzed = await analyzeWithAI(
+      allRaw,
+      keywords,
+      sectors,
+      cat,
+      watched.length
+        ? `AO internationaux (${watched.map((s) => s.shortLabel).join(', ')})`
+        : marketLabel(market),
+    );
+
+    for (const a of analyzed) {
+      const raw = allRaw[a.index - 1];
+      if (!raw || isStaleAnalyzedHit(cat, raw, a, market, watchSites)) continue;
+      const existing = await prisma.scoutOpportunity.findFirst({ where: { organizationId: orgId, url: raw.link } });
+      if (!existing) {
+        const created = await prisma.scoutOpportunity.create({
+          data: {
+            organizationId: orgId, category: cat, title: raw.title, url: raw.link,
+            source: (() => { try { return new URL(raw.link).hostname; } catch { return 'unknown'; } })(),
+            snippet: raw.snippet, aiSummary: a.aiSummary || null,
+            relevanceScore: Math.min(100, Math.max(0, a.relevanceScore)),
+            deadline: a.deadline, location: a.location, budget: a.budget,
+            searchQuery: queries[0], status: 'NEW',
+            rawData: {
+              companyName: a.companyName || null,
+              contactEmail: a.contactEmail || null,
+              contactPhone: a.contactPhone || null,
+            },
+          },
+        });
+        allResults.push({
+          id: created.id,
+          title: created.title,
+          url: created.url,
+          source: created.source,
+          relevanceScore: created.relevanceScore,
+          category: created.category,
+          deadline: created.deadline,
+          aiSummary: created.aiSummary,
+        });
+        if (opts?.userId) {
+          void persistScoutMemory({
+            organizationId: orgId,
+            userId: opts.userId,
+            opportunity: created,
+          });
+        }
+      }
+    }
+  }
+
+  await prisma.scoutProfile.update({
+    where: { organizationId: orgId },
+    data: { lastScanAt: new Date() },
+  });
+
+  const disabled: string[] = [];
+  if (!profile.tenderEnabled) disabled.push('TENDER');
+  if (!profile.eventEnabled) disabled.push('EVENT');
+  if (!profile.newsEnabled) disabled.push('NEWS');
+  if (disabled.length > 0) {
+    await prisma.scoutOpportunity.updateMany({
+      where: {
+        organizationId: orgId,
+        category: { in: disabled },
+        status: { in: ['NEW', 'SAVED'] },
+      },
+      data: { status: 'DISMISSED' },
+    });
+  }
+
+  return { newOpportunities: allResults, categories, totalRaw };
+}
+
+/**
  * POST /api/scout-ai/scan-all
  * Lance un scan sur toutes les catégories activées du profil.
  */
@@ -821,117 +965,89 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
     const orgId = req.organizationId!;
     if (!(await tryConsumeAgentQuota(orgId, 'scout-ai', res))) return;
 
-    const profile = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
-    if (!profile) {
-      res.status(400).json({ error: 'Configurez votre profil de veille d\'abord.' });
-      return;
-    }
-
-    const categories: Array<'TENDER' | 'EVENT' | 'NEWS'> = [];
-    if (profile.tenderEnabled) categories.push('TENDER');
-    if (profile.eventEnabled) categories.push('EVENT');
-    if (profile.newsEnabled) categories.push('NEWS');
-
-    const allResults: any[] = [];
-    let totalRaw = 0;
-
-    for (const cat of categories) {
-      const keywords = profile.keywords as string[];
-      const sectors = profile.sectors as string[];
-      const geoZones = profile.geoZones as string[];
-      const watchSites = ((profile as { watchSites?: unknown }).watchSites as string[]) || [];
-      const market = inferMarketCode(geoZones);
-      const gl = watchSites.length > 0 ? '' : (market || '');
-      const queries = buildSearchQueries(keywords, sectors, geoZones, cat, market, watchSites);
-      const watched = resolveWatchSites(watchSites);
-
-      const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
-      const seenUrls = new Set<string>();
-
-      for (const q of queries) {
-        const results = await searchWeb(q, 8, gl);
-        for (const r of results) {
-          if (seenUrls.has(r.link)) continue;
-          let host = '';
-          try { host = new URL(r.link).hostname; } catch { /* */ }
-          if (!isWatchedHost(host, watched, r.link) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
-          seenUrls.add(r.link);
-          allRaw.push(r);
-        }
-      }
-      totalRaw += allRaw.length;
-
-      const analyzed = await analyzeWithAI(
-        allRaw,
-        keywords,
-        sectors,
-        cat,
-        watched.length
-          ? `AO internationaux (${watched.map((s) => s.shortLabel).join(', ')})`
-          : marketLabel(market),
+    try {
+      const result = await executeScoutScanAll(orgId, { userId: req.userId });
+      // Alerte email si score élevé (même après scan manuel)
+      void notifyScoutHighScores(orgId, result.newOpportunities).catch((err) =>
+        console.warn('[scout-ai] alert after scan-all', err),
       );
-
-      for (const a of analyzed) {
-        const raw = allRaw[a.index - 1];
-        if (!raw || isStaleAnalyzedHit(cat, raw, a, market, watchSites)) continue;
-        const existing = await prisma.scoutOpportunity.findFirst({ where: { organizationId: orgId, url: raw.link } });
-        if (!existing) {
-          const created = await prisma.scoutOpportunity.create({
-            data: {
-              organizationId: orgId, category: cat, title: raw.title, url: raw.link,
-              source: (() => { try { return new URL(raw.link).hostname; } catch { return 'unknown'; } })(),
-              snippet: raw.snippet, aiSummary: a.aiSummary || null,
-              relevanceScore: Math.min(100, Math.max(0, a.relevanceScore)),
-              deadline: a.deadline, location: a.location, budget: a.budget,
-              searchQuery: queries[0], status: 'NEW',
-              rawData: {
-                companyName: a.companyName || null,
-                contactEmail: a.contactEmail || null,
-                contactPhone: a.contactPhone || null,
-              },
-            },
-          });
-          allResults.push(created);
-          if (req.userId) {
-            void persistScoutMemory({
-              organizationId: orgId,
-              userId: req.userId,
-              opportunity: created,
-            });
-          }
-        }
-      }
-    }
-
-    await prisma.scoutProfile.update({
-      where: { organizationId: orgId },
-      data: { lastScanAt: new Date() },
-    });
-
-    // Après scan : ranger les catégories non activées (anciens résultats)
-    const disabled: string[] = [];
-    if (!profile.tenderEnabled) disabled.push('TENDER');
-    if (!profile.eventEnabled) disabled.push('EVENT');
-    if (!profile.newsEnabled) disabled.push('NEWS');
-    if (disabled.length > 0) {
-      await prisma.scoutOpportunity.updateMany({
-        where: {
-          organizationId: orgId,
-          category: { in: disabled },
-          status: { in: ['NEW', 'SAVED'] },
-        },
-        data: { status: 'DISMISSED' },
+      res.json({
+        newOpportunities: result.newOpportunities.length,
+        categories: result.categories,
+        totalRaw: result.totalRaw,
+        scannedAt: new Date().toISOString(),
       });
+    } catch (err) {
+      if (err instanceof Error && err.message === 'PROFILE_REQUIRED') {
+        res.status(400).json({ error: 'Configurez votre profil de veille d\'abord.' });
+        return;
+      }
+      throw err;
     }
-
-    res.json({
-      newOpportunities: allResults.length,
-      categories,
-      totalRaw,
-      scannedAt: new Date().toISOString(),
-    });
   } catch (err) { next(err); }
 });
+
+export async function notifyScoutHighScores(
+  orgId: string,
+  newOpps: Array<{
+    title: string;
+    url: string;
+    source: string;
+    relevanceScore: number;
+    category: string;
+    deadline: string | null;
+    aiSummary: string | null;
+  }>,
+): Promise<void> {
+  if (!newOpps.length) return;
+  const profile = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
+  if (!profile) return;
+  const alertOn = (profile as { alertEmailEnabled?: boolean }).alertEmailEnabled !== false;
+  const minScore = (profile as { alertMinScore?: number }).alertMinScore ?? 70;
+  if (!alertOn) return;
+
+  const high = newOpps.filter((o) => o.relevanceScore >= minScore);
+  if (!high.length) return;
+
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { name: true, email: true },
+  });
+  const owner = await prisma.user.findFirst({
+    where: { organizationId: orgId },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, email: true },
+  });
+  const toEmail = org?.email || owner?.email;
+  if (!toEmail) return;
+
+  const { sendScoutOpportunityAlert } = await import('../services/scout/scoutAlertMailer.js');
+  await sendScoutOpportunityAlert({
+    toEmail,
+    orgName: org?.name,
+    opportunities: high,
+    minScore,
+  });
+
+  // Notification in-app
+  const users = await prisma.user.findMany({
+    where: { organizationId: orgId },
+    select: { id: true },
+    take: 20,
+  });
+  if (users.length) {
+    await prisma.notification.createMany({
+      data: users.map((u) => ({
+        userId: u.id,
+        organizationId: orgId,
+        title: 'Veilleur IA',
+        content: `${high.length} nouvelle(s) opportunité(s) score ≥ ${minScore}`,
+        type: 'SCOUT_ALERT' as const,
+        link: '/agents/scout-ai',
+      })),
+    }).catch((err) => console.warn('[scout-ai] notification', err));
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  OPPORTUNITES — CRUD + filtres

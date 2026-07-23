@@ -855,6 +855,7 @@ enum NotificationType {
   SUPPORT_TICKET_NEW     // Nouveau ticket support
   SUPPORT_TICKET_REPLY   // Réponse sur ticket support
   BRAND_PULSE_ALERT      // Alerte BrandPulse AI
+  SCOUT_ALERT            // Alerte Veilleur IA (nouvelle opportunité)
 }
 
 model SupportTicket {
@@ -1206,6 +1207,8 @@ model ScoutProfile {
   newsEnabled    Boolean  @default(true)
   autoScanEnabled Boolean @default(false)
   scanIntervalH  Int      @default(24) // intervalle en heures
+  alertEmailEnabled Boolean @default(true)
+  alertMinScore  Int      @default(70) // alerte si score >= seuil
   lastScanAt     DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

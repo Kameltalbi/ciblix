@@ -252,4 +252,7 @@ app.listen(PORT, '0.0.0.0', () => {
   void import('./services/agent-memory/scheduler.js').then(({ startAgentMemoryScheduler }) => {
     startAgentMemoryScheduler();
   });
+  void import('./services/scout/scoutScheduler.js').then(({ startScoutScheduler }) => {
+    startScoutScheduler();
+  });
 });

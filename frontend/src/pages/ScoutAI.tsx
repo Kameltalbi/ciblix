@@ -56,6 +56,8 @@ interface ScoutProfile {
   newsEnabled: boolean;
   autoScanEnabled: boolean;
   scanIntervalH: number;
+  alertEmailEnabled?: boolean;
+  alertMinScore?: number;
   lastScanAt: string | null;
 }
 
@@ -460,6 +462,10 @@ export function ScoutAI() {
   const [newsEnabled, setNewsEnabled] = useState(true);
   const [watchSites, setWatchSites] = useState<string[]>([]);
   const [linkedinUrlDraft, setLinkedinUrlDraft] = useState('');
+  const [autoScanEnabled, setAutoScanEnabled] = useState(true);
+  const [scanIntervalH, setScanIntervalH] = useState(24);
+  const [alertEmailEnabled, setAlertEmailEnabled] = useState(true);
+  const [alertMinScore, setAlertMinScore] = useState(70);
   const [setupView, setSetupView] = useState<SetupView>('converse');
   const [briefText, setBriefText] = useState('');
   const [missionTitle, setMissionTitle] = useState('');
@@ -513,6 +519,10 @@ export function ScoutAI() {
     setEventEnabled(profileQuery.data.eventEnabled);
     setNewsEnabled(profileQuery.data.newsEnabled);
     setWatchSites(normalizeTags(profileQuery.data.watchSites));
+    setAutoScanEnabled(profileQuery.data.autoScanEnabled ?? true);
+    setScanIntervalH(profileQuery.data.scanIntervalH ?? 24);
+    setAlertEmailEnabled(profileQuery.data.alertEmailEnabled !== false);
+    setAlertMinScore(profileQuery.data.alertMinScore ?? 70);
     const inferred = inferMarketFromZones(zones);
     setMarket(inferred);
     try {
@@ -614,6 +624,10 @@ export function ScoutAI() {
         tenderEnabled,
         eventEnabled,
         newsEnabled,
+        autoScanEnabled,
+        scanIntervalH,
+        alertEmailEnabled,
+        alertMinScore,
         marketCountry: market,
       });
     },
@@ -628,6 +642,10 @@ export function ScoutAI() {
         setTenderEnabled(saved.tenderEnabled);
         setEventEnabled(saved.eventEnabled);
         setNewsEnabled(saved.newsEnabled);
+        setAutoScanEnabled(saved.autoScanEnabled ?? true);
+        setScanIntervalH(saved.scanIntervalH ?? 24);
+        setAlertEmailEnabled(saved.alertEmailEnabled !== false);
+        setAlertMinScore(saved.alertMinScore ?? 70);
       }
       void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
       void queryClient.invalidateQueries({ queryKey: ['scout-stats'] });
@@ -649,6 +667,10 @@ export function ScoutAI() {
       tenderEnabled,
       eventEnabled,
       newsEnabled,
+      autoScanEnabled,
+      scanIntervalH,
+      alertEmailEnabled,
+      alertMinScore,
       marketCountry: market,
     });
     void queryClient.invalidateQueries({ queryKey: ['scout-profile'] });
@@ -835,6 +857,8 @@ export function ScoutAI() {
               <p className="text-sm text-foreground">
                 <span className="font-medium">Marché :</span> {marketMeta.label}
                 {geoZones.length > 0 ? ` · ${geoZones.slice(0, 4).join(', ')}${geoZones.length > 4 ? '…' : ''}` : ''}
+                {autoScanEnabled ? ` · Auto ${scanIntervalH}h` : ''}
+                {alertEmailEnabled ? ` · Alertes ≥${alertMinScore}` : ''}
               </p>
               <p className="truncate text-xs text-muted-foreground">
                 {keywords.length > 0 ? keywords.join(' · ') : 'Aucun mot-clé'}
@@ -1161,8 +1185,70 @@ export function ScoutAI() {
                   <h3 className="text-base font-semibold text-foreground">Activez votre agent de veille</h3>
                 </div>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  L&apos;agent enregistre la mission et lance un premier scan immédiatement.
+                  L&apos;agent enregistre la mission, lance un premier scan, puis peut travailler en continu et vous alerter.
                 </p>
+
+                <div className="mb-5 space-y-3 rounded-xl border border-[#BED6F6] bg-[#f7faff]/60 p-4">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-[#016AEB]"
+                      checked={autoScanEnabled}
+                      onChange={(e) => setAutoScanEnabled(e.target.checked)}
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-foreground">Scan automatique</span>
+                      <span className="text-xs text-muted-foreground">
+                        L&apos;agent relance la veille sans intervention (recommandé).
+                      </span>
+                    </span>
+                  </label>
+                  {autoScanEnabled && (
+                    <div className="ml-7 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Fréquence</span>
+                      <select
+                        value={scanIntervalH}
+                        onChange={(e) => setScanIntervalH(Number(e.target.value))}
+                        className="rounded-lg border border-[#BED6F6] bg-white px-2 py-1.5 text-sm"
+                      >
+                        <option value={6}>Toutes les 6 h</option>
+                        <option value={12}>Toutes les 12 h</option>
+                        <option value={24}>Tous les jours</option>
+                        <option value={48}>Tous les 2 jours</option>
+                      </select>
+                    </div>
+                  )}
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-[#016AEB]"
+                      checked={alertEmailEnabled}
+                      onChange={(e) => setAlertEmailEnabled(e.target.checked)}
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-foreground">Alerte email</span>
+                      <span className="text-xs text-muted-foreground">
+                        Recevoir un email dès qu&apos;une opportunité dépasse le score minimum.
+                      </span>
+                    </span>
+                  </label>
+                  {alertEmailEnabled && (
+                    <div className="ml-7 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Score minimum</span>
+                      <select
+                        value={alertMinScore}
+                        onChange={(e) => setAlertMinScore(Number(e.target.value))}
+                        className="rounded-lg border border-[#BED6F6] bg-white px-2 py-1.5 text-sm"
+                      >
+                        <option value={50}>≥ 50</option>
+                        <option value={60}>≥ 60</option>
+                        <option value={70}>≥ 70 (recommandé)</option>
+                        <option value={80}>≥ 80</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     type="button"
@@ -1211,7 +1297,7 @@ export function ScoutAI() {
                   'Scanne les sources d’appels d’offres et d’événements du marché choisi',
                   'Filtre les formations hors sujet et les dates déjà passées',
                   'Ne garde que les opportunités alignées avec votre brief',
-                  'Vous alerte dès qu’une nouvelle piste apparaît',
+                  'Scan auto + alerte email dès qu’un AO à fort score apparaît',
                 ].map((line) => (
                   <li key={line} className="flex gap-2">
                     <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#016AEB]" />
