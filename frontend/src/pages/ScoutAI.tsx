@@ -657,6 +657,34 @@ export function ScoutAI() {
         </div>
       )}
 
+      {/* Récap des choix — toujours visible même si le formulaire est replié */}
+      {hasProfile && !profileOpen && (
+        <Card className="border-[#BED6F6]/70 bg-[#f7faff]">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#016AEB]">Vos choix de veille</p>
+              <p className="text-sm text-foreground">
+                <span className="font-medium">Marché :</span> {marketMeta.label}
+                {geoZones.length > 0 ? ` · ${geoZones.slice(0, 4).join(', ')}${geoZones.length > 4 ? '…' : ''}` : ''}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {keywords.length > 0 ? keywords.join(' · ') : 'Aucun mot-clé'}
+                {sectors.length > 0 ? ` · ${sectors.slice(0, 3).join(', ')}` : ''}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5"
+              onClick={() => setProfileOpen(true)}
+            >
+              <Settings2 size={14} /> Modifier mes choix
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Profile config (collapsible) */}
       {profileOpen && (
         <Card className="border-blue-200 bg-blue-50/30">
@@ -905,12 +933,40 @@ export function ScoutAI() {
 
           {/* Scan feedback */}
           {(scanMutation.isSuccess || scanAllMutation.isSuccess) && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-              <CheckCircle2 size={16} />
-              {scanAllMutation.isSuccess
-                ? `Scan complet terminé — ${scanAllMutation.data?.newOpportunities || 0} nouvelles opportunités détectées`
-                : `Scan terminé — ${scanMutation.data?.meta?.totalSaved || 0} opportunités`
-              }
+            <div
+              className={cn(
+                'flex flex-col gap-2 rounded-lg border p-3 text-sm sm:flex-row sm:items-center',
+                (scanAllMutation.data?.newOpportunities || scanMutation.data?.meta?.totalSaved || 0) > 0
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
+              )}
+            >
+              <div className="flex items-start gap-2 flex-1">
+                {(scanAllMutation.data?.newOpportunities || scanMutation.data?.meta?.totalSaved || 0) > 0 ? (
+                  <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                )}
+                <span>
+                  {scanAllMutation.isSuccess
+                    ? `Scan terminé — ${scanAllMutation.data?.newOpportunities || 0} nouvelle(s) opportunité(s).`
+                    : `Scan terminé — ${scanMutation.data?.meta?.totalSaved || 0} opportunité(s) (sources brutes : ${scanMutation.data?.meta?.totalRaw ?? '—'}).`}
+                  {(scanAllMutation.data?.newOpportunities || scanMutation.data?.meta?.totalSaved || 0) === 0
+                    ? ' Vos choix n’ont pas été effacés. Élargissez mots-clés / zones, ou changez de marché.'
+                    : null}
+                </span>
+              </div>
+              {(scanAllMutation.data?.newOpportunities || scanMutation.data?.meta?.totalSaved || 0) === 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 border-amber-300 bg-white"
+                  onClick={() => setProfileOpen(true)}
+                >
+                  Modifier mes choix
+                </Button>
+              ) : null}
             </div>
           )}
 
@@ -950,13 +1006,24 @@ export function ScoutAI() {
             <Card className="border-dashed">
               <CardContent className="py-12 text-center">
                 <Search size={40} className="mx-auto mb-3 text-muted-foreground/40" />
-                <h3 className="font-semibold text-foreground">Aucune opportunité détectée</h3>
-                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-                  Lancez un scan pour détecter les appels d'offres, événements et actualités correspondant à votre profil.
+                <h3 className="font-semibold text-foreground">Aucune opportunité pour ce scan</h3>
+                <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                  Le profil n’a pas été supprimé. Cliquez sur <strong>Modifier mes choix</strong> pour changer pays,
+                  villes ou mots-clés, puis relancez un scan.
                 </p>
-                <Button className="mt-4 gap-1.5" onClick={() => scanAllMutation.mutate()} disabled={isScanning}>
-                  <ScanLine size={14} /> Lancer le premier scan
-                </Button>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Button type="button" variant="outline" className="gap-1.5" onClick={() => setProfileOpen(true)}>
+                    <Settings2 size={14} /> Modifier mes choix
+                  </Button>
+                  <Button
+                    type="button"
+                    className="gap-1.5"
+                    onClick={() => scanAllMutation.mutate()}
+                    disabled={isScanning}
+                  >
+                    <ScanLine size={14} /> Relancer le scan
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
