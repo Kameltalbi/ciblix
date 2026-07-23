@@ -41,11 +41,9 @@ async function callOpenAI(prompt: string, systemPrompt: string): Promise<string>
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
-async function searchWeb(
-  query: string,
-  num = 10,
-  gl = ''
-): Promise<Array<{ title: string; link: string; snippet: string }>> {
+type SearchHit = { title: string; link: string; snippet: string };
+
+async function searchGoogleCse(query: string, num: number, gl: string): Promise<SearchHit[]> {
   const apiKey = process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
   if (!apiKey || !cseId) {
@@ -66,10 +64,20 @@ async function searchWeb(
     const response = await fetch(`https://www.googleapis.com/customsearch/v1?${params}`);
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
-      console.warn(`[scout-ai] CSE HTTP ${response.status} q="${query}" gl=${useGl || '—'}: ${errText.slice(0, 200)}`);
-      return [] as Array<{ title: string; link: string; snippet: string }>;
+      console.warn(`[scout-ai] CSE HTTP ${response.status}: ${errText.slice(0, 240)}`);
+      return [] as SearchHit[];
     }
-    const data = (await response.json()) as { items?: Array<{ title?: string; link?: string; snippet?: string }> };
+    const data = (await response.json()) as {
+      items?: Array<{ title?: string; link?: string; snippet?: string }>;
+      searchInformation?: { totalResults?: string };
+      error?: { message?: string };
+    };
+    if (data.error?.message) {
+      console.warn(`[scout-ai] CSE error body: ${data.error.message}`);
+    }
+    console.log(
+      `[scout-ai] CSE q="${query}" gl=${useGl || '—'} totalReported=${data.searchInformation?.totalResults ?? '?'} items=${data.items?.length ?? 0}`
+    );
     return (data.items || []).map((item) => ({
       title: item.title || '',
       link: item.link || '',
@@ -77,18 +85,106 @@ async function searchWeb(
     }));
   };
 
+  let hits = await run(gl);
+  if (hits.length === 0 && gl) hits = await run('');
+  return hits;
+}
+
+async function searchSerper(query: string, num: number, gl: string): Promise<SearchHit[]> {
+  const apiKey = process.env.SERPER_API_KEY?.trim();
+  if (!apiKey) return [];
   try {
-    let hits = await run(gl);
-    // Si 0 résultat avec bias pays, retenter sans gl
-    if (hits.length === 0 && gl) {
-      hits = await run('');
+    const res = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-KEY': apiKey },
+      body: JSON.stringify({ q: query, num: Math.min(num, 10), gl: gl || 'fr', hl: 'fr' }),
+    });
+    if (!res.ok) {
+      console.warn(`[scout-ai] Serper HTTP ${res.status}`);
+      return [];
     }
-    console.log(`[scout-ai] CSE "${query}" → ${hits.length} hit(s)`);
+    const data = (await res.json()) as {
+      organic?: Array<{ title?: string; link?: string; snippet?: string }>;
+    };
+    const hits = (data.organic || []).map((item) => ({
+      title: item.title || '',
+      link: item.link || '',
+      snippet: item.snippet || '',
+    }));
+    console.log(`[scout-ai] Serper q="${query}" → ${hits.length}`);
     return hits;
   } catch (err) {
-    console.warn('[scout-ai] CSE error', err);
+    console.warn('[scout-ai] Serper error', err);
     return [];
   }
+}
+
+/** Fallback gratuit si CSE/Serper ne renvoient rien. */
+async function searchDuckDuckGo(query: string, num: number): Promise<SearchHit[]> {
+  try {
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (compatible; CiblixScout/1.0; +https://ciblix.com)',
+        Accept: 'text/html',
+      },
+    });
+    if (!res.ok) {
+      console.warn(`[scout-ai] DDG HTTP ${res.status}`);
+      return [];
+    }
+    const html = await res.text();
+    const hits: SearchHit[] = [];
+    const re =
+      /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]*?)<\/(?:a|td)/gi;
+    let m: RegExpExecArray | null;
+    const decode = (s: string) =>
+      s
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&#x27;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .trim();
+
+    while ((m = re.exec(html)) && hits.length < num) {
+      let link = m[1];
+      // DDG wraps redirects: /l/?uddg=<encoded>
+      try {
+        const u = new URL(link, 'https://duckduckgo.com');
+        const uddg = u.searchParams.get('uddg');
+        if (uddg) link = decodeURIComponent(uddg);
+      } catch {
+        /* keep raw */
+      }
+      const title = decode(m[2]);
+      const snippet = decode(m[3]);
+      if (link.startsWith('http') && title) {
+        hits.push({ title, link, snippet });
+      }
+    }
+    console.log(`[scout-ai] DDG q="${query}" → ${hits.length}`);
+    return hits;
+  } catch (err) {
+    console.warn('[scout-ai] DDG error', err);
+    return [];
+  }
+}
+
+async function searchWeb(query: string, num = 10, gl = ''): Promise<SearchHit[]> {
+  // 1) Google CSE
+  let hits = await searchGoogleCse(query, num, gl);
+  if (hits.length > 0) return hits;
+
+  // 2) Serper (si clé)
+  hits = await searchSerper(query, num, gl);
+  if (hits.length > 0) return hits;
+
+  // 3) DuckDuckGo fallback — pour que l'agent ne reste pas à 0
+  hits = await searchDuckDuckGo(query, num);
+  return hits;
 }
 
 function inferSearchGl(geoZones: string[], marketCountry?: string | null): string {
@@ -431,6 +527,8 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
 scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const orgId = req.organizationId!;
+    if (!(await tryConsumeAgentQuota(orgId, 'scout-ai', res))) return;
+
     const profile = await prisma.scoutProfile.findUnique({ where: { organizationId: orgId } });
     if (!profile) {
       res.status(400).json({ error: 'Configurez votre profil de veille d\'abord.' });
@@ -446,8 +544,6 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
     let totalRaw = 0;
 
     for (const cat of categories) {
-      if (!(await tryConsumeAgentQuota(orgId, 'scout-ai', res))) return;
-
       const keywords = profile.keywords as string[];
       const sectors = profile.sectors as string[];
       const geoZones = profile.geoZones as string[];
@@ -458,9 +554,12 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       const seenUrls = new Set<string>();
 
       for (const q of queries) {
-        const results = await searchWeb(q, 6, gl);
+        const results = await searchWeb(q, 8, gl);
         for (const r of results) {
-          if (!seenUrls.has(r.link)) { seenUrls.add(r.link); allRaw.push(r); }
+          if (!seenUrls.has(r.link)) {
+            seenUrls.add(r.link);
+            allRaw.push(r);
+          }
         }
       }
       totalRaw += allRaw.length;

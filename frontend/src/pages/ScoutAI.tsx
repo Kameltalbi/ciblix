@@ -949,7 +949,7 @@ export function ScoutAI() {
                 )}
                 <span>
                   {scanAllMutation.isSuccess
-                    ? `Scan terminé — ${scanAllMutation.data?.newOpportunities || 0} nouvelle(s) opportunité(s).`
+                    ? `Scan terminé — ${scanAllMutation.data?.newOpportunities || 0} nouvelle(s) · ${scanAllMutation.data?.totalRaw ?? 0} source(s) trouvée(s).`
                     : `Scan terminé — ${scanMutation.data?.meta?.totalSaved || 0} opportunité(s) (sources brutes : ${scanMutation.data?.meta?.totalRaw ?? '—'}).`}
                   {(scanAllMutation.data?.newOpportunities || scanMutation.data?.meta?.totalSaved || 0) === 0
                     ? ' Vos choix n’ont pas été effacés. Élargissez mots-clés / zones, ou changez de marché.'
