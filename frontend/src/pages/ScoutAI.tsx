@@ -34,6 +34,7 @@ import {
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/form-controls';
 import { cn } from '@/lib/utils';
 
 // ─── Types ─────────────────────────────────────────────────
@@ -483,6 +484,9 @@ export function ScoutAI() {
 
   const selectMarket = (id: MarketId) => {
     setMarket(id);
+    const meta = MARKETS.find((m) => m.id === id);
+    // Changer de pays = nouvelles zones (évite Tunis sous Algérie)
+    setGeoZones(meta?.countryLabel ? [meta.countryLabel] : []);
     try {
       localStorage.setItem(MARKET_STORAGE_KEY, id);
     } catch {
@@ -703,32 +707,28 @@ export function ScoutAI() {
               suggestions={SUGGESTED_SECTORS} placeholder="Ex: IT & Digital, BTP..." maxTags={10}
             />
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-foreground">Pays / marché à surveiller</label>
+              <label className="block text-sm font-medium text-foreground" htmlFor="scout-market">
+                Pays / marché à surveiller
+              </label>
               <p className="text-xs text-muted-foreground">
-                Choisissez où chercher les opportunités — indépendamment de votre localisation. Vous pouvez surveiller la
-                France depuis la Tunisie, ou l’inverse.
+                Choisissez le pays où chercher les opportunités (ex. France depuis la Tunisie, ou l’inverse).
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {MARKETS.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => selectMarket(m.id)}
-                    className={cn(
-                      'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                      market === m.id
-                        ? 'border-blue-400 bg-blue-100 text-blue-800'
-                        : 'border-gray-200 bg-white text-muted-foreground hover:border-blue-200 hover:text-blue-700'
-                    )}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+              <Select value={market} onValueChange={(v) => selectMarket(v as MarketId)}>
+                <SelectTrigger id="scout-market" className="h-11 w-full max-w-md bg-white">
+                  <SelectValue placeholder="Choisir un pays…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MARKETS.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <TagInput
-              label={`Zones dans ${marketMeta.label}`}
+              label={`Villes / zones (${marketMeta.label})`}
               tags={geoZones}
               setTags={setGeoZones}
               suggestions={zoneSuggestions}
