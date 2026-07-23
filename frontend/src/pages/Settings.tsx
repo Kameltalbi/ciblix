@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Mail, Users, Lock, Building2 } from 'lucide-react';
 import { GmailSettings } from '@/components/settings/GmailSettings';
 import { UsersSettings } from '@/components/settings/UsersSettings';
@@ -17,17 +18,37 @@ const ALL_TABS: { id: Tab; label: string; icon: typeof Building2; ownerOnly?: bo
   { id: 'security', label: 'Sécurité', icon: Lock },
 ];
 
+function parseSettingsTab(value: string | null, isOwner: boolean): Tab {
+  if (value === 'organization' || value === 'gmail' || value === 'users' || value === 'security') {
+    if (!isOwner && (value === 'organization' || value === 'users')) return 'security';
+    return value;
+  }
+  return isOwner ? 'organization' : 'security';
+}
+
 export function Settings() {
   const { t } = useTranslation();
   const user = useAuth((s) => s.user);
   const isOwner = user?.role === 'OWNER' || user?.role === 'SUPERADMIN';
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const tabs = useMemo(
     () => ALL_TABS.filter((tab) => isOwner || !tab.ownerOnly),
     [isOwner]
   );
 
-  const [activeTab, setActiveTab] = useState<Tab>(() => (isOwner ? 'organization' : 'security'));
+  const [activeTab, setActiveTab] = useState<Tab>(() => parseSettingsTab(searchParams.get('tab'), isOwner));
+
+  useEffect(() => {
+    setActiveTab(parseSettingsTab(searchParams.get('tab'), isOwner));
+  }, [searchParams, isOwner]);
+
+  const selectTab = (id: Tab) => {
+    setActiveTab(id);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', id);
+    setSearchParams(next, { replace: true });
+  };
 
   const visibleTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0]?.id ?? 'security';
 
@@ -40,7 +61,7 @@ export function Settings() {
 
       {/* Mobile: menu déroulant */}
       <div className="md:hidden">
-        <Select value={visibleTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+        <Select value={visibleTab} onValueChange={(v) => selectTab(v as Tab)}>
           <SelectTrigger className="h-11 w-full justify-between gap-2 text-left font-medium [&>span]:min-w-0">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {(() => {
@@ -81,7 +102,7 @@ export function Settings() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => selectTab(tab.id)}
                 className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   visibleTab === tab.id
                     ? 'border-leaf text-leaf'

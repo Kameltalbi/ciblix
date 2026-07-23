@@ -69,9 +69,21 @@ export function IntegrationsSettings() {
           whatsappSessionTimeoutMinutes: Number(waTimeout) || 30,
         })
         .then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (data: {
+      businessAccountId?: string | null;
+      phoneNumberId?: string | null;
+      webhookToken?: string | null;
+      webhookTokenCreated?: boolean;
+      sessionTimeoutMinutes?: number;
+    }) => {
       void qc.invalidateQueries({ queryKey: ['integrations-config'] });
-      alert('Configuration WhatsApp enregistrée');
+      if (data.webhookTokenCreated && data.webhookToken) {
+        alert(
+          `Configuration WhatsApp enregistrée.\n\nVerify token Meta (à coller une fois) :\n${data.webhookToken}`
+        );
+      } else {
+        alert('Configuration WhatsApp enregistrée');
+      }
     },
   });
 
@@ -132,30 +144,56 @@ export function IntegrationsSettings() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">WhatsApp Business</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle className="text-base">WhatsApp Business</CardTitle>
+            {data?.whatsapp.phoneNumberId && data.whatsapp.webhookTokenSet ? (
+              <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-700">
+                Configuré
+              </span>
+            ) : (
+              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
+                Non connecté
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
-            Capture automatique des conversations. Consentement one-shot requis par contact (
-            <code>whatsappConsentAt</code>). Le client est responsable de l&apos;obtention légale du consentement.
+            Pour synchroniser automatiquement les messages Meta WhatsApp Business Cloud API. Sans ça, l’Assistant IA
+            analyse seulement le texte WhatsApp que vous collez manuellement. Consentement one-shot requis par contact.
+            Le client reste responsable de l&apos;obtention légale du consentement.
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
-            <Label>Business Account ID</Label>
-            <Input value={waAccount} onChange={(e) => setWaAccount(e.target.value)} />
+            <Label>Business Account ID (Meta)</Label>
+            <Input
+              value={waAccount}
+              onChange={(e) => setWaAccount(e.target.value)}
+              placeholder="Ex. 123456789012345"
+            />
           </div>
           <div className="space-y-1.5">
-            <Label>Phone Number ID</Label>
-            <Input value={waPhone} onChange={(e) => setWaPhone(e.target.value)} />
+            <Label>Phone Number ID (Meta)</Label>
+            <Input
+              value={waPhone}
+              onChange={(e) => setWaPhone(e.target.value)}
+              placeholder="Ex. 109876543210987"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Timeout session (minutes)</Label>
             <Input type="number" value={waTimeout} onChange={(e) => setWaTimeout(e.target.value)} />
           </div>
           {data?.whatsapp.webhookUrl ? (
-            <p className="text-xs text-muted-foreground break-all">Webhook : {data.whatsapp.webhookUrl}</p>
+            <div className="space-y-1 rounded-md border border-border/60 bg-muted/30 p-3">
+              <p className="text-xs font-medium text-foreground">Webhook à coller dans Meta</p>
+              <p className="break-all font-mono text-[11px] text-muted-foreground">{data.whatsapp.webhookUrl}</p>
+              <p className="text-[11px] text-muted-foreground">
+                Après enregistrement, le verify token est renvoyé une fois — conservez-le pour Meta.
+              </p>
+            </div>
           ) : null}
           <Button type="button" onClick={() => saveWa.mutate()} disabled={saveWa.isPending}>
-            Enregistrer WhatsApp
+            {saveWa.isPending ? 'Enregistrement…' : 'Enregistrer WhatsApp'}
           </Button>
         </CardContent>
       </Card>

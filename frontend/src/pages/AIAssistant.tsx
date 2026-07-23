@@ -116,6 +116,18 @@ export function AIAssistant() {
     staleTime: 60_000,
   });
 
+  const { data: integrations } = useQuery<{
+    whatsapp: { phoneNumberId: string | null; webhookTokenSet: boolean };
+  }>({
+    queryKey: ['integrations-config'],
+    queryFn: () => api.get('/integrations/config').then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  const whatsappConnected = Boolean(
+    integrations?.whatsapp.phoneNumberId && integrations.whatsapp.webhookTokenSet
+  );
+
   const { data: chatHistory } = useQuery({
     queryKey: ['copilot-chat-messages', activeAgentEventId],
     queryFn: () =>
@@ -256,6 +268,39 @@ export function AIAssistant() {
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Votre coach commercial : il lit un appel ou un WhatsApp, vous dit qui relancer, et répond à vos questions.
         </p>
+      </div>
+
+      <div
+        className={cn(
+          'flex flex-col gap-2 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between',
+          whatsappConnected
+            ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900'
+            : 'border-amber-200 bg-amber-50/70 text-amber-950'
+        )}
+      >
+        <div>
+          <p className="font-medium">
+            WhatsApp {whatsappConnected ? 'connecté' : 'non connecté'}
+          </p>
+          <p className="text-xs opacity-90">
+            {whatsappConnected
+              ? 'Les conversations Business arrivent automatiquement. Vous pouvez aussi coller un fil manuellement.'
+              : 'Pas de sync auto pour l’instant. Collez un fil WhatsApp ci-dessous, ou connectez WhatsApp Business dans les réglages.'}
+          </p>
+        </div>
+        {!whatsappConnected ? (
+          <Link to="/settings?tab=organization&orgTab=integrations">
+            <Button size="sm" variant="outline" className="shrink-0 border-amber-300 bg-white">
+              Connecter WhatsApp
+            </Button>
+          </Link>
+        ) : (
+          <Link to="/settings?tab=organization&orgTab=integrations">
+            <Button size="sm" variant="outline" className="shrink-0 bg-white">
+              Voir la config
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* How it works */}

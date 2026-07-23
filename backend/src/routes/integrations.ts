@@ -111,10 +111,16 @@ integrationsRoutes.get('/config', async (req: AuthRequest, res, next) => {
 integrationsRoutes.put('/config/whatsapp', async (req: AuthRequest, res, next) => {
   try {
     const body = whatsappConfigSchema.parse(req.body);
+    const existing = await prisma.organization.findUnique({
+      where: { id: req.organizationId! },
+      select: { whatsappWebhookToken: true },
+    });
+
     const token =
       body.whatsappWebhookToken === null
         ? null
         : body.whatsappWebhookToken?.trim() ||
+          existing?.whatsappWebhookToken ||
           randomBytes(24).toString('hex');
 
     const org = await prisma.organization.update({
@@ -140,6 +146,7 @@ integrationsRoutes.put('/config/whatsapp', async (req: AuthRequest, res, next) =
       phoneNumberId: org.whatsappPhoneNumberId,
       webhookToken: org.whatsappWebhookToken,
       sessionTimeoutMinutes: org.whatsappSessionTimeoutMinutes,
+      webhookTokenCreated: !existing?.whatsappWebhookToken && Boolean(org.whatsappWebhookToken),
     });
   } catch (e) {
     next(e);
