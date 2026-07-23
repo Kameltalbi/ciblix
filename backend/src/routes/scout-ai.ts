@@ -48,27 +48,45 @@ async function searchWeb(
 ): Promise<Array<{ title: string; link: string; snippet: string }>> {
   const apiKey = process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
-  if (!apiKey || !cseId) return [];
+  if (!apiKey || !cseId) {
+    console.warn('[scout-ai] GOOGLE_CSE_API_KEY / GOOGLE_CSE_ID manquants');
+    return [];
+  }
 
-  const params = new URLSearchParams({
-    key: apiKey,
-    cx: cseId,
-    q: query,
-    num: String(Math.min(num, 10)),
-    lr: 'lang_fr',
-  });
-  if (gl) params.set('gl', gl);
+  const run = async (useGl: string) => {
+    const params = new URLSearchParams({
+      key: apiKey,
+      cx: cseId,
+      q: query,
+      num: String(Math.min(num, 10)),
+      lr: 'lang_fr',
+    });
+    if (useGl) params.set('gl', useGl);
 
-  try {
     const response = await fetch(`https://www.googleapis.com/customsearch/v1?${params}`);
-    if (!response.ok) return [];
-    const data = (await response.json()) as any;
-    return (data.items || []).map((item: any) => ({
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      console.warn(`[scout-ai] CSE HTTP ${response.status} q="${query}" gl=${useGl || '—'}: ${errText.slice(0, 200)}`);
+      return [] as Array<{ title: string; link: string; snippet: string }>;
+    }
+    const data = (await response.json()) as { items?: Array<{ title?: string; link?: string; snippet?: string }> };
+    return (data.items || []).map((item) => ({
       title: item.title || '',
       link: item.link || '',
       snippet: item.snippet || '',
     }));
-  } catch {
+  };
+
+  try {
+    let hits = await run(gl);
+    // Si 0 résultat avec bias pays, retenter sans gl
+    if (hits.length === 0 && gl) {
+      hits = await run('');
+    }
+    console.log(`[scout-ai] CSE "${query}" → ${hits.length} hit(s)`);
+    return hits;
+  } catch (err) {
+    console.warn('[scout-ai] CSE error', err);
     return [];
   }
 }
@@ -104,33 +122,37 @@ function buildSearchQueries(
   geoZones: string[],
   category: 'TENDER' | 'EVENT' | 'NEWS'
 ): string[] {
-  const geo = geoZones.length > 0 ? geoZones.join(' ') : '';
-  const kw = keywords.join(' ');
-  const sec = sectors.join(' ');
-  const loc = geo ? ` ${geo}` : '';
+  // Requêtes courtes = bien plus de hits CSE qu'une phrase surchargée
+  const kw = keywords.slice(0, 2).join(' ') || 'entreprise';
+  const sec = sectors.slice(0, 1).join(' ');
+  const geo = geoZones.slice(0, 2).join(' ');
+  const year = new Date().getFullYear();
 
+  const queries: string[] = [];
   switch (category) {
     case 'TENDER':
-      return [
-        `appel d'offres ${kw}${loc} 2026`,
-        `marché public ${kw} ${sec}${loc}`,
-        geo.toLowerCase().includes('tunisie') || geo.toLowerCase().includes('tunis')
-          ? `consultation ${kw}${loc} site:marchespublics.gov.tn OR site:tuneps.tn`
-          : `appel d'offres consultation ${kw} ${sec}${loc}`,
-      ].filter(Boolean);
+      queries.push(`appel d'offres ${kw} ${geo}`.trim());
+      queries.push(`marché public ${kw} ${geo || sec}`.trim());
+      if (/tunisie|tunis|sfax|sousse|nabeul/i.test(geo)) {
+        queries.push(`${kw} site:marchespublics.gov.tn`);
+      } else if (/france|paris|lyon/i.test(geo)) {
+        queries.push(`${kw} appel d'offres site:boamp.fr OR site:marches-publics.gouv.fr`);
+      } else {
+        queries.push(`appel d'offres ${kw} ${sec} ${geo} ${year}`.trim());
+      }
+      break;
     case 'EVENT':
-      return [
-        `salon conférence forum ${kw} ${sec}${loc} 2026`,
-        `événement professionnel ${kw}${loc} 2026`,
-        `webinaire formation ${sec}${loc}`,
-      ];
+      queries.push(`salon ${kw} ${geo} ${year}`.trim());
+      queries.push(`conférence ${kw} ${geo || sec}`.trim());
+      queries.push(`forum professionnel ${sec || kw} ${geo}`.trim());
+      break;
     case 'NEWS':
-      return [
-        `actualité ${kw} ${sec}${loc}`,
-        `réglementation ${kw}${loc} 2026`,
-        `investissement financement ${sec}${loc}`,
-      ];
+      queries.push(`actualité ${kw} ${geo}`.trim());
+      queries.push(`${kw} ${sec} ${geo} ${year}`.trim());
+      queries.push(`investissement ${kw} ${geo || sec}`.trim());
+      break;
   }
+  return [...new Set(queries.filter((q) => q.replace(/\s+/g, ' ').trim().length > 3))];
 }
 
 async function analyzeWithAI(
@@ -138,6 +160,7 @@ async function analyzeWithAI(
   keywords: string[],
   sectors: string[],
   category: string,
+  marketLabel: string,
 ): Promise<Array<{
   index: number;
   relevanceScore: number;
@@ -151,6 +174,19 @@ async function analyzeWithAI(
 }>> {
   if (rawResults.length === 0) return [];
 
+  const fallback = () =>
+    rawResults.map((_, i) => ({
+      index: i + 1,
+      relevanceScore: 45,
+      aiSummary: rawResults[i]?.snippet?.slice(0, 220) || '',
+      deadline: null as string | null,
+      location: null as string | null,
+      budget: null as string | null,
+      companyName: null as string | null,
+      contactEmail: null as string | null,
+      contactPhone: null as string | null,
+    }));
+
   const resultsText = rawResults
     .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.link}\nExtrait: ${r.snippet}`)
     .join('\n\n');
@@ -161,34 +197,36 @@ async function analyzeWithAI(
     NEWS: 'actualités sectorielles et signaux faibles',
   };
 
-  const systemPrompt = `Tu es Scout AI, spécialisé dans la veille d'opportunités commerciales en Tunisie.
+  const market = marketLabel || 'le marché ciblé';
+
+  const systemPrompt = `Tu es Scout AI, spécialisé dans la veille d'opportunités commerciales pour ${market}.
 Tu analyses des résultats de recherche pour identifier les ${categoryLabels[category] || 'opportunités'}.
 
-Pour chaque résultat pertinent, extrais:
-- relevanceScore: 0-100 (pertinence par rapport aux mots-clés et secteurs)
+Pour chaque résultat, donne un score même s'il est moyen — ne sois pas trop strict.
+Extrais:
+- relevanceScore: 0-100
 - aiSummary: résumé actionnable en 2-3 phrases
-- deadline: date limite si applicable (format DD/MM/YYYY) ou null
-- location: lieu si mentionné ou null
-- budget: montant si mentionné ou null
-- companyName: nom d'entreprise si identifiable clairement, sinon null
-- contactEmail: email de contact si présent dans l'extrait, sinon null
-- contactPhone: téléphone si présent, sinon null
+- deadline, location, budget, companyName, contactEmail, contactPhone (ou null)
 
-Réponds en JSON: [{"index": 1, "relevanceScore": 85, "aiSummary": "...", "deadline": null, "location": "Tunis", "budget": null, "companyName": null, "contactEmail": null, "contactPhone": null}]
-Ne retourne que les résultats avec relevanceScore >= 25.`;
+Réponds UNIQUEMENT en JSON array:
+[{"index": 1, "relevanceScore": 70, "aiSummary": "...", "deadline": null, "location": null, "budget": null, "companyName": null, "contactEmail": null, "contactPhone": null}]
+Inclus tous les résultats avec relevanceScore >= 15.`;
 
-  const prompt = `Catégorie: ${category}\nMots-clés: ${keywords.join(', ')}\nSecteurs: ${sectors.join(', ')}\n\nRésultats:\n${resultsText}`;
+  const prompt = `Marché: ${market}\nCatégorie: ${category}\nMots-clés: ${keywords.join(', ')}\nSecteurs: ${sectors.join(', ')}\n\nRésultats:\n${resultsText}`;
 
   try {
     const aiResponse = await callOpenAI(prompt, systemPrompt);
     const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    return rawResults.map((_, i) => ({
-      index: i + 1, relevanceScore: 40, aiSummary: '', deadline: null, location: null, budget: null,
-      companyName: null, contactEmail: null, contactPhone: null,
-    }));
+    if (!jsonMatch) {
+      console.warn('[scout-ai] AI sans JSON — fallback scores bruts');
+      return fallback();
+    }
+    const parsed = JSON.parse(jsonMatch[0]) as Array<{ index: number; relevanceScore?: number }>;
+    if (!Array.isArray(parsed) || parsed.length === 0) return fallback();
+    return parsed as ReturnType<typeof fallback>;
+  } catch (err) {
+    console.warn('[scout-ai] analyzeWithAI fallback', err);
+    return fallback();
   }
 }
 
@@ -303,10 +341,16 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
       }
     }
 
-    const analyzed = await analyzeWithAI(allRaw, keywords, sectors, category);
+    const analyzed = await analyzeWithAI(
+      allRaw,
+      keywords,
+      sectors,
+      category,
+      geoZones.slice(0, 2).join(', ') || 'marché ciblé'
+    );
 
     const opportunities = analyzed
-      .filter((a) => a.relevanceScore >= 25 && allRaw[a.index - 1])
+      .filter((a) => a.relevanceScore >= 15 && allRaw[a.index - 1])
       .map((a) => {
         const raw = allRaw[a.index - 1];
         return {
@@ -399,8 +443,11 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
     if (profile.newsEnabled) categories.push('NEWS');
 
     const allResults: any[] = [];
+    let totalRaw = 0;
 
     for (const cat of categories) {
+      if (!(await tryConsumeAgentQuota(orgId, 'scout-ai', res))) return;
+
       const keywords = profile.keywords as string[];
       const sectors = profile.sectors as string[];
       const geoZones = profile.geoZones as string[];
@@ -416,11 +463,18 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
           if (!seenUrls.has(r.link)) { seenUrls.add(r.link); allRaw.push(r); }
         }
       }
+      totalRaw += allRaw.length;
 
-      const analyzed = await analyzeWithAI(allRaw, keywords, sectors, cat);
+      const analyzed = await analyzeWithAI(
+        allRaw,
+        keywords,
+        sectors,
+        cat,
+        geoZones.slice(0, 2).join(', ') || 'marché ciblé'
+      );
 
       for (const a of analyzed) {
-        if (a.relevanceScore < 25 || !allRaw[a.index - 1]) continue;
+        if (a.relevanceScore < 15 || !allRaw[a.index - 1]) continue;
         const raw = allRaw[a.index - 1];
         const existing = await prisma.scoutOpportunity.findFirst({ where: { organizationId: orgId, url: raw.link } });
         if (!existing) {
@@ -456,7 +510,12 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       data: { lastScanAt: new Date() },
     });
 
-    res.json({ newOpportunities: allResults.length, categories, scannedAt: new Date().toISOString() });
+    res.json({
+      newOpportunities: allResults.length,
+      categories,
+      totalRaw,
+      scannedAt: new Date().toISOString(),
+    });
   } catch (err) { next(err); }
 });
 
