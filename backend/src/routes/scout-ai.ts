@@ -277,7 +277,7 @@ function isStaleAnalyzedHit(
   const watched = resolveWatchSites(watchSiteIds);
   let host = '';
   try { host = new URL(raw.link).hostname; } catch { /* ignore */ }
-  const onWatchList = isWatchedHost(host, watched);
+  const onWatchList = isWatchedHost(host, watched, raw.link);
 
   // Sites explicitement surveillés (UNDP…) : ne pas rejeter pour « mauvais pays »
   if (!onWatchList && !fitsScoutMarket({
@@ -451,6 +451,7 @@ scoutAiRoutes.get('/watch-sites', (_req, res) => {
       url: s.url,
       domain: s.domain,
       org: s.org,
+      kind: s.kind || 'portal',
     })),
   });
 });
@@ -473,7 +474,7 @@ Règles:
 - keywords: 3 à 8 mots-clés métier CONCRETS (pas de verbes vagues). Si la mission est des appels d'offres, N'inclus PAS "formation", "bootcamp", "cours".
 - sectors: 1 à 4 secteurs
 - tenderEnabled / eventEnabled / newsEnabled: selon l'intention. Par défaut AO=true.
-- watchSites: ids parmi ungm, undp, unido, unops, unicef, worldbank, afdb, ted, dgmarket — si l'utilisateur mentionne ONU, UNDP, UNIDO, UNGM, banques de développement, AO internationaux, inclus les ids pertinents (au minimum undp+unido+ungm pour ONU).
+- watchSites: ids parmi ungm, undp, unido, unops, unicef, worldbank, afdb, ted, dgmarket, et pages LinkedIn li-undp, li-unido, li-ungm, li-unops, li-unicef, li-worldbank, li-afdb. Si AO internationaux / ONU → portails + LinkedIn associés.
 - summary: 1-2 phrases qui reformulent la mission
 - missionTitle: titre court (max 8 mots)
 
@@ -541,13 +542,29 @@ Réponds UNIQUEMENT en JSON:
 
     // Enrichir watchSites si brief international
     let watchSites = Array.isArray(parsed.watchSites) ? parsed.watchSites.map(String) : [];
-    if (wantsIntl && watchSites.length === 0) watchSites = ['ungm', 'undp', 'unido'];
-    if (/undp/.test(lower) && !watchSites.includes('undp')) watchSites.push('undp');
-    if (/unido/.test(lower) && !watchSites.includes('unido')) watchSites.push('unido');
-    if (/ungm/.test(lower) && !watchSites.includes('ungm')) watchSites.push('ungm');
+    if (wantsIntl && watchSites.length === 0) {
+      watchSites = ['ungm', 'undp', 'unido', 'li-undp', 'li-unido', 'li-ungm'];
+    }
+    if (/undp/.test(lower)) {
+      if (!watchSites.includes('undp')) watchSites.push('undp');
+      if (!watchSites.includes('li-undp')) watchSites.push('li-undp');
+    }
+    if (/unido/.test(lower)) {
+      if (!watchSites.includes('unido')) watchSites.push('unido');
+      if (!watchSites.includes('li-unido')) watchSites.push('li-unido');
+    }
+    if (/ungm/.test(lower)) {
+      if (!watchSites.includes('ungm')) watchSites.push('ungm');
+      if (!watchSites.includes('li-ungm')) watchSites.push('li-ungm');
+    }
+    if (/linkedin/.test(lower) && wantsIntl) {
+      for (const id of ['li-undp', 'li-unido', 'li-ungm', 'li-worldbank'] as const) {
+        if (!watchSites.includes(id)) watchSites.push(id);
+      }
+    }
     watchSites = [...new Set(watchSites)].filter((id) =>
-      INTERNATIONAL_TENDER_SITES.some((s) => s.id === id),
-    ).slice(0, 10);
+      INTERNATIONAL_TENDER_SITES.some((s) => s.id === id) || id.startsWith('li-custom-') || id.startsWith('http'),
+    ).slice(0, 16);
 
     const marketCountry = String(parsed.marketCountry || (wantsIntl ? 'INT' : 'FR')).toUpperCase();
     const marketNames: Record<string, string> = {
@@ -685,7 +702,7 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
         if (seenUrls.has(r.link)) continue;
         let host = '';
         try { host = new URL(r.link).hostname; } catch { /* */ }
-        if (!isWatchedHost(host, watched) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+        if (!isWatchedHost(host, watched, r.link) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
         seenUrls.add(r.link);
         allRaw.push(r);
       }
@@ -837,7 +854,7 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
           if (seenUrls.has(r.link)) continue;
           let host = '';
           try { host = new URL(r.link).hostname; } catch { /* */ }
-          if (!isWatchedHost(host, watched) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
+          if (!isWatchedHost(host, watched, r.link) && !fitsScoutMarket({ market, url: r.link, title: r.title, snippet: r.snippet })) continue;
           seenUrls.add(r.link);
           allRaw.push(r);
         }
@@ -972,7 +989,7 @@ scoutAiRoutes.get('/opportunities', async (req: AuthRequest, res: Response, next
       const wrongCat = !fitsScoutCategory(o.category, o.title, o.snippet, o.aiSummary);
       let host = '';
       try { host = new URL(o.url).hostname; } catch { /* */ }
-      const onWatch = isWatchedHost(host, watched);
+      const onWatch = isWatchedHost(host, watched, o.url);
       const wrongMarket = !onWatch && !fitsScoutMarket({
         market,
         url: o.url,

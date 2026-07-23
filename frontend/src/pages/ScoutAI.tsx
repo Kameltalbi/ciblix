@@ -188,23 +188,30 @@ function inferMarketFromZones(zones: string[]): MarketId {
 const MARKET_STORAGE_KEY = 'ciblix.scout.marketCountry';
 
 const EXAMPLE_BRIEFS = [
-  "Je cherche des appels d'offres UNDP, UNIDO et UNGM sur le bilan carbone et l'ESG",
-  "Veille AO internationaux environnement et énergie sur les portails ONU",
+  "Je cherche des appels d'offres UNDP, UNIDO et UNGM (sites + LinkedIn) sur le bilan carbone",
+  "Veille AO internationaux environnement sur les portails ONU et leurs pages LinkedIn",
   "Je cherche des appels d'offres bilan carbone et RSE en France",
   'Veille AO audit énergétique en Tunisie',
 ];
 
 /** Portails AO internationaux (miroir backend). */
-const WATCH_SITE_PRESETS: Array<{ id: string; shortLabel: string; org: string }> = [
-  { id: 'ungm', shortLabel: 'UNGM', org: 'ONU' },
-  { id: 'undp', shortLabel: 'UNDP', org: 'ONU' },
-  { id: 'unido', shortLabel: 'UNIDO', org: 'ONU' },
-  { id: 'unops', shortLabel: 'UNOPS', org: 'ONU' },
-  { id: 'unicef', shortLabel: 'UNICEF', org: 'ONU' },
-  { id: 'worldbank', shortLabel: 'World Bank', org: 'Banque' },
-  { id: 'afdb', shortLabel: 'AfDB', org: 'Banque' },
-  { id: 'ted', shortLabel: 'TED Europa', org: 'UE' },
-  { id: 'dgmarket', shortLabel: 'dgMarket', org: 'Agrégateur' },
+const WATCH_SITE_PRESETS: Array<{ id: string; shortLabel: string; org: string; kind: 'portal' | 'linkedin' }> = [
+  { id: 'ungm', shortLabel: 'UNGM', org: 'ONU', kind: 'portal' },
+  { id: 'undp', shortLabel: 'UNDP', org: 'ONU', kind: 'portal' },
+  { id: 'unido', shortLabel: 'UNIDO', org: 'ONU', kind: 'portal' },
+  { id: 'unops', shortLabel: 'UNOPS', org: 'ONU', kind: 'portal' },
+  { id: 'unicef', shortLabel: 'UNICEF', org: 'ONU', kind: 'portal' },
+  { id: 'worldbank', shortLabel: 'World Bank', org: 'Banque', kind: 'portal' },
+  { id: 'afdb', shortLabel: 'AfDB', org: 'Banque', kind: 'portal' },
+  { id: 'ted', shortLabel: 'TED Europa', org: 'UE', kind: 'portal' },
+  { id: 'dgmarket', shortLabel: 'dgMarket', org: 'Agrégateur', kind: 'portal' },
+  { id: 'li-undp', shortLabel: 'LI · UNDP', org: 'LinkedIn', kind: 'linkedin' },
+  { id: 'li-unido', shortLabel: 'LI · UNIDO', org: 'LinkedIn', kind: 'linkedin' },
+  { id: 'li-ungm', shortLabel: 'LI · UNGM', org: 'LinkedIn', kind: 'linkedin' },
+  { id: 'li-unops', shortLabel: 'LI · UNOPS', org: 'LinkedIn', kind: 'linkedin' },
+  { id: 'li-unicef', shortLabel: 'LI · UNICEF', org: 'LinkedIn', kind: 'linkedin' },
+  { id: 'li-worldbank', shortLabel: 'LI · World Bank', org: 'LinkedIn', kind: 'linkedin' },
+  { id: 'li-afdb', shortLabel: 'LI · AfDB', org: 'LinkedIn', kind: 'linkedin' },
 ];
 
 type SetupView = 'converse' | 'review' | 'manual';
@@ -452,6 +459,7 @@ export function ScoutAI() {
   const [eventEnabled, setEventEnabled] = useState(true);
   const [newsEnabled, setNewsEnabled] = useState(true);
   const [watchSites, setWatchSites] = useState<string[]>([]);
+  const [linkedinUrlDraft, setLinkedinUrlDraft] = useState('');
   const [setupView, setSetupView] = useState<SetupView>('converse');
   const [briefText, setBriefText] = useState('');
   const [missionTitle, setMissionTitle] = useState('');
@@ -977,10 +985,10 @@ export function ScoutAI() {
                       Sites AO internationaux
                     </p>
                     <p className="mb-3 text-xs text-muted-foreground">
-                      Portails ONU / banques à surveiller (UNDP, UNIDO, UNGM…). Cochez ceux à scanner.
+                      Portails officiels (UNDP, UNIDO, UNGM…) à scanner.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {WATCH_SITE_PRESETS.map((site) => {
+                      {WATCH_SITE_PRESETS.filter((s) => s.kind === 'portal').map((site) => {
                         const on = watchSites.includes(site.id);
                         return (
                           <button
@@ -1004,13 +1012,84 @@ export function ScoutAI() {
                         );
                       })}
                     </div>
+
+                    <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-[#016AEB]">
+                      Pages LinkedIn institutions
+                    </p>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      Suivre les annonces AO / procurement publiées sur LinkedIn (pages publiques indexées).
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {WATCH_SITE_PRESETS.filter((s) => s.kind === 'linkedin').map((site) => {
+                        const on = watchSites.includes(site.id);
+                        return (
+                          <button
+                            key={site.id}
+                            type="button"
+                            onClick={() =>
+                              setWatchSites((prev) =>
+                                on ? prev.filter((id) => id !== site.id) : [...prev, site.id],
+                              )
+                            }
+                            className={cn(
+                              'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+                              on
+                                ? 'border-[#016AEB] bg-[#016AEB] text-white'
+                                : 'border-[#BED6F6] bg-white text-[#016AEB] hover:bg-[#eef5ff]',
+                            )}
+                          >
+                            {site.shortLabel}
+                          </button>
+                        );
+                      })}
+                      {watchSites
+                        .filter((id) => id.startsWith('li-custom-') || /linkedin\.com\/company\//i.test(id))
+                        .map((id) => {
+                          const label = id.replace(/^li-custom-/, 'LI · ');
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => setWatchSites((prev) => prev.filter((x) => x !== id))}
+                              className="rounded-full border border-[#016AEB] bg-[#016AEB] px-3 py-1.5 text-xs font-semibold text-white"
+                              title="Cliquer pour retirer"
+                            >
+                              {label} ×
+                            </button>
+                          );
+                        })}
+                    </div>
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                      <input
+                        type="url"
+                        value={linkedinUrlDraft}
+                        onChange={(e) => setLinkedinUrlDraft(e.target.value)}
+                        placeholder="https://www.linkedin.com/company/…"
+                        className="min-w-0 flex-1 rounded-lg border border-[#BED6F6] bg-white px-3 py-2 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="shrink-0 border-[#016AEB]/40 text-[#016AEB]"
+                        disabled={!/linkedin\.com\/company\//i.test(linkedinUrlDraft)}
+                        onClick={() => {
+                          const url = linkedinUrlDraft.trim();
+                          if (!url) return;
+                          setWatchSites((prev) => (prev.includes(url) ? prev : [...prev, url]));
+                          setLinkedinUrlDraft('');
+                        }}
+                      >
+                        Ajouter la page
+                      </Button>
+                    </div>
+
                     {watchSites.length === 0 && (
                       <button
                         type="button"
                         className="mt-3 text-xs font-medium text-[#016AEB] underline-offset-2 hover:underline"
-                        onClick={() => setWatchSites(['ungm', 'undp', 'unido'])}
+                        onClick={() => setWatchSites(['ungm', 'undp', 'unido', 'li-undp', 'li-unido', 'li-ungm'])}
                       >
-                        Sélectionner UNDP + UNIDO + UNGM
+                        Sélectionner UNDP + UNIDO + UNGM (sites + LinkedIn)
                       </button>
                     )}
                   </div>

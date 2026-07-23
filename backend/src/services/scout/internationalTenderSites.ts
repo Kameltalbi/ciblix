@@ -1,5 +1,5 @@
 /**
- * Portails d'appels d'offres internationaux à surveiller (ONU, banques de développement…).
+ * Portails AO internationaux + pages LinkedIn d'institutions à surveiller.
  */
 
 export type WatchSitePreset = {
@@ -11,6 +11,9 @@ export type WatchSitePreset = {
   /** Fragment de requête Google/CSE */
   queryHint: string;
   org: string;
+  kind?: 'portal' | 'linkedin';
+  /** Pour LinkedIn : /company/slug */
+  pathPrefix?: string;
 };
 
 export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
@@ -22,6 +25,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'ungm.org',
     queryHint: 'site:ungm.org tender OR procurement OR "invitation to bid"',
     org: 'ONU',
+    kind: 'portal',
   },
   {
     id: 'undp',
@@ -31,6 +35,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'undp.org',
     queryHint: 'site:undp.org procurement OR tender OR RFP OR ITB',
     org: 'ONU',
+    kind: 'portal',
   },
   {
     id: 'unido',
@@ -40,6 +45,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'unido.org',
     queryHint: 'site:unido.org procurement OR tender OR "expression of interest"',
     org: 'ONU',
+    kind: 'portal',
   },
   {
     id: 'unops',
@@ -49,6 +55,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'unops.org',
     queryHint: 'site:unops.org "business opportunities" OR procurement OR tender',
     org: 'ONU',
+    kind: 'portal',
   },
   {
     id: 'unicef',
@@ -58,6 +65,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'unicef.org',
     queryHint: 'site:unicef.org supply OR tender OR RFP OR procurement',
     org: 'ONU',
+    kind: 'portal',
   },
   {
     id: 'worldbank',
@@ -67,6 +75,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'worldbank.org',
     queryHint: 'site:worldbank.org procurement OR tender OR RFP',
     org: 'Banque',
+    kind: 'portal',
   },
   {
     id: 'afdb',
@@ -76,6 +85,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'afdb.org',
     queryHint: 'site:afdb.org procurement OR tender OR "expression of interest"',
     org: 'Banque',
+    kind: 'portal',
   },
   {
     id: 'ted',
@@ -85,6 +95,7 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'ted.europa.eu',
     queryHint: 'site:ted.europa.eu',
     org: 'UE',
+    kind: 'portal',
   },
   {
     id: 'dgmarket',
@@ -94,8 +105,108 @@ export const INTERNATIONAL_TENDER_SITES: WatchSitePreset[] = [
     domain: 'dgmarket.com',
     queryHint: 'site:dgmarket.com',
     org: 'Agrégateur',
+    kind: 'portal',
+  },
+  // ── Pages LinkedIn institutions (annonces AO / procurement) ──
+  {
+    id: 'li-undp',
+    label: 'LinkedIn — UNDP',
+    shortLabel: 'LI · UNDP',
+    url: 'https://www.linkedin.com/company/undp',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/undp',
+    queryHint: 'site:linkedin.com/company/undp (tender OR procurement OR RFP OR "call for" OR "invitation to bid" OR "appel d\'offres")',
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  },
+  {
+    id: 'li-unido',
+    label: 'LinkedIn — UNIDO',
+    shortLabel: 'LI · UNIDO',
+    url: 'https://www.linkedin.com/company/unido',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/unido',
+    queryHint: 'site:linkedin.com/company/unido (tender OR procurement OR RFP OR "call for" OR "expression of interest")',
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  },
+  {
+    id: 'li-ungm',
+    label: 'LinkedIn — UNGM',
+    shortLabel: 'LI · UNGM',
+    url: 'https://www.linkedin.com/company/ungm',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/ungm',
+    queryHint: 'site:linkedin.com/company/ungm (tender OR procurement OR RFP OR notice)',
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  },
+  {
+    id: 'li-unops',
+    label: 'LinkedIn — UNOPS',
+    shortLabel: 'LI · UNOPS',
+    url: 'https://www.linkedin.com/company/unops',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/unops',
+    queryHint: 'site:linkedin.com/company/unops (tender OR procurement OR "business opportunities" OR RFP)',
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  },
+  {
+    id: 'li-unicef',
+    label: 'LinkedIn — UNICEF',
+    shortLabel: 'LI · UNICEF',
+    url: 'https://www.linkedin.com/company/unicef',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/unicef',
+    queryHint: 'site:linkedin.com/company/unicef (tender OR procurement OR RFP OR supply)',
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  },
+  {
+    id: 'li-worldbank',
+    label: 'LinkedIn — World Bank',
+    shortLabel: 'LI · World Bank',
+    url: 'https://www.linkedin.com/company/the-world-bank',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/the-world-bank',
+    queryHint: 'site:linkedin.com/company/the-world-bank (tender OR procurement OR RFP OR "request for")',
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  },
+  {
+    id: 'li-afdb',
+    label: 'LinkedIn — African Development Bank',
+    shortLabel: 'LI · AfDB',
+    url: 'https://www.linkedin.com/company/african-development-bank',
+    domain: 'linkedin.com',
+    pathPrefix: '/company/african-development-bank',
+    queryHint: 'site:linkedin.com/company/african-development-bank (tender OR procurement OR RFP OR EOI)',
+    org: 'LinkedIn',
+    kind: 'linkedin',
   },
 ];
+
+function linkedInCompanyPreset(url: URL): WatchSitePreset | null {
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  if (!host.includes('linkedin.com')) return null;
+  const m = url.pathname.match(/\/company\/([^/?#]+)/i);
+  if (!m) return null;
+  const slug = decodeURIComponent(m[1]).toLowerCase();
+  const pathPrefix = `/company/${slug}`;
+  const id = `li-custom-${slug}`;
+  return {
+    id,
+    label: `LinkedIn — ${slug}`,
+    shortLabel: `LI · ${slug}`,
+    url: `https://www.linkedin.com${pathPrefix}`,
+    domain: 'linkedin.com',
+    pathPrefix,
+    queryHint: `site:linkedin.com${pathPrefix} (tender OR procurement OR RFP OR "appel d'offres" OR "call for" OR EOI)`,
+    org: 'LinkedIn',
+    kind: 'linkedin',
+  };
+}
 
 export function resolveWatchSites(idsOrUrls: string[]): WatchSitePreset[] {
   const out: WatchSitePreset[] = [];
@@ -103,8 +214,9 @@ export function resolveWatchSites(idsOrUrls: string[]): WatchSitePreset[] {
   for (const raw of idsOrUrls) {
     const v = String(raw || '').trim();
     if (!v) continue;
+
     const preset = INTERNATIONAL_TENDER_SITES.find(
-      (s) => s.id === v || s.domain === v || v.includes(s.domain),
+      (s) => s.id === v || s.url === v || (s.pathPrefix && v.includes(s.pathPrefix)),
     );
     if (preset) {
       if (!seen.has(preset.id)) {
@@ -113,9 +225,17 @@ export function resolveWatchSites(idsOrUrls: string[]): WatchSitePreset[] {
       }
       continue;
     }
-    // URL custom
+
     try {
       const u = new URL(v.startsWith('http') ? v : `https://${v}`);
+      const li = linkedInCompanyPreset(u);
+      if (li) {
+        if (!seen.has(li.id)) {
+          seen.add(li.id);
+          out.push(li);
+        }
+        continue;
+      }
       const domain = u.hostname.replace(/^www\./, '');
       if (seen.has(domain)) continue;
       seen.add(domain);
@@ -127,6 +247,7 @@ export function resolveWatchSites(idsOrUrls: string[]): WatchSitePreset[] {
         domain,
         queryHint: `site:${domain}`,
         org: 'Custom',
+        kind: 'portal',
       });
     } catch {
       /* ignore invalid */
@@ -135,7 +256,14 @@ export function resolveWatchSites(idsOrUrls: string[]): WatchSitePreset[] {
   return out;
 }
 
-export function isWatchedHost(host: string, watchSites: WatchSitePreset[]): boolean {
+/** true si l'URL appartient à un site / page LinkedIn surveillé. */
+export function isWatchedHost(host: string, watchSites: WatchSitePreset[], fullUrl = ''): boolean {
   const h = host.toLowerCase().replace(/^www\./, '');
-  return watchSites.some((s) => h === s.domain || h.endsWith(`.${s.domain}`));
+  const href = fullUrl.toLowerCase();
+  return watchSites.some((s) => {
+    if (s.kind === 'linkedin' && s.pathPrefix) {
+      return h.includes('linkedin.com') && (href.includes(s.pathPrefix) || href.includes(s.pathPrefix.replace(/\//g, '%2F')));
+    }
+    return h === s.domain || h.endsWith(`.${s.domain}`);
+  });
 }
