@@ -119,10 +119,68 @@ const SUGGESTED_SECTORS = [
   'Tourisme', 'Finance & Banque', 'Industrie', 'Télécommunications',
 ];
 
-const SUGGESTED_ZONES = [
-  'Tunis', 'Sfax', 'Sousse', 'Grand Tunis', 'Monastir', 'Gabès',
-  'Bizerte', 'Nabeul', 'Kairouan', 'Tunisie entière',
+/** Marché ciblé (où chercher), indépendant du pays de l’utilisateur. */
+type MarketId = 'TN' | 'FR' | 'DZ' | 'MA' | 'BE' | 'CA' | 'SN' | 'CI' | 'INT';
+
+const MARKETS: Array<{ id: MarketId; label: string; countryLabel: string; gl: string }> = [
+  { id: 'TN', label: 'Tunisie', countryLabel: 'Tunisie', gl: 'tn' },
+  { id: 'FR', label: 'France', countryLabel: 'France', gl: 'fr' },
+  { id: 'DZ', label: 'Algérie', countryLabel: 'Algérie', gl: 'dz' },
+  { id: 'MA', label: 'Maroc', countryLabel: 'Maroc', gl: 'ma' },
+  { id: 'BE', label: 'Belgique', countryLabel: 'Belgique', gl: 'be' },
+  { id: 'CA', label: 'Canada', countryLabel: 'Canada', gl: 'ca' },
+  { id: 'SN', label: 'Sénégal', countryLabel: 'Sénégal', gl: 'sn' },
+  { id: 'CI', label: 'Côte d’Ivoire', countryLabel: "Côte d'Ivoire", gl: 'ci' },
+  { id: 'INT', label: 'International', countryLabel: '', gl: '' },
 ];
+
+const ZONES_BY_MARKET: Record<MarketId, string[]> = {
+  TN: [
+    'Tunisie entière', 'Tunis', 'Grand Tunis', 'Sfax', 'Sousse', 'Nabeul',
+    'Monastir', 'Bizerte', 'Gabès', 'Kairouan', 'Hammamet',
+  ],
+  FR: [
+    'France entière', 'Paris', 'Île-de-France', 'Lyon', 'Marseille', 'Lille',
+    'Toulouse', 'Bordeaux', 'Nantes', 'Nice', 'Strasbourg',
+  ],
+  DZ: [
+    'Algérie entière', 'Alger', 'Oran', 'Constantine', 'Annaba', 'Blida', 'Sétif',
+  ],
+  MA: [
+    'Maroc entier', 'Casablanca', 'Rabat', 'Marrakech', 'Tanger', 'Fès', 'Agadir',
+  ],
+  BE: [
+    'Belgique entière', 'Bruxelles', 'Anvers', 'Liège', 'Gand', 'Charleroi',
+  ],
+  CA: [
+    'Canada entier', 'Montréal', 'Québec', 'Toronto', 'Ottawa', 'Laval',
+  ],
+  SN: [
+    'Sénégal entier', 'Dakar', 'Thiès', 'Saint-Louis', 'Kaolack',
+  ],
+  CI: [
+    "Côte d'Ivoire entière", 'Abidjan', 'Bouaké', 'San-Pédro', 'Yamoussoukro',
+  ],
+  INT: [
+    'Europe', 'Afrique du Nord', 'Afrique de l’Ouest', 'Moyen-Orient', 'Golfe', 'Monde',
+  ],
+};
+
+function inferMarketFromZones(zones: string[]): MarketId {
+  const hay = zones.join(' ').toLowerCase();
+  if (/tunis|nabeul|sfax|sousse|hammamet|monastir|bizerte|gabès|gabes|kairouan/.test(hay)) return 'TN';
+  if (/paris|lyon|marseille|lille|toulouse|bordeaux|nantes|france|île-de-france|ile-de-france/.test(hay)) return 'FR';
+  if (/alger|oran|constantine|algérie|algerie/.test(hay)) return 'DZ';
+  if (/casablanca|rabat|marrakech|tanger|maroc/.test(hay)) return 'MA';
+  if (/bruxelles|anvers|liège|liege|gand|belgique/.test(hay)) return 'BE';
+  if (/montréal|montreal|québec|quebec|toronto|ottawa|canada/.test(hay)) return 'CA';
+  if (/dakar|sénégal|senegal/.test(hay)) return 'SN';
+  if (/abidjan|yamoussoukro|côte d|cote d/.test(hay)) return 'CI';
+  if (/europe|monde|golfe|international|afrique/.test(hay)) return 'INT';
+  return 'FR'; // défaut neutre : ne plus forcer la Tunisie
+}
+
+const MARKET_STORAGE_KEY = 'ciblix.scout.marketCountry';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -354,6 +412,15 @@ export function ScoutAI() {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [sectors, setSectors] = useState<string[]>([]);
   const [geoZones, setGeoZones] = useState<string[]>([]);
+  const [market, setMarket] = useState<MarketId>(() => {
+    try {
+      const stored = localStorage.getItem(MARKET_STORAGE_KEY) as MarketId | null;
+      if (stored && MARKETS.some((m) => m.id === stored)) return stored;
+    } catch {
+      /* ignore */
+    }
+    return 'FR';
+  });
   const [tenderEnabled, setTenderEnabled] = useState(true);
   const [eventEnabled, setEventEnabled] = useState(true);
   const [newsEnabled, setNewsEnabled] = useState(true);
@@ -398,13 +465,33 @@ export function ScoutAI() {
   useEffect(() => {
     if (!profileQuery.data || profileHydratedRef.current) return;
     profileHydratedRef.current = true;
+    const zones = normalizeTags(profileQuery.data.geoZones);
     setKeywords(normalizeTags(profileQuery.data.keywords));
     setSectors(normalizeTags(profileQuery.data.sectors));
-    setGeoZones(normalizeTags(profileQuery.data.geoZones));
+    setGeoZones(zones);
     setTenderEnabled(profileQuery.data.tenderEnabled);
     setEventEnabled(profileQuery.data.eventEnabled);
     setNewsEnabled(profileQuery.data.newsEnabled);
+    const inferred = inferMarketFromZones(zones);
+    setMarket(inferred);
+    try {
+      localStorage.setItem(MARKET_STORAGE_KEY, inferred);
+    } catch {
+      /* ignore */
+    }
   }, [profileQuery.data]);
+
+  const selectMarket = (id: MarketId) => {
+    setMarket(id);
+    try {
+      localStorage.setItem(MARKET_STORAGE_KEY, id);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const zoneSuggestions = ZONES_BY_MARKET[market] || ZONES_BY_MARKET.FR;
+  const marketMeta = MARKETS.find((m) => m.id === market) || MARKETS[0];
 
   // Auto-open profile config if no profile exists
   useEffect(() => {
@@ -416,15 +503,22 @@ export function ScoutAI() {
   // ─── Mutations ───────────────────────────────────────────
 
   const saveProfileMutation = useMutation({
-    mutationFn: () =>
-      api.post('/scout-ai/profile', {
+    mutationFn: () => {
+      const country = marketMeta.countryLabel;
+      const zones =
+        country && !geoZones.some((z) => z.toLowerCase().includes(country.toLowerCase()))
+          ? [...geoZones, country]
+          : geoZones;
+      return api.post('/scout-ai/profile', {
         keywords,
         sectors,
-        geoZones,
+        geoZones: zones,
         tenderEnabled,
         eventEnabled,
         newsEnabled,
-      }),
+        marketCountry: market,
+      });
+    },
     onSuccess: (res) => {
       const saved = res.data?.profile as ScoutProfile | undefined;
       if (saved) {
@@ -580,9 +674,38 @@ export function ScoutAI() {
               label="Secteurs d'activité" tags={sectors} setTags={setSectors}
               suggestions={SUGGESTED_SECTORS} placeholder="Ex: IT & Digital, BTP..." maxTags={10}
             />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">Pays / marché à surveiller</label>
+              <p className="text-xs text-muted-foreground">
+                Choisissez où chercher les opportunités — indépendamment de votre localisation. Vous pouvez surveiller la
+                France depuis la Tunisie, ou l’inverse.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {MARKETS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => selectMarket(m.id)}
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                      market === m.id
+                        ? 'border-blue-400 bg-blue-100 text-blue-800'
+                        : 'border-gray-200 bg-white text-muted-foreground hover:border-blue-200 hover:text-blue-700'
+                    )}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <TagInput
-              label="Zones géographiques" tags={geoZones} setTags={setGeoZones}
-              suggestions={SUGGESTED_ZONES} placeholder="Ex: Tunis, Sfax..." maxTags={10}
+              label={`Zones dans ${marketMeta.label}`}
+              tags={geoZones}
+              setTags={setGeoZones}
+              suggestions={zoneSuggestions}
+              placeholder={`Ex: ville ou région en ${marketMeta.label}…`}
+              maxTags={10}
             />
 
             <div>

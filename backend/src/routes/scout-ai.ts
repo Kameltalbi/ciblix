@@ -41,49 +41,94 @@ async function callOpenAI(prompt: string, systemPrompt: string): Promise<string>
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
-async function searchWeb(query: string, num = 10): Promise<Array<{ title: string; link: string; snippet: string }>> {
+async function searchWeb(
+  query: string,
+  num = 10,
+  gl = ''
+): Promise<Array<{ title: string; link: string; snippet: string }>> {
   const apiKey = process.env.GOOGLE_CSE_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
   const cseId = process.env.GOOGLE_CSE_ID;
   if (!apiKey || !cseId) return [];
 
   const params = new URLSearchParams({
-    key: apiKey, cx: cseId, q: query,
-    num: String(Math.min(num, 10)), lr: 'lang_fr', gl: 'tn',
+    key: apiKey,
+    cx: cseId,
+    q: query,
+    num: String(Math.min(num, 10)),
+    lr: 'lang_fr',
   });
+  if (gl) params.set('gl', gl);
 
   try {
     const response = await fetch(`https://www.googleapis.com/customsearch/v1?${params}`);
     if (!response.ok) return [];
     const data = (await response.json()) as any;
     return (data.items || []).map((item: any) => ({
-      title: item.title || '', link: item.link || '', snippet: item.snippet || '',
+      title: item.title || '',
+      link: item.link || '',
+      snippet: item.snippet || '',
     }));
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
-function buildSearchQueries(keywords: string[], sectors: string[], geoZones: string[], category: 'TENDER' | 'EVENT' | 'NEWS'): string[] {
-  const geo = geoZones.length > 0 ? geoZones.join(' ') : 'Tunisie';
+function inferSearchGl(geoZones: string[], marketCountry?: string | null): string {
+  const marketGl: Record<string, string> = {
+    TN: 'tn',
+    FR: 'fr',
+    DZ: 'dz',
+    MA: 'ma',
+    BE: 'be',
+    CA: 'ca',
+    SN: 'sn',
+    CI: 'ci',
+  };
+  if (marketCountry && marketGl[marketCountry]) return marketGl[marketCountry];
+
+  const hay = geoZones.join(' ').toLowerCase();
+  if (/tunis|nabeul|sfax|sousse|tunisie|hammamet|monastir/.test(hay)) return 'tn';
+  if (/paris|lyon|marseille|france|lille|toulouse/.test(hay)) return 'fr';
+  if (/alger|oran|algérie|algerie/.test(hay)) return 'dz';
+  if (/casablanca|rabat|maroc|marrakech/.test(hay)) return 'ma';
+  if (/bruxelles|belgique|anvers/.test(hay)) return 'be';
+  if (/montréal|montreal|canada|toronto|québec|quebec/.test(hay)) return 'ca';
+  if (/dakar|sénégal|senegal/.test(hay)) return 'sn';
+  if (/abidjan|côte d|cote d/.test(hay)) return 'ci';
+  return '';
+}
+
+function buildSearchQueries(
+  keywords: string[],
+  sectors: string[],
+  geoZones: string[],
+  category: 'TENDER' | 'EVENT' | 'NEWS'
+): string[] {
+  const geo = geoZones.length > 0 ? geoZones.join(' ') : '';
   const kw = keywords.join(' ');
   const sec = sectors.join(' ');
+  const loc = geo ? ` ${geo}` : '';
 
   switch (category) {
     case 'TENDER':
       return [
-        `appel d'offres ${kw} ${geo} 2026`,
-        `marché public ${kw} ${sec} ${geo}`,
-        `consultation ${kw} ${geo} site:marchespublics.gov.tn OR site:tuneps.tn`,
-      ];
+        `appel d'offres ${kw}${loc} 2026`,
+        `marché public ${kw} ${sec}${loc}`,
+        geo.toLowerCase().includes('tunisie') || geo.toLowerCase().includes('tunis')
+          ? `consultation ${kw}${loc} site:marchespublics.gov.tn OR site:tuneps.tn`
+          : `appel d'offres consultation ${kw} ${sec}${loc}`,
+      ].filter(Boolean);
     case 'EVENT':
       return [
-        `salon conférence forum ${kw} ${sec} ${geo} 2026`,
-        `événement professionnel ${kw} ${geo} 2026`,
-        `webinaire formation ${sec} ${geo}`,
+        `salon conférence forum ${kw} ${sec}${loc} 2026`,
+        `événement professionnel ${kw}${loc} 2026`,
+        `webinaire formation ${sec}${loc}`,
       ];
     case 'NEWS':
       return [
-        `actualité ${kw} ${sec} ${geo}`,
-        `réglementation ${kw} ${geo} 2026`,
-        `investissement financement ${sec} ${geo}`,
+        `actualité ${kw} ${sec}${loc}`,
+        `réglementation ${kw}${loc} 2026`,
+        `investissement financement ${sec}${loc}`,
       ];
   }
 }
@@ -192,6 +237,8 @@ const profileSchema = z.object({
   newsEnabled: z.boolean().optional().default(true),
   autoScanEnabled: z.boolean().optional().default(false),
   scanIntervalH: z.number().min(6).max(168).optional().default(24),
+  /** Hint UI only — not persisted (country is reflected in geoZones). */
+  marketCountry: z.string().max(8).optional(),
 });
 
 scoutAiRoutes.get('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -205,7 +252,7 @@ scoutAiRoutes.get('/profile', async (req: AuthRequest, res: Response, next: Next
 
 scoutAiRoutes.post('/profile', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = profileSchema.parse(req.body);
+    const { marketCountry: _market, ...data } = profileSchema.parse(req.body);
     const profile = await prisma.scoutProfile.upsert({
       where: { organizationId: req.organizationId! },
       update: data,
@@ -239,6 +286,7 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
     const keywords = profile.keywords as string[];
     const sectors = profile.sectors as string[];
     const geoZones = profile.geoZones as string[];
+    const gl = inferSearchGl(geoZones);
 
     const queries = buildSearchQueries(keywords, sectors, geoZones, category);
 
@@ -246,7 +294,7 @@ scoutAiRoutes.post('/scan', async (req: AuthRequest, res: Response, next: NextFu
     const seenUrls = new Set<string>();
 
     for (const q of queries) {
-      const results = await searchWeb(q, 8);
+      const results = await searchWeb(q, 8, gl);
       for (const r of results) {
         if (!seenUrls.has(r.link)) {
           seenUrls.add(r.link);
@@ -356,13 +404,14 @@ scoutAiRoutes.post('/scan-all', async (req: AuthRequest, res: Response, next: Ne
       const keywords = profile.keywords as string[];
       const sectors = profile.sectors as string[];
       const geoZones = profile.geoZones as string[];
+      const gl = inferSearchGl(geoZones);
       const queries = buildSearchQueries(keywords, sectors, geoZones, cat);
 
       const allRaw: Array<{ title: string; link: string; snippet: string }> = [];
       const seenUrls = new Set<string>();
 
       for (const q of queries) {
-        const results = await searchWeb(q, 6);
+        const results = await searchWeb(q, 6, gl);
         for (const r of results) {
           if (!seenUrls.has(r.link)) { seenUrls.add(r.link); allRaw.push(r); }
         }
