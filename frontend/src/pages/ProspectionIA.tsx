@@ -97,6 +97,15 @@ interface AiProspectRow {
   technologiesDetected?: unknown;
   probableBusinessProblem?: string | null;
   suggestedOffer?: string | null;
+  googleMapsUrl?: string | null;
+  commercialProfile?: {
+    productsServices?: string[];
+    targetSectors?: string[];
+    clienteleType?: string;
+    companySizeEstimate?: string;
+    saleOpportunities?: string[];
+    importantPages?: string[];
+  } | null;
   emailOpenedAt?: string | null;
   linkClickedAt?: string | null;
   lastReplyAt?: string | null;
@@ -344,6 +353,10 @@ export function ProspectionIA() {
     disclaimer?: string;
     signatureWarning?: string;
   }>({ open: false, title: '', body: '' });
+  const [fiche, setFiche] = useState<{ open: boolean; prospect: AiProspectRow | null }>({
+    open: false,
+    prospect: null,
+  });
 
   const [autoActive, setAutoActive] = useState(false);
   const [autoInterval, setAutoInterval] = useState(24);
@@ -1058,6 +1071,55 @@ export function ProspectionIA() {
                       </p>
                     ) : null}
 
+                    {(() => {
+                      const profile = p.commercialProfile;
+                      if (!profile) return null;
+                      const products = profile.productsServices || [];
+                      const sectors = profile.targetSectors || [];
+                      const opps = profile.saleOpportunities || [];
+                      if (!products.length && !sectors.length && !opps.length && !profile.companySizeEstimate) {
+                        return null;
+                      }
+                      return (
+                        <div className="grid gap-2 rounded-xl border border-border/60 bg-white p-3 text-xs sm:grid-cols-2">
+                          {profile.companySizeEstimate ? (
+                            <div>
+                              <p className="font-semibold text-foreground">Taille estimée</p>
+                              <p className="text-muted-foreground">{profile.companySizeEstimate}</p>
+                            </div>
+                          ) : null}
+                          {profile.clienteleType && profile.clienteleType !== 'INCONNU' ? (
+                            <div>
+                              <p className="font-semibold text-foreground">Clientèle</p>
+                              <p className="text-muted-foreground">{profile.clienteleType}</p>
+                            </div>
+                          ) : null}
+                          {products.length ? (
+                            <div className="sm:col-span-2">
+                              <p className="font-semibold text-foreground">Produits & services</p>
+                              <p className="text-muted-foreground">{products.join(' · ')}</p>
+                            </div>
+                          ) : null}
+                          {sectors.length ? (
+                            <div className="sm:col-span-2">
+                              <p className="font-semibold text-foreground">Secteurs</p>
+                              <p className="text-muted-foreground">{sectors.join(' · ')}</p>
+                            </div>
+                          ) : null}
+                          {opps.length ? (
+                            <div className="sm:col-span-2">
+                              <p className="mb-1 font-semibold text-foreground">Opportunités détectées</p>
+                              <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
+                                {opps.map((o) => (
+                                  <li key={o}>{o}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
+
                     {p.probableBusinessProblem ? (
                       <div className="rounded-lg bg-amber-50/80 border border-amber-200 px-3 py-2 text-xs">
                         <span className="font-semibold text-amber-900">Problème probable : </span>
@@ -1173,7 +1235,21 @@ export function ProspectionIA() {
                             <ExternalLink size={14} /> Voir la fiche complète
                           </Link>
                         </Button>
-                      ) : null}
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="rounded-lg gap-1.5"
+                          onClick={() =>
+                            setFiche({
+                              open: true,
+                              prospect: p,
+                            })
+                          }
+                        >
+                          <ExternalLink size={14} /> Voir la fiche complète
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -1219,6 +1295,93 @@ export function ProspectionIA() {
               <Copy size={16} /> Copier
             </Button>
             <Button type="button" onClick={() => setPreview((x) => ({ ...x, open: false }))}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={fiche.open}
+        onOpenChange={(o) => setFiche((f) => ({ ...f, open: o, prospect: o ? f.prospect : null }))}
+      >
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{fiche.prospect?.companyName || 'Fiche commerciale'}</DialogTitle>
+          </DialogHeader>
+          {fiche.prospect ? (
+            <div className="space-y-3 text-sm">
+              <p>
+                <span className="font-semibold">Activité : </span>
+                {fiche.prospect.industry || '—'}
+              </p>
+              <p>
+                <span className="font-semibold">Adresse : </span>
+                {[fiche.prospect.city, fiche.prospect.country].filter(Boolean).join(', ') || '—'}
+              </p>
+              <p>
+                <span className="font-semibold">Téléphone : </span>
+                {fiche.prospect.phone || '—'}
+              </p>
+              <p>
+                <span className="font-semibold">Site : </span>
+                {fiche.prospect.website || '—'}
+              </p>
+              <p>
+                <span className="font-semibold">Emails : </span>
+                {[fiche.prospect.email, ...parseEmailList(fiche.prospect.detectedEmails)]
+                  .filter(Boolean)
+                  .join(', ') || '—'}
+              </p>
+              {fiche.prospect.aiSummary ? (
+                <p>
+                  <span className="font-semibold">Description : </span>
+                  {fiche.prospect.aiSummary}
+                </p>
+              ) : null}
+              {fiche.prospect.commercialProfile?.productsServices?.length ? (
+                <p>
+                  <span className="font-semibold">Produits & services : </span>
+                  {fiche.prospect.commercialProfile.productsServices.join(' · ')}
+                </p>
+              ) : null}
+              {fiche.prospect.commercialProfile?.companySizeEstimate ? (
+                <p>
+                  <span className="font-semibold">Taille estimée : </span>
+                  {fiche.prospect.commercialProfile.companySizeEstimate}
+                </p>
+              ) : null}
+              {fiche.prospect.commercialProfile?.targetSectors?.length ? (
+                <p>
+                  <span className="font-semibold">Secteurs : </span>
+                  {fiche.prospect.commercialProfile.targetSectors.join(' · ')}
+                </p>
+              ) : null}
+              <p>
+                <span className="font-semibold">Score commercial : </span>
+                {fiche.prospect.score}/100
+              </p>
+              {fiche.prospect.commercialProfile?.saleOpportunities?.length ? (
+                <div>
+                  <p className="font-semibold">Opportunités détectées</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                    {fiche.prospect.commercialProfile.saleOpportunities.map((o) => (
+                      <li key={o}>{o}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {fiche.prospect.googleMapsUrl ? (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={fiche.prospect.googleMapsUrl} target="_blank" rel="noreferrer">
+                    Google Maps
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" onClick={() => setFiche({ open: false, prospect: null })}>
               Fermer
             </Button>
           </DialogFooter>

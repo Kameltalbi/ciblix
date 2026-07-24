@@ -1,10 +1,23 @@
 import type {
+  ClienteleType,
+  CommercialProfile,
   CompanySearchCriteria,
   CompanySearchHit,
   LeadQualification,
   PotentialLevel,
   WebEnrichmentResult,
 } from './types.js';
+
+function emptyProfile(partial?: Partial<CommercialProfile>): CommercialProfile {
+  return {
+    productsServices: partial?.productsServices || [],
+    targetSectors: partial?.targetSectors || [],
+    clienteleType: partial?.clienteleType || 'INCONNU',
+    companySizeEstimate: partial?.companySizeEstimate || 'Non estimée',
+    saleOpportunities: partial?.saleOpportunities || [],
+    importantPages: partial?.importantPages || [],
+  };
+}
 
 function sectorFamily(sector: string, industry: string): string {
   const s = `${sector} ${industry}`.toLowerCase();
@@ -71,6 +84,7 @@ function buildScoreBullets(
   if (hit.linkedin || (e?.linkedinUrlsFound?.length ?? 0) > 0) lines.push('✔ Présence LinkedIn');
   else lines.push('❌ Pas de LinkedIn détecté');
   if (e?.facebookUrl || e?.instagramUrl) lines.push('✔ Réseaux sociaux (FB/IG) détectés');
+  if ((e?.detectedEmails?.length ?? 0) > 0 || hit.email) lines.push('✔ Emails professionnels détectés');
   lines.push(`✔ Secteur : ${sectorFamily(criteria.sector || '', hit.industry || '')}`);
   if (exportSignal(criteria, hit.industry || '')) lines.push('✔ Signaux export / international');
   if (carbonSignal(criteria, hit.industry || '')) lines.push('✔ Angle bilan carbone / RSE possible');
@@ -131,6 +145,8 @@ export function heuristicQualify(
         ? 'CRM adapté aux équipes export : suivi clients multi-pays, relances et documents centralisés.'
         : 'CRM PME : pipeline clair, relances automatiques, devis/factures reliés au suivi client.';
 
+  const clienteleType: ClienteleType = b2bSignal(hit, criteria) ? 'B2B' : 'INCONNU';
+
   return {
     score,
     potentialLevel,
@@ -152,10 +168,31 @@ export function heuristicQualify(
     ],
     probableBusinessProblem: problem,
     suggestedOffer: offer,
+    commercialProfile: emptyProfile({
+      productsServices: e?.productsServices?.length
+        ? e.productsServices
+        : [criteria.sector || family].filter(Boolean),
+      targetSectors: e?.sectorsFromSite?.length ? e.sectorsFromSite : [family],
+      clienteleType,
+      companySizeEstimate: hit.companySize || 'PME (estimation)',
+      saleOpportunities: [
+        offer,
+        e?.digitalPresenceLevel === 'FAIBLE' ? 'Audit digital + CRM de démarrage' : 'Optimisation pipeline commercial',
+      ].filter(Boolean),
+      importantPages: e?.importantPages || [],
+    }),
   };
 }
 
-async function callOpenAiJson(userPrompt: string): Promise<Partial<LeadQualification> | null> {
+type OpenAiQualifyJson = Partial<LeadQualification> & {
+  productsServices?: string[];
+  targetSectors?: string[];
+  clienteleType?: ClienteleType;
+  companySizeEstimate?: string;
+  saleOpportunities?: string[];
+};
+
+async function callOpenAiJson(userPrompt: string): Promise<OpenAiQualifyJson | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
@@ -163,15 +200,20 @@ async function callOpenAiJson(userPrompt: string): Promise<Partial<LeadQualifica
 Réponds UNIQUEMENT en JSON valide avec les clés :
 score (nombre 0-100),
 potentialLevel ("TRES_FORT"|"MOYEN"|"FAIBLE"),
-scoreReason (string, 5 à 8 lignes courtes, chaque ligne commence par ✔ ou ❌ ou ❄️ pour expliquer le score : site, HTTPS, mobile, SEO, LinkedIn, réseaux, secteur, B2B, export, bilan carbone si pertinent),
-commercialAngle (1 phrase : comment aborder le prospect),
-probableBusinessProblem (1 phrase : douleur métier probable),
-suggestedOffer (1 phrase : offre CRM / digital / carbone adaptée),
-aiSummary (2 phrases max, ton humain et professionnel, précis sur ville/secteur/presence digitale — jamais "présence en ligne identifiable"),
-suggestedPitch (une phrase d'accroche email),
+scoreReason (string, 5 à 8 lignes courtes, chaque ligne commence par ✔ ou ❌ ou ❄️),
+commercialAngle (1 phrase),
+probableBusinessProblem (1 phrase),
+suggestedOffer (1 phrase),
+aiSummary (2 phrases max — résumé commercial),
+suggestedPitch (accroche email),
 interestProbability (0-100),
 aiTags (tableau de strings courts),
-followUpPlan (tableau de { dayOffset: 3|7|15, approach: string, tone: "doux"|"commercial"|"ferme" }).
+followUpPlan (tableau de { dayOffset: 3|7|15, approach: string, tone: "doux"|"commercial"|"ferme" }),
+productsServices (tableau de produits/services détectés),
+targetSectors (tableau de secteurs cibles),
+clienteleType ("B2B"|"B2C"|"MIXTE"|"INCONNU"),
+companySizeEstimate (string courte, ex. "TPE 1-10", "PME 10-50"),
+saleOpportunities (tableau de 2 à 5 opportunités de vente concrètes pour l'utilisateur Ciblix).
 
 Pas de markdown, pas de texte hors JSON.`;
 
@@ -185,7 +227,7 @@ Pas de markdown, pas de texte hors JSON.`;
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.35,
-      max_tokens: 1100,
+      max_tokens: 1400,
       response_format: { type: 'json_object' },
     }),
   });
@@ -194,7 +236,7 @@ Pas de markdown, pas de texte hors JSON.`;
   const text = data.choices?.[0]?.message?.content;
   if (!text) return null;
   try {
-    return JSON.parse(text) as Partial<LeadQualification>;
+    return JSON.parse(text) as OpenAiQualifyJson;
   } catch {
     return null;
   }
@@ -203,16 +245,19 @@ Pas de markdown, pas de texte hors JSON.`;
 function enrichmentBlock(hit: CompanySearchHit, e: WebEnrichmentResult | null): string {
   if (!e || (!hit.website && !e.fetchedUrl)) return '';
   return `
-Enrichissement site (crawl léger) :
+Enrichissement site (${e.enrichmentSource || 'crawl'}) :
 - Titre page : ${e.websiteTitle || '—'}
-- Meta description : ${(e.websiteDescription || '—').slice(0, 280)}
-- Emails détectés : ${e.detectedEmails.slice(0, 5).join(', ') || '—'}
+- Meta description : ${(e.websiteDescription || '—').slice(0, 400)}
+- Emails détectés : ${e.detectedEmails.slice(0, 8).join(', ') || '—'}
 - Tél page : ${e.phoneFromPage || '—'}
 - LinkedIn trouvés : ${e.linkedinUrlsFound.join(', ') || '—'}
 - Facebook : ${e.facebookUrl || '—'} | Instagram : ${e.instagramUrl || '—'}
 - HTTPS : ${e.hasSsl} | Mobile viewport : ${e.hasResponsiveWebsite}
 - Score SEO heuristique : ${e.seoScore}/100 | Niveau présence digitale : ${e.digitalPresenceLevel}
 - Technologies : ${e.technologiesDetected.join(', ') || '—'}
+- Pages importantes : ${(e.importantPages || []).slice(0, 8).join(', ') || '—'}
+- Adresse : ${hit.address || '—'}
+- Maps : ${hit.googleMapsUrl || '—'}
 - Erreur crawl (si any) : ${e.fetchError || 'aucune'}
 `.trim();
 }
@@ -222,8 +267,9 @@ export async function qualifyCompanyHit(
   criteria: CompanySearchCriteria,
   enrichment: WebEnrichmentResult | null = null
 ): Promise<LeadQualification> {
-  const useOpenAiScoring =
-    process.env.PROSPECTING_OPENAI_SCORING === 'true' || process.env.PROSPECTING_OPENAI_SCORING === '1';
+  const scoringOff =
+    process.env.PROSPECTING_OPENAI_SCORING === 'false' || process.env.PROSPECTING_OPENAI_SCORING === '0';
+  const useOpenAiScoring = !scoringOff && Boolean(process.env.OPENAI_API_KEY);
 
   const userPrompt = `Entreprise: ${hit.companyName}
 Site: ${hit.website || 'non renseigné'}
@@ -231,12 +277,15 @@ LinkedIn: ${hit.linkedin || 'non renseigné'}
 Email: ${hit.email || 'non renseigné'}
 Téléphone: ${hit.phone || 'non renseigné'}
 Ville/Pays: ${hit.city || ''} / ${hit.country || ''}
+Adresse: ${hit.address || '—'}
 Secteur détecté: ${hit.industry || ''}
 Taille: ${hit.companySize || ''}
 
 Contexte recherche utilisateur:
-- Secteur visé: ${criteria.sector || '—'}
+- Activité / secteur visé: ${criteria.sector || '—'}
 - Mots-clés: ${criteria.keywords || '—'}
+- Ville: ${criteria.city || '—'}
+- Pays: ${criteria.country || '—'}
 
 ${enrichmentBlock(hit, enrichment)}`;
 
@@ -251,6 +300,12 @@ ${enrichmentBlock(hit, enrichment)}`;
     const pl = j.potentialLevel;
     const potentialLevel: PotentialLevel =
       pl === 'TRES_FORT' || pl === 'MOYEN' || pl === 'FAIBLE' ? pl : 'MOYEN';
+    const ct = j.clienteleType;
+    const clienteleType: ClienteleType =
+      ct === 'B2B' || ct === 'B2C' || ct === 'MIXTE' || ct === 'INCONNU'
+        ? ct
+        : fallback.commercialProfile.clienteleType;
+
     return {
       score,
       potentialLevel,
@@ -262,9 +317,26 @@ ${enrichmentBlock(hit, enrichment)}`;
       suggestedPitch: String(j.suggestedPitch || fallback.suggestedPitch),
       interestProbability: Math.max(0, Math.min(100, Number(j.interestProbability ?? score))),
       aiTags: Array.isArray(j.aiTags) ? j.aiTags.map(String).slice(0, 12) : fallback.aiTags,
-      followUpPlan: Array.isArray(j.followUpPlan) && j.followUpPlan.length
-        ? (j.followUpPlan as LeadQualification['followUpPlan']).slice(0, 5)
-        : fallback.followUpPlan,
+      followUpPlan:
+        Array.isArray(j.followUpPlan) && j.followUpPlan.length
+          ? (j.followUpPlan as LeadQualification['followUpPlan']).slice(0, 5)
+          : fallback.followUpPlan,
+      commercialProfile: emptyProfile({
+        productsServices: Array.isArray(j.productsServices)
+          ? j.productsServices.map(String).slice(0, 12)
+          : fallback.commercialProfile.productsServices,
+        targetSectors: Array.isArray(j.targetSectors)
+          ? j.targetSectors.map(String).slice(0, 8)
+          : fallback.commercialProfile.targetSectors,
+        clienteleType,
+        companySizeEstimate: String(
+          j.companySizeEstimate || fallback.commercialProfile.companySizeEstimate
+        ),
+        saleOpportunities: Array.isArray(j.saleOpportunities)
+          ? j.saleOpportunities.map(String).slice(0, 6)
+          : fallback.commercialProfile.saleOpportunities,
+        importantPages: enrichment?.importantPages || fallback.commercialProfile.importantPages,
+      }),
     };
   }
   return fallback;

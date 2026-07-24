@@ -1,7 +1,6 @@
 import { prisma } from '../../db/prisma.js';
-import { enrichHitWebsiteCached } from './index.js';
-import { qualifyCompanyHit } from './qualifyWithAi.js';
-import type { CompanySearchCriteria, CompanySearchHit, WebEnrichmentResult } from './types.js';
+import { runProspectEnrichmentPipeline } from './index.js';
+import type { CompanySearchCriteria, CompanySearchHit, LeadQualification, WebEnrichmentResult } from './types.js';
 
 function enrichmentPersistFields(e: WebEnrichmentResult) {
   return {
@@ -19,7 +18,7 @@ function enrichmentPersistFields(e: WebEnrichmentResult) {
   };
 }
 
-type LeadQualificationLike = Awaited<ReturnType<typeof qualifyCompanyHit>>;
+type LeadQualificationLike = LeadQualification;
 
 function prismaRowToSearchHit(row: {
   companyName: string;
@@ -31,7 +30,12 @@ function prismaRowToSearchHit(row: {
   country: string | null;
   industry: string | null;
   companySize: string | null;
+  rawProvider?: string | null;
+  googleMapsUrl?: string | null;
 }): CompanySearchHit {
+  const rawProvider = row.rawProvider || '';
+  const colon = rawProvider.indexOf(':');
+  const externalId = colon >= 0 ? rawProvider.slice(colon + 1) : null;
   return {
     companyName: row.companyName,
     website: row.website,
@@ -42,6 +46,8 @@ function prismaRowToSearchHit(row: {
     country: row.country,
     industry: row.industry,
     companySize: row.companySize,
+    externalId: externalId || null,
+    googleMapsUrl: row.googleMapsUrl || null,
   };
 }
 
@@ -73,6 +79,8 @@ function hitToProspectData(
     followUpPlan: q.followUpPlan as object,
     probableBusinessProblem: q.probableBusinessProblem,
     suggestedOffer: q.suggestedOffer,
+    commercialProfile: q.commercialProfile as object,
+    googleMapsUrl: hit.googleMapsUrl || null,
     status: 'QUALIFIED' as const,
     lastSearchQuery: JSON.stringify(criteria),
     rawProvider,
@@ -102,8 +110,10 @@ export async function qualifyFoundBatchForOrganization(
       try {
         const criteria = (row.lastSearchQuery ? JSON.parse(row.lastSearchQuery) : {}) as CompanySearchCriteria;
         const hit = prismaRowToSearchHit(row);
-        const { hit: merged, enrichment } = await enrichHitWebsiteCached(hit);
-        const q = await qualifyCompanyHit(merged, criteria, enrichment);
+        const { hit: merged, enrichment, qualification: q } = await runProspectEnrichmentPipeline(
+          hit,
+          criteria
+        );
         await prisma.aiProspect.update({
           where: { id: row.id },
           data: {

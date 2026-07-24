@@ -106,7 +106,7 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': this.apiKey,
       'X-Goog-FieldMask':
-        'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.internationalPhoneNumber,places.websiteUri,places.nationalPhoneNumber',
+        'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.types,places.internationalPhoneNumber,places.websiteUri,places.nationalPhoneNumber,places.googleMapsUri',
     };
 
     console.log(
@@ -235,6 +235,10 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
         industry: criteria.sector?.trim() || null,
         companySize: criteria.companySize?.trim() || null,
         externalId: r.id,
+        address: addr || null,
+        googleMapsUrl: r.googleMapsUri || null,
+        lat: typeof r.location?.latitude === 'number' ? r.location.latitude : null,
+        lng: typeof r.location?.longitude === 'number' ? r.location.longitude : null,
         raw: {
           types: r.types,
           location: r.location,

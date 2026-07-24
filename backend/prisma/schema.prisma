@@ -300,6 +300,10 @@ model AiProspect {
   probableBusinessProblem String?    @db.Text
   suggestedOffer          String?    @db.Text
 
+  /// Fiche commerciale enrichie (produits, secteurs, opportunités, type clientèle…)
+  commercialProfile       Json?
+  googleMapsUrl           String?
+
   leadId           String?           @unique
   lead             Lead?             @relation(fields: [leadId], references: [id], onDelete: SetNull)
 

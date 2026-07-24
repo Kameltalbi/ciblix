@@ -47,6 +47,7 @@ function hitToFoundProspectData(
     status: 'FOUND' as const,
     lastSearchQuery: JSON.stringify(criteria),
     rawProvider: rawProviderDedupe,
+    googleMapsUrl: hit.googleMapsUrl || null,
     ...enrichmentPersistFields(enrichment),
   };
 }

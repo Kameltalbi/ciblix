@@ -24,6 +24,13 @@ export interface WebEnrichmentResult {
   technologiesDetected: string[];
   fetchedUrl: string | null;
   fetchError?: string | null;
+  /** Pages importantes (Firecrawl / crawl). */
+  importantPages?: string[];
+  /** Description / produits extraits du site. */
+  productsServices?: string[];
+  sectorsFromSite?: string[];
+  /** Source d’enrichissement utilisée. */
+  enrichmentSource?: 'firecrawl' | 'native' | 'none';
 }
 
 /** Résultat brut d’un fournisseur de recherche (Apollo, Hunter, Maps, Clearbit…). */
@@ -39,6 +46,10 @@ export interface CompanySearchHit {
   companySize?: string | null;
   /** Identifiant fournisseur pour corrélation / enrichissement futur */
   externalId?: string | null;
+  address?: string | null;
+  googleMapsUrl?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   raw?: Record<string, unknown>;
 }
 
@@ -47,8 +58,12 @@ export type ProspectingSearchProviderId =
   | 'apollo'
   | 'hunter'
   | 'google_places'
+  | 'google_cse'
+  | 'bing_search'
   | 'outscraper'
-  | 'clearbit';
+  | 'clearbit'
+  | 'opencorporates'
+  | 'tenders';
 
 /** Port d’abstraction : implémentations par fournisseur. */
 export interface CompanySearchPort {
@@ -56,15 +71,30 @@ export interface CompanySearchPort {
   searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]>;
 }
 
+/** Enrichissement entreprise (site, registres, etc.) — sources plugables. */
 export interface CompanyEnrichmentPort {
-  enrichCompany(hit: CompanySearchHit): Promise<CompanySearchHit>;
+  readonly id: string;
+  enrichCompany(hit: CompanySearchHit): Promise<{ hit: CompanySearchHit; enrichment: WebEnrichmentResult }>;
 }
 
+/** Recherche d’emails professionnels — sources plugables (Hunter, Apollo…). */
 export interface EmailFinderPort {
-  findEmails(hit: CompanySearchHit): Promise<CompanySearchHit>;
+  readonly id: string;
+  findEmails(hit: CompanySearchHit): Promise<{ emails: string[]; hit: CompanySearchHit }>;
 }
 
 export type PotentialLevel = 'TRES_FORT' | 'MOYEN' | 'FAIBLE';
+export type ClienteleType = 'B2B' | 'B2C' | 'MIXTE' | 'INCONNU';
+
+/** Profil commercial produit par OpenAI / heuristique. */
+export interface CommercialProfile {
+  productsServices: string[];
+  targetSectors: string[];
+  clienteleType: ClienteleType;
+  companySizeEstimate: string;
+  saleOpportunities: string[];
+  importantPages: string[];
+}
 
 export interface LeadQualification {
   score: number;
@@ -80,6 +110,7 @@ export interface LeadQualification {
   probableBusinessProblem: string;
   /** Offre / levier CRM adapté (1 phrase) */
   suggestedOffer: string;
+  commercialProfile: CommercialProfile;
 }
 
 export type OutreachMessageType =

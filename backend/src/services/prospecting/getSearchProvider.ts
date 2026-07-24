@@ -1,16 +1,19 @@
 import type { CompanySearchPort, ProspectingSearchProviderId } from './types.js';
 import { MockCompanySearchProvider } from './providers/MockCompanySearchProvider.js';
 import { ExternalSearchStub } from './providers/ExternalSearchStub.js';
-import { GooglePlacesTextSearchProvider } from './providers/GooglePlacesTextSearchProvider.js';
 import { GooglePlacesNewProvider } from './providers/GooglePlacesNewProvider.js';
 import { OutscraperProvider } from './providers/OutscraperProvider.js';
+import { BingSearchProvider } from './providers/BingSearchProvider.js';
+import { GoogleCustomSearchProvider } from './providers/GoogleCustomSearchProvider.js';
 
 /**
  * Fournisseur de recherche :
- * - `PROSPECTING_SEARCH_PROVIDER` : `google_places` (défaut), `mock`, `apollo`, `hunter`, `clearbit`
- * - Google Places (New) prioritaire si clé présente, sinon legacy
- * - Google Places : clé dans `GOOGLE_PLACES_API_KEY` ou `GOOGLE_MAPS_API_KEY`
- * - Apollo / Hunter : stubs prêts pour branchement ultérieur
+ * - Actif maintenant : `google_places` (défaut) + OpenAI au qualify
+ * - Prêts pour plus tard : `bing_search`, `google_cse` (scraping site déjà dans le pipeline)
+ * - Stubs : apollo, hunter (recherche), clearbit
+ *
+ * Env `PROSPECTING_SEARCH_PROVIDER` sélectionne le moteur de recherche.
+ * Le scrape des sites trouvés est indépendant (Firecrawl | HTML natif) dans enrichmentPipeline.
  */
 export function resolveProspectingSearchProvider(): CompanySearchPort {
   const outscraperKey = process.env.OUTSCRAPER_API_KEY?.trim() || '';
@@ -20,7 +23,6 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
     process.env.PLACES_API_KEY?.trim() ||
     '';
 
-  // Auto-detect: Outscraper prioritaire si clé présente, sinon provider env
   const raw = (process.env.PROSPECTING_SEARCH_PROVIDER ||
     (outscraperKey ? 'outscraper' : 'google_places')
   ).toLowerCase() as ProspectingSearchProviderId;
@@ -33,6 +35,10 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
       console.warn('[Prospecting] outscraper sans OUTSCRAPER_API_KEY — repli Google Places.');
       if (placesKey) return new GooglePlacesNewProvider(placesKey);
       return new MockCompanySearchProvider();
+    case 'bing_search':
+      return new BingSearchProvider();
+    case 'google_cse':
+      return new GoogleCustomSearchProvider();
     case 'apollo':
       return new ExternalSearchStub('apollo');
     case 'hunter':
@@ -41,7 +47,6 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
       return new ExternalSearchStub('clearbit');
     case 'google_places':
       if (placesKey) {
-        // Priorité à Google Places API (New)
         return new GooglePlacesNewProvider(placesKey);
       }
       console.warn('[Prospecting] google_places sans GOOGLE_PLACES_API_KEY — repli mock.');

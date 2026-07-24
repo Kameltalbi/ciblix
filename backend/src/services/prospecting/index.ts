@@ -2,7 +2,9 @@ import type { CompanySearchCriteria, CompanySearchHit, WebEnrichmentResult } fro
 import { resolveProspectingSearchProvider } from './getSearchProvider.js';
 import { qualifyCompanyHit } from './qualifyWithAi.js';
 import { MockCompanySearchProvider } from './providers/MockCompanySearchProvider.js';
-import { enrichWebsiteFromUrl, emptyWebEnrichment } from './websiteEnrichment.js';
+import { resolveWebsiteEnrichmentPort } from './providers/FirecrawlWebsiteProvider.js';
+import { resolveEmailFinderPort } from './providers/HunterEmailProvider.js';
+import { emptyWebEnrichment } from './websiteEnrichment.js';
 import {
   getCachedSearchHits,
   getCachedWebsiteEnrichment,
@@ -11,6 +13,8 @@ import {
   setCachedWebsiteEnrichment,
   websiteCacheKeyFromRawWebsite,
 } from './prospectingCache.js';
+
+export { runProspectEnrichmentPipeline } from './enrichmentPipeline.js';
 
 /** Recherche entreprises — délègue au fournisseur (Google Places par défaut si clé, sinon mock). */
 export async function searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]> {
@@ -55,7 +59,7 @@ function mergeEnrichmentIntoHit(hit: CompanySearchHit, e: WebEnrichmentResult): 
   return out;
 }
 
-/** Crawl site + cache URL — fusionne emails / tél / LinkedIn dans le hit. */
+/** Crawl site + cache URL — Firecrawl si clé, sinon HTML natif. */
 export async function enrichHitWebsiteCached(
   hit: CompanySearchHit
 ): Promise<{ hit: CompanySearchHit; enrichment: WebEnrichmentResult }> {
@@ -71,20 +75,23 @@ export async function enrichHitWebsiteCached(
     const e = cached as unknown as WebEnrichmentResult;
     return { hit: mergeEnrichmentIntoHit(hit, e), enrichment: e };
   }
-  const e = await enrichWebsiteFromUrl(hit.website);
+  const port = resolveWebsiteEnrichmentPort();
+  const { hit: merged, enrichment: e } = await port.enrichCompany(hit);
   await setCachedWebsiteEnrichment(ukey, { ...(e as object) } as Record<string, unknown>).catch(() => {});
-  return { hit: mergeEnrichmentIntoHit(hit, e), enrichment: e };
+  return { hit: merged, enrichment: e };
 }
 
-/** Point d’extension Apollo / Hunter — aujourd’hui : enrichissement web crawl. */
+/** Point d’extension Apollo / registres — aujourd’hui : enrichissement web. */
 export async function enrichCompany(hit: CompanySearchHit): Promise<CompanySearchHit> {
   const { hit: h } = await enrichHitWebsiteCached(hit);
   return h;
 }
 
-/** Recherche d’emails (Hunter, etc.) — no-op pour l’instant. */
+/** Recherche d’emails via Hunter (si HUNTER_API_KEY). */
 export async function findEmails(hit: CompanySearchHit): Promise<CompanySearchHit> {
-  return hit;
+  const port = resolveEmailFinderPort();
+  const { hit: next } = await port.findEmails(hit);
+  return next;
 }
 
 /** Qualification / score IA d’un prospect. */

@@ -5,7 +5,7 @@ import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { prisma } from '../db/prisma.js';
-import { enrichHitWebsiteCached } from '../services/prospecting/index.js';
+import { runProspectEnrichmentPipeline } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
 import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
 import { assertChannelAvailableForMessageType } from '../services/prospecting/channelAvailability.js';
@@ -189,6 +189,8 @@ function hitToProspectData(
     followUpPlan: q.followUpPlan as object,
     probableBusinessProblem: q.probableBusinessProblem,
     suggestedOffer: q.suggestedOffer,
+    commercialProfile: q.commercialProfile as object,
+    googleMapsUrl: hit.googleMapsUrl || null,
     status: 'QUALIFIED' as const,
     lastSearchQuery: JSON.stringify(criteria),
     rawProvider,
@@ -222,6 +224,7 @@ function hitToFoundProspectData(
     status: 'FOUND' as const,
     lastSearchQuery: JSON.stringify(criteria),
     rawProvider: rawProviderDedupe,
+    googleMapsUrl: hit.googleMapsUrl || null,
     ...enrichmentPersistFields(enrichment),
   };
 }
@@ -236,7 +239,12 @@ function prismaRowToSearchHit(row: {
   country: string | null;
   industry: string | null;
   companySize: string | null;
+  rawProvider?: string | null;
+  googleMapsUrl?: string | null;
 }): CompanySearchHit {
+  const rawProvider = row.rawProvider || '';
+  const colon = rawProvider.indexOf(':');
+  const externalId = colon >= 0 ? rawProvider.slice(colon + 1) : null;
   return {
     companyName: row.companyName,
     website: row.website,
@@ -247,6 +255,8 @@ function prismaRowToSearchHit(row: {
     country: row.country,
     industry: row.industry,
     companySize: row.companySize,
+    externalId: externalId || null,
+    googleMapsUrl: row.googleMapsUrl || null,
   };
 }
 
@@ -511,8 +521,10 @@ prospectingRoutes.post('/qualify-batch', async (req: AuthRequest, res, next) => 
       try {
         const criteria = (row.lastSearchQuery ? JSON.parse(row.lastSearchQuery) : {}) as CompanySearchCriteria;
         const hit = prismaRowToSearchHit(row);
-        const { hit: merged, enrichment } = await enrichHitWebsiteCached(hit);
-        const q = await qualifyCompanyHit(merged, criteria, enrichment);
+        const { hit: merged, enrichment, qualification: q } = await runProspectEnrichmentPipeline(
+          hit,
+          criteria
+        );
         const u = await prisma.aiProspect.update({
           where: { id: row.id },
           data: {
@@ -582,37 +594,19 @@ prospectingRoutes.post('/prospects/:id/qualify', async (req: AuthRequest, res, n
     if (!row) return res.status(404).json({ error: 'Prospect introuvable' });
 
     const criteria = (row.lastSearchQuery ? JSON.parse(row.lastSearchQuery) : {}) as CompanySearchCriteria;
-    const hit = {
-      companyName: row.companyName,
-      website: row.website,
-      linkedin: row.linkedin,
-      phone: row.phone,
-      email: row.email,
-      city: row.city,
-      country: row.country,
-      industry: row.industry,
-      companySize: row.companySize,
-    };
-    const { hit: merged, enrichment } = await enrichHitWebsiteCached(hit);
-    const q = await qualifyCompanyHit(merged, criteria, enrichment);
+    const hit = prismaRowToSearchHit(row);
+    const { hit: merged, enrichment, qualification: q } = await runProspectEnrichmentPipeline(
+      hit,
+      criteria
+    );
     const updated = await prisma.aiProspect.update({
       where: { id },
       data: {
-        ...enrichmentPersistFields(enrichment),
-        score: q.score,
-        scoreReason: q.scoreReason,
-        suggestedPitch: q.suggestedPitch,
-        aiTags: q.aiTags as object,
-        potentialLevel: q.potentialLevel,
-        commercialAngle: q.commercialAngle,
-        aiSummary: q.aiSummary,
-        interestProbability: q.interestProbability,
-        followUpPlan: q.followUpPlan as object,
-        probableBusinessProblem: q.probableBusinessProblem,
-        suggestedOffer: q.suggestedOffer,
+        ...hitToProspectData(merged, q, criteria, row.rawProvider || 'google_places', enrichment),
         phone: merged.phone,
         email: merged.email,
         linkedin: merged.linkedin,
+        website: merged.website,
         status: 'QUALIFIED',
       },
     });

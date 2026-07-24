@@ -171,6 +171,10 @@ const emptyResult = (err?: string): WebEnrichmentResult => ({
   technologiesDetected: [],
   fetchedUrl: null,
   fetchError: err ?? null,
+  importantPages: [],
+  productsServices: [],
+  sectorsFromSite: [],
+  enrichmentSource: 'none',
 });
 
 /** Enrichissement vide (pas de site ou crawl désactivé). */
@@ -245,6 +249,10 @@ export async function enrichWebsiteFromUrl(rawWebsite: string | null | undefined
       technologiesDetected: tech,
       fetchedUrl: finalUrl,
       fetchError: null,
+      importantPages: [],
+      productsServices: [],
+      sectorsFromSite: [],
+      enrichmentSource: 'native',
     };
   } catch (e) {
     clearTimeout(timer);
