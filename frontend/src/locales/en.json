@@ -26,8 +26,8 @@
     "no": "No"
   },
   "nav": {
-    "viewIA": "Dashboard",
-    "dashboard": "Dashboard",
+    "viewIA": "Performance",
+    "dashboard": "Performance",
     "prospection": "Prospecting",
     "sectionContacts": "Contacts",
     "sectionTools": "Tools",
@@ -1057,5 +1057,110 @@
     "addonsAnnouncement": "Announcement — 2 new AI agents in development",
     "addonNotify": "Sign up now — we'll notify you at launch.",
     "addonsPackNote": "IA Power Pack: both add-ons for +39 DT/month (when available)"
+  },
+  "tarifs": {
+    "badge": "7-day trial · no credit card",
+    "title": "Three plans. One complete solution.",
+    "subtitle": "Prospecteur, Veilleur, Analyste and Assistant included everywhere. Choose based on usage and team size.",
+    "monthly": "Monthly",
+    "yearly": "Yearly (−2 months)",
+    "perMonth": "{{symbol}}/mo",
+    "perYear": "{{symbol}}/yr",
+    "monthlyEquiv": "≈ {{price}} {{symbol}}/mo",
+    "popular": "Most popular",
+    "includesTitle": "Includes · Full solution",
+    "ctaTrial": "Free trial",
+    "noCard": "No credit card required",
+    "trialFootnote": "7-day trial: full solution included. Then your plan sets quota and users.",
+    "compareTitle": "Detailed comparison",
+    "compareSubtitle": "Same solution on all 3 plans — the difference is usage.",
+    "featureColumn": "Feature",
+    "faqTitle": "FAQ",
+    "includedAria": "Included",
+    "notIncludedAria": "Not included",
+    "agents": {
+      "prospecteur": "Prospecteur",
+      "veilleur": "Veilleur",
+      "analyste": "Analyste",
+      "assistant": "Assistant"
+    },
+    "tiers": {
+      "essentiel": {
+        "name": "Essential",
+        "users": "1 user",
+        "actions": "100 AI actions / month",
+        "features": [
+          "Full solution (4 agents)",
+          "7-day trial included"
+        ]
+      },
+      "croissance": {
+        "name": "Growth",
+        "users": "3 users",
+        "actions": "300 AI actions / month",
+        "features": [
+          "Full solution (4 agents)",
+          "Gmail (connector)",
+          "Shared memory & pipeline",
+          "7-day trial included"
+        ]
+      },
+      "pro": {
+        "name": "Pro",
+        "users": "10 users",
+        "actions": "1,000 AI actions / month",
+        "features": [
+          "Full solution (4 agents)",
+          "Gmail (connector)",
+          "Soft-cap overage allowed",
+          "External CRM webhook",
+          "7-day trial included"
+        ]
+      }
+    },
+    "compare": {
+      "fullSolution": "Full solution (4 agents)",
+      "gmail": "Gmail (connector)",
+      "actionsPerMonth": "AI actions / month",
+      "softCap": "Soft-cap overage",
+      "sharedMemory": "Shared memory",
+      "webhook": "External CRM webhook",
+      "support": "Support",
+      "users": "Included users",
+      "supportEmail": "email",
+      "supportEmailChat": "email + chat",
+      "supportPriority": "priority",
+      "actions100": "100",
+      "actions300": "300",
+      "actions1000": "1,000"
+    },
+    "reassurance": [
+      "No commitment — upgrade or cancel anytime",
+      "No credit card for the trial",
+      "Data hosted securely",
+      "Support in French and Arabic"
+    ],
+    "faq": [
+      {
+        "q": "Can I change plans anytime?",
+        "a": "Yes. You can move to a higher or lower plan from settings at any time."
+      },
+      {
+        "q": "What’s the difference between monthly and yearly?",
+        "a": "Yearly billing equals 10 months: you save 2 months versus monthly."
+      },
+      {
+        "q": "What happens if I exceed my AI action quota?",
+        "a": "With soft-cap, you’re notified without a hard cutoff. Pro may allow overage depending on your setup."
+      },
+      {
+        "q": "Do all plans include every agent?",
+        "a": "Yes. Each plan includes the full solution (Prospecteur, Veilleur, Analyste, Assistant). Only users and AI action quotas change. The Gmail connector starts at Growth."
+      },
+      {
+        "q": "What’s included in the 7-day free trial?",
+        "a": "The trial activates the full solution with a dedicated quota, whichever plan you pick at signup."
+      }
+    ]
   }
 }

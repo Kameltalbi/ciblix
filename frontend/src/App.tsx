@@ -47,9 +47,6 @@ const OffreBot = lazy(() =>
 const GmailAI = lazy(() =>
   import('./pages/GmailAI').then((m) => ({ default: m.GmailAI }))
 );
-const AgentsMarketplace = lazy(() =>
-  import('./pages/AgentsMarketplace').then((m) => ({ default: m.AgentsMarketplace }))
-);
 const Dashboard = lazy(() =>
   import('./pages/Dashboard').then((m) => ({ default: m.Dashboard }))
 );
@@ -148,31 +145,31 @@ export default function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/affaires" element={<Navigate to="/agents" replace />} />
-                        <Route path="/affaires/:id" element={<Navigate to="/agents" replace />} />
+                        <Route path="/affaires" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/affaires/:id" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/clients" element={<Navigate to="/contacts" replace />} />
                         <Route path="/clients/:id" element={<Navigate to="/contacts" replace />} />
-                        <Route path="/leads" element={<Navigate to="/agents" replace />} />
-                        <Route path="/calendar" element={<Navigate to="/agents" replace />} />
-                        <Route path="/expenses" element={<Navigate to="/agents" replace />} />
-                        <Route path="/activites" element={<Navigate to="/agents" replace />} />
-                        <Route path="/email-templates" element={<Navigate to="/agents" replace />} />
-                        <Route path="/objectifs" element={<Navigate to="/agents" replace />} />
-                        <Route path="/products" element={<Navigate to="/agents" replace />} />
+                        <Route path="/leads" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/calendar" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/expenses" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/activites" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/email-templates" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/objectifs" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/products" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/settings/billing/choose-agent" element={<ChooseDiscoveryAgent />} />
                         <Route path="/settings/organizations" element={<Organizations />} />
                         <Route path="/users" element={<Users />} />
                         <Route path="/prospection-ia" element={<ProspectionIA />} />
-                        <Route path="/agents" element={<AgentsMarketplace />} />
+                        <Route path="/agents" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/agents/scout-ai" element={<ScoutAI />} />
                         <Route path="/agents/analyste-ai" element={<AnalysteAI />} />
                         <Route path="/agents/offre-bot" element={<OffreBot />} />
-                        <Route path="/agents/factcheck-ai" element={<Navigate to="/agents" replace />} />
-                        <Route path="/agents/brand-pulse" element={<Navigate to="/agents" replace />} />
+                        <Route path="/agents/factcheck-ai" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/agents/brand-pulse" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/agents/gmail-ai" element={<GmailAI />} />
-                        <Route path="/agents/comm-bot" element={<Navigate to="/agents" replace />} />
-                        <Route path="/agents/:agentId" element={<Navigate to="/agents" replace />} />
+                        <Route path="/agents/comm-bot" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/agents/:agentId" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/contacts" element={<Contacts />} />
                         <Route path="/contacts/:id" element={<ContactDetail />} />
                         <Route path="/connecteurs" element={<Connecteurs />} />

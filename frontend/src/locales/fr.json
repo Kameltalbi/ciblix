@@ -26,8 +26,8 @@
     "no": "Non"
   },
   "nav": {
-    "viewIA": "Accueil",
-    "dashboard": "Accueil",
+    "viewIA": "Performance",
+    "dashboard": "Performance",
     "prospection": "Prospection",
     "sectionContacts": "Contacts",
     "sectionTools": "Outils",
@@ -1063,5 +1063,110 @@
     "addonsAnnouncement": "Annonce — 2 nouveaux agents IA en préparation",
     "addonNotify": "Inscrivez-vous maintenant — vous serez informé dès le lancement.",
     "addonsPackNote": "Pack IA Power : les 2 add-ons pour +39 DT/mois (dès disponibilité)"
+  },
+  "tarifs": {
+    "badge": "Essai 7 jours · sans carte bancaire",
+    "title": "Trois plans. Une seule solution complète.",
+    "subtitle": "Prospecteur, Veilleur, Analyste et Assistant inclus partout. Vous choisissez selon votre usage et le nombre d’utilisateurs.",
+    "monthly": "Mensuel",
+    "yearly": "Annuel (−2 mois)",
+    "perMonth": "{{symbol}}/mois",
+    "perYear": "{{symbol}}/an",
+    "monthlyEquiv": "soit ~{{price}} {{symbol}}/mois",
+    "popular": "Le plus choisi",
+    "includesTitle": "Inclut · Solution complète",
+    "ctaTrial": "Essai gratuit",
+    "noCard": "Aucune carte bancaire requise",
+    "trialFootnote": "Essai 7 jours : solution complète incluse. Ensuite, votre palier définit le quota et les utilisateurs.",
+    "compareTitle": "Comparatif détaillé",
+    "compareSubtitle": "Même solution sur les 3 plans — la différence, c’est l’usage.",
+    "featureColumn": "Fonctionnalité",
+    "faqTitle": "FAQ",
+    "includedAria": "Inclus",
+    "notIncludedAria": "Non inclus",
+    "agents": {
+      "prospecteur": "Prospecteur",
+      "veilleur": "Veilleur",
+      "analyste": "Analyste",
+      "assistant": "Assistant"
+    },
+    "tiers": {
+      "essentiel": {
+        "name": "Essentiel",
+        "users": "1 utilisateur",
+        "actions": "100 actions IA / mois",
+        "features": [
+          "Solution complète (4 agents)",
+          "Essai 7 jours inclus"
+        ]
+      },
+      "croissance": {
+        "name": "Croissance",
+        "users": "3 utilisateurs",
+        "actions": "300 actions IA / mois",
+        "features": [
+          "Solution complète (4 agents)",
+          "Gmail (connecteur)",
+          "Mémoire partagée & pipeline",
+          "Essai 7 jours inclus"
+        ]
+      },
+      "pro": {
+        "name": "Pro",
+        "users": "10 utilisateurs",
+        "actions": "1 000 actions IA / mois",
+        "features": [
+          "Solution complète (4 agents)",
+          "Gmail (connecteur)",
+          "Dépassement soft-cap autorisé",
+          "Webhook CRM externe",
+          "Essai 7 jours inclus"
+        ]
+      }
+    },
+    "compare": {
+      "fullSolution": "Solution complète (4 agents)",
+      "gmail": "Gmail (connecteur)",
+      "actionsPerMonth": "Actions IA / mois",
+      "softCap": "Dépassement soft-cap",
+      "sharedMemory": "Mémoire partagée",
+      "webhook": "Webhook CRM externe",
+      "support": "Support",
+      "users": "Utilisateurs inclus",
+      "supportEmail": "email",
+      "supportEmailChat": "email + chat",
+      "supportPriority": "prioritaire",
+      "actions100": "100",
+      "actions300": "300",
+      "actions1000": "1 000"
+    },
+    "reassurance": [
+      "Sans engagement — changez ou annulez à tout moment",
+      "Sans carte bancaire pour l'essai",
+      "Données hébergées de façon sécurisée",
+      "Support en français et arabe"
+    ],
+    "faq": [
+      {
+        "q": "Puis-je changer de palier à tout moment ?",
+        "a": "Oui, vous pouvez passer à un palier supérieur ou inférieur depuis vos paramètres, à tout moment."
+      },
+      {
+        "q": "Quelle est la différence entre mensuel et annuel ?",
+        "a": "Le paiement annuel équivaut à 10 mois : vous économisez 2 mois par rapport au mensuel."
+      },
+      {
+        "q": "Que se passe-t-il si je dépasse mon quota d'actions IA ?",
+        "a": "En mode soft-cap, vous êtes notifié du dépassement sans coupure brutale. Le palier Pro peut autoriser le dépassement selon votre configuration."
+      },
+      {
+        "q": "Les plans incluent-ils tous les agents ?",
+        "a": "Oui. Chaque palier inclut la solution complète (Prospecteur, Veilleur, Analyste, Assistant). Seuls le nombre d’utilisateurs et le quota d’actions IA changent. Le connecteur Gmail est disponible à partir de Croissance."
+      },
+      {
+        "q": "Que contient l'essai gratuit de 7 jours ?",
+        "a": "L'essai active la solution complète avec un quota dédié, quel que soit le palier choisi au départ."
+      }
+    ]
   }
 }

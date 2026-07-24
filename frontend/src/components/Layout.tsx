@@ -14,7 +14,6 @@ import {
   Radar,
   Search,
   Bot,
-  Target,
   Plug,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -50,7 +49,6 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/agents/analyste-ai', labelKey: 'nav.agentAnalyste', icon: Search, page: 'analyste-ai', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'RESULTS' },
-  { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Target, page: 'agents-marketplace', section: 'RESULTS' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
@@ -63,12 +61,6 @@ const SECTION_LABEL_KEYS: Record<string, string> = {
   RESULTS: 'nav.sectionResults',
   SUPPORT: 'nav.sectionSupport',
 };
-
-/** Route courante correspond au lien sidebar (sous-routes incluses sauf `/`). */
-function pathMatchesNav(to: string, pathname: string): boolean {
-  if (to === '/') return pathname === '/';
-  return pathname === to || pathname.startsWith(`${to}/`);
-}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const CONSENT_VERSION = 'v1';
@@ -167,7 +159,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         // Tant que l’API des droits n’a pas encore répondu, ne pas masquer toute la nav (sinon sidebar vide).
         // Une fois `[]` ou une liste renvoyée, on applique les `canView` normalement — l’API reste authoritative.
         if (permissionsData === undefined) return true;
-        if (page === 'agents-marketplace' || page === 'dashboard' || page === 'connectors') return true;
+        if (page === 'dashboard' || page === 'connectors') return true;
         if (!Array.isArray(permissionsData)) return true;
         const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
@@ -233,30 +225,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           </Link>
         </div>
-        {/* Agent quick-nav — desktop only */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 px-4 md:flex">
-          {filteredNav
-            .filter((item) => item.section === 'AGENTS' || item.section === 'COMMAND')
-            .map((item) => {
-              const Icon = item.icon;
-              const isActive = pathMatchesNav(item.to, location.pathname);
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
-                    isActive
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )}
-                >
-                  <Icon size={14} strokeWidth={2} />
-                  <span className="hidden xl:inline">{t(item.labelKey)}</span>
-                </NavLink>
-              );
-            })}
-        </nav>
         <div className="flex flex-shrink-0 items-center gap-2">
           <div className="hidden items-center gap-1 rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] font-medium text-muted-foreground md:inline-flex">
             <span>{currentTime.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' })}</span>

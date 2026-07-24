@@ -17,11 +17,12 @@ describe('trial helpers', () => {
     expect(end.toISOString()).toBe('2026-07-08T00:00:00.000Z');
   });
 
-  it('gives the same full solution on every paid tier', () => {
+  it('includes Gmail connector from Croissance upward', () => {
     expect(TRIAL_QUOTA.agentActionsLimit).toBe(200);
-    for (const tier of Object.keys(TIER_AGENTS) as Array<keyof typeof TIER_AGENTS>) {
-      expect([...TIER_AGENTS[tier]].sort()).toEqual([...FULL_SOLUTION_AGENTS].sort());
-    }
+    expect(TIER_AGENTS.DECOUVERTE).not.toContain('gmail-ai');
+    expect(TIER_AGENTS.CROISSANCE).toContain('gmail-ai');
+    expect(TIER_AGENTS.PRO).toContain('gmail-ai');
+    expect([...TIER_AGENTS.CROISSANCE].sort()).toEqual([...FULL_SOLUTION_AGENTS].sort());
     expect(isTrialAgentSlug('hunt-ai')).toBe(true);
     expect(isTrialAgentSlug('analyste-ai')).toBe(true);
     expect([...TRIAL_AGENTS]).toContain('hunt-ai');

@@ -23,7 +23,8 @@ export const AGENT_MIN_PLAN: Record<AgentSlug, PlanType> = {
   'scout-ai': 'FREE',
   'analyste-ai': 'FREE',
   'offre-bot': 'FREE',
-  'gmail-ai': 'FREE',
+  /** Connecteur Gmail — à partir de Croissance (BASIC). */
+  'gmail-ai': 'BASIC',
   'factcheck-ai': 'ENTERPRISE',
   'brand-pulse-ai': 'ENTERPRISE',
 };

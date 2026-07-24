@@ -25,20 +25,21 @@ export const TIER_TO_PLAN: Record<BillingTier, string> = {
 };
 
 /**
- * Solution commerciale complète — même jeu d’agents sur tous les paliers.
- * La différenciation se fait par usage (actions/mois), utilisateurs et options.
+ * Agents inclus sur tous les paliers (sans Gmail — connecteur dès Croissance).
  */
-export const FULL_SOLUTION_AGENTS: AgentSlug[] = [
+export const CORE_SOLUTION_AGENTS: AgentSlug[] = [
   'hunt-ai',
   'copilot-ia',
   'scout-ai',
   'analyste-ai',
   'offre-bot',
-  'gmail-ai',
 ];
 
+/** @deprecated Prefer CORE_SOLUTION_AGENTS + gmail selon palier */
+export const FULL_SOLUTION_AGENTS: AgentSlug[] = [...CORE_SOLUTION_AGENTS, 'gmail-ai'];
+
 export const TIER_AGENTS: Record<BillingTier, AgentSlug[]> = {
-  DECOUVERTE: [...FULL_SOLUTION_AGENTS],
+  DECOUVERTE: [...CORE_SOLUTION_AGENTS],
   CROISSANCE: [...FULL_SOLUTION_AGENTS],
   PRO: [...FULL_SOLUTION_AGENTS],
   ENTERPRISE: [...FULL_SOLUTION_AGENTS],
