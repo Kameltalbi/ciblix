@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, TIER_AGENTS, TRIAL_DAYS } from '../../config/billingTiers.js';
+import { addDays, FULL_SOLUTION_AGENTS, TIER_AGENTS, TRIAL_DAYS } from '../../config/billingTiers.js';
 import {
-  DEFAULT_DISCOVERY_AGENT,
   TRIAL_AGENTS,
   TRIAL_DURATION_DAYS,
   TRIAL_QUOTA,
@@ -18,17 +17,15 @@ describe('trial helpers', () => {
     expect(end.toISOString()).toBe('2026-07-08T00:00:00.000Z');
   });
 
-  it('keeps trial agents independent from every tier', () => {
-    expect([...TRIAL_AGENTS]).toEqual(['hunt-ai', 'copilot-ia', 'offre-bot']);
+  it('gives the same full solution on every paid tier', () => {
     expect(TRIAL_QUOTA.agentActionsLimit).toBe(200);
     for (const tier of Object.keys(TIER_AGENTS) as Array<keyof typeof TIER_AGENTS>) {
-      // TRIAL_AGENTS must never be derived from tier mapping
-      expect(TRIAL_AGENTS).not.toEqual(TIER_AGENTS[tier]);
+      expect([...TIER_AGENTS[tier]].sort()).toEqual([...FULL_SOLUTION_AGENTS].sort());
     }
-    expect(TIER_AGENTS.DECOUVERTE).toEqual([]);
-    expect(DEFAULT_DISCOVERY_AGENT).toBe('copilot-ia');
     expect(isTrialAgentSlug('hunt-ai')).toBe(true);
-    expect(isTrialAgentSlug('gmail-ai')).toBe(false);
+    expect(isTrialAgentSlug('analyste-ai')).toBe(true);
+    expect([...TRIAL_AGENTS]).toContain('hunt-ai');
+    expect([...TRIAL_AGENTS]).toContain('copilot-ia');
   });
 
   it('blocks agent writes when trial expired', () => {

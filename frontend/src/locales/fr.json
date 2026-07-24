@@ -71,7 +71,7 @@
     "agentGmail": "Gmail",
     "agentFactCheck": "Vérificateur",
     "agentBrandPulse": "BrandPulse",
-    "agentsMarketplace": "Flotte agents"
+    "agentsMarketplace": "Performance"
   },
   "gmailAi": {
     "badge": "Connecteur Gmail",
@@ -865,8 +865,8 @@
     "diff3Title": "Aucun CRM requis pour démarrer",
     "diff3Body": "Votre pipeline se construit dès le premier agent — connectez un CRM externe plus tard si besoin.",
     "pricingTitle": "Un palier pour chaque étape de votre croissance",
-    "pricingTeaser": "À partir de 29 TND/mois — essai gratuit de 7 jours, sans carte bancaire.",
-    "pricingPopular": "Palier le plus choisi : Croissance, 85 TND/mois — 3 utilisateurs · Prospecteur, Assistant et Gmail (connecteur).",
+    "pricingTeaser": "À partir de 65 TND/mois — essai gratuit de 7 jours, sans carte bancaire.",
+    "pricingPopular": "Palier le plus choisi : Croissance — 89 TND/mois ou 890 TND/an · solution complète · 3 utilisateurs.",
     "pricingCta": "Voir tous les tarifs →",
     "trustTitle": "Vos données, protégées à chaque étape",
     "trustLead": "Consentement, effacement et hébergement sécurisé — pour démarrer en confiance.",
@@ -899,7 +899,7 @@
     "step2Label": "Montant estimé (DT)",
     "step2Placeholder": "Ex : 5000",
     "step3Title": "C'est prêt !",
-    "step3Body": "Ouvrez l'accueil Agents et activez le Prospecteur, l'Assistant ou le Veilleur pour commencer.",
+    "step3Body": "La solution complète est activée. Votre palier définit surtout le quota d’actions IA et le nombre d’utilisateurs.",
     "skip": "Passer",
     "done1": "Accès à la plateforme d'agents IA",
     "done2": "L'Assistant IA prêt à vous proposer des actions",

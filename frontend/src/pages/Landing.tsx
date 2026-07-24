@@ -28,7 +28,7 @@ const SCHEMA = {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'TND',
-    description: 'Essai Découverte',
+    description: 'Essai gratuit 7 jours — à partir de 65 TND/mois',
   },
   inLanguage: ['fr', 'ar', 'en'],
 };

@@ -215,7 +215,7 @@ export function Fonctionnalites() {
               Essai 7 jours — 3 agents en réseau
             </h2>
             <p className="mb-8 text-white/80">
-              Paliers Découverte, Croissance, Pro, Enterprise — la valeur vient de l’effet réseau. L’essai active
+              Paliers Essentiel, Croissance et Pro — la valeur vient de l’effet réseau. L’essai active
               Chasseur IA, Assistant IA et Rédacteur d’offres pour le démontrer dès le premier jour.
             </p>
             <div className="flex flex-col justify-center gap-3 sm:flex-row">

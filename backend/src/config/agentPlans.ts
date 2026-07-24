@@ -17,14 +17,13 @@ export type AgentSlug = (typeof ALL_AGENT_SLUGS)[number];
 
 /** Plan minimum requis pour activer chaque agent. */
 export const AGENT_MIN_PLAN: Record<AgentSlug, PlanType> = {
-  'hunt-ai': 'BASIC',
-  'copilot-ia': 'BASIC',
-  'scout-ai': 'BUSINESS',
-  'analyste-ai': 'BUSINESS',
-  /** Capacité de l’Assistant (propositions) — pas un agent commercial de la flotte. */
-  'offre-bot': 'BASIC',
-  /** Connecteur — pas un agent de la flotte. */
-  'gmail-ai': 'BASIC',
+  /** Solution complète dès Découverte (FREE) — différenciation = quotas. */
+  'hunt-ai': 'FREE',
+  'copilot-ia': 'FREE',
+  'scout-ai': 'FREE',
+  'analyste-ai': 'FREE',
+  'offre-bot': 'FREE',
+  'gmail-ai': 'FREE',
   'factcheck-ai': 'ENTERPRISE',
   'brand-pulse-ai': 'ENTERPRISE',
 };

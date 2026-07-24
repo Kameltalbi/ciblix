@@ -170,7 +170,7 @@ const FAQ: Array<{ theme: string; items: Array<{ q: string; a: string }> }> = [
     items: [
       {
         q: 'Puis-je changer de palier à tout moment ?',
-        a: 'Oui. Les paliers Découverte, Croissance, Pro et Enterprise sont gérés depuis les paramètres de facturation.',
+        a: 'Oui. Les paliers Essentiel, Croissance et Pro sont gérés depuis les paramètres de facturation.',
       },
       {
         q: 'Facturez-vous en TND ou en devise étrangère ?',

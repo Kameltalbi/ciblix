@@ -8,20 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-const AGENT_OPTIONS = [
-  { slug: 'copilot-ia', label: 'Assistant' },
-  { slug: 'hunt-ai', label: 'Prospecteur' },
-  { slug: 'scout-ai', label: 'Veilleur' },
-  { slug: 'analyste-ai', label: 'Analyste' },
-];
-
 export function Onboarding() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [sectorId, setSectorId] = useState('generic');
   const [tier, setTier] = useState('DECOUVERTE');
-  const [agents, setAgents] = useState<string[]>(['copilot-ia', 'hunt-ai']);
 
   const { data: templates } = useQuery({
     queryKey: ['sector-templates'],
@@ -36,7 +28,7 @@ export function Onboarding() {
       api.post('/organizations/onboarding/complete', {
         sectorTemplateId: sectorId,
         tier,
-        agentSlugs: agents,
+        agentSlugs: ['hunt-ai', 'copilot-ia', 'scout-ai', 'analyste-ai'],
       }),
     onSuccess: () => {
       localStorage.setItem('onboardingCompleted', 'true');
@@ -51,8 +43,11 @@ export function Onboarding() {
     () => [
       { title: t('onboarding.step0Title'), content: t('onboarding.step0Body') },
       { title: 'Votre secteur', content: 'Choisissez un modèle pour pré-remplir le lexique et la grille de scoring.' },
-      { title: 'Votre palier', content: 'Découverte est gratuit sans carte bancaire. Vous pourrez upgrader plus tard.' },
-      { title: 'Vos agents', content: 'Activez les agents dont vous avez besoin. Vous pourrez connecter WhatsApp plus tard.' },
+      {
+        title: 'Votre palier',
+        content:
+          'Chaque palier inclut la solution complète (4 agents). Seuls le nombre d’utilisateurs et le quota d’actions IA changent.',
+      },
       { title: t('onboarding.step3Title'), content: t('onboarding.step3Body') },
     ],
     [t]
@@ -116,41 +111,40 @@ export function Onboarding() {
 
           {currentStep === 2 && (
             <div className="grid gap-2">
-              {['DECOUVERTE', 'CROISSANCE', 'PRO'].map((t) => (
+              {(
+                [
+                  {
+                    id: 'DECOUVERTE',
+                    label: 'Essentiel',
+                    detail: '65 TND/mois · 650 TND/an · 1 user · 100 actions',
+                  },
+                  {
+                    id: 'CROISSANCE',
+                    label: 'Croissance',
+                    detail: '89 TND/mois · 890 TND/an · 3 users · 300 actions',
+                  },
+                  {
+                    id: 'PRO',
+                    label: 'Pro',
+                    detail: '129 TND/mois · 1 290 TND/an · 10 users · 1 000 actions',
+                  },
+                ] as const
+              ).map((opt) => (
                 <button
-                  key={t}
+                  key={opt.id}
                   type="button"
-                  onClick={() => setTier(t)}
+                  onClick={() => setTier(opt.id)}
                   className={cn(
                     'rounded-lg border p-3 text-left text-sm',
-                    tier === t ? 'border-leaf bg-leaf/5' : ''
+                    tier === opt.id ? 'border-leaf bg-leaf/5' : ''
                   )}
                 >
-                  {t === 'DECOUVERTE' ? 'Découverte (gratuit)' : t === 'CROISSANCE' ? 'Croissance' : 'Pro'}
+                  <p className="font-medium">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground">{opt.detail}</p>
                 </button>
               ))}
             </div>
           )}
-
-          {currentStep === 3 && (
-            <div className="space-y-2">
-              {AGENT_OPTIONS.map((a) => (
-                <label key={a.slug} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={agents.includes(a.slug)}
-                    onChange={(e) => {
-                      setAgents((prev) =>
-                        e.target.checked ? [...prev, a.slug] : prev.filter((x) => x !== a.slug)
-                      );
-                    }}
-                  />
-                  {a.label}
-                </label>
-              ))}
-            </div>
-          )}
-
           {currentStep === steps.length - 1 && (
             <div className="space-y-3 pt-4">
               {[t('onboarding.done1'), t('onboarding.done2'), t('onboarding.done3')].map((txt) => (

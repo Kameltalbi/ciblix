@@ -13,59 +13,33 @@ export function LandingSales() {
 
   const plans = [
     {
-      name: 'Découverte',
-      price: '29 TND',
+      name: 'Essentiel',
+      price: '65 TND',
       period: '/mois',
-      sub: '1 utilisateur',
-      agents: '1 agent au choix parmi les 4',
-      features: [
-        '1 utilisateur inclus',
-        'Quota découverte (50 actions/mois)',
-        'Essai 7 jours inclus',
-      ],
+      sub: '650 TND / an',
+      agents: 'Solution complète · 100 actions IA / mois',
+      features: ['1 utilisateur', '100 actions IA / mois', 'Essai 7 jours inclus'],
       cta: 'Voir les tarifs',
       popular: false,
     },
     {
       name: 'Croissance',
-      price: '85 TND',
+      price: '89 TND',
       period: '/mois',
-      sub: '3 utilisateurs',
-      agents: 'Prospecteur · Assistant · Gmail (connecteur)',
-      features: [
-        'Jusqu’à 3 utilisateurs',
-        'Mémoire partagée & pipeline',
-        'Essai 7 jours inclus',
-      ],
+      sub: '890 TND / an',
+      agents: 'Solution complète · 300 actions IA / mois',
+      features: ['3 utilisateurs', '300 actions IA / mois', 'Essai 7 jours inclus'],
       cta: 'Voir les tarifs',
       popular: true,
     },
     {
       name: 'Pro',
-      price: '149 TND',
+      price: '129 TND',
       period: '/mois',
-      sub: '10 utilisateurs',
-      agents: 'Prospecteur · Veilleur · Analyste · Assistant + Gmail',
-      features: [
-        'Jusqu’à 10 utilisateurs',
-        'Scoring avancé & webhook CRM',
-        'Essai 7 jours inclus',
-      ],
+      sub: '1 290 TND / an',
+      agents: 'Solution complète · 1 000 actions IA / mois',
+      features: ['10 utilisateurs', '1 000 actions IA / mois', 'Essai 7 jours inclus'],
       cta: 'Voir les tarifs',
-      popular: false,
-    },
-    {
-      name: 'Entreprise',
-      price: 'Sur devis',
-      period: '',
-      sub: 'Utilisateurs illimités',
-      agents: 'Tous les agents Pro + multi-équipes',
-      features: [
-        'Utilisateurs illimités',
-        'Tout Pro + multi-équipes',
-        'SLA dédié',
-      ],
-      cta: 'Nous contacter',
       popular: false,
     },
   ];
@@ -173,7 +147,7 @@ export function LandingSales() {
             {t('pricingPage.simplePricing', { defaultValue: 'Tarifs simples et transparents' })}
           </h2>
           <p className="text-center text-gray-600 mb-12">{t('pricingPage.noCommitmentAnytime', { defaultValue: 'Sans engagement, annulation à tout moment' })}</p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
             {plans.map((plan, idx) => (
               <Card key={idx} className={`border-2 ${plan.popular ? 'border-leaf shadow-lg' : ''}`}>
                 <CardContent className="p-6">
@@ -188,9 +162,7 @@ export function LandingSales() {
                     {plan.period ? <span className="text-gray-600">{plan.period}</span> : null}
                   </div>
                   {plan.sub ? (
-                    <p className="mb-2 inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">
-                      {plan.sub}
-                    </p>
+                    <p className="mb-2 text-sm text-muted-foreground">{plan.sub}</p>
                   ) : null}
                   <p className="mb-6 text-xs font-medium text-sky-900/80 leading-relaxed">{plan.agents}</p>
                   <ul className="space-y-3 mb-6">
@@ -204,11 +176,7 @@ export function LandingSales() {
                   <Button 
                     className="w-full" 
                     variant={plan.popular ? 'default' : 'outline'}
-                    onClick={() =>
-                      plan.name === 'Entreprise'
-                        ? (window.location.href = 'mailto:contact@ciblix.com?subject=Ciblix%20Entreprise')
-                        : navigate('/pricing')
-                    }
+                    onClick={() => navigate('/pricing')}
                   >
                     {plan.cta}
                   </Button>

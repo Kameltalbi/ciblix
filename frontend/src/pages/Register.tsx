@@ -142,16 +142,20 @@ export function Register() {
             <p className="mb-6 text-sm text-white/50">
               {(() => {
                 const tierLabels: Record<string, string> = {
-                  DECOUVERTE: 'Découverte',
+                  DECOUVERTE: 'Essentiel',
                   CROISSANCE: 'Croissance',
                   PRO: 'Pro',
-                  ENTERPRISE: 'Enterprise',
                 };
                 if (tierLabels[selectedTier]) {
                   return `Essai gratuit 7 jours — palier ${tierLabels[selectedTier]} · aucune carte bancaire`;
                 }
                 if (['BASIC', 'BUSINESS', 'ENTERPRISE'].includes(selectedPlan)) {
-                  return `Essai gratuit${trialDays ? ` ${trialDays} jours` : ''} — plan ${selectedPlan === 'ENTERPRISE' ? 'Professionnel' : selectedPlan.charAt(0) + selectedPlan.slice(1).toLowerCase()}`;
+                  const planLabels: Record<string, string> = {
+                    BASIC: 'Essentiel',
+                    BUSINESS: 'Croissance',
+                    ENTERPRISE: 'Pro',
+                  };
+                  return `Essai gratuit${trialDays ? ` ${trialDays} jours` : ''} — plan ${planLabels[selectedPlan]}`;
                 }
                 return "Essai gratuit 7 jours (Croissance) — ou choisissez un palier sur /tarifs";
               })()}

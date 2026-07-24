@@ -11,12 +11,10 @@ import {
   currentMonthKey,
 } from '../../config/billingTiers.js';
 import {
-  DEFAULT_DISCOVERY_AGENT,
   TRIAL_AGENT_LABELS,
   TRIAL_AGENTS,
   TRIAL_DURATION_DAYS,
   TRIAL_QUOTA,
-  isTrialAgentSlug,
   type TrialAgentSlug,
 } from '../../config/trial.js';
 import { ALL_AGENT_SLUGS, normalizePlan, type AgentSlug } from '../../config/agentPlans.js';
@@ -44,27 +42,14 @@ export async function activateTrialAgents(organizationId: string): Promise<void>
 
 /**
  * Applique le jeu d'agents du tier (post-essai / changement de palier).
- * DECOUVERTE : 1 agent via selectedDiscoveryAgent, sinon fallback COPILOT.
+ * Tous les paliers reçoivent la solution complète — seule l’usage change.
  */
 export async function activateTierAgents(
   organizationId: string,
   tier: BillingTier,
-  options?: { selectedDiscoveryAgent?: string | null; requireSelection?: boolean }
+  _options?: { selectedDiscoveryAgent?: string | null; requireSelection?: boolean }
 ): Promise<AgentSlug[]> {
-  let targetAgents: AgentSlug[] = [...TIER_AGENTS[tier]];
-
-  if (tier === 'DECOUVERTE') {
-    const selected = options?.selectedDiscoveryAgent;
-    if (options?.requireSelection && (!selected || !isTrialAgentSlug(selected))) {
-      const err = new Error('REQUIRES_AGENT_SELECTION') as Error & { statusCode?: number; code?: string };
-      err.statusCode = 409;
-      err.code = 'REQUIRES_AGENT_SELECTION';
-      throw err;
-    }
-    const slug: TrialAgentSlug =
-      selected && isTrialAgentSlug(selected) ? selected : DEFAULT_DISCOVERY_AGENT;
-    targetAgents = [slug];
-  }
+  const targetAgents: AgentSlug[] = [...TIER_AGENTS[tier]];
 
   const allowed = new Set(targetAgents);
   for (const slug of ALL_AGENT_SLUGS) {
@@ -173,11 +158,6 @@ export async function assertAgentActionsAllowed(organizationId: string): Promise
   }
 }
 
-function resolveDiscoveryAgent(selected: string | null | undefined): TrialAgentSlug {
-  if (selected && isTrialAgentSlug(selected)) return selected;
-  return DEFAULT_DISCOVERY_AGENT;
-}
-
 async function applyPostTrialQuota(organizationId: string, tier: BillingTier): Promise<void> {
   const month = currentMonthKey();
   await prisma.usageQuota.upsert({
@@ -210,29 +190,20 @@ export async function checkExpiredTrials(): Promise<{ expired: number; activated
 
   for (const sub of due) {
     const hasPayment = Boolean(sub.stripeCustomerId && sub.stripeSubscriptionId);
-    const discoveryAgent = resolveDiscoveryAgent(sub.selectedDiscoveryAgent);
-    const usedFallback = sub.tier === 'DECOUVERTE' && !isTrialAgentSlug(sub.selectedDiscoveryAgent || '');
 
     if (hasPayment) {
-      const activeAgents = await activateTierAgents(sub.organizationId, sub.tier, {
-        selectedDiscoveryAgent: discoveryAgent,
-      });
+      const activeAgents = await activateTierAgents(sub.organizationId, sub.tier);
       await applyPostTrialQuota(sub.organizationId, sub.tier);
       await prisma.billingSubscription.update({
         where: { id: sub.id },
-        data: {
-          status: 'ACTIVE',
-          ...(sub.tier === 'DECOUVERTE' && usedFallback
-            ? { selectedDiscoveryAgent: DEFAULT_DISCOVERY_AGENT }
-            : {}),
-        },
+        data: { status: 'ACTIVE' },
       });
       activated += 1;
       structuredLog({
         service: 'trialService',
         event: 'trial_activated',
         organizationId: sub.organizationId,
-        meta: { tier: sub.tier, agents: activeAgents, usedFallback },
+        meta: { tier: sub.tier, agents: activeAgents },
       });
       if (sub.organization.email) {
         void sendTrialEmail({
@@ -242,19 +213,13 @@ export async function checkExpiredTrials(): Promise<{ expired: number; activated
           tier: sub.tier,
           hasPaymentMethod: true,
           remainingAgents: activeAgents,
-          usedDiscoveryFallback: usedFallback,
         });
       }
     } else {
       // Lecture seule : on laisse les agents visibles mais les écritures sont bloquées via status.
       await prisma.billingSubscription.update({
         where: { id: sub.id },
-        data: {
-          status: 'TRIAL_EXPIRED',
-          ...(sub.tier === 'DECOUVERTE' && usedFallback
-            ? { selectedDiscoveryAgent: DEFAULT_DISCOVERY_AGENT }
-            : {}),
-        },
+        data: { status: 'TRIAL_EXPIRED' },
       });
       expired += 1;
       structuredLog({
@@ -269,8 +234,7 @@ export async function checkExpiredTrials(): Promise<{ expired: number; activated
           orgName: sub.organization.name,
           tier: sub.tier,
           hasPaymentMethod: false,
-          remainingAgents: sub.tier === 'DECOUVERTE' ? [discoveryAgent] : [],
-          usedDiscoveryFallback: usedFallback,
+          remainingAgents: [],
         });
       }
     }
@@ -312,37 +276,15 @@ export async function sendTrialReminders(): Promise<number> {
 export async function selectDiscoveryAgent(params: {
   organizationId: string;
   agentSlug: string;
-}): Promise<{ selectedDiscoveryAgent: TrialAgentSlug }> {
-  if (!isTrialAgentSlug(params.agentSlug)) {
-    throw Object.assign(new Error('Agent invalide pour le palier Découverte'), { statusCode: 400 });
-  }
-
+}): Promise<{ selectedDiscoveryAgent: TrialAgentSlug | null; deprecated: true }> {
+  // Legacy no-op : tous les paliers incluent désormais la solution complète.
   const sub = await prisma.billingSubscription.findUnique({
     where: { organizationId: params.organizationId },
   });
   if (!sub) {
     throw Object.assign(new Error('Abonnement introuvable'), { statusCode: 404 });
   }
-  if (sub.tier !== 'DECOUVERTE') {
-    throw Object.assign(new Error('Sélection réservée au palier Découverte'), { statusCode: 400 });
-  }
-  if (sub.status !== 'TRIALING' && sub.status !== 'TRIAL_EXPIRED' && sub.status !== 'ACTIVE') {
-    throw Object.assign(new Error('Statut abonnement incompatible'), { statusCode: 400 });
-  }
-
-  await prisma.billingSubscription.update({
-    where: { id: sub.id },
-    data: { selectedDiscoveryAgent: params.agentSlug },
-  });
-
-  // Si déjà actif / expiré, appliquer immédiatement le choix.
-  if (sub.status === 'ACTIVE' || sub.status === 'TRIAL_EXPIRED') {
-    await activateTierAgents(params.organizationId, 'DECOUVERTE', {
-      selectedDiscoveryAgent: params.agentSlug,
-    });
-  }
-
-  return { selectedDiscoveryAgent: params.agentSlug };
+  return { selectedDiscoveryAgent: null, deprecated: true };
 }
 
 export async function getTrialAgentUsageSummary(organizationId: string) {
@@ -480,9 +422,7 @@ export async function activateSubscriptionManually(params: {
     throw Object.assign(new Error('Abonnement introuvable'), { statusCode: 404 });
   }
 
-  const activeAgents = await activateTierAgents(params.organizationId, sub.tier, {
-    selectedDiscoveryAgent: resolveDiscoveryAgent(sub.selectedDiscoveryAgent),
-  });
+  const activeAgents = await activateTierAgents(params.organizationId, sub.tier);
   await applyPostTrialQuota(params.organizationId, sub.tier);
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -528,7 +468,7 @@ export function trialBannerPayload(sub: {
     tier: sub.tier,
     tierLabel: TIER_LABELS[sub.tier],
     trialAgents: TRIAL_AGENTS.map((slug) => ({ slug, label: TRIAL_AGENT_LABELS[slug] })),
-    needsDiscoveryChoice: sub.tier === 'DECOUVERTE' && !isTrialAgentSlug(sub.selectedDiscoveryAgent || ''),
+    needsDiscoveryChoice: false,
     selectedDiscoveryAgent: sub.selectedDiscoveryAgent,
   };
 }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest, requireSuperAdmin } from '../middleware/auth.js';
 import { normalizePlan, syncAgentsForPlan } from '../config/agentPlans.js';
+import { TIER_PRICES, TIER_PRICES_ANNUAL } from '../config/billingTiers.js';
 
 export const subscriptionsRoutes = Router();
 subscriptionsRoutes.use(auth);
@@ -13,62 +14,48 @@ const subscriptionSchema = z.object({
   billingPeriod: z.enum(['MONTHLY', 'YEARLY']).default('YEARLY'),
 });
 
-/** Catalogue legacy BASIC/BUSINESS/ENTERPRISE — aligné sur Croissance / Pro / Entreprise. */
+/**
+ * Catalogue legacy BASIC / BUSINESS / ENTERPRISE
+ * → Essentiel / Croissance / Pro (3 plans commercialisés).
+ */
 export const PLAN_CATALOG = {
   BASIC: {
-    monthlyPrice: 85,
-    annualPrice: 1020,
-    maxUsers: 3,
-    label: 'Croissance',
-    agents: ['Chasseur IA', 'Assistant IA', 'Gmail IA'],
+    monthlyPrice: TIER_PRICES.DECOUVERTE.TND!,
+    annualPrice: TIER_PRICES_ANNUAL.DECOUVERTE.TND!,
+    maxUsers: 1,
+    label: 'Essentiel',
+    agents: ['Prospecteur', 'Veilleur', 'Analyste', 'Assistant'],
     features: [
-      'Prospects illimités',
-      "Jusqu'à 3 utilisateurs",
-      'Pipeline Kanban & objectifs',
-      'Agents : Chasseur IA, Assistant IA, Gmail IA',
+      'Solution complète (4 agents)',
+      '1 utilisateur',
+      '100 actions IA / mois',
+      'Essai 7 jours inclus',
     ],
   },
   BUSINESS: {
-    monthlyPrice: 149,
-    annualPrice: 1788,
-    maxUsers: 10,
-    label: 'Pro',
-    agents: [
-      'Chasseur IA',
-      'Assistant IA',
-      'Gmail IA',
-      'Veilleur IA',
-      "Rédacteur d'offres",
-      'Vérificateur IA',
-    ],
+    monthlyPrice: TIER_PRICES.CROISSANCE.TND!,
+    annualPrice: TIER_PRICES_ANNUAL.CROISSANCE.TND!,
+    maxUsers: 3,
+    label: 'Croissance',
+    agents: ['Prospecteur', 'Veilleur', 'Analyste', 'Assistant'],
     features: [
-      'Tout le plan Croissance',
-      "Jusqu'à 10 utilisateurs",
-      'Agents : les 6 agents complets',
-      'Reporting avancé & support prioritaire',
-      'Webhook CRM externe',
+      'Solution complète (4 agents)',
+      "Jusqu'à 3 utilisateurs",
+      '300 actions IA / mois',
+      'Mémoire partagée & pipeline',
     ],
   },
   ENTERPRISE: {
-    monthlyPrice: 0,
-    annualPrice: 0,
-    maxUsers: null,
-    label: 'Entreprise',
-    agents: [
-      'Chasseur IA',
-      'Assistant IA',
-      'Gmail IA',
-      'Veilleur IA',
-      "Rédacteur d'offres",
-      'Vérificateur IA',
-      'BrandPulse AI',
-    ],
+    monthlyPrice: TIER_PRICES.PRO.TND!,
+    annualPrice: TIER_PRICES_ANNUAL.PRO.TND!,
+    maxUsers: 10,
+    label: 'Pro',
+    agents: ['Prospecteur', 'Veilleur', 'Analyste', 'Assistant'],
     features: [
-      'Tout le plan Pro',
-      'Utilisateurs illimités',
-      'Agents : tous les agents Pro + BrandPulse / config sectorielle',
-      'SLA dédié & config sectorielle',
-      'Tarif sur devis',
+      'Solution complète (4 agents)',
+      "Jusqu'à 10 utilisateurs",
+      '1 000 actions IA / mois',
+      'Webhook CRM & soft-cap',
     ],
   },
 } as const;

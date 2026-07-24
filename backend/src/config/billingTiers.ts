@@ -3,8 +3,8 @@ import type { AgentSlug } from './agentPlans.js';
 import { TRIAL_DURATION_DAYS } from './trial.js';
 
 export const TIER_ACTION_LIMITS: Record<BillingTier, number> = {
-  DECOUVERTE: 50,
-  CROISSANCE: 200,
+  DECOUVERTE: 100,
+  CROISSANCE: 300,
   PRO: 1000,
   ENTERPRISE: 5000,
 };
@@ -25,24 +25,42 @@ export const TIER_TO_PLAN: Record<BillingTier, string> = {
 };
 
 /**
- * Agents inclus par palier — appliqués UNIQUEMENT après l'essai (ou changement de tier payant).
- * DECOUVERTE est vide : 1 agent au choix via selectedDiscoveryAgent (fallback COPILOT).
+ * Solution commerciale complète — même jeu d’agents sur tous les paliers.
+ * La différenciation se fait par usage (actions/mois), utilisateurs et options.
  */
-/**
- * Agents commerciaux : Prospecteur, Assistant, Veilleur, Analyste.
- * offre-bot / gmail-ai = capacités / connecteurs inclus, hors flotte marketing.
- */
+export const FULL_SOLUTION_AGENTS: AgentSlug[] = [
+  'hunt-ai',
+  'copilot-ia',
+  'scout-ai',
+  'analyste-ai',
+  'offre-bot',
+  'gmail-ai',
+];
+
 export const TIER_AGENTS: Record<BillingTier, AgentSlug[]> = {
-  DECOUVERTE: [],
-  CROISSANCE: ['hunt-ai', 'copilot-ia', 'offre-bot', 'gmail-ai'],
-  PRO: ['hunt-ai', 'copilot-ia', 'offre-bot', 'gmail-ai', 'scout-ai', 'analyste-ai'],
-  ENTERPRISE: ['hunt-ai', 'copilot-ia', 'offre-bot', 'gmail-ai', 'scout-ai', 'analyste-ai'],
+  DECOUVERTE: [...FULL_SOLUTION_AGENTS],
+  CROISSANCE: [...FULL_SOLUTION_AGENTS],
+  PRO: [...FULL_SOLUTION_AGENTS],
+  ENTERPRISE: [...FULL_SOLUTION_AGENTS],
 };
 
+/** Les 3 plans commercialisés (ENTERPRISE = legacy / hors catalogue). */
+export const PUBLIC_TIERS = ['DECOUVERTE', 'CROISSANCE', 'PRO'] as const satisfies readonly BillingTier[];
+export type PublicTier = (typeof PUBLIC_TIERS)[number];
+
+/** Prix mensuels TND (source de vérité commerciale). */
 export const TIER_PRICES: Record<BillingTier, { TND: number | null; EUR: number | null; USD: number | null }> = {
-  DECOUVERTE: { TND: 29, EUR: 9, USD: 10 },
-  CROISSANCE: { TND: 85, EUR: 28, USD: 30 },
-  PRO: { TND: 149, EUR: 49, USD: 55 },
+  DECOUVERTE: { TND: 65, EUR: 20, USD: 22 },
+  CROISSANCE: { TND: 89, EUR: 28, USD: 30 },
+  PRO: { TND: 129, EUR: 40, USD: 44 },
+  ENTERPRISE: { TND: null, EUR: null, USD: null },
+};
+
+/** Prix annuels TND (= ~10 mois). */
+export const TIER_PRICES_ANNUAL: Record<BillingTier, { TND: number | null; EUR: number | null; USD: number | null }> = {
+  DECOUVERTE: { TND: 650, EUR: 200, USD: 220 },
+  CROISSANCE: { TND: 890, EUR: 280, USD: 300 },
+  PRO: { TND: 1290, EUR: 400, USD: 440 },
   ENTERPRISE: { TND: null, EUR: null, USD: null },
 };
 
@@ -55,7 +73,7 @@ export const TIER_MAX_USERS: Record<BillingTier, number | null> = {
 };
 
 export const TIER_LABELS: Record<BillingTier, string> = {
-  DECOUVERTE: 'Découverte',
+  DECOUVERTE: 'Essentiel',
   CROISSANCE: 'Croissance',
   PRO: 'Pro',
   ENTERPRISE: 'Entreprise',
@@ -64,9 +82,12 @@ export const TIER_LABELS: Record<BillingTier, string> = {
 /** @deprecated Prefer TRIAL_DURATION_DAYS from config/trial.ts */
 export const TRIAL_DAYS = TRIAL_DURATION_DAYS;
 
-/** Price IDs Stripe — à configurer dans .env (un par tier × devise). */
-export function stripePriceId(tier: BillingTier, currency: string): string | null {
-  const key = `STRIPE_PRICE_${tier}_${currency}`;
+/** Price IDs Stripe — à configurer dans .env (un par tier × devise × intervalle). */
+export function stripePriceId(tier: BillingTier, currency: string, interval: 'month' | 'year' = 'month'): string | null {
+  const key =
+    interval === 'year'
+      ? `STRIPE_PRICE_${tier}_${currency}_YEAR`
+      : `STRIPE_PRICE_${tier}_${currency}`;
   return process.env[key] || null;
 }
 

@@ -28,7 +28,6 @@ export function TrialEndingBanner() {
   const banner = data?.trialBanner;
   if (!banner) return null;
 
-  const agentNames = banner.trialAgents.map((a) => a.label).join(', ');
   const dayLabel =
     banner.daysLeft <= 0
       ? "aujourd'hui"
@@ -39,27 +38,16 @@ export function TrialEndingBanner() {
   return (
     <div className="mb-6 rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-sky-50 px-4 py-3 sm:px-5">
       <p className="text-sm font-medium text-foreground">
-        Votre essai se termine {dayLabel}. Vous testez actuellement {agentNames}.
+        Votre essai se termine {dayLabel}. Vous testez la solution complète Ciblix.
       </p>
-      {banner.needsDiscoveryChoice ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            Le palier Découverte inclut 1 agent. Choisissez lequel garder avant la fin de l’essai.
-          </p>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/settings/billing/choose-agent">Choisir mon agent →</Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            Passez au palier {banner.tierLabel} pour garder ces agents actifs sans interruption.
-          </p>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/settings">Ajouter un moyen de paiement →</Link>
-          </Button>
-        </div>
-      )}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <p className="text-sm text-muted-foreground">
+          Passez au palier {banner.tierLabel} pour continuer avec le quota d’actions adapté à votre usage.
+        </p>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/settings">Ajouter un moyen de paiement →</Link>
+        </Button>
+      </div>
     </div>
   );
 }

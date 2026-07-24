@@ -105,49 +105,49 @@ const PACK_CARDS = [
 const PAID_PLANS: PricingPlanRow[] = [
   {
     slug: 'BASIC',
-    name: 'Croissance',
+    name: 'Essentiel',
     packKey: 'pricingPage.packEssentiel',
     packDescKey: 'pricingPage.packEssentielDesc',
-    monthlyPrice: 85,
-    annualPrice: 1020,
+    monthlyPrice: 65,
+    annualPrice: 650,
     features: [
-      "Jusqu'à 3 utilisateurs",
-      'Agents : Chasseur IA, Assistant IA, Gmail IA',
-      'Mémoire partagée & pipeline',
+      '1 utilisateur',
+      'Solution complète (4 agents)',
+      '100 actions IA / mois',
       'Essai 7 jours inclus',
     ],
     cta: "Démarrer l'essai gratuit",
   },
   {
     slug: 'BUSINESS',
-    name: 'Pro',
+    name: 'Croissance',
     packKey: 'pricingPage.packBusiness',
     packDescKey: 'pricingPage.packBusinessDesc',
-    monthlyPrice: 149,
-    annualPrice: 1788,
+    monthlyPrice: 89,
+    annualPrice: 890,
     features: [
-      'Tout le plan Croissance',
-      "Jusqu'à 10 utilisateurs",
-      'Agents : Chasseur, Assistant, Gmail, Veilleur, Rédacteur, Vérificateur',
-      'Scoring avancé & webhook CRM',
+      "Jusqu'à 3 utilisateurs",
+      'Solution complète (4 agents)',
+      '300 actions IA / mois',
+      'Essai 7 jours inclus',
     ],
     cta: "Démarrer l'essai gratuit",
     popular: true,
   },
   {
     slug: 'ENTERPRISE',
-    name: 'Entreprise',
+    name: 'Pro',
     packKey: 'pricingPage.packPro',
     packDescKey: 'pricingPage.packProDesc',
-    monthlyPrice: 0,
-    annualPrice: 0,
+    monthlyPrice: 129,
+    annualPrice: 1290,
     features: [
-      'Tout le plan Pro',
-      'Utilisateurs illimités',
-      'Agents : tous les agents Pro + BrandPulse / config sectorielle',
-      'Tarif sur devis',
+      "Jusqu'à 10 utilisateurs",
+      'Solution complète (4 agents)',
+      '1 000 actions IA / mois',
+      'Webhook CRM & soft-cap',
     ],
-    cta: 'Nous contacter',
+    cta: "Démarrer l'essai gratuit",
   },
 ];
 
@@ -224,17 +224,17 @@ export function Pricing() {
           )}
           {plan.slug === 'BASIC' && (
             <span className="inline-block mt-3 rounded-full bg-sky-100 text-sky-900 text-xs font-medium px-3 py-1">
-              Jusqu&apos;à 3 utilisateurs
+              1 utilisateur
             </span>
           )}
           {plan.slug === 'BUSINESS' && (
             <span className="inline-block mt-3 rounded-full bg-emerald-100 text-emerald-900 text-xs font-medium px-3 py-1">
-              Jusqu&apos;à 10 utilisateurs
+              Jusqu&apos;à 3 utilisateurs
             </span>
           )}
           {plan.slug === 'ENTERPRISE' && (
             <span className="inline-block mt-3 rounded-full bg-violet-100 text-violet-900 text-xs font-medium px-3 py-1">
-              Utilisateurs illimités · sur devis
+              Jusqu&apos;à 10 utilisateurs
             </span>
           )}
         </div>

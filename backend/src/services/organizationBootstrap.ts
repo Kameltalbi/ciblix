@@ -90,10 +90,10 @@ export async function seedTrialSubscriptionForOrganization(
     billingTier === 'ENTERPRISE'
       ? 0
       : billingTier === 'PRO'
-        ? 149
+        ? 129
         : billingTier === 'CROISSANCE'
-          ? 85
-          : 29;
+          ? 89
+          : 65;
 
   await prisma.subscription.create({
     data: {

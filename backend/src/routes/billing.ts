@@ -70,7 +70,7 @@ billingRoutes.get('/trial-agents', async (req: AuthRequest, res, next) => {
       status: sub.status,
       selectedDiscoveryAgent: sub.selectedDiscoveryAgent,
       agents,
-      canSelect: sub.tier === 'DECOUVERTE',
+      canSelect: false,
     });
   } catch (e) {
     next(e);
@@ -119,7 +119,7 @@ billingRoutes.post('/change-tier', requireOwner, async (req: AuthRequest, res, n
     const body = z.object({ tier: z.nativeEnum(BillingTier) }).parse(req.body);
     if (body.tier !== 'DECOUVERTE' && !process.env.STRIPE_SECRET_KEY) {
       return res.status(400).json({
-        error: 'Paiement requis pour ce palier. Configurez Stripe ou restez sur Découverte.',
+        error: 'Paiement requis pour ce palier. Configurez Stripe ou restez sur Essentiel.',
       });
     }
     const sub = await changeTier(req.organizationId!, body.tier);

@@ -71,7 +71,7 @@
     "agentGmail": "Gmail",
     "agentFactCheck": "Fact-Checker",
     "agentBrandPulse": "BrandPulse",
-    "agentsMarketplace": "Agent fleet"
+    "agentsMarketplace": "Performance"
   },
   "gmailAi": {
     "badge": "Gmail AI Agent",
@@ -859,8 +859,8 @@
     "diff3Title": "No CRM required to start",
     "diff3Body": "Your pipeline builds from the first agent — connect an external CRM later if you need.",
     "pricingTitle": "A plan for every stage of growth",
-    "pricingTeaser": "From 29 TND/month — 7-day free trial, no credit card.",
-    "pricingPopular": "Most chosen: Growth, 85 TND/month — 3 users · Hunt, Copilot and Gmail AI.",
+    "pricingTeaser": "From 65 TND/month — 7-day free trial, no credit card.",
+    "pricingPopular": "Most chosen: Growth — 89 TND/month or 890 TND/year · full solution · 3 users.",
     "pricingCta": "See all pricing →",
     "trustTitle": "Your data, protected at every step",
     "trustLead": "Consent, deletion and secure hosting — so you can start with confidence.",

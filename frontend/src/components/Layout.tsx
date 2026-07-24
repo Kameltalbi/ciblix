@@ -14,7 +14,7 @@ import {
   Radar,
   Search,
   Bot,
-  Store,
+  Target,
   Plug,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -50,7 +50,7 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/agents/analyste-ai', labelKey: 'nav.agentAnalyste', icon: Search, page: 'analyste-ai', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'RESULTS' },
-  { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'RESULTS' },
+  { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Target, page: 'agents-marketplace', section: 'RESULTS' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
