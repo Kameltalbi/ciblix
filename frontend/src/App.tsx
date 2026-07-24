@@ -44,12 +44,6 @@ const ScoutAI = lazy(() =>
 const OffreBot = lazy(() =>
   import('./pages/OffreBot').then((m) => ({ default: m.OffreBot }))
 );
-const FactCheckAI = lazy(() =>
-  import('./pages/FactCheckAI').then((m) => ({ default: m.FactCheckAI }))
-);
-const BrandPulse = lazy(() =>
-  import('./pages/BrandPulse').then((m) => ({ default: m.BrandPulse }))
-);
 const GmailAI = lazy(() =>
   import('./pages/GmailAI').then((m) => ({ default: m.GmailAI }))
 );
@@ -69,20 +63,22 @@ const Contacts = lazy(() => import('./pages/Contacts').then((m) => ({ default: m
 const ContactDetail = lazy(() =>
   import('./pages/ContactDetail').then((m) => ({ default: m.ContactDetail }))
 );
+const Connecteurs = lazy(() =>
+  import('./pages/Connecteurs').then((m) => ({ default: m.Connecteurs }))
+);
 
 // Public agent pages (marketing / pre-login)
 const HuntAIPage = lazy(() => import('./pages/public/HuntAIPage').then((m) => ({ default: m.HuntAIPage })));
 const CopilotIAPage = lazy(() => import('./pages/public/CopilotIAPage').then((m) => ({ default: m.CopilotIAPage })));
 const ScoutAIPage = lazy(() => import('./pages/public/ScoutAIPage').then((m) => ({ default: m.ScoutAIPage })));
-const OffreBotPage = lazy(() => import('./pages/public/OffreBotPage').then((m) => ({ default: m.OffreBotPage })));
-const FactCheckAIPage = lazy(() => import('./pages/public/FactCheckAIPage').then((m) => ({ default: m.FactCheckAIPage })));
-const BrandPulsePage = lazy(() => import('./pages/public/BrandPulsePage').then((m) => ({ default: m.BrandPulsePage })));
+const AnalysteAIPage = lazy(() => import('./pages/public/AnalysteAIPage').then((m) => ({ default: m.AnalysteAIPage })));
 const SupportTickets = lazy(() =>
   import('./pages/SupportTickets').then((m) => ({ default: m.SupportTickets }))
 );
 const AdminDashboard = lazy(() =>
   import('./pages/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
 );
+const AnalysteAI = lazy(() => import('./pages/AnalysteAI').then((m) => ({ default: m.AnalysteAI })));
 
 function PageFallback() {
   return (
@@ -137,10 +133,11 @@ export default function App() {
           <Route path="/agent/hunt-ai" element={<HuntAIPage />} />
           <Route path="/agent/copilot-ia" element={<CopilotIAPage />} />
           <Route path="/agent/scout-ai" element={<ScoutAIPage />} />
-          <Route path="/agent/offre-bot" element={<OffreBotPage />} />
-          <Route path="/agent/factcheck-ai" element={<FactCheckAIPage />} />
-          <Route path="/agent/brand-pulse" element={<BrandPulsePage />} />
-          <Route path="/agent/comm-bot" element={<Navigate to="/agent/brand-pulse" replace />} />
+          <Route path="/agent/analyste-ai" element={<AnalysteAIPage />} />
+          <Route path="/agent/offre-bot" element={<Navigate to="/agent/copilot-ia" replace />} />
+          <Route path="/agent/factcheck-ai" element={<Navigate to="/" replace />} />
+          <Route path="/agent/brand-pulse" element={<Navigate to="/" replace />} />
+          <Route path="/agent/comm-bot" element={<Navigate to="/" replace />} />
           <Route path="/payment-pending" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/*"
@@ -169,14 +166,16 @@ export default function App() {
                         <Route path="/prospection-ia" element={<ProspectionIA />} />
                         <Route path="/agents" element={<AgentsMarketplace />} />
                         <Route path="/agents/scout-ai" element={<ScoutAI />} />
+                        <Route path="/agents/analyste-ai" element={<AnalysteAI />} />
                         <Route path="/agents/offre-bot" element={<OffreBot />} />
-                        <Route path="/agents/factcheck-ai" element={<FactCheckAI />} />
-                        <Route path="/agents/brand-pulse" element={<BrandPulse />} />
+                        <Route path="/agents/factcheck-ai" element={<Navigate to="/agents" replace />} />
+                        <Route path="/agents/brand-pulse" element={<Navigate to="/agents" replace />} />
                         <Route path="/agents/gmail-ai" element={<GmailAI />} />
-                        <Route path="/agents/comm-bot" element={<Navigate to="/agents/brand-pulse" replace />} />
+                        <Route path="/agents/comm-bot" element={<Navigate to="/agents" replace />} />
                         <Route path="/agents/:agentId" element={<Navigate to="/agents" replace />} />
                         <Route path="/contacts" element={<Contacts />} />
                         <Route path="/contacts/:id" element={<ContactDetail />} />
+                        <Route path="/connecteurs" element={<Connecteurs />} />
                         <Route path="/all-prospects" element={<AllProspects />} />
                         <Route path="/ai-assistant" element={<AIAssistant />} />
                         <Route path="/support" element={<SupportTickets />} />

@@ -9,15 +9,13 @@ import {
   Users,
   Globe,
   MessageSquare,
-  Radio,
+  Crosshair,
   Sparkles,
   Radar,
-  FileSignature,
-  ShieldCheck,
+  Search,
   Bot,
   Store,
-  Megaphone,
-  Mail,
+  Plug,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -46,26 +44,23 @@ type NavItem = {
  */
 const NAV_STRUCTURE: NavItem[] = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'COMMAND' },
-  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Radio, page: 'prospection-ia', section: 'AGENTS' },
-  { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
+  { to: '/connecteurs', labelKey: 'nav.connectors', icon: Plug, page: 'connectors', section: 'COMMAND' },
+  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
-  { to: '/agents/offre-bot', labelKey: 'nav.agentOffre', icon: FileSignature, page: 'offre-bot', section: 'AGENTS' },
-  { to: '/agents/gmail-ai', labelKey: 'nav.agentGmail', icon: Mail, page: 'gmail-ai', section: 'AGENTS' },
+  { to: '/agents/analyste-ai', labelKey: 'nav.agentAnalyste', icon: Search, page: 'analyste-ai', section: 'AGENTS' },
+  { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'RESULTS' },
   { to: '/agents', labelKey: 'nav.agentsMarketplace', icon: Store, page: 'agents-marketplace', section: 'RESULTS' },
-  { to: '/agents/factcheck-ai', labelKey: 'nav.agentFactCheck', icon: ShieldCheck, page: 'factcheck-ai', section: 'MORE' },
-  { to: '/agents/brand-pulse', labelKey: 'nav.agentBrandPulse', icon: Megaphone, page: 'brand-pulse', section: 'MORE' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
 ];
 
 /** Ordre d’affichage des blocs sidebar (libellés i18n : nav.section*). */
-const SIDEBAR_SECTION_ORDER = ['COMMAND', 'AGENTS', 'RESULTS', 'MORE', 'SUPPORT'] as const;
+const SIDEBAR_SECTION_ORDER = ['COMMAND', 'AGENTS', 'RESULTS', 'SUPPORT'] as const;
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
   COMMAND: 'nav.sectionCommand',
   AGENTS: 'nav.sectionAgents',
   RESULTS: 'nav.sectionResults',
-  MORE: 'nav.sectionMore',
   SUPPORT: 'nav.sectionSupport',
 };
 
@@ -172,7 +167,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         // Tant que l’API des droits n’a pas encore répondu, ne pas masquer toute la nav (sinon sidebar vide).
         // Une fois `[]` ou une liste renvoyée, on applique les `canView` normalement — l’API reste authoritative.
         if (permissionsData === undefined) return true;
-        if (page === 'agents-marketplace' || page === 'dashboard') return true;
+        if (page === 'agents-marketplace' || page === 'dashboard' || page === 'connectors') return true;
         if (!Array.isArray(permissionsData)) return true;
         const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
@@ -189,10 +184,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     'contacts': 'copilot-ia',
     'ai-assistant': 'copilot-ia',
     'scout-ai': 'scout-ai',
-    'offre-bot': 'offre-bot',
-    'gmail-ai': 'gmail-ai',
-    'factcheck-ai': 'factcheck-ai',
-    'brand-pulse': 'brand-pulse-ai',
+    'analyste-ai': 'analyste-ai',
   };
 
   const filteredNav = useMemo(() => {

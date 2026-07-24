@@ -10,7 +10,7 @@ const TIERS = [
     priceTnd: 29,
     users: 1,
     limit: 50,
-    agents: '1 agent au choix parmi les 6',
+    agents: '1 agent au choix parmi les 4',
   },
   {
     id: 'CROISSANCE',
@@ -18,7 +18,7 @@ const TIERS = [
     priceTnd: 85,
     users: 3,
     limit: 200,
-    agents: 'Chasseur IA, Assistant IA, Gmail IA',
+    agents: 'Prospecteur, Assistant + Gmail (connecteur)',
   },
   {
     id: 'PRO',
@@ -26,7 +26,7 @@ const TIERS = [
     priceTnd: 149,
     users: 10,
     limit: 1000,
-    agents: 'Les 6 agents (Chasseur, Assistant, Gmail, Veilleur, Rédacteur, Vérificateur)',
+    agents: 'Prospecteur, Veilleur, Analyste, Assistant + Gmail',
   },
   {
     id: 'ENTERPRISE',
@@ -34,7 +34,7 @@ const TIERS = [
     priceTnd: null as number | null,
     users: null as number | null,
     limit: 5000,
-    agents: 'Tous les agents Pro + BrandPulse / config sectorielle',
+    agents: 'Tous les agents Pro + multi-équipes / config sectorielle',
   },
 ] as const;
 

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Download, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import { isPublicMarketingPath } from '@/lib/publicPaths';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -28,6 +30,7 @@ function isStandaloneDisplay(): boolean {
 
 export function PwaInstallPrompt() {
   const { t } = useTranslation();
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isDismissed, setIsDismissed] = useState<boolean>(() => localStorage.getItem(STORAGE_KEY) === '1');
   const [isInstalled, setIsInstalled] = useState<boolean>(() => isStandaloneDisplay());
@@ -58,7 +61,10 @@ export function PwaInstallPrompt() {
   const canShowAndroidHint =
     isAndroidDevice() && !isIosDevice() && !isStandaloneDisplay() && !deferredPrompt;
   const shouldShow =
-    !isDismissed && !isInstalled && (deferredPrompt || canShowIosHint || canShowAndroidHint);
+    !isPublicMarketingPath(location.pathname) &&
+    !isDismissed &&
+    !isInstalled &&
+    (deferredPrompt || canShowIosHint || canShowAndroidHint);
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, '1');

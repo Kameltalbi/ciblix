@@ -9,10 +9,10 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 const AGENT_OPTIONS = [
-  { slug: 'copilot-ia', label: 'Copilot IA' },
-  { slug: 'hunt-ai', label: 'Chasseur IA' },
-  { slug: 'gmail-ai', label: 'Gmail IA' },
-  { slug: 'scout-ai', label: 'Veilleur IA' },
+  { slug: 'copilot-ia', label: 'Assistant' },
+  { slug: 'hunt-ai', label: 'Prospecteur' },
+  { slug: 'scout-ai', label: 'Veilleur' },
+  { slug: 'analyste-ai', label: 'Analyste' },
 ];
 
 export function Onboarding() {

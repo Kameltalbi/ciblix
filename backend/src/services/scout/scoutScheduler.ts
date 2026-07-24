@@ -40,6 +40,8 @@ async function processDueProfiles(): Promise<void> {
         console.warn('[scout-scheduler] scan failed', profile.organizationId, err);
       }
     }
+  } catch (err) {
+    console.warn('[scout-scheduler] tick failed', err);
   } finally {
     running = false;
   }

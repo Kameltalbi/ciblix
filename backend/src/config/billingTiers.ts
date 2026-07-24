@@ -28,11 +28,15 @@ export const TIER_TO_PLAN: Record<BillingTier, string> = {
  * Agents inclus par palier — appliqués UNIQUEMENT après l'essai (ou changement de tier payant).
  * DECOUVERTE est vide : 1 agent au choix via selectedDiscoveryAgent (fallback COPILOT).
  */
+/**
+ * Agents commerciaux : Prospecteur, Assistant, Veilleur, Analyste.
+ * offre-bot / gmail-ai = capacités / connecteurs inclus, hors flotte marketing.
+ */
 export const TIER_AGENTS: Record<BillingTier, AgentSlug[]> = {
   DECOUVERTE: [],
-  CROISSANCE: ['hunt-ai', 'copilot-ia', 'gmail-ai'],
-  PRO: ['hunt-ai', 'copilot-ia', 'gmail-ai', 'scout-ai', 'offre-bot', 'factcheck-ai'],
-  ENTERPRISE: ['hunt-ai', 'copilot-ia', 'gmail-ai', 'scout-ai', 'offre-bot', 'factcheck-ai'],
+  CROISSANCE: ['hunt-ai', 'copilot-ia', 'offre-bot', 'gmail-ai'],
+  PRO: ['hunt-ai', 'copilot-ia', 'offre-bot', 'gmail-ai', 'scout-ai', 'analyste-ai'],
+  ENTERPRISE: ['hunt-ai', 'copilot-ia', 'offre-bot', 'gmail-ai', 'scout-ai', 'analyste-ai'],
 };
 
 export const TIER_PRICES: Record<BillingTier, { TND: number | null; EUR: number | null; USD: number | null }> = {

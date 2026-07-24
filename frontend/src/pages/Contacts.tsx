@@ -6,7 +6,7 @@ import {
   ChevronRight,
   Mail,
   FileSignature,
-  Radio,
+  Crosshair,
   Download,
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -26,11 +26,12 @@ interface ContactRow {
 }
 
 const SOURCE_LABELS: Record<string, string> = {
-  HUNT: 'Chasseur IA',
-  COPILOT: 'Assistant IA',
-  GMAIL: 'Gmail IA',
-  SCOUT: 'Veilleur IA',
-  OFFREBOT: "Rédacteur d'offres",
+  HUNT: 'Prospecteur',
+  COPILOT: 'Assistant',
+  GMAIL: 'Gmail',
+  SCOUT: 'Veilleur',
+  ANALYSTE: 'Analyste',
+  OFFREBOT: 'Propositions',
   MANUAL_IMPORT: 'Import',
 };
 
@@ -72,7 +73,7 @@ export function Contacts() {
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/prospection-ia" className="gap-1.5">
-              <Radio size={14} /> Lancer Chasseur IA
+              <Crosshair size={14} /> Lancer Prospecteur
             </Link>
           </Button>
         </div>
@@ -113,7 +114,7 @@ export function Contacts() {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                    Aucun résultat pour le moment. Lancez le Chasseur IA pour en détecter.
+                    Aucun résultat pour le moment. Lancez le Prospecteur pour en détecter.
                   </td>
                 </tr>
               ) : (

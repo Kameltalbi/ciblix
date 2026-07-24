@@ -59,16 +59,18 @@
     "sectionWorkspace": "Workspace",
     "sectionEnterprise": "Performance & finance",
     "sectionSupport": "Help",
-    "agentHunt": "AI Hunter",
-    "agentAssistant": "AI Assistant",
+    "agentHunt": "Prospector",
+    "agentAssistant": "Assistant",
     "comingSoon": "Coming soon",
-    "agentCopilot": "AI Assistant",
+    "agentCopilot": "Assistant",
     "contacts": "Contacts",
-    "agentScout": "AI Scout",
-    "agentOffre": "Offer Writer",
-    "agentGmail": "Gmail AI",
-    "agentFactCheck": "AI Fact-Checker",
-    "agentBrandPulse": "BrandPulse AI",
+    "connectors": "Connectors",
+    "agentScout": "Scout",
+    "agentAnalyste": "Analyst",
+    "agentOffre": "Proposals",
+    "agentGmail": "Gmail",
+    "agentFactCheck": "Fact-Checker",
+    "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "Agent fleet"
   },
   "gmailAi": {
@@ -613,17 +615,20 @@
   "landing": {
     "seoTitle": "Ciblix — Collaborative AI agents | Automated sales pipeline",
     "seoDescription": "Your AI agents work together. Your sales pipeline builds itself. Free trial — no CRM to fill in.",
-    "badge": "Your AI agents work together, not in silos",
-    "heroTitle": "AI agents that accelerate your sales growth",
-    "heroTitle1": "AI agents that accelerate",
-    "heroTitle2": "your sales growth",
-    "heroSubtitle": "Six agents automatically share what they learn about your prospects — no CRM to fill in, no manual entry.",
+    "badge": "Your next opportunities start here",
+    "heroTitle": "An AI agent team dedicated to your commercial growth.",
+    "heroTitle1": "An AI agent team dedicated to your commercial growth.",
+    "heroTitle2": "",
+    "heroLine1": "",
+    "heroLine2": "",
+    "heroLine3": "",
+    "heroSubtitle": "Ciblix AI agents work together to detect opportunities, find new customers, and help you grow sales sustainably.",
     "agentsBadge": "One team, one memory",
-    "agentsSectionTitle": "Six agents. One team.",
-    "agentsIntro": "Each agent excels at its job — and automatically enriches the same team memory as the other five.",
+    "agentsSectionTitle": "Four agents. One team.",
+    "agentsIntro": "Hunter, Assistant, Scout and Offer Writer — shared memory. Gmail connects separately under Connectors.",
     "agentsSeeAll": "See every solution in detail →",
     "learnMore": "Details",
-    "cta": "Prospect with AI",
+    "cta": "Find my opportunities",
     "ctaDemo": "Watch the demo",
     "demo": "Watch a 90-second demo",
     "noCommitment": "No commitment",
@@ -689,6 +694,105 @@
     "howTitle": "Each agent has a clear job.",
     "howLead": "You don’t need to turn everything on at once: pick the agent for today’s job. They share the same prospect memory.",
     "howCta": "Start free trial →",
+    "teamTitle": "An AI agent team. One goal: grow your business.",
+    "teamLead": "Each agent has a specific business expertise and works with the others to detect opportunities, qualify companies, prepare your sales actions, and save you time.",
+    "teamLearnMore": "Learn more",
+    "teamOrchestra": "The Assistant coordinates the team and uses the other agents’ outputs — without overlapping their missions.",
+    "team": {
+      "learnMore": "Learn more",
+      "panelMissions": "Detailed missions",
+      "panelTools": "Tools & sources",
+      "panelTasks": "Example tasks",
+      "panelResults": "Concrete results",
+      "prospecteur": {
+        "name": "Prospector",
+        "mission": "Find new customers",
+        "desc": "Identifies companies that match your criteria, enriches contacts, qualifies prospects, and prepares your outreach campaigns.",
+        "missions": [
+          "Find target companies by sector, region and size",
+          "Enrich records (contacts, decision-makers, signals)",
+          "Score and prioritize prospects",
+          "Draft personalized first-touch messages"
+        ],
+        "tools": ["LinkedIn", "Public web", "Company registries", "Local databases", "Ciblix memory"],
+        "tasks": [
+          "List 40 scored companies in a city",
+          "Find the buying decision-maker",
+          "Write 5 personalized openers"
+        ],
+        "results": [
+          "Pipeline enriched without manual entry",
+          "Ready-to-contact prospect lists",
+          "Decision-makers linked to each record"
+        ]
+      },
+      "veilleur": {
+        "name": "Scout",
+        "mission": "Detect business opportunities",
+        "desc": "Continuously monitors tenders, investments, hiring, projects, public markets and market signals to surface new opportunities.",
+        "missions": [
+          "Watch tenders and public markets",
+          "Detect investments, projects and hiring",
+          "Filter signals for your business",
+          "Alert when an opportunity deserves attention"
+        ],
+        "tools": ["TUNEPS", "Tender portals", "Institutional sites", "LinkedIn", "Web & press"],
+        "tasks": [
+          "Alert on a relevant tender",
+          "Spot hiring at a target account",
+          "Track an investment project in your sector"
+        ],
+        "results": [
+          "Scored opportunity alerts",
+          "Saved opportunities for follow-up",
+          "Fewer missed deals"
+        ]
+      },
+      "analyste": {
+        "name": "Analyst",
+        "mission": "Analyze companies",
+        "desc": "Studies companies, activities, decision-makers, competitors and potential to better prepare every sales approach.",
+        "missions": [
+          "Map activity, offer and positioning",
+          "Identify useful decision-makers",
+          "Compare competitors and commercial potential",
+          "Prepare an approach brief before contact"
+        ],
+        "tools": ["Company websites", "Registries", "LinkedIn", "Public sources", "Ciblix memory"],
+        "tasks": [
+          "Brief a target before a first call",
+          "List decision-makers and angles",
+          "One-page competitive summary"
+        ],
+        "results": [
+          "Better-prepared approaches",
+          "Messaging aligned with client context",
+          "Less manual research time"
+        ]
+      },
+      "assistant": {
+        "name": "Assistant",
+        "mission": "Drive your sales actions",
+        "desc": "Answers your questions, coordinates the other agents, recommends next actions, and prepares emails, meeting notes, proposals and tender responses.",
+        "missions": [
+          "Coordinate Prospector, Scout and Analyst",
+          "Recommend the next priority action",
+          "Prepare emails, notes, proposals and tender replies",
+          "Answer in natural language about your pipeline"
+        ],
+        "tools": ["Shared agent memory", "Gmail (connector)", "WhatsApp", "Contact history", "Offer documents"],
+        "tasks": [
+          "“Who should I follow up this week?”",
+          "Draft a follow-up after a detected tender",
+          "Generate a proposal from conversation history"
+        ],
+        "results": [
+          "Clear daily priorities",
+          "Documents ready to review or send",
+          "More time spent on relationships"
+        ]
+      }
+    },
     "agentWhenLabel": "Use when:",
     "agentHuntName": "AI Hunter",
     "agentHuntRole": "Find new customers",

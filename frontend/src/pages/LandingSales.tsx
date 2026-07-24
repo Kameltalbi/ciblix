@@ -17,7 +17,7 @@ export function LandingSales() {
       price: '29 TND',
       period: '/mois',
       sub: '1 utilisateur',
-      agents: '1 agent au choix parmi les 6',
+      agents: '1 agent au choix parmi les 4',
       features: [
         '1 utilisateur inclus',
         'Quota découverte (50 actions/mois)',
@@ -31,7 +31,7 @@ export function LandingSales() {
       price: '85 TND',
       period: '/mois',
       sub: '3 utilisateurs',
-      agents: 'Chasseur IA · Assistant IA · Gmail IA',
+      agents: 'Prospecteur · Assistant · Gmail (connecteur)',
       features: [
         'Jusqu’à 3 utilisateurs',
         'Mémoire partagée & pipeline',
@@ -45,7 +45,7 @@ export function LandingSales() {
       price: '149 TND',
       period: '/mois',
       sub: '10 utilisateurs',
-      agents: 'Les 6 agents (Chasseur, Assistant, Gmail, Veilleur, Rédacteur, Vérificateur)',
+      agents: 'Prospecteur · Veilleur · Analyste · Assistant + Gmail',
       features: [
         'Jusqu’à 10 utilisateurs',
         'Scoring avancé & webhook CRM',
@@ -59,7 +59,7 @@ export function LandingSales() {
       price: 'Sur devis',
       period: '',
       sub: 'Utilisateurs illimités',
-      agents: 'Tous les agents Pro + BrandPulse / config sectorielle',
+      agents: 'Tous les agents Pro + multi-équipes',
       features: [
         'Utilisateurs illimités',
         'Tout Pro + multi-équipes',
@@ -73,13 +73,13 @@ export function LandingSales() {
   const features = [
     {
       icon: Zap,
-      title: 'Copilot IA',
-      description: 'Posez vos questions en langage naturel et obtenez des réponses instantanées sur vos priorités, prospects et signaux.',
+      title: 'Assistant',
+      description: 'Coordonne les agents, priorise vos actions et prépare emails, CR et propositions.',
     },
     {
       icon: BarChart,
-      title: 'Hunt AI',
-      description: 'Prospection multi-sources avec lead scoring IA pour prioriser les meilleurs prospects automatiquement.',
+      title: 'Prospecteur',
+      description: 'Trouve et qualifie de nouveaux clients selon vos critères métier.',
     },
     {
       icon: Shield,
@@ -88,18 +88,18 @@ export function LandingSales() {
     },
     {
       icon: DollarSign,
-      title: 'OffreBot',
-      description: 'Générez des propositions commerciales personnalisées en quelques secondes, prêtes à envoyer.',
+      title: 'Analyste',
+      description: 'Prépare des briefs entreprise : décideurs, concurrents, angles d’approche.',
     },
     {
       icon: Users,
-      title: '6 agents IA',
-      description: 'Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse — une plateforme d\'agents, pas un CRM.',
+      title: '4 agents IA',
+      description: 'Prospecteur, Veilleur, Analyste et Assistant — une équipe commerciale, pas un CRM.',
     },
     {
       icon: Mail,
-      title: 'Scout & BrandPulse',
-      description: 'Veille d\'opportunités (TUNEPS, événements) et présence de marque en ligne avec blog SEO assisté.',
+      title: 'Connecteurs',
+      description: 'Gmail et vos outils métier se branchent à part pour alimenter les agents.',
     },
   ];
 
@@ -129,10 +129,10 @@ export function LandingSales() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="font-serif text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Une plateforme de 6 agents IA pour les TPE et PME tunisiennes
+            Une plateforme de 4 agents IA pour les TPE et PME tunisiennes
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Hunt, Copilot, Scout, OffreBot, FactCheck et BrandPulse travaillent pour vous.
+            Prospecteur, Veilleur, Analyste et Assistant travaillent pour vous.
             Simple, local, et adapté à votre business.
           </p>
           <div className="flex gap-4 justify-center">

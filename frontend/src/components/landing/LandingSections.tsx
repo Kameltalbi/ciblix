@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, useInView } from 'framer-motion';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -24,6 +24,7 @@ import {
   Radar,
   Rocket,
   Scale,
+  Search,
   Shield,
   ShieldCheck,
   Sparkles,
@@ -32,8 +33,7 @@ import {
   X,
   XCircle,
   Bot,
-  Megaphone,
-  Radio,
+  Crosshair,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -66,13 +66,13 @@ export function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#BED6F6]/40 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-[4.25rem] items-center justify-between py-2 sm:min-h-20">
+        <div className="flex min-h-[5rem] items-center justify-between py-2.5 sm:min-h-[5.5rem]">
           <div className="flex min-w-0 items-center gap-8 lg:gap-10">
             <Link to="/" className="shrink-0 transition-opacity hover:opacity-80">
               <img
                 src="/logo-ciblix.png"
                 alt="CIBLIX"
-                className="h-[3.9rem] w-auto max-w-[min(16rem,72vw)] object-contain sm:h-16 md:h-[4.5rem]"
+                className="h-16 w-auto max-w-[min(20rem,78vw)] object-contain sm:h-[4.75rem] md:h-20"
               />
             </Link>
             <nav className="hidden items-center gap-6 md:flex lg:gap-8">
@@ -147,7 +147,7 @@ export function LandingHeader() {
 }
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 1, y: 16 },
   visible: { opacity: 1, y: 0 },
 };
 
@@ -160,16 +160,14 @@ function Reveal({
   className?: string;
   delay?: number;
 }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
   return (
     <motion.div
-      ref={ref}
       className={className}
       initial="hidden"
-      animate={inView ? 'visible' : 'hidden'}
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.08, margin: '0px 0px 15% 0px' }}
       variants={fadeUp}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay }}
     >
       {children}
     </motion.div>
@@ -400,122 +398,205 @@ function UnifiedMemoryIllustration() {
   );
 }
 
-const PRODUCT_AGENTS: Array<{
-  id: string;
+type TeamAgentId = 'prospecteur' | 'veilleur' | 'analyste' | 'assistant';
+
+const TEAM_AGENTS: Array<{
+  id: TeamAgentId;
   Icon: LucideIcon;
-  nameKey: string;
-  roleKey: string;
-  whenKey: string;
   accent: string;
 }> = [
-  {
-    id: 'hunt',
-    Icon: Radio,
-    nameKey: 'landingHome.agentHuntName',
-    roleKey: 'landingHome.agentHuntRole',
-    whenKey: 'landingHome.agentHuntWhen',
-    accent: '#0EA5E9',
-  },
-  {
-    id: 'copilot',
-    Icon: Bot,
-    nameKey: 'landingHome.agentCopilotName',
-    roleKey: 'landingHome.agentCopilotRole',
-    whenKey: 'landingHome.agentCopilotWhen',
-    accent: '#016AEB',
-  },
-  {
-    id: 'scout',
-    Icon: Radar,
-    nameKey: 'landingHome.agentScoutName',
-    roleKey: 'landingHome.agentScoutRole',
-    whenKey: 'landingHome.agentScoutWhen',
-    accent: '#1E72B9',
-  },
-  {
-    id: 'offre',
-    Icon: FileSignature,
-    nameKey: 'landingHome.agentOffreName',
-    roleKey: 'landingHome.agentOffreRole',
-    whenKey: 'landingHome.agentOffreWhen',
-    accent: '#D97706',
-  },
-  {
-    id: 'gmail',
-    Icon: Mail,
-    nameKey: 'landingHome.agentGmailName',
-    roleKey: 'landingHome.agentGmailRole',
-    whenKey: 'landingHome.agentGmailWhen',
-    accent: '#DC2626',
-  },
-  {
-    id: 'fact',
-    Icon: ShieldCheck,
-    nameKey: 'landingHome.agentFactName',
-    roleKey: 'landingHome.agentFactRole',
-    whenKey: 'landingHome.agentFactWhen',
-    accent: '#059669',
-  },
-  {
-    id: 'brand',
-    Icon: Megaphone,
-    nameKey: 'landingHome.agentBrandName',
-    roleKey: 'landingHome.agentBrandRole',
-    whenKey: 'landingHome.agentBrandWhen',
-    accent: '#BE123C',
-  },
+  { id: 'prospecteur', Icon: Crosshair, accent: '#0EA5E9' },
+  { id: 'veilleur', Icon: Radar, accent: '#016AEB' },
+  { id: 'analyste', Icon: Search, accent: '#1E72B9' },
+  { id: 'assistant', Icon: Bot, accent: '#0F766E' },
 ];
 
-/** Post-hero: explain what each real product agent is for. */
-export function LandingSolution() {
+function AgentDetailPanel({
+  agentId,
+  accent,
+  Icon,
+  open,
+  onClose,
+}: {
+  agentId: TeamAgentId | null;
+  accent: string;
+  Icon: LucideIcon | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [open, onClose]);
+
+  if (!agentId || !Icon) return null;
+
+  const base = `landingHome.team.${agentId}`;
+  const missions = t(`${base}.missions`, { returnObjects: true });
+  const tools = t(`${base}.tools`, { returnObjects: true });
+  const tasks = t(`${base}.tasks`, { returnObjects: true });
+  const results = t(`${base}.results`, { returnObjects: true });
+
+  const list = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : []);
+
   return (
-    <section id="agents" className="relative overflow-hidden bg-[#f7faff] py-20 md:py-28">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(1,106,235,0.08),transparent_55%)]" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className={cn('fixed inset-0 z-[80]', open ? 'pointer-events-auto' : 'pointer-events-none')}>
+      <button
+        type="button"
+        aria-label={t('common.close', { defaultValue: 'Fermer' })}
+        className={cn(
+          'absolute inset-0 bg-slate-900/40 transition-opacity duration-300',
+          open ? 'opacity-100' : 'opacity-0'
+        )}
+        onClick={onClose}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        className={cn(
+          'absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-neutral-200 bg-white shadow-2xl transition-transform duration-300 ease-out',
+          open ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 py-5">
+          <div className="flex items-start gap-3">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: `${accent}14`, color: accent }}
+            >
+              <Icon size={20} />
+            </div>
+            <div>
+              <p className="text-lg font-semibold tracking-tight text-neutral-900">{t(`${base}.name`)}</p>
+              <p className="mt-0.5 text-sm font-medium text-[#016AEB]">{t(`${base}.mission`)}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-50 hover:text-neutral-700"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6">
+          <p className="text-sm leading-relaxed text-neutral-500">{t(`${base}.desc`)}</p>
+
+          {(
+            [
+              { title: t('landingHome.team.panelMissions'), items: list(missions) },
+              { title: t('landingHome.team.panelTools'), items: list(tools) },
+              { title: t('landingHome.team.panelTasks'), items: list(tasks) },
+              { title: t('landingHome.team.panelResults'), items: list(results) },
+            ] as const
+          ).map((block) => (
+            <div key={block.title}>
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-400">
+                {block.title}
+              </h4>
+              <ul className="space-y-2">
+                {block.items.map((item) => (
+                  <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-neutral-700">
+                    <Check size={14} className="mt-1 shrink-0 text-[#016AEB]" strokeWidth={2.5} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-neutral-100 px-6 py-4">
+          <Link to="/register" onClick={onClose}>
+            <Button className="w-full rounded-xl">
+              {t('landingHome.howCta')}
+              <ArrowRight size={16} className="ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+/** Équipe de 4 agents — section landing premium. */
+export function LandingSolution() {
+  const { t } = useTranslation();
+  const [activeId, setActiveId] = useState<TeamAgentId | null>(null);
+  const active = TEAM_AGENTS.find((a) => a.id === activeId) ?? null;
+
+  return (
+    <section id="agents" className="relative bg-white pb-20 pt-12 md:pb-28 md:pt-16">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(1,106,235,0.06),transparent_55%)]" />
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
+          <div className="mx-auto mb-14 max-w-3xl text-center md:mb-16">
             <h2 className="mb-4 font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-[2.75rem]">
-              {t('landingHome.howTitle')}
+              {t('landingHome.teamTitle')}
             </h2>
-            <p className="text-base text-muted-foreground md:text-lg">{t('landingHome.howLead')}</p>
+            <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
+              {t('landingHome.teamLead')}
+            </p>
           </div>
         </Reveal>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {PRODUCT_AGENTS.map((agent, i) => (
-            <Reveal key={agent.id} delay={i * 0.05}>
-              <article className="flex h-full flex-col rounded-[1.1rem] border border-[#BED6F6]/60 bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-[#016AEB]/30 hover:shadow-md">
+        <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {TEAM_AGENTS.map((agent, i) => (
+            <Reveal key={agent.id} delay={i * 0.06}>
+              <button
+                type="button"
+                onClick={() => setActiveId(agent.id)}
+                className="group flex h-full w-full flex-col rounded-2xl border border-neutral-200/80 bg-white p-6 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:border-neutral-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]"
+              >
                 <div
-                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: `${agent.accent}18`, color: agent.accent }}
+                  className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl transition group-hover:scale-105"
+                  style={{ backgroundColor: `${agent.accent}14`, color: agent.accent }}
                 >
-                  <agent.Icon size={20} />
+                  <agent.Icon size={20} strokeWidth={2} />
                 </div>
-                <h3 className="mb-1 text-base font-bold text-foreground">{t(agent.nameKey)}</h3>
-                <p className="mb-3 text-sm font-semibold text-[#016AEB]">{t(agent.roleKey)}</p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  <span className="font-medium text-foreground/80">{t('landingHome.agentWhenLabel')} </span>
-                  {t(agent.whenKey)}
+                <h3 className="mb-1.5 text-[15px] font-semibold tracking-tight text-neutral-900">
+                  {t(`landingHome.team.${agent.id}.name`)}
+                </h3>
+                <p className="mb-3 text-sm font-semibold text-[#016AEB]">
+                  {t(`landingHome.team.${agent.id}.mission`)}
                 </p>
-              </article>
+                <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-neutral-500">
+                  {t(`landingHome.team.${agent.id}.desc`)}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-neutral-400 transition group-hover:text-[#016AEB]">
+                  {t('landingHome.team.learnMore')}
+                  <ArrowRight size={12} />
+                </span>
+              </button>
             </Reveal>
           ))}
         </div>
 
-        <Reveal delay={0.2}>
-          <div className="mt-12 text-center">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 text-base font-semibold text-[#0071DD] transition hover:text-[#016AEB]"
-            >
-              {t('landingHome.howCta')}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
+        <Reveal delay={0.25}>
+          <p className="mx-auto mt-12 max-w-2xl text-center text-sm leading-relaxed text-neutral-400">
+            {t('landingHome.teamOrchestra')}
+          </p>
         </Reveal>
       </div>
+
+      <AgentDetailPanel
+        agentId={activeId}
+        accent={active?.accent ?? '#016AEB'}
+        Icon={active?.Icon ?? null}
+        open={!!activeId}
+        onClose={() => setActiveId(null)}
+      />
     </section>
   );
 }
@@ -804,7 +885,7 @@ export function LandingFooter() {
               <img
                 src="/logo-ciblix.png"
                 alt="CIBLIX"
-                className="mb-4 h-9 w-auto max-w-[9.5rem] object-contain"
+                className="mb-5 h-16 w-auto max-w-[min(18rem,85vw)] object-contain sm:h-[4.5rem] md:h-20"
               />
             </Link>
             <p className="max-w-xs text-[14px] leading-relaxed text-neutral-500">{t('landing.footerDesc')}</p>
@@ -926,12 +1007,10 @@ export function LandingFooter() {
 /** Decorative hero illustration — agents around a shared pipeline */
 export function HeroPipelineIllustration({ className }: { className?: string }) {
   const nodes = [
-    { label: 'Chasseur', x: 18, y: 22, Icon: Sparkles },
-    { label: 'Assistant', x: 82, y: 22, Icon: MessageCircle },
-    { label: 'Veilleur', x: 12, y: 58, Icon: Radar },
-    { label: 'Gmail', x: 88, y: 58, Icon: Mail },
-    { label: 'Offres', x: 28, y: 88, Icon: FileSignature },
-    { label: 'Vérif.', x: 72, y: 88, Icon: ShieldCheck },
+    { label: 'Prospecteur', x: 18, y: 22, Icon: Crosshair },
+    { label: 'Veilleur', x: 82, y: 22, Icon: Radar },
+    { label: 'Analyste', x: 18, y: 78, Icon: Search },
+    { label: 'Assistant', x: 82, y: 78, Icon: Bot },
   ];
 
   return (

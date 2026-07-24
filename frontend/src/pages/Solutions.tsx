@@ -4,11 +4,9 @@ import {
   ArrowRight,
   Bot,
   FileSignature,
-  Mail,
   Network,
   Radio,
   Radar,
-  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -91,37 +89,6 @@ const SOLUTIONS: Solution[] = [
     ],
     feeds: 'S’appuie sur l’historique réel analysé par Assistant IA — l’offre reflète ce qui a vraiment été dit.',
   },
-  {
-    id: 'gmail',
-    name: 'Gmail IA',
-    role: 'Résumés & brouillons Gmail',
-    icon: Mail,
-    problem:
-      'La boîte mail déborde, et rédiger une réponse cohérente avec l’historique client prend du temps.',
-    does: [
-      'Lit les nouveaux emails reçus',
-      'Prépare un résumé de chaque message',
-      'Rédige un brouillon classé sous « Réponse à valider »',
-      'N’envoie jamais rien automatiquement — validation humaine systématique',
-    ],
-    feeds: 'Chaque email enrichit l’historique du contact — même fiche que Chasseur ou Assistant IA.',
-  },
-  {
-    id: 'verificateur',
-    name: 'Vérificateur IA',
-    role: "Vérification d'informations",
-    icon: ShieldCheck,
-    problem:
-      'Envoyer une information incorrecte (prix, norme, chiffre) nuit à la crédibilité et peut coûter cher.',
-    does: [
-      'Vérifie la fiabilité d’une affirmation en croisant plusieurs sources',
-      'Analyse la fiabilité d’une URL',
-      'Fournit un verdict avec niveau de confiance',
-      'Cite les sources utilisées',
-    ],
-    feeds: 'Outil utilitaire transverse — volontairement autonome, sans lien direct avec la fiche contact.',
-    note: 'Particularité : reste autonome par design, contrairement aux autres agents du réseau.',
-  },
 ];
 
 export function Solutions() {
@@ -137,7 +104,7 @@ export function Solutions() {
               <Sparkles size={14} className="text-[#016AEB]" /> Solutions
             </p>
             <h1 className="mb-5 font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              Les 6 solutions, en détail
+              Les 4 solutions, en détail
             </h1>
             <p className="text-lg leading-relaxed text-muted-foreground md:text-xl">
               Chaque agent résout un problème concret — et alimente la même mémoire. Voici ce qu’ils font, un par un.
@@ -214,9 +181,10 @@ export function Solutions() {
             </h2>
             <p className="leading-relaxed text-muted-foreground">
               Aucun agent ne fonctionne en silo. Un prospect trouvé par Chasseur IA, analysé en appel par Assistant IA,
-              et relancé par Gmail IA,{' '}
+              puis suivi dans votre pipeline,{' '}
               <strong className="font-semibold text-foreground">reste le même contact</strong> avec un historique unique —
-              sans saisie manuelle. C’est cette mémoire commune qui constitue la vraie valeur de Ciblix.
+              sans saisie manuelle. Gmail se branche à part via Connecteurs. C’est cette mémoire commune qui constitue la
+              vraie valeur de Ciblix.
             </p>
           </div>
         </section>

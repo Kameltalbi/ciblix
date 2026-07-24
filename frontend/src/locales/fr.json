@@ -59,21 +59,23 @@
     "sectionWorkspace": "Espace de travail",
     "sectionEnterprise": "Performance & finance",
     "sectionSupport": "Aide",
-    "agentHunt": "Chasseur IA",
-    "agentAssistant": "Assistant IA",
+    "agentHunt": "Prospecteur",
+    "agentAssistant": "Assistant",
     "comingSoon": "À venir",
-    "agentCopilot": "Assistant IA",
+    "agentCopilot": "Assistant",
     "contacts": "Contacts",
-    "agentScout": "Veilleur IA",
-    "agentOffre": "Rédacteur d'offres",
-    "agentGmail": "Gmail IA",
-    "agentFactCheck": "Vérificateur IA",
-    "agentBrandPulse": "BrandPulse AI",
+    "connectors": "Connecteurs",
+    "agentScout": "Veilleur",
+    "agentAnalyste": "Analyste",
+    "agentOffre": "Propositions",
+    "agentGmail": "Gmail",
+    "agentFactCheck": "Vérificateur",
+    "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "Flotte agents"
   },
   "gmailAi": {
-    "badge": "Agent Gmail IA",
-    "title": "Gmail IA",
+    "badge": "Connecteur Gmail",
+    "title": "Gmail",
     "subtitle": "Lit les nouveaux e-mails, prépare un résumé et un brouillon. Vous validez et envoyez dans Gmail.",
     "syncNow": "Synchroniser maintenant",
     "connectionTitle": "Connexion Gmail",
@@ -113,7 +115,7 @@
       "description": "Surveille les appels d'offres, détecte les événements à venir (salons, conférences, forums) et alerte quand une opportunité correspond à vos services."
     },
     "offreBot": {
-      "name": "Rédacteur d'offres",
+      "name": "Propositions",
       "role": "Préparation d'offres commerciales",
       "description": "Génère des propositions commerciales personnalisées à partir des données client et affaire, avec chiffrage et conditions adaptés."
     },
@@ -619,15 +621,18 @@
   "landing": {
     "seoTitle": "Ciblix — Agents IA collaboratifs | Pipeline commercial automatique",
     "seoDescription": "Vos agents IA travaillent ensemble. Votre pipeline commercial se construit automatiquement. Essai gratuit, sans CRM à remplir.",
-    "badge": "Vos agents IA travaillent ensemble, pas en silos",
-    "heroTitle": "Des agents IA qui accélèrent la croissance de vos ventes",
-    "heroTitle1": "Des agents IA qui accélèrent",
-    "heroTitle2": "la croissance de vos ventes",
-    "heroSubtitle": "Six agents partagent automatiquement ce qu’ils apprennent de vos prospects — sans CRM à remplir, sans saisie manuelle.",
-    "cta": "Prospectez avec IA",
+    "badge": "Vos prochaines opportunités commencent ici",
+    "heroTitle": "Une équipe d'agents IA dédiée à votre croissance commerciale.",
+    "heroTitle1": "Une équipe d'agents IA dédiée à votre croissance commerciale.",
+    "heroTitle2": "",
+    "heroLine1": "",
+    "heroLine2": "",
+    "heroLine3": "",
+    "heroSubtitle": "Les agents IA de Ciblix travaillent ensemble pour détecter des opportunités, trouver de nouveaux clients et vous aider à augmenter durablement vos ventes.",
+    "cta": "Trouver mes opportunités",
     "agentsBadge": "Une équipe, une mémoire",
-    "agentsSectionTitle": "Six agents. Une seule équipe.",
-    "agentsIntro": "Chaque agent excelle dans sa tâche — et enrichit automatiquement la même mémoire d’équipe que les cinq autres.",
+    "agentsSectionTitle": "Quatre agents. Une seule équipe.",
+    "agentsIntro": "Prospecteur, Veilleur, Analyste et Assistant — une mémoire commune. Gmail se connecte à part, dans Connecteurs.",
     "agentsSeeAll": "Voir le détail de chaque solution →",
     "learnMore": "Détail",
     "demo": "Voir une démo de 90 secondes",
@@ -695,19 +700,118 @@
     "howTitle": "Chaque agent a un rôle précis.",
     "howLead": "Pas besoin de tout activer d’un coup : choisissez l’agent selon le job du jour. Ils partagent la même mémoire prospect.",
     "howCta": "Essayer gratuitement →",
+    "teamTitle": "Une équipe d'agents IA. Un seul objectif : développer votre activité.",
+    "teamLead": "Chaque agent possède une expertise métier spécifique et travaille avec les autres pour détecter des opportunités, qualifier les entreprises, préparer vos actions commerciales et vous faire gagner du temps.",
+    "teamLearnMore": "En savoir plus",
+    "teamOrchestra": "L’Assistant coordonne l’équipe et exploite les résultats des autres agents — sans chevaucher leurs missions.",
+    "team": {
+      "learnMore": "En savoir plus",
+      "panelMissions": "Missions détaillées",
+      "panelTools": "Outils & sources",
+      "panelTasks": "Exemples de tâches",
+      "panelResults": "Résultats concrets",
+      "prospecteur": {
+        "name": "Prospecteur",
+        "mission": "Trouver de nouveaux clients",
+        "desc": "Identifie les entreprises correspondant à vos critères, enrichit les contacts, qualifie les prospects et prépare vos campagnes de prospection.",
+        "missions": [
+          "Identifier des entreprises cibles selon secteur, zone et taille",
+          "Enrichir les fiches (contacts, décideurs, signaux)",
+          "Scorer et prioriser les prospects",
+          "Préparer des messages de première approche"
+        ],
+        "tools": ["LinkedIn", "Web public", "RNE", "Bases locales", "Mémoire Ciblix"],
+        "tasks": [
+          "Lister 40 entreprises BTP en Tunis scorées > 70",
+          "Trouver le décideur achats d’une société cible",
+          "Rédiger 5 accroches personnalisées"
+        ],
+        "results": [
+          "Pipeline enrichi sans saisie manuelle",
+          "Liste de prospects prêts à contacter",
+          "Contacts décideurs rattachés à chaque fiche"
+        ]
+      },
+      "veilleur": {
+        "name": "Veilleur",
+        "mission": "Détecter les opportunités d'affaires",
+        "desc": "Surveille en continu les appels d'offres, les investissements, les recrutements, les projets, les marchés publics et les signaux du marché afin d'identifier de nouvelles opportunités.",
+        "missions": [
+          "Surveiller appels d’offres et marchés publics",
+          "Détecter investissements, projets et recrutements",
+          "Filtrer les signaux selon votre métier",
+          "Alerter dès qu’une opportunité mérite attention"
+        ],
+        "tools": ["TUNEPS", "BOAMP / sources AO", "Sites institutionnels", "LinkedIn", "Web & presse"],
+        "tasks": [
+          "Alerter sur un AO compatible avec votre offre",
+          "Repérer un recrutement commercial chez un compte cible",
+          "Suivre un projet d’investissement dans votre secteur"
+        ],
+        "results": [
+          "Alertes opportunités scorées",
+          "Opportunités sauvées pour suivi",
+          "Moins d’opportunités manquées"
+        ]
+      },
+      "analyste": {
+        "name": "Analyste",
+        "mission": "Analyser les entreprises",
+        "desc": "Étudie les entreprises, leurs activités, leurs décideurs, leurs concurrents et leur potentiel afin de mieux préparer chaque approche commerciale.",
+        "missions": [
+          "Cartographier activité, offre et positionnement",
+          "Identifier décideurs et organigramme utile",
+          "Comparer concurrents et potentiel commercial",
+          "Préparer un brief d’approche avant contact"
+        ],
+        "tools": ["Sites web", "RNE", "LinkedIn", "Sources publiques", "Mémoire Ciblix"],
+        "tasks": [
+          "Brief d’une cible avant un premier appel",
+          "Liste des décideurs et angles d’approche",
+          "Synthèse concurrentielle en 1 page"
+        ],
+        "results": [
+          "Approches mieux préparées",
+          "Argumentaires alignés sur le contexte client",
+          "Moins de temps de recherche manuelle"
+        ]
+      },
+      "assistant": {
+        "name": "Assistant",
+        "mission": "Piloter vos actions commerciales",
+        "desc": "Répond à vos questions, coordonne les autres agents, recommande les prochaines actions, prépare les emails, les comptes rendus, les propositions commerciales et les réponses aux appels d'offres.",
+        "missions": [
+          "Coordonner Prospecteur, Veilleur et Analyste",
+          "Recommander la prochaine action prioritaire",
+          "Préparer emails, CR, offres et réponses AO",
+          "Répondre en langage naturel sur votre activité"
+        ],
+        "tools": ["Mémoire partagée des agents", "Gmail (connecteur)", "WhatsApp", "Historique contacts", "Documents d’offre"],
+        "tasks": [
+          "« Qui dois-je relancer cette semaine ? »",
+          "Préparer un email de relance après un AO détecté",
+          "Générer une proposition à partir de l’historique"
+        ],
+        "results": [
+          "Priorités claires chaque jour",
+          "Documents prêts à valider / envoyer",
+          "Temps commercial recentré sur la relation"
+        ]
+      }
+    },
     "agentWhenLabel": "À utiliser :",
-    "agentHuntName": "Chasseur IA",
+    "agentHuntName": "Prospecteur",
     "agentHuntRole": "Trouver de nouveaux clients",
     "agentHuntWhen": "quand vous voulez une liste d’entreprises à contacter (secteur + ville), scorées et prêtes à relancer.",
-    "agentCopilotName": "Assistant IA",
-    "agentCopilotRole": "Coacher la journée commerciale",
-    "agentCopilotWhen": "quand vous voulez savoir qui relancer, rédiger un email ou demander un conseil en langage naturel.",
-    "agentScoutName": "Veilleur IA",
-    "agentScoutRole": "Repérer les opportunités du marché",
+    "agentCopilotName": "Assistant",
+    "agentCopilotRole": "Piloter vos actions commerciales",
+    "agentCopilotWhen": "quand vous voulez coordonner les agents, savoir qui relancer ou préparer un document.",
+    "agentScoutName": "Veilleur",
+    "agentScoutRole": "Détecter les opportunités d'affaires",
     "agentScoutWhen": "quand vous voulez être alerté sur des appels d’offres, salons ou signaux liés à votre activité.",
-    "agentOffreName": "Rédacteur d’offres",
-    "agentOffreRole": "Rédiger une proposition commerciale",
-    "agentOffreWhen": "quand un prospect est prêt et que vous devez produire une offre rapidement, sans partir de zéro.",
+    "agentOffreName": "Propositions",
+    "agentOffreRole": "Capacité de l’Assistant",
+    "agentOffreWhen": "quand l’Assistant génère une proposition commerciale à partir du contexte.",
     "agentGmailName": "Gmail IA",
     "agentGmailRole": "Gagner du temps sur les emails",
     "agentGmailWhen": "quand votre boîte déborde et que vous voulez des résumés + brouillons à valider avant envoi.",
@@ -727,7 +831,7 @@
     "demoLive4": "Opportunité créée dans le pipeline",
     "demoLive5": "Relance email + WhatsApp programmée",
     "demoLive6": "Prévisions manager mises à jour",
-    "demoAgent1Name": "Chasseur IA",
+    "demoAgent1Name": "Prospecteur",
     "demoAgent1Desc": "Trouve automatiquement des prospects.",
     "demoAgent1Status": "Prospects détectés",
     "demoAgent2Name": "Enrichissement IA",
@@ -745,13 +849,13 @@
     "demoAgent6Name": "Manager IA",
     "demoAgent6Desc": "Prévisions, conversion, performances.",
     "demoAgent6Status": "Prévisions mises à jour",
-    "timeline1Title": "Chasseur IA trouve un prospect",
+    "timeline1Title": "Prospecteur trouve un prospect",
     "timeline1Body": "Il apparaît automatiquement dans votre pipeline, sans rien saisir.",
-    "timeline2Title": "Assistant IA écoute un appel ou WhatsApp",
+    "timeline2Title": "Assistant écoute un appel ou WhatsApp",
     "timeline2Body": "Résumé automatique, score de qualification, actions suggérées.",
     "timeline3Title": "Tout l’historique au même endroit",
     "timeline3Body": "Peu importe quel agent a capté l’information — c’est le même prospect.",
-    "timeline4Title": "Rédacteur d’offres en un clic",
+    "timeline4Title": "Proposition commerciale en un clic",
     "timeline4Body": "Proposition basée sur ce qui a vraiment été dit en conversation.",
     "diffTitle": "Conçu pour les marchés où le CRM classique ne suffit pas",
     "diff1Title": "Multilingue natif",
@@ -762,7 +866,7 @@
     "diff3Body": "Votre pipeline se construit dès le premier agent — connectez un CRM externe plus tard si besoin.",
     "pricingTitle": "Un palier pour chaque étape de votre croissance",
     "pricingTeaser": "À partir de 29 TND/mois — essai gratuit de 7 jours, sans carte bancaire.",
-    "pricingPopular": "Palier le plus choisi : Croissance, 85 TND/mois — 3 utilisateurs · Chasseur, Assistant et Gmail IA.",
+    "pricingPopular": "Palier le plus choisi : Croissance, 85 TND/mois — 3 utilisateurs · Prospecteur, Assistant et Gmail (connecteur).",
     "pricingCta": "Voir tous les tarifs →",
     "trustTitle": "Vos données, protégées à chaque étape",
     "trustLead": "Consentement, effacement et hébergement sécurisé — pour démarrer en confiance.",
@@ -795,7 +899,7 @@
     "step2Label": "Montant estimé (DT)",
     "step2Placeholder": "Ex : 5000",
     "step3Title": "C'est prêt !",
-    "step3Body": "Ouvrez l'accueil Agents et activez le Chasseur, l'Assistant ou le Veilleur pour commencer.",
+    "step3Body": "Ouvrez l'accueil Agents et activez le Prospecteur, l'Assistant ou le Veilleur pour commencer.",
     "skip": "Passer",
     "done1": "Accès à la plateforme d'agents IA",
     "done2": "L'Assistant IA prêt à vous proposer des actions",
@@ -877,7 +981,7 @@
   },
   "agents": {
     "huntAi": {
-      "name": "Chasseur IA",
+      "name": "Prospecteur",
       "desc": "Trouver de nouveaux clients à contacter"
     },
     "copilotIa": {
@@ -889,7 +993,7 @@
       "desc": "Repérer appels d'offres et signaux marché"
     },
     "offreBot": {
-      "name": "Rédacteur d'offres",
+      "name": "Propositions",
       "desc": "Produire une proposition commerciale"
     },
     "offreBotSubtitle": "Propositions commerciales personnalisées en quelques secondes",

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  Radio,
+  Crosshair,
   Bot,
   Radar,
   FileSignature,
@@ -13,6 +13,7 @@ import {
   Lock,
   Megaphone,
   Mail,
+  Search,
   Settings2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -44,9 +45,11 @@ interface AgentUsageRow {
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  Radio,
+  Radio: Crosshair,
+  Crosshair,
   Bot,
   Radar,
+  Search,
   FileSignature,
   ShieldCheck,
   Megaphone,
@@ -102,11 +105,11 @@ export function AgentsMarketplace() {
       <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">Comment les lire</p>
         <p className="mt-1">
-          <span className="text-foreground">Chasseur</span> = trouver des clients ·{' '}
-          <span className="text-foreground">Veilleur</span> = opportunités marché ·{' '}
-          <span className="text-foreground">Assistant / Gmail</span> = écrire & prioriser ·{' '}
-          <span className="text-foreground">Rédacteur</span> = offres ·{' '}
-          <span className="text-foreground">BrandPulse</span> = présence web.
+          <span className="text-foreground">Prospecteur</span> = trouver des clients ·{' '}
+          <span className="text-foreground">Veilleur</span> = opportunités ·{' '}
+          <span className="text-foreground">Analyste</span> = préparer l’approche ·{' '}
+          <span className="text-foreground">Assistant</span> = orchestrer & documents.
+          {' '}Gmail se connecte dans <Link to="/connecteurs" className="font-medium text-primary hover:underline">Connecteurs</Link>.
         </p>
       </div>
 

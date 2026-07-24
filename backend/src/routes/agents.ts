@@ -17,68 +17,81 @@ export const agentsRoutes = Router();
 const AVAILABLE_AGENTS = [
   {
     slug: 'hunt-ai',
-    name: 'Chasseur IA',
+    name: 'Prospecteur',
     role: 'Trouver de nouveaux clients',
     whenToUse:
       'Quand vous voulez une liste d’entreprises à contacter (secteur + ville), déjà scorées et prêtes à relancer.',
     description:
-      'Cherche des sociétés sur votre zone, les qualifie avec l’IA, puis propose des messages de prospection. C’est votre agent pour remplir le pipeline.',
-    icon: 'Radio',
+      'Identifie les entreprises correspondant à vos critères, enrichit les contacts, qualifie les prospects et prépare vos campagnes de prospection.',
+    icon: 'Crosshair',
     color: 'sky',
-    features: ['Recherche par critères métier', 'Qualification automatique', 'Scoring IA', 'Messages de prospection', 'Automatisation périodique'],
+    features: ['Recherche par critères métier', 'Enrichissement contacts', 'Scoring IA', 'Messages de prospection', 'Automatisation périodique'],
     route: '/prospection-ia',
     defaultActive: false,
   },
   {
-    slug: 'copilot-ia',
-    name: 'Assistant IA',
-    role: 'Coacher la journée commerciale',
-    whenToUse:
-      'Quand vous voulez savoir qui relancer aujourd’hui, rédiger un email, ou demander un conseil commercial en langage naturel.',
-    description:
-      'Votre copilote : briefing du jour, chat, brouillons de relances et recommandations. Il aide à décider et à écrire — pas à chercher des sociétés.',
-    icon: 'Bot',
-    color: 'violet',
-    features: ['Briefing du jour', 'Chat IA conversationnel', 'Prédiction CA fin d\'année', 'Brouillons relances/emails', 'Scoring leads'],
-    route: '/ai-assistant',
-    defaultActive: false,
-  },
-  {
     slug: 'scout-ai',
-    name: 'Veilleur IA',
-    role: 'Repérer les opportunités du marché',
+    name: 'Veilleur',
+    role: 'Détecter les opportunités d’affaires',
     whenToUse:
-      'Quand vous voulez être alerté sur des appels d’offres, salons ou signaux marché liés à votre activité.',
+      'Quand vous voulez être alerté sur des appels d’offres, investissements, recrutements ou signaux marché.',
     description:
-      'Surveille le web pour détecter des opportunités (AO, événements) et vous les présente déjà analysées. Complète le Chasseur : opportunités entrantes vs prospection sortante.',
+      'Surveille en continu AO, marchés publics et signaux pour identifier de nouvelles opportunités.',
     icon: 'Radar',
     color: 'blue',
-    features: ['Recherche appels d\'offres', 'Détection événements/salons', 'Analyse IA des résultats', 'Analyse d\'URL', 'Sauvegarde d\'opportunités'],
+    features: ['Appels d’offres', 'Signaux marché', 'Alertes scorées', 'Analyse d’URL', 'Sauvegarde d’opportunités'],
     route: '/agents/scout-ai',
     defaultActive: false,
   },
   {
-    slug: 'offre-bot',
-    name: 'Rédacteur d\'offres',
-    role: 'Rédiger une proposition commerciale',
+    slug: 'analyste-ai',
+    name: 'Analyste',
+    role: 'Analyser les entreprises',
     whenToUse:
-      'Quand un prospect est prêt et que vous devez produire une offre / proposition rapidement, sans partir de zéro.',
+      'Quand vous devez préparer une approche : activité, décideurs, concurrents et potentiel.',
     description:
-      'Génère une proposition commerciale structurée à partir du contexte client. Idéal après le Chasseur ou une opportunité Scout.',
-    icon: 'FileSignature',
-    color: 'amber',
-    features: ['Génération offre depuis affaire CRM', 'Ton personnalisable', 'Conditions générales auto', 'Export texte', 'Régénération par section'],
-    route: '/agents/offre-bot',
+      'Étudie les entreprises cibles pour produire un brief d’approche avant contact.',
+    icon: 'Search',
+    color: 'indigo',
+    features: ['Brief entreprise', 'Décideurs', 'Concurrents', 'Angles d’approche', 'Prochaines actions'],
+    route: '/agents/analyste-ai',
     defaultActive: false,
   },
   {
-    slug: 'gmail-ai',
-    name: 'Gmail IA',
-    role: 'Gagner du temps sur les emails',
+    slug: 'copilot-ia',
+    name: 'Assistant',
+    role: 'Piloter vos actions commerciales',
     whenToUse:
-      'Quand votre boîte Gmail déborde et que vous voulez des résumés + brouillons de réponse à valider avant envoi.',
+      'Quand vous voulez coordonner les autres agents, savoir qui relancer, ou préparer emails, CR et propositions.',
     description:
-      'Lit les nouveaux mails, résume et prépare une réponse. Rien n’est envoyé sans votre validation. Complète l’Assistant : focus inbox Gmail uniquement.',
+      'Chef d’orchestre Ciblix : coordonne Prospecteur, Veilleur et Analyste, recommande les prochaines actions et prépare vos documents commerciaux.',
+    icon: 'Bot',
+    color: 'violet',
+    features: ['Coordination des agents', 'Briefing du jour', 'Chat IA', 'Emails & CR', 'Propositions commerciales'],
+    route: '/ai-assistant',
+    defaultActive: false,
+  },
+  {
+    slug: 'offre-bot',
+    name: 'Propositions',
+    role: 'Capacité de l’Assistant',
+    whenToUse: 'Accessible via l’Assistant pour générer une proposition commerciale.',
+    description: 'Capacité intégrée à l’Assistant — pas un agent de la flotte commerciale.',
+    icon: 'FileSignature',
+    color: 'amber',
+    features: ['Génération offre', 'Ton personnalisable', 'Export texte'],
+    route: '/agents/offre-bot',
+    defaultActive: false,
+    showInFleet: false,
+  },
+  {
+    slug: 'gmail-ai',
+    name: 'Gmail',
+    role: 'Connecteur messagerie',
+    whenToUse:
+      'Quand vous voulez connecter Gmail pour que les agents analysent les emails et préparent des brouillons.',
+    description:
+      'Connecteur : lit les nouveaux mails, résume et prépare une réponse. Accessible depuis Connecteurs — pas un agent de la flotte.',
     icon: 'Mail',
     color: 'red',
     features: [
@@ -90,34 +103,33 @@ const AVAILABLE_AGENTS = [
     ],
     route: '/agents/gmail-ai',
     defaultActive: false,
+    showInFleet: false,
   },
   {
     slug: 'factcheck-ai',
     name: 'Vérificateur IA',
-    role: 'Vérifier une info avant de l’utiliser',
-    whenToUse:
-      'Quand un chiffre, une affirmation client ou une source web doit être validé avant une offre ou un argumentaire.',
-    description:
-      'Croise plusieurs sources web et donne un verdict avec niveau de confiance. Utile pour sécuriser ce que vous dites au client.',
+    role: 'Capacité transverse (non commercialisé)',
+    whenToUse: 'Utilisé en interne par les agents — pas un produit standalone.',
+    description: 'Masqué de la flotte : la vérification est une capacité des agents, pas un agent à part.',
     icon: 'ShieldCheck',
     color: 'emerald',
-    features: ['Vérification d\'affirmations', 'Croisement multi-sources', 'Verdict avec confiance', 'Analyse fiabilité URL', 'Sources citées'],
+    features: ['Vérification d\'affirmations', 'Croisement multi-sources'],
     route: '/agents/factcheck-ai',
     defaultActive: false,
+    showInFleet: false,
   },
   {
     slug: 'brand-pulse-ai',
     name: 'BrandPulse AI',
-    role: 'Renforcer votre présence en ligne',
-    whenToUse:
-      'Quand vous voulez mesurer votre marque en ligne et publier du contenu SEO (blog) pour être trouvé plus facilement.',
-    description:
-      'Score votre présence digitale, propose des sujets d’articles, rédige et valide avant publication CMS. Marketing de contenu — pas de la vente directe.',
+    role: 'Marketing / SEO (hors scope commercial)',
+    whenToUse: 'Produit marketing séparé — hors flotte commerciale Ciblix.',
+    description: 'Masqué de la flotte : pas de lien direct avec le développement commercial.',
     icon: 'Megaphone',
     color: 'rose',
-    features: ['Score marque /100', 'Audit SEO site', 'Sujets articles IA', 'Pipeline validation', 'Publication CMS'],
+    features: ['Score marque', 'Audit SEO', 'Pipeline blog'],
     route: '/agents/brand-pulse',
     defaultActive: false,
+    showInFleet: false,
   },
 ];
 
@@ -169,7 +181,7 @@ agentsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction
 
     const agentMap = new Map(orgAgents.map((a) => [a.agentSlug, a]));
 
-    const agents = AVAILABLE_AGENTS.map((agent) =>
+    const agents = AVAILABLE_AGENTS.filter((agent) => agent.showInFleet !== false).map((agent) =>
       buildAgentResponse(agent, agentMap.get(agent.slug), plan, { trialing }),
     );
 
@@ -196,6 +208,7 @@ agentsRoutes.get('/active-slugs', async (req: AuthRequest, res: Response, next: 
     const agentMap = new Map(orgAgents.map((a) => [a.agentSlug, a]));
 
     const activeSlugs = AVAILABLE_AGENTS
+      .filter((agent) => agent.showInFleet !== false)
       .filter((agent) => buildAgentResponse(agent, agentMap.get(agent.slug), plan, { trialing }).active)
       .map((a) => a.slug);
 

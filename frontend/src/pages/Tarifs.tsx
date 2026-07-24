@@ -28,14 +28,7 @@ const TIERS: Array<{
     prices: { TND: 29, EUR: 9, USD: 10 },
     users: '1 utilisateur',
     agentsLabel: '1 agent au choix',
-    agents: [
-      'Chasseur IA',
-      'Assistant IA',
-      'Veilleur IA',
-      'Rédacteur d’offres',
-      'Gmail IA',
-      'Vérificateur IA',
-    ],
+    agents: ['Prospecteur', 'Assistant', 'Veilleur', 'Analyste'],
     features: [
       '1 utilisateur inclus',
       'Quota découverte (50 actions/mois)',
@@ -48,8 +41,8 @@ const TIERS: Array<{
     name: 'Croissance',
     prices: { TND: 85, EUR: 28, USD: 30 },
     users: '3 utilisateurs',
-    agentsLabel: '3 agents inclus',
-    agents: ['Chasseur IA', 'Assistant IA', 'Gmail IA'],
+    agentsLabel: 'Prospecteur + Assistant + Gmail',
+    agents: ['Prospecteur', 'Assistant', 'Gmail (connecteur)'],
     highlight: true,
     features: [
       'Jusqu’à 3 utilisateurs',
@@ -64,14 +57,13 @@ const TIERS: Array<{
     name: 'Pro',
     prices: { TND: 149, EUR: 49, USD: 55 },
     users: '10 utilisateurs',
-    agentsLabel: '6 agents inclus',
+    agentsLabel: '4 agents + Gmail',
     agents: [
-      'Chasseur IA',
-      'Assistant IA',
-      'Gmail IA',
-      'Veilleur IA',
-      'Rédacteur d’offres',
-      'Vérificateur IA',
+      'Prospecteur',
+      'Veilleur',
+      'Analyste',
+      'Assistant',
+      'Gmail (connecteur)',
     ],
     features: [
       'Jusqu’à 10 utilisateurs',
@@ -86,12 +78,8 @@ const TIERS: Array<{
     name: 'Entreprise',
     prices: { TND: null, EUR: null, USD: null },
     users: 'Utilisateurs illimités',
-    agentsLabel: '6 agents + options',
-    agents: [
-      'Tous les agents Pro',
-      'BrandPulse AI (sur demande)',
-      'Agents / config sectorielle',
-    ],
+    agentsLabel: '4 agents + options',
+    agents: ['Tous les agents Pro', 'Multi-équipes', 'Config sectorielle dédiée'],
     features: [
       'Utilisateurs illimités',
       'Tout Pro + multi-équipes',
@@ -105,12 +93,11 @@ const TIERS: Array<{
 type Cell = boolean | 'choice' | string;
 
 const COMPARE_ROWS: Array<{ label: string; values: [Cell, Cell, Cell, Cell] }> = [
-  { label: 'Chasseur IA', values: ['choice', true, true, true] },
-  { label: 'Assistant IA (Copilot)', values: ['choice', true, true, true] },
-  { label: 'Veilleur IA', values: ['choice', false, true, true] },
-  { label: "Rédacteur d'offres", values: ['choice', false, true, true] },
-  { label: 'Gmail IA', values: ['choice', true, true, true] },
-  { label: 'Vérificateur IA', values: ['choice', false, true, true] },
+  { label: 'Prospecteur', values: ['choice', true, true, true] },
+  { label: 'Assistant', values: ['choice', true, true, true] },
+  { label: 'Veilleur', values: ['choice', false, true, true] },
+  { label: 'Analyste', values: ['choice', false, true, true] },
+  { label: 'Gmail (connecteur)', values: [false, true, true, true] },
   { label: 'Mémoire partagée entre agents', values: [false, true, true, true] },
   { label: 'Webhook CRM externe', values: [false, false, true, true] },
   { label: 'Scoring personnalisé', values: [false, 'basique', 'avancé', 'avancé'] },
@@ -140,7 +127,7 @@ const FAQ = [
   },
   {
     q: "Que contient exactement l'essai gratuit de 7 jours ?",
-    a: "L'essai active toujours 3 agents (Chasseur IA, Assistant IA, Rédacteur d'offres), quel que soit le palier choisi au départ — pour montrer comment ils fonctionnent ensemble.",
+    a: "L'essai active Prospecteur, Veilleur, Analyste et Assistant (avec propositions), quel que soit le palier choisi au départ — pour montrer comment ils travaillent ensemble.",
   },
   {
     q: "Ai-je besoin d'un CRM existant pour utiliser Ciblix ?",
@@ -312,7 +299,7 @@ export function Tarifs() {
             ))}
           </div>
           <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">
-            Votre essai de 7 jours inclut toujours Chasseur IA, Assistant IA et Rédacteur d&apos;offres, quel que soit
+            Votre essai de 7 jours inclut Prospecteur, Veilleur, Analyste et Assistant, quel que soit
             le palier choisi ici.
           </p>
         </section>

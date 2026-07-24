@@ -8,12 +8,13 @@ export const opsRoutes = Router();
 opsRoutes.use(auth);
 
 const SOURCE_LABELS: Record<string, string> = {
-  HUNT: 'Chasseur IA',
-  COPILOT: 'Assistant IA',
-  GMAIL: 'Gmail IA',
-  SCOUT: 'Veilleur IA',
-  OFFREBOT: "Rédacteur d'offres",
-  FACTCHECK: 'Vérificateur IA',
+  HUNT: 'Prospecteur',
+  COPILOT: 'Assistant',
+  GMAIL: 'Gmail',
+  SCOUT: 'Veilleur',
+  OFFREBOT: 'Propositions',
+  ANALYSTE: 'Analyste',
+  FACTCHECK: 'Vérificateur',
 };
 
 function currentMonthKey() {
@@ -195,43 +196,35 @@ opsRoutes.get('/overview', async (req: AuthRequest, res: Response, next: NextFun
     const agentsToday = [
       {
         slug: 'hunt-ai',
-        name: 'Chasseur IA',
+        name: 'Prospecteur',
         active: activeSlugs.has('hunt-ai'),
         metric: `${huntFound24h} entreprises`,
         detail: huntMessages24h > 0 ? `${huntMessages24h} messages` : 'Temps réel',
         href: '/prospection-ia',
       },
       {
-        slug: 'gmail-ai',
-        name: 'Gmail IA',
-        active: activeSlugs.has('gmail-ai'),
-        metric: `${gmailDraftsPending} brouillons`,
-        detail: gmailUrgent > 0 ? `${gmailUrgent} urgent` : 'À valider',
-        href: '/agents/gmail-ai',
-      },
-      {
         slug: 'scout-ai',
-        name: 'Veilleur IA',
+        name: 'Veilleur',
         active: activeSlugs.has('scout-ai'),
         metric: `${scoutNew24h} alertes`,
         detail: 'Veille 24h',
         href: '/agents/scout-ai',
       },
       {
-        slug: 'copilot-ia',
-        name: 'Assistant IA',
-        active: activeSlugs.has('copilot-ia'),
-        metric: `${recentEvents.filter((e) => e.source === 'COPILOT').length} analyses`,
-        detail: usageBySlug['copilot-ia'] != null ? `${usageBySlug['copilot-ia']} ce mois` : 'Copilote',
-        href: '/ai-assistant',
+        slug: 'analyste-ai',
+        name: 'Analyste',
+        active: activeSlugs.has('analyste-ai'),
+        metric: `${usageBySlug['analyste-ai'] != null ? `${usageBySlug['analyste-ai']} briefs` : 'Briefs'}`,
+        detail: 'Analyse cibles',
+        href: '/agents/analyste-ai',
       },
       {
-        slug: 'offre-bot',
-        name: "Rédacteur d'offres",
-        active: activeSlugs.has('offre-bot'),
-        metric: `${recentEvents.filter((e) => e.source === 'OFFREBOT').length} documents`,
-        detail: 'Bibliothèque',
-        href: '/agents/offre-bot',
+        slug: 'copilot-ia',
+        name: 'Assistant',
+        active: activeSlugs.has('copilot-ia'),
+        metric: `${recentEvents.filter((e) => e.source === 'COPILOT').length} analyses`,
+        detail: usageBySlug['copilot-ia'] != null ? `${usageBySlug['copilot-ia']} ce mois` : 'Orchestration',
+        href: '/ai-assistant',
       },
     ];
 

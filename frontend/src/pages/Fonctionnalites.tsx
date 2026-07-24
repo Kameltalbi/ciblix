@@ -4,12 +4,10 @@ import {
   Bot,
   CheckCircle2,
   FileSignature,
-  Mail,
   MessageCircle,
   Network,
   Radio,
   Radar,
-  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,16 +34,6 @@ const AGENTS = [
     name: "Rédacteur d'offres",
     icon: FileSignature,
     desc: 'Génère des propositions commerciales personnalisées à partir de l’historique réel des échanges.',
-  },
-  {
-    name: 'Gmail IA',
-    icon: Mail,
-    desc: 'Résume les emails entrants et prépare des brouillons de réponse.',
-  },
-  {
-    name: 'Vérificateur IA',
-    icon: ShieldCheck,
-    desc: 'Vérifie la fiabilité des informations en croisant plusieurs sources.',
   },
 ] as const;
 

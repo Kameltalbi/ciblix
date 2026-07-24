@@ -6,6 +6,7 @@ export const ALL_AGENT_SLUGS = [
   'hunt-ai',
   'copilot-ia',
   'scout-ai',
+  'analyste-ai',
   'offre-bot',
   'gmail-ai',
   'factcheck-ai',
@@ -19,8 +20,11 @@ export const AGENT_MIN_PLAN: Record<AgentSlug, PlanType> = {
   'hunt-ai': 'BASIC',
   'copilot-ia': 'BASIC',
   'scout-ai': 'BUSINESS',
-  'offre-bot': 'BUSINESS',
-  'gmail-ai': 'BUSINESS',
+  'analyste-ai': 'BUSINESS',
+  /** Capacité de l’Assistant (propositions) — pas un agent commercial de la flotte. */
+  'offre-bot': 'BASIC',
+  /** Connecteur — pas un agent de la flotte. */
+  'gmail-ai': 'BASIC',
   'factcheck-ai': 'ENTERPRISE',
   'brand-pulse-ai': 'ENTERPRISE',
 };

@@ -1,13 +1,13 @@
-import { Radio, Search, UserCheck, TrendingUp, Globe, Database, Filter, BarChart3, Zap, Target, Users, Mail } from 'lucide-react';
+import { Crosshair, Search, UserCheck, TrendingUp, Globe, Database, Filter, BarChart3, Zap, Target, Users, Mail } from 'lucide-react';
 import { AgentPublicPage } from '../AgentPublicPage';
 
 export function HuntAIPage() {
   return (
     <AgentPublicPage
-      name="Chasseur IA"
-      subtitle="Prospection commerciale intelligente"
-      heroDescription="Le Chasseur IA recherche automatiquement des entreprises cibles en fonction de vos critères : secteur, zone géographique, type d'activité. Fini les heures perdues à chercher des contacts — l'IA trouve les bons prospects pour vous."
-      icon={Radio}
+      name="Prospecteur"
+      subtitle="Trouver de nouveaux clients"
+      heroDescription="Le Prospecteur identifie les entreprises correspondant à vos critères, enrichit les contacts, qualifie les prospects et prépare vos campagnes de prospection."
+      icon={Crosshair}
       gradient="bg-gradient-to-br from-[#016AEB] via-[#0071DD] to-[#0a2540]"
       iconBg="bg-white/20"
       stats={[

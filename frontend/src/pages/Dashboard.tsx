@@ -5,10 +5,10 @@ import {
   Check,
   Circle,
   Loader2,
-  Radio,
+  Crosshair,
   Bot,
   Radar,
-  FileSignature,
+  Search,
   Mail,
   Sparkles,
 } from 'lucide-react';
@@ -56,11 +56,11 @@ const PRIORITY_DOT: Record<string, string> = {
 };
 
 const AGENT_ICON: Record<string, LucideIcon> = {
-  'hunt-ai': Radio,
+  'hunt-ai': Crosshair,
   'gmail-ai': Mail,
   'scout-ai': Radar,
   'copilot-ia': Bot,
-  'offre-bot': FileSignature,
+  'analyste-ai': Search,
 };
 
 function formatTime(iso: string) {
@@ -71,16 +71,31 @@ export function Dashboard() {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] || 'vous';
 
-  const { data, isPending } = useQuery<OpsOverview>({
+  const { data, isPending, isError, refetch, isFetching } = useQuery<OpsOverview>({
     queryKey: ['ops-overview'],
     queryFn: () => api.get('/ops/overview').then((r) => r.data),
     refetchInterval: 60_000,
+    retry: 1,
   });
 
-  if (isPending || !data) {
+  if (isPending) {
     return (
       <div className="flex items-center justify-center py-24 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Chargement du centre de commandement…
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="mx-auto max-w-lg space-y-4 py-24 text-center">
+        <p className="text-sm text-muted-foreground">
+          Impossible de charger le centre de commandement. Vérifiez que l’API est démarrée.
+        </p>
+        <Button variant="outline" size="sm" disabled={isFetching} onClick={() => void refetch()}>
+          {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Réessayer
+        </Button>
       </div>
     );
   }
@@ -101,7 +116,7 @@ export function Dashboard() {
         <p className="text-sm text-muted-foreground">
           {hasActivity
             ? 'Pendant votre absence, vos agents ont travaillé.'
-            : 'Vos agents sont prêts — lancez une recherche ou activez Gmail IA.'}
+            : 'Vos agents sont prêts — lancez une recherche ou connectez Gmail.'}
         </p>
       </header>
 
@@ -258,7 +273,7 @@ export function Dashboard() {
         <div className="pt-2">
           <Button variant="outline" size="sm" asChild>
             <Link to="/prospection-ia" className="gap-1.5">
-              Lancer le Chasseur IA <ArrowRight size={14} />
+              Lancer le Prospecteur <ArrowRight size={14} />
             </Link>
           </Button>
         </div>
