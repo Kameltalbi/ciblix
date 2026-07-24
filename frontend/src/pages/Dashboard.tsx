@@ -107,12 +107,21 @@ const AGENT_ICONS: Record<string, LucideIcon> = {
   'copilot-ia': Bot,
 };
 
-const SOURCE_COLORS = ['#016AEB', '#38BDF8', '#6366F1', '#14B8A6', '#94A3B8'];
+/** Couleurs variées saturées — contraste fort, pas de pastels. */
+const CHART = {
+  blue: '#016AEB',
+  teal: '#0D9488',
+  amber: '#D97706',
+  violet: '#7C3AED',
+  rose: '#E11D48',
+} as const;
+
+const SOURCE_COLORS = [CHART.blue, CHART.teal, CHART.amber, CHART.violet, CHART.rose];
 
 const SERIES = [
-  { key: 'prospects' as const, label: 'Prospects trouvés', color: '#016AEB' },
-  { key: 'opportunities' as const, label: 'Opportunités détectées', color: '#14B8A6' },
-  { key: 'proposals' as const, label: 'Propositions envoyées', color: '#6366F1' },
+  { key: 'prospects' as const, label: 'Prospects trouvés', color: CHART.blue },
+  { key: 'opportunities' as const, label: 'Opportunités détectées', color: CHART.teal },
+  { key: 'proposals' as const, label: 'Propositions envoyées', color: CHART.amber },
 ];
 
 function formatDay(iso: string) {
@@ -288,7 +297,7 @@ export function Dashboard() {
                 <defs>
                   {SERIES.map((s) => (
                     <linearGradient key={s.key} id={`grad-${s.key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={s.color} stopOpacity={0.22} />
+                      <stop offset="0%" stopColor={s.color} stopOpacity={0.35} />
                       <stop offset="100%" stopColor={s.color} stopOpacity={0} />
                     </linearGradient>
                   ))}
@@ -324,7 +333,7 @@ export function Dashboard() {
                         dataKey={s.key}
                         name={s.label}
                         stroke={s.color}
-                        strokeWidth={2.25}
+                        strokeWidth={2.75}
                         fill={`url(#grad-${s.key})`}
                         dot={false}
                         activeDot={{ r: 4, strokeWidth: 0 }}
@@ -354,7 +363,7 @@ export function Dashboard() {
                     <div className="flex items-center gap-3">
                       <div className="w-full">
                         <div
-                          className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#016AEB] to-[#38BDF8] px-4 py-3 text-white shadow-sm transition-all duration-500"
+                          className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#016AEB] to-[#0D9488] px-4 py-3 text-white shadow-sm transition-all duration-500"
                           style={{ width: `${widthPct}%`, minWidth: '9rem' }}
                         >
                           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -457,12 +466,12 @@ export function Dashboard() {
                       fontSize: 12,
                     }}
                   />
-                  <Bar dataKey="actions" radius={[0, 8, 8, 0]} barSize={22} fill="#016AEB">
+                  <Bar dataKey="actions" radius={[0, 8, 8, 0]} barSize={22} fill={CHART.blue}>
                     {data.agentActivity.map((_, i) => (
                       <Cell
                         key={i}
-                        fill={['#016AEB', '#0EA5E9', '#6366F1', '#14B8A6'][i % 4]}
-                        fillOpacity={0.9}
+                        fill={[CHART.blue, CHART.teal, CHART.amber, CHART.violet][i % 4]}
+                        fillOpacity={1}
                       />
                     ))}
                   </Bar>
