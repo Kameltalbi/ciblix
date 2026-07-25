@@ -46,7 +46,84 @@ type ProspectingAutomationDTO = {
   lastRunImported: number | null;
   lastRunQualified: number | null;
   lastRunError: string | null;
+  criteria?: {
+    sector?: string | null;
+    country?: string | null;
+    city?: string | null;
+    companySize?: string | null;
+    keywords?: string | null;
+  } | null;
 };
+
+type MissionIdealProfile = {
+  name?: string;
+  description?: string;
+  importance?: number;
+  sector?: string;
+  companySize?: string;
+};
+
+type MissionProfileDTO = {
+  sectors?: string[];
+  keywords?: string[];
+  countries?: string[];
+  cities?: string[];
+  markets?: string[];
+  targetClients?: string[];
+  productsServices?: string[];
+  idealProfiles?: MissionIdealProfile[] | unknown;
+  missionStatus?: string;
+};
+
+function joinUnique(parts: Array<string | null | undefined>, max = 10): string {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const t = typeof p === 'string' ? p.trim() : '';
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+    if (out.length >= max) break;
+  }
+  return out.join(', ');
+}
+
+function asIdealProfiles(raw: unknown): MissionIdealProfile[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((x): x is MissionIdealProfile => Boolean(x) && typeof x === 'object');
+}
+
+function criteriaFromMission(profile: MissionProfileDTO): {
+  sector: string;
+  country: string;
+  city: string;
+  companySize: string;
+  keywords: string;
+} {
+  const icps = asIdealProfiles(profile.idealProfiles).sort(
+    (a, b) => (b.importance ?? 0) - (a.importance ?? 0)
+  );
+  const top = icps[0];
+  const sector = joinUnique(
+    [top?.sector, ...(profile.sectors || []), ...(profile.markets || [])],
+    3
+  );
+  const country = joinUnique(profile.countries || [], 2);
+  const city = joinUnique(profile.cities || [], 2);
+  const companySize = (top?.companySize || '').trim();
+  const keywords = joinUnique(
+    [
+      ...(profile.keywords || []),
+      ...(profile.targetClients || []),
+      ...icps.map((i) => i.name),
+      ...icps.map((i) => i.description),
+    ],
+    8
+  );
+  return { sector, country, city, companySize, keywords };
+}
 
 const AUTOMATION_INTERVALS_H = [6, 12, 24, 48, 72, 168];
 
@@ -333,10 +410,12 @@ export function ProspectionIA() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [sector, setSector] = useState('');
-  const [country, setCountry] = useState('Tunisie');
+  const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [companySize, setCompanySize] = useState('');
   const [keywords, setKeywords] = useState('');
+  const [criteriaSource, setCriteriaSource] = useState<'mission' | 'automation' | null>(null);
+  const [formReady, setFormReady] = useState(false);
   const [results, setResults] = useState<AiProspectRow[]>([]);
   const [fromCache, setFromCache] = useState(false);
   const [qualifyRunning, setQualifyRunning] = useState(false);
@@ -371,10 +450,18 @@ export function ProspectionIA() {
     staleTime: 45_000,
   });
 
-  const { data: automationRes } = useQuery<{ automation: ProspectingAutomationDTO | null }>({
+  const { data: automationRes, isFetched: automationFetched } = useQuery<{
+    automation: ProspectingAutomationDTO | null;
+  }>({
     queryKey: ['prospecting-automation'],
     queryFn: () => api.get('/prospecting/automation').then((r) => r.data),
     staleTime: 30_000,
+  });
+
+  const { data: missionRes, isFetched: missionFetched } = useQuery<{ profile: MissionProfileDTO }>({
+    queryKey: ['mission-profile'],
+    queryFn: () => api.get('/mission').then((r) => r.data),
+    staleTime: 60_000,
   });
 
   useEffect(() => {
@@ -385,6 +472,47 @@ export function ProspectionIA() {
     setAutoRefresh(row.refreshCache);
     setAutoQualify(row.qualifyAfterSearch);
   }, [automationRes?.automation]);
+
+  // Préremplit depuis planification sauvegardée, sinon Mission IA / ICP
+  useEffect(() => {
+    if (formReady || !automationFetched || !missionFetched) return;
+
+    const autoCrit = automationRes?.automation?.criteria;
+    const autoHas =
+      autoCrit &&
+      Boolean(
+        autoCrit.sector?.trim() ||
+          autoCrit.country?.trim() ||
+          autoCrit.city?.trim() ||
+          autoCrit.companySize?.trim() ||
+          autoCrit.keywords?.trim()
+      );
+
+    if (autoHas && autoCrit) {
+      setSector(autoCrit.sector?.trim() || '');
+      setCountry(autoCrit.country?.trim() || '');
+      setCity(autoCrit.city?.trim() || '');
+      setCompanySize(autoCrit.companySize?.trim() || '');
+      setKeywords(autoCrit.keywords?.trim() || '');
+      setCriteriaSource('automation');
+      setFormReady(true);
+      return;
+    }
+
+    const profile = missionRes?.profile;
+    if (profile) {
+      const fromMission = criteriaFromMission(profile);
+      setSector(fromMission.sector);
+      setCountry(fromMission.country);
+      setCity(fromMission.city);
+      setCompanySize(fromMission.companySize);
+      setKeywords(fromMission.keywords);
+      setCriteriaSource(
+        fromMission.sector || fromMission.country || fromMission.keywords ? 'mission' : null
+      );
+    }
+    setFormReady(true);
+  }, [formReady, automationFetched, missionFetched, automationRes?.automation, missionRes?.profile]);
 
   const drainQualifyAfterSearch = async (data: SearchResponse) => {
     const ids = (data.prospects ?? []).filter((p) => p.status === 'FOUND').map((p) => p.id);
@@ -742,6 +870,25 @@ export function ProspectionIA() {
           <p className="text-sm text-muted-foreground">
             Recherche intelligente avec scoring automatique et enrichissement web
           </p>
+          {formReady && criteriaSource === 'mission' ? (
+            <p className="text-xs text-muted-foreground">
+              Critères préremplis depuis votre{' '}
+              <Link to="/mission" className="font-medium text-primary underline-offset-2 hover:underline">
+                Mission IA
+              </Link>
+              .
+            </p>
+          ) : null}
+          {formReady && criteriaSource === 'automation' ? (
+            <p className="text-xs text-muted-foreground">
+              Critères repris de votre planification Prospecteur (basés sur la Mission si vous les avez enregistrés).
+            </p>
+          ) : null}
+          {!formReady ? (
+            <p className="text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Chargement des critères Mission…
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent className="relative space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -752,6 +899,7 @@ export function ProspectionIA() {
                 onChange={(e) => setSector(e.target.value)}
                 placeholder="ex. BTP, agroalimentaire…"
                 className="h-11"
+                disabled={!formReady}
               />
             </div>
             <div className="space-y-2">
@@ -761,6 +909,7 @@ export function ProspectionIA() {
                 onChange={(e) => setCountry(e.target.value)}
                 placeholder="Tunisie"
                 className="h-11"
+                disabled={!formReady}
               />
             </div>
             <div className="space-y-2">
@@ -770,6 +919,7 @@ export function ProspectionIA() {
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="Tunis, Casablanca…"
                 className="h-11"
+                disabled={!formReady}
               />
             </div>
             <div className="space-y-2">
@@ -779,6 +929,7 @@ export function ProspectionIA() {
                 onChange={(e) => setCompanySize(e.target.value)}
                 placeholder="11-50, 50-200…"
                 className="h-11"
+                disabled={!formReady}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -788,16 +939,18 @@ export function ProspectionIA() {
                 onChange={(e) => setKeywords(e.target.value)}
                 placeholder="ex. architecture Tunisie, bureaux d'études, industriels…"
                 className="h-11"
+                disabled={!formReady}
               />
             </div>
           </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <Button
             size="lg"
             className={cn(
               'w-full min-w-[220px] gap-2 rounded-xl bg-primary text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md sm:w-auto',
               searchMutation.isPending && 'opacity-90'
             )}
-            disabled={searchMutation.isPending}
+            disabled={searchMutation.isPending || !formReady}
             onClick={() => searchMutation.mutate()}
           >
             {searchMutation.isPending ? (
@@ -810,6 +963,29 @@ export function ProspectionIA() {
               </>
             )}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="gap-2"
+            disabled={!missionRes?.profile || !formReady}
+            onClick={() => {
+              const profile = missionRes?.profile;
+              if (!profile) return;
+              const fromMission = criteriaFromMission(profile);
+              setSector(fromMission.sector);
+              setCountry(fromMission.country);
+              setCity(fromMission.city);
+              setCompanySize(fromMission.companySize);
+              setKeywords(fromMission.keywords);
+              setCriteriaSource(
+                fromMission.sector || fromMission.country || fromMission.keywords ? 'mission' : null
+              );
+            }}
+          >
+            Recharger depuis Mission
+          </Button>
+          </div>
         </CardContent>
       </Card>
 
