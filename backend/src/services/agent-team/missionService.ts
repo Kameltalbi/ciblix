@@ -329,11 +329,22 @@ export async function activateMission(organizationId: string): Promise<OrgTarget
 
   await syncScoutFromMission(activated);
 
+  // Cœur métier : Prospecteur cherche des entreprises clientes dès l’activation
+  await enqueueAgentTask({
+    organizationId,
+    assignee: 'HUNT',
+    kind: 'FIND_COMPANIES',
+    priority: 95,
+    dedupeKey: `find:mission:${organizationId}:${Date.now()}`,
+    payload: { triggeredBy: 'mission_activate', refresh: true, importMax: 40 },
+  });
+
+  // Veilleur en second (signaux), priorité basse
   await enqueueAgentTask({
     organizationId,
     assignee: 'SCOUT',
     kind: 'WATCH_SIGNALS',
-    priority: 95,
+    priority: 20,
     dedupeKey: `watch:mission:${organizationId}:${Date.now()}`,
     payload: { triggeredBy: 'mission_activate' },
   });

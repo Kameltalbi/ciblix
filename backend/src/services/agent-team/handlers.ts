@@ -4,8 +4,9 @@ import { getIntegrationUserId } from '../integrations/orgIntegrationUser.js';
 import { createAgentEvent } from '../agent-memory/agentEventService.js';
 import { findOrCreateContact } from '../agent-memory/contactService.js';
 import { enqueueAgentTask } from './agentTaskService.js';
+import { criteriaFromTargeting, criteriaHasSearchableFields } from './missionCriteria.js';
 import { isPastDatedContent, isPastScoutOpportunity } from '../scout/scoutFreshness.js';
-import { resolveCompanyNameForContact } from '../scout/companyNameGuard.js';
+import { resolveCompanyNameForContact, looksLikeCompanyName } from '../scout/companyNameGuard.js';
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -71,7 +72,105 @@ async function upsertCompanyContact(opts: {
   });
 }
 
-/** Veilleur : scan signaux → tâches Prospecteur. */
+/**
+ * Prospecteur (cœur métier) : recherche d’entreprises clientes depuis la Mission / ICP,
+ * puis file d’enrichissement + analyse.
+ */
+export async function handleFindCompanies(task: AgentTask): Promise<Record<string, unknown>> {
+  const targeting = await prisma.orgTargetingProfile.findUnique({
+    where: { organizationId: task.organizationId },
+  });
+  if (!targeting) {
+    return { skipped: true, reason: 'no_targeting' };
+  }
+
+  const criteria = criteriaFromTargeting(targeting);
+  if (!criteriaHasSearchableFields(criteria)) {
+    return { skipped: true, reason: 'empty_criteria' };
+  }
+
+  const payload = asRecord(task.payload);
+  const importMax =
+    typeof payload.importMax === 'number' && payload.importMax > 0
+      ? Math.min(60, Math.floor(payload.importMax))
+      : 40;
+
+  const { importProspectsFromSearch } = await import('../prospecting/importProspectsFromSearch.js');
+  const { qualifyFoundBatchForOrganization } = await import(
+    '../prospecting/qualifyFoundBatchOrg.js'
+  );
+
+  const imp = await importProspectsFromSearch(task.organizationId, criteria, {
+    refresh: payload.refresh === true,
+    importMax,
+  });
+
+  let qualified = 0;
+  if (imp.count > 0) {
+    const q = await qualifyFoundBatchForOrganization(
+      task.organizationId,
+      Math.min(80, Math.max(10, importMax))
+    );
+    qualified = q.qualifiedCount;
+  }
+
+  const prospects = await prisma.aiProspect.findMany({
+    where: {
+      organizationId: task.organizationId,
+      deletedAt: null,
+      companyName: { not: '' },
+    },
+    orderBy: [{ score: 'desc' }, { updatedAt: 'desc' }],
+    take: 25,
+    select: {
+      id: true,
+      companyName: true,
+      website: true,
+      phone: true,
+      email: true,
+      city: true,
+      country: true,
+      score: true,
+      aiSummary: true,
+    },
+  });
+
+  const exclude = targeting.excludeCompanies ?? [];
+  let handedToEnrich = 0;
+  for (const p of prospects) {
+    if (!looksLikeCompanyName(p.companyName)) continue;
+    if (isExcluded(p.companyName, exclude)) continue;
+
+    await enqueueAgentTask({
+      organizationId: task.organizationId,
+      assignee: 'HUNT',
+      kind: 'ENRICH_COMPANY',
+      priority: 75,
+      parentTaskId: task.id,
+      dedupeKey: `enrich:hunt:${p.id}`,
+      payload: {
+        companyName: p.companyName,
+        signalUrl: p.website,
+        aiSummary: p.aiSummary,
+        relevanceScore: p.score,
+        prospectId: p.id,
+        triggeredBy: 'find_companies',
+      },
+    });
+    handedToEnrich += 1;
+  }
+
+  return {
+    criteria,
+    imported: imp.count,
+    fromCache: imp.fromCache,
+    providerUsed: imp.providerUsed,
+    qualified,
+    handedToEnrich,
+  };
+}
+
+/** Veilleur (secondaire) : signaux AO/actu — ne remplace pas la recherche d’entreprises. */
 export async function handleWatchSignals(task: AgentTask): Promise<Record<string, unknown>> {
   const { executeScoutScanAll } = await import('../../routes/scout-ai.js');
   const targeting = await prisma.orgTargetingProfile.findUnique({

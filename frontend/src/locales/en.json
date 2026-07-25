@@ -705,10 +705,10 @@
     "howTitle": "Each agent has a clear job.",
     "howLead": "You don’t need to turn everything on at once: pick the agent for today’s job. They share the same prospect memory.",
     "howCta": "Start free trial →",
-    "teamTitle": "An AI agent team. One goal: grow your business.",
-    "teamLead": "Each agent has a specific business expertise and works with the others to detect opportunities, qualify companies, prepare your sales actions, and save you time.",
+    "teamTitle": "An AI agent team. One goal: find client companies.",
+    "teamLead": "Hunter leads company search. Analyst qualifies, Assistant prepares outreach. Scout adds signals only — it does not replace the client list.",
     "teamLearnMore": "Learn more",
-    "teamOrchestra": "The Assistant coordinates the team and uses the other agents’ outputs — without overlapping their missions.",
+    "teamOrchestra": "The orchestrator prioritizes Hunter (companies), then Analyst and Assistant. Scout stays secondary (signals).",
     "team": {
       "learnMore": "Learn more",
       "panelMissions": "Detailed missions",

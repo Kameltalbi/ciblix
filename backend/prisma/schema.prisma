@@ -1901,6 +1901,7 @@ enum AgentRole {
 }
 
 enum AgentTaskKind {
+  FIND_COMPANIES
   WATCH_SIGNALS
   ENRICH_COMPANY
   ANALYZE_FIT

@@ -8,16 +8,24 @@ import {
 import {
   handleAnalyzeFit,
   handleEnrichCompany,
+  handleFindCompanies,
   handlePrepareOutreach,
   handleWatchSignals,
 } from './handlers.js';
 
 const TICK_MS = 60_000;
 const MAX_TASKS_PER_TICK = 8;
+/** Veilleur tourne moins souvent que le Prospecteur (cœur métier). */
+const SCOUT_EVERY_N_HUNT_CYCLES = 3;
+
 let running = false;
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
-async function scheduleWatchJobs(): Promise<void> {
+/**
+ * Cœur métier = Prospecteur (FIND_COMPANIES).
+ * Veilleur = secondaire (signaux), moins fréquent et priorité plus basse.
+ */
+async function scheduleTeamJobs(): Promise<void> {
   const now = new Date();
   const profiles = await prisma.orgTargetingProfile.findMany({
     where: {
@@ -35,14 +43,30 @@ async function scheduleWatchJobs(): Promise<void> {
       continue;
     }
 
+    const hourBucket = now.toISOString().slice(0, 13);
+
+    // 1) Prospecteur — priorité absolue
     await enqueueAgentTask({
       organizationId: p.organizationId,
-      assignee: 'SCOUT',
-      kind: 'WATCH_SIGNALS',
-      priority: 40,
-      dedupeKey: `watch:${p.organizationId}:${now.toISOString().slice(0, 13)}`,
-      payload: { triggeredBy: 'orchestrator' },
+      assignee: 'HUNT',
+      kind: 'FIND_COMPANIES',
+      priority: 90,
+      dedupeKey: `find:${p.organizationId}:${hourBucket}`,
+      payload: { triggeredBy: 'orchestrator', refresh: true, importMax: 40 },
     });
+
+    // 2) Veilleur — optionnel / moins fréquent (signaux seulement)
+    const cycle = Math.floor(now.getTime() / intervalMs);
+    if (cycle % SCOUT_EVERY_N_HUNT_CYCLES === 0) {
+      await enqueueAgentTask({
+        organizationId: p.organizationId,
+        assignee: 'SCOUT',
+        kind: 'WATCH_SIGNALS',
+        priority: 25,
+        dedupeKey: `watch:${p.organizationId}:${hourBucket}`,
+        payload: { triggeredBy: 'orchestrator' },
+      });
+    }
 
     await prisma.orgTargetingProfile.update({
       where: { id: p.id },
@@ -75,6 +99,9 @@ async function processOneTask(): Promise<boolean> {
   try {
     let result: Record<string, unknown>;
     switch (task.kind) {
+      case 'FIND_COMPANIES':
+        result = await handleFindCompanies(task);
+        break;
       case 'WATCH_SIGNALS':
         result = await handleWatchSignals(task);
         break;
@@ -107,7 +134,7 @@ async function tickOnce(): Promise<void> {
   if (running) return;
   running = true;
   try {
-    await scheduleWatchJobs();
+    await scheduleTeamJobs();
     for (let i = 0; i < MAX_TASKS_PER_TICK; i++) {
       const did = await processOneTask();
       if (!did) break;
@@ -121,7 +148,9 @@ async function tickOnce(): Promise<void> {
 
 export function startAgentOrchestrator(): void {
   if (intervalId) return;
-  console.log('[agent-orchestrator] actif (tick 60s) — équipe Veilleur→Prospecteur→Analyste→Assistant');
+  console.log(
+    '[agent-orchestrator] actif (tick 60s) — cœur Prospecteur→Analyste→Assistant ; Veilleur secondaire'
+  );
   void tickOnce();
   intervalId = setInterval(() => {
     void tickOnce();

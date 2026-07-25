@@ -63,7 +63,7 @@ export async function handoffScoutSignalsToHunt(
       organizationId,
       assignee: 'HUNT',
       kind: 'ENRICH_COMPANY',
-      priority: Math.min(100, opp.relevanceScore),
+      priority: 35,
       dedupeKey: `enrich:scout:${opp.id}`,
       payload: {
         scoutOpportunityId: opp.id,

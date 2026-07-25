@@ -711,10 +711,10 @@
     "howTitle": "Chaque agent a un rôle précis.",
     "howLead": "Pas besoin de tout activer d’un coup : choisissez l’agent selon le job du jour. Ils partagent la même mémoire prospect.",
     "howCta": "Essayer gratuitement →",
-    "teamTitle": "Une équipe d'agents IA. Un seul objectif : développer votre activité.",
-    "teamLead": "Chaque agent possède une expertise métier spécifique et travaille avec les autres pour détecter des opportunités, qualifier les entreprises, préparer vos actions commerciales et vous faire gagner du temps.",
+    "teamTitle": "Une équipe d'agents IA. Un seul objectif : trouver des entreprises clientes.",
+    "teamLead": "Le Prospecteur mène la recherche d’entreprises. L’Analyste qualifie, l’Assistant prépare le contact. Le Veilleur apporte des signaux en complément — pas la liste de clients.",
     "teamLearnMore": "En savoir plus",
-    "teamOrchestra": "L’Assistant coordonne l’équipe et exploite les résultats des autres agents — sans chevaucher leurs missions.",
+    "teamOrchestra": "L’orchestrateur priorise le Prospecteur (entreprises), puis Analyste et Assistant. Le Veilleur reste secondaire (signaux).",
     "team": {
       "learnMore": "En savoir plus",
       "panelMissions": "Missions détaillées",

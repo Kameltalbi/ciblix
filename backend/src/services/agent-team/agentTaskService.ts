@@ -190,7 +190,7 @@ export async function overnightTeamStats(organizationId: string, since: Date) {
   return {
     since: since.toISOString(),
     tasksCompleted: tasksDone,
-    companiesDetected: kindMap.WATCH_SIGNALS ?? scoutNew,
+    companiesDetected: (kindMap.FIND_COMPANIES ?? 0) + (kindMap.ENRICH_COMPANY ?? 0),
     companiesEnriched: kindMap.ENRICH_COMPANY ?? 0,
     opportunitiesAnalyzed: kindMap.ANALYZE_FIT ?? 0,
     messagesPrepared: kindMap.PREPARE_OUTREACH ?? suggestions,
@@ -198,5 +198,6 @@ export async function overnightTeamStats(organizationId: string, since: Date) {
     scoreIncreased: scoreUp,
     eventsLogged: events,
     scoutSignals: scoutNew,
+    huntSearches: kindMap.FIND_COMPANIES ?? 0,
   };
 }
