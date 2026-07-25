@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { resolvePostLoginPath } from '@/lib/postLoginPath';
 
 /**
  * Reçoit les jetons dans le fragment (#) après redirection Google,
@@ -47,11 +48,8 @@ export function GoogleAuthCallback() {
           navigate('/login?error=google_profile_failed', { replace: true });
           return;
         }
-        if (u.role === 'SUPERADMIN') {
-          navigate('/admin', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        const next = await resolvePostLoginPath(u.role);
+        navigate(next, { replace: true });
       } catch {
         if (!cancelled) navigate('/login?error=google_profile_failed', { replace: true });
       }

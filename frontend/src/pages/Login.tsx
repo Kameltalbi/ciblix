@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/form-controls';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getGoogleAuthHref, isGoogleAuthUiEnabled } from '@/lib/googleAuthUrl';
+import { resolvePostLoginPath } from '@/lib/postLoginPath';
 
 const OAUTH_FALLBACK_MESSAGES: Record<string, string> = {
   google_not_configured:
@@ -51,11 +52,8 @@ export function Login() {
     try {
       await login(email, password);
       const { user: currentUser } = useAuth.getState();
-      if (currentUser?.role === 'SUPERADMIN') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+      const next = await resolvePostLoginPath(currentUser?.role);
+      navigate(next, { replace: true });
     } catch (err: unknown) {
       const ax = err as {
         response?: { data?: { error?: string }; status?: number };

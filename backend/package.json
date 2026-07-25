@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:unit": "vitest run src/services/agent-memory/computePipelineStatus.test.ts src/services/integrations/*.test.ts src/services/billing/*.test.ts",
     "test:integration": "vitest run src/**/*.integration.test.ts",
-    "test:places": "tsx scripts/test-google-places.ts"
+    "test:places": "tsx scripts/test-google-places.ts",
+    "reset:mission": "tsx scripts/reset-users-for-mission.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
