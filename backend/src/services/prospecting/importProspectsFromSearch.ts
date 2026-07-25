@@ -21,9 +21,11 @@ function enrichmentPersistFields(e: WebEnrichmentResult) {
   };
 }
 
+/** Clé stable (ignore le suffixe |search_cache). */
 function dedupeProviderKey(providerUsed: string, hit: CompanySearchHit): string {
+  const provider = providerUsed.replace(/\|search_cache$/i, '').trim() || 'provider';
   const tail = (hit.externalId || hit.companyName || 'unknown').toString().trim();
-  return `${providerUsed}:${tail}`.slice(0, 450);
+  return `${provider}:${tail}`.slice(0, 450);
 }
 
 /** Persistance brute — aligné avec la route `/prospecting/search`. */
@@ -52,17 +54,42 @@ function hitToFoundProspectData(
   };
 }
 
+async function findExistingProspect(organizationId: string, hit: CompanySearchHit, dedupeKey: string) {
+  const externalId = hit.externalId?.trim();
+  const name = hit.companyName?.trim();
+
+  const or: Array<Record<string, unknown>> = [{ rawProvider: dedupeKey }];
+  if (externalId) {
+    or.push({ rawProvider: { endsWith: `:${externalId}` } });
+  }
+  if (name) {
+    or.push({ companyName: { equals: name, mode: 'insensitive' } });
+  }
+
+  return prisma.aiProspect.findFirst({
+    where: {
+      organizationId,
+      deletedAt: null,
+      OR: or,
+    },
+  });
+}
+
 export type ImportProspectsResult = {
   providerUsed: string;
   fromCache: boolean;
+  /** Nouvelles fiches créées (affichées dans les résultats). */
   count: number;
+  /** Hits API bruts avant dédup / filtre déjà connus. */
   rawHits: number;
+  /** Déjà en base — masquées de la liste résultats. */
+  skippedExisting: number;
   prospects: unknown[];
 };
 
 /**
  * Lance une recherche comme l’endpoint HTTP, puis crée des `FOUND` jusqu’à `importMax`.
- * Utilisable par les jobs automatiques sans `AuthRequest`.
+ * Ne renvoie que les **nouvelles** entreprises (les déjà connues restent dans « Tous les prospects »).
  */
 export async function importProspectsFromSearch(
   organizationId: string,
@@ -76,26 +103,20 @@ export async function importProspectsFromSearch(
     120,
     Math.max(10, Number(options?.importMax) || Number(process.env.PROSPECTING_IMPORT_MAX) || 80)
   );
-  const tagBase = fromCache ? `${providerUsed}|search_cache` : providerUsed;
   const empty = emptyWebEnrichment();
 
   const created: unknown[] = [];
   const dedupeKeys = new Set<string>();
+  let skippedExisting = 0;
 
   for (const hitBase of hits.slice(0, importMax)) {
-    const dedupeKey = dedupeProviderKey(tagBase, hitBase);
+    const dedupeKey = dedupeProviderKey(providerUsed, hitBase);
     if (dedupeKeys.has(dedupeKey)) continue;
     dedupeKeys.add(dedupeKey);
 
-    const existing = await prisma.aiProspect.findFirst({
-      where: {
-        organizationId,
-        deletedAt: null,
-        rawProvider: dedupeKey,
-      },
-    });
+    const existing = await findExistingProspect(organizationId, hitBase, dedupeKey);
     if (existing) {
-      created.push(existing);
+      skippedExisting += 1;
       continue;
     }
 
@@ -133,6 +154,7 @@ export async function importProspectsFromSearch(
     fromCache,
     count: created.length,
     rawHits: hits.length,
+    skippedExisting,
     prospects: created,
   };
 }

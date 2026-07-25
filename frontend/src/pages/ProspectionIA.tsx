@@ -206,6 +206,8 @@ interface SearchResponse {
   providerUsed: string;
   fromCache?: boolean;
   rawHits?: number;
+  count?: number;
+  skippedExisting?: number;
 }
 
 interface TimelinePayload {
@@ -418,6 +420,7 @@ export function ProspectionIA() {
   const [formReady, setFormReady] = useState(false);
   const [results, setResults] = useState<AiProspectRow[]>([]);
   const [fromCache, setFromCache] = useState(false);
+  const [skippedExisting, setSkippedExisting] = useState(0);
   const [qualifyRunning, setQualifyRunning] = useState(false);
   const [filters, setFilters] = useState<ProspectFilters>(defaultFilters);
   const [timeline, setTimeline] = useState<{ open: boolean; id: string | null; name: string }>({
@@ -556,6 +559,7 @@ export function ProspectionIA() {
     onSuccess: (data) => {
       setResults(data.prospects || []);
       setFromCache(Boolean(data.fromCache));
+      setSkippedExisting(Number(data.skippedExisting) || 0);
       void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
       void drainQualifyAfterSearch(data);
     },
@@ -986,6 +990,25 @@ export function ProspectionIA() {
             Recharger depuis Mission
           </Button>
           </div>
+          {searchMutation.isSuccess && skippedExisting > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {skippedExisting} entreprise{skippedExisting > 1 ? 's' : ''} déjà connue
+              {skippedExisting > 1 ? 's' : ''} masquée{skippedExisting > 1 ? 's' : ''} — voir{' '}
+              <Link to="/all-prospects" className="font-medium text-primary underline-offset-2 hover:underline">
+                Tous les prospects IA
+              </Link>
+              .
+            </p>
+          ) : null}
+          {searchMutation.isSuccess && results.length === 0 && skippedExisting === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Aucune nouvelle entreprise pour ces critères. Élargissez secteur / ville ou consultez{' '}
+              <Link to="/all-prospects" className="font-medium text-primary underline-offset-2 hover:underline">
+                Tous les prospects IA
+              </Link>
+              .
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -994,7 +1017,7 @@ export function ProspectionIA() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
               <Filter size={18} />
-              Résultats ({filtered.length}/{results.length})
+              Nouveaux résultats ({filtered.length}/{results.length})
             </h2>
             {fromCache ? (
               <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">

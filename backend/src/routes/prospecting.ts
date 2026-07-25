@@ -483,6 +483,7 @@ async function runProspectingSearch(req: AuthRequest, res: Response, next: NextF
       fromCache: result.fromCache,
       count: result.count,
       rawHits: result.rawHits,
+      skippedExisting: result.skippedExisting,
       prospects: result.prospects,
     });
   } catch (e) {
