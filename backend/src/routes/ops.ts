@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Response } from 'express';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { prisma } from '../db/prisma.js';
 import { listRecentEventsForOrganization } from '../services/agent-memory/agentEventService.js';
+import { isPastDatedContent } from '../services/scout/scoutFreshness.js';
 
 export const opsRoutes = Router();
 
@@ -16,6 +17,11 @@ const SOURCE_LABELS: Record<string, string> = {
   ANALYSTE: 'Analyste',
   FACTCHECK: 'Vérificateur',
 };
+
+/** Timeline dashboard : masque les signaux dont la date d’événement / deadline est passée. */
+function filterFreshTimelineEvents<T extends { resume?: string | null }>(events: T[], take: number): T[] {
+  return events.filter((e) => !isPastDatedContent(e.resume)).slice(0, take);
+}
 
 function currentMonthKey() {
   return new Date().toISOString().slice(0, 7);
@@ -181,7 +187,7 @@ opsRoutes.get('/overview', async (req: AuthRequest, res: Response, next: NextFun
       });
     }
 
-    const timeline = recentEvents.slice(0, 20).map((e) => ({
+    const timeline = filterFreshTimelineEvents(recentEvents, 20).map((e) => ({
       id: e.id,
       at: e.createdAt.toISOString(),
       source: e.source,
@@ -587,7 +593,7 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
       },
     ].filter((a) => a.count > 0);
 
-    const timeline = recentEvents.slice(0, 10).map((e) => ({
+    const timeline = filterFreshTimelineEvents(recentEvents, 10).map((e) => ({
       id: e.id,
       at: e.createdAt.toISOString(),
       source: e.source,

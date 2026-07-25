@@ -4,6 +4,7 @@ import { getIntegrationUserId } from '../integrations/orgIntegrationUser.js';
 import { createAgentEvent } from '../agent-memory/agentEventService.js';
 import { findOrCreateContact } from '../agent-memory/contactService.js';
 import { enqueueAgentTask } from './agentTaskService.js';
+import { isPastDatedContent, isPastScoutOpportunity } from '../scout/scoutFreshness.js';
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -136,12 +137,34 @@ export async function handleEnrichCompany(task: AgentTask): Promise<Record<strin
       where: { id: scoutOppId, organizationId: task.organizationId },
     });
     if (opp) {
+      if (
+        isPastScoutOpportunity({
+          category: opp.category,
+          title: opp.title,
+          snippet: opp.snippet,
+          aiSummary: opp.aiSummary,
+          deadline: opp.deadline,
+        })
+      ) {
+        if (opp.status === 'NEW') {
+          await prisma.scoutOpportunity.update({
+            where: { id: opp.id },
+            data: { status: 'DISMISSED' },
+          });
+        }
+        return { skipped: true, reason: 'past_event' };
+      }
       const raw = asRecord(opp.rawData);
       email = str(raw.contactEmail) || email;
       phone = str(raw.contactPhone) || phone;
       summary = opp.aiSummary || summary;
       website = opp.url || website;
     }
+  }
+
+  const signalBlob = [str(payload.signalTitle), summary, str(payload.aiSummary)].filter(Boolean).join('\n');
+  if (isPastDatedContent(signalBlob)) {
+    return { skipped: true, reason: 'past_event' };
   }
 
   // Enrichissement Places si clé dispo et peu d’infos

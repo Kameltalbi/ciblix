@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Bot, Loader2, Plus, Star, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { stripAiMarkdown } from '@/lib/stripAiMarkdown';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea } from '@/components/ui/form-controls';
 import { cn } from '@/lib/utils';
@@ -113,7 +114,7 @@ export function MissionWizard() {
     setExSectors(listToText(p.excludeSectors));
     setExCompanies(listToText(p.excludeCompanies));
     setExCountries(listToText(p.excludeCountries));
-    setSummary(p.missionSummary || '');
+    setSummary(p.missionSummary ? stripAiMarkdown(p.missionSummary) : '');
     setInsights(p.extractedInsights || null);
     setHydrated(true);
   }, [data, hydrated]);
@@ -177,7 +178,7 @@ export function MissionWizard() {
       return api.post('/mission/preview-summary').then((r) => r.data);
     },
     onSuccess: (res) => {
-      setSummary(res.summary || '');
+      setSummary(res.summary ? stripAiMarkdown(res.summary) : '');
     },
   });
 

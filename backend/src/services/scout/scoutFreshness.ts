@@ -48,10 +48,10 @@ export function extractLatestDateFromText(text: string): Date | null {
     if (d) daySpecific.push(d);
   }
 
-  // "26 & 27 juin 2025", "14-16 Juillet 2025", "27 juin 2025"
+  // "26 & 27 juin 2025", "du 19 au 24 mai 2026", "14-16 Juillet 2025", "27 juin 2025"
   const monthNames = Object.keys(FR_MONTHS).join('|');
   const reRange = new RegExp(
-    `\\b(\\d{1,2})(?:\\s*(?:&|et|-|–|—)\\s*(\\d{1,2}))?\\s+(${monthNames})\\s+(20\\d{2})\\b`,
+    `\\b(\\d{1,2})(?:\\s*(?:&|et|au|to|-|–|—)\\s*(\\d{1,2}))?\\s+(${monthNames})\\s+(20\\d{2})\\b`,
     'gi',
   );
   for (const m of hay.matchAll(reRange)) {
@@ -104,4 +104,15 @@ export function isPastScoutOpportunity(opts: {
   }
 
   return false;
+}
+
+/**
+ * Garde-fou générique pour résumés / timelines dashboard :
+ * si une date d’événement / deadline est détectée et déjà passée → à masquer.
+ */
+export function isPastDatedContent(text: string | null | undefined, now = new Date()): boolean {
+  if (!text?.trim()) return false;
+  const latest = extractLatestDateFromText(text);
+  if (!latest) return false;
+  return latest < startOfToday(now);
 }

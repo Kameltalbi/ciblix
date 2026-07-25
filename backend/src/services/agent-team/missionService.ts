@@ -90,7 +90,9 @@ export async function buildMissionSummary(profile: OrgTargetingProfile): Promise
     : []) as IdealClientProfile[];
   const geos = [...profile.countries, ...profile.regions, ...profile.cities].filter(Boolean);
 
-  const system = `Tu résumes une Mission IA Ciblix pour un dirigeant. Style clair, puces, français. Pas de markdown code.`;
+  const system = `Tu résumes une Mission IA Ciblix pour un dirigeant.
+Style clair, puces avec le caractère •, français professionnel.
+INTERDIT : markdown (**gras**, *italique*, # titres, backticks). Texte brut uniquement.`;
   const user = JSON.stringify({
     brief: profile.companyBrief,
     geos,
@@ -104,11 +106,12 @@ export async function buildMissionSummary(profile: OrgTargetingProfile): Promise
     },
   });
   const parsed = await callOpenAiJson(
-    system +
-      ` JSON: {"summary":"texte multi-lignes avec puces •"}`,
+    system + ` JSON: {"summary":"texte multi-lignes avec puces •, sans markdown"}`,
     user
   );
-  if (parsed?.summary && typeof parsed.summary === 'string') return parsed.summary;
+  if (parsed?.summary && typeof parsed.summary === 'string') {
+    return stripAiMarkdown(parsed.summary);
+  }
 
   const lines = [
     'Votre équipe IA recherchera principalement :',
@@ -122,6 +125,17 @@ export async function buildMissionSummary(profile: OrgTargetingProfile): Promise
     lines.push('', `Priorité : ${profile.commercialPriorities.trim()}`);
   }
   return lines.join('\n');
+}
+
+/** Retire le markdown « gadget » (**gras**, *italique*, titres) des textes LLM. */
+export function stripAiMarkdown(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .trim();
 }
 
 export async function getOrCreateMissionProfile(organizationId: string): Promise<OrgTargetingProfile> {

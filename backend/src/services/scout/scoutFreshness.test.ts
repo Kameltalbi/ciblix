@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { extractLatestDateFromText, isPastScoutOpportunity } from './scoutFreshness.js';
+import {
+  extractLatestDateFromText,
+  isPastDatedContent,
+  isPastScoutOpportunity,
+} from './scoutFreshness.js';
 
 function ymd(d: Date | null): string | null {
   if (!d) return null;
@@ -13,6 +17,12 @@ describe('extractLatestDateFromText', () => {
 
   it('parses July range', () => {
     expect(ymd(extractLatestDateFromText('Formation 14-16 Juillet 2025'))).toBe('2025-07-16');
+  });
+
+  it('parses du X au Y mois année', () => {
+    expect(
+      ymd(extractLatestDateFromText('Salon Carthage du 19 au 24 mai 2026 au Parc des Expositions')),
+    ).toBe('2026-05-24');
   });
 
   it('parses ISO deadline', () => {
@@ -72,5 +82,26 @@ describe('isPastScoutOpportunity', () => {
         now,
       }),
     ).toBe(true);
+  });
+});
+
+describe('isPastDatedContent', () => {
+  const now = new Date(2026, 6, 25); // 25 juil. 2026
+
+  it('hides past salon mentioned in agent resume', () => {
+    expect(
+      isPastDatedContent(
+        'Le Salon International du Bâtiment Carthage 2026 se déroulera du 19 au 24 mai 2026',
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps content without a date', () => {
+    expect(isPastDatedContent('Score 85/100 — PRIORITY. Alignement fort.', now)).toBe(false);
+  });
+
+  it('keeps future events', () => {
+    expect(isPastDatedContent('Forum RSE du 12 au 14 septembre 2026', now)).toBe(false);
   });
 });

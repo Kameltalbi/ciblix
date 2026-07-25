@@ -1,5 +1,6 @@
 import { prisma } from '../../db/prisma.js';
 import { enqueueAgentTask } from './agentTaskService.js';
+import { isPastScoutOpportunity } from '../scout/scoutFreshness.js';
 
 /**
  * Après un scan Veilleur (manuel ou auto) : crée des tâches Prospecteur.
@@ -28,6 +29,24 @@ export async function handoffScoutSignalsToHunt(
   for (const opp of opportunities) {
     if (opp.relevanceScore < minScore) continue;
     const full = await prisma.scoutOpportunity.findUnique({ where: { id: opp.id } });
+    if (
+      full &&
+      isPastScoutOpportunity({
+        category: full.category || opp.category,
+        title: full.title,
+        snippet: full.snippet,
+        aiSummary: full.aiSummary,
+        deadline: full.deadline,
+      })
+    ) {
+      if (full.status === 'NEW') {
+        await prisma.scoutOpportunity.update({
+          where: { id: full.id },
+          data: { status: 'DISMISSED' },
+        });
+      }
+      continue;
+    }
     const raw = (full?.rawData || {}) as { companyName?: string };
     const companyGuess =
       raw.companyName?.trim() ||
