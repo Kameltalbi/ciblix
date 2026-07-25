@@ -73,6 +73,16 @@ export function ConnectorBrandIcon({ id, className }: { id: string; className?: 
           <path fill="#fff" d="M7 10h4v1.2H7V10zm0 3h10v1.2H7V13zm6-3h4v1.2h-4V10z" />
         </svg>
       );
+    case 'softfacture':
+      return (
+        <svg viewBox="0 0 24 24" className={cn} aria-hidden>
+          <rect x="3" y="4" width="18" height="16" rx="3" fill="#0B5FFF" />
+          <path
+            fill="#fff"
+            d="M7.2 8.2h9.6v1.5H13.4v6.1h-2.8V9.7H7.2V8.2zm1.2 9.2h7.2v1.4H8.4v-1.4z"
+          />
+        </svg>
+      );
     case 'erp':
       return (
         <svg viewBox="0 0 24 24" className={cn} aria-hidden>

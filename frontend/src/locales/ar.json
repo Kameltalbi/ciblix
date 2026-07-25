@@ -1383,7 +1383,9 @@
       "webhookMeta": "Webhook Meta",
       "webhook": "Webhook",
       "configured": "مُعدّ",
-      "active": "نشط"
+      "active": "نشط",
+      "api": "API",
+      "billing": "الفوترة"
     },
     "items": {
       "gmail": {
@@ -1493,6 +1495,20 @@
           "رابط webhook",
           "سر HMAC",
           "اختيار الأحداث"
+        ]
+      },
+      "softfacture": {
+        "description": "فوترة Softfacture (خدمة خارجية) — خطة Softfacture مجانية متاحة ثم خطط مدفوعة على softfacture.com. يربط Ciblix بحسابك Softfacture.",
+        "capabilities": [
+          "إنشاء عروض أسعار",
+          "إنشاء فواتير",
+          "ملفات PDF",
+          "ربط العملاء / الفرص"
+        ],
+        "permissions": [
+          "حساب Softfacture (خطة مجانية أو مدفوعة)",
+          "مفتاح API Softfacture",
+          "رابط API Softfacture"
         ]
       },
       "erp": {

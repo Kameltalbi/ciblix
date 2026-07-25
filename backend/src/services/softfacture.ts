@@ -99,6 +99,18 @@ class SoftfactureClient {
     const arrayBuffer = await res.arrayBuffer();
     return Buffer.from(arrayBuffer);
   }
+
+  isConfigured(): boolean {
+    return Boolean(this.baseUrl && this.apiKey);
+  }
+
+  status() {
+    return {
+      configured: this.isConfigured(),
+      baseUrl: this.baseUrl || null,
+      website: 'https://www.softfacture.com',
+    };
+  }
 }
 
 export const softfactureClient = new SoftfactureClient();

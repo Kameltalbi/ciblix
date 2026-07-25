@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/form-controls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SoftfactureSettings } from '@/components/settings/SoftfactureSettings';
 
 type IntegrationsConfig = {
   whatsapp: {
@@ -298,6 +299,8 @@ export function IntegrationsSettings() {
           </Button>
         </CardContent>
       </Card>
+
+      <SoftfactureSettings />
     </div>
   );
 }

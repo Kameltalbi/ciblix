@@ -29,7 +29,7 @@ export const PLAN_LIMITS = {
       ai: false,
       commissions: false,
       advancedAutomations: false,
-      softfacture: false,
+      softfacture: true,
     },
   },
   BASIC: {
@@ -41,7 +41,7 @@ export const PLAN_LIMITS = {
       ai: false,
       commissions: false,
       advancedAutomations: false,
-      softfacture: false,
+      softfacture: true,
     },
   },
   BUSINESS: {
@@ -53,7 +53,7 @@ export const PLAN_LIMITS = {
       ai: false,
       commissions: false,
       advancedAutomations: false,
-      softfacture: false,
+      softfacture: true,
     },
   },
   ENTERPRISE: {

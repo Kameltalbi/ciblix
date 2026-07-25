@@ -27,6 +27,8 @@ export type ConnectorDefinition = {
   /** Permissions shown in the connect wizard */
   permissions: string[];
   configureHref?: string;
+  /** Lien externe (ex. Softfacture) ouvert à la connexion / config */
+  externalUrl?: string;
 };
 
 export type ConnectorRuntime = ConnectorDefinition & {

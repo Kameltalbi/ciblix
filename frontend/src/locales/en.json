@@ -1387,7 +1387,9 @@
       "webhookMeta": "Meta webhook",
       "webhook": "Webhook",
       "configured": "Configured",
-      "active": "Active"
+      "active": "Active",
+      "api": "API",
+      "billing": "Billing"
     },
     "items": {
       "gmail": {
@@ -1497,6 +1499,20 @@
           "Webhook URL",
           "HMAC secret",
           "Event selection"
+        ]
+      },
+      "softfacture": {
+        "description": "Softfacture billing (external service) — Softfacture free plan available, then paid plans on softfacture.com. Ciblix connects to your Softfacture account.",
+        "capabilities": [
+          "Quote creation",
+          "Invoice creation",
+          "Document PDFs",
+          "Link clients / opportunities"
+        ],
+        "permissions": [
+          "Softfacture account (free or paid plan)",
+          "Softfacture API key",
+          "Softfacture API URL"
         ]
       },
       "erp": {

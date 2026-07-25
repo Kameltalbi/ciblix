@@ -6,6 +6,14 @@ import { softfactureClient } from '../services/softfacture.js';
 export const softfactureRoutes = Router();
 softfactureRoutes.use(auth);
 
+softfactureRoutes.get('/status', async (_req: AuthRequest, res, next) => {
+  try {
+    res.json(softfactureClient.status());
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ─── Créer un DEVIS dans Softfacture à partir d'une affaire ─────
 softfactureRoutes.post('/devis/:affaireId', async (req: AuthRequest, res, next) => {
   try {

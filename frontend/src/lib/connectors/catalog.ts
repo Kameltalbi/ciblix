@@ -150,6 +150,27 @@ export const CONNECTOR_CATALOG: ConnectorDefinition[] = [
     configureHref: '/settings?tab=organization&orgTab=integrations',
   },
   {
+    id: 'softfacture',
+    name: 'Softfacture',
+    category: 'enterprise',
+    description:
+      'Facturation Softfacture (service externe) — plan gratuit Softfacture disponible, puis offres payantes sur softfacture.com.',
+    capabilities: [
+      'Création de devis',
+      'Création de factures',
+      'PDF documents',
+      'Lien clients / opportunités',
+    ],
+    authType: 'api_key',
+    accent: '#0B5FFF',
+    permissions: [
+      'Compte Softfacture (plan gratuit ou payant)',
+      'Clé API Softfacture',
+      'URL API Softfacture',
+    ],
+    externalUrl: 'https://www.softfacture.com',
+  },
+  {
     id: 'erp',
     name: 'ERP',
     category: 'enterprise',

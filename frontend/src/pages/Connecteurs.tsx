@@ -38,6 +38,11 @@ type IntegrationsConfig = {
   };
   outboundWebhook: { targetUrl: string; enabled: boolean } | null;
 };
+type SoftfactureStatus = {
+  configured: boolean;
+  baseUrl: string | null;
+  website: string;
+};
 
 function dateLocale(lang: string) {
   if (lang.startsWith('ar')) return 'ar-TN';
@@ -107,7 +112,8 @@ function resolveConnectors(
   locale: string,
   gmail?: GmailStatus,
   gmailStats?: GmailStats,
-  integrations?: IntegrationsConfig
+  integrations?: IntegrationsConfig,
+  softfacture?: SoftfactureStatus
 ): ConnectorRuntime[] {
   return CONNECTOR_CATALOG.map((def) => {
     if (def.comingSoon) {
@@ -164,6 +170,22 @@ function resolveConnectors(
         lastSyncAt: connected ? new Date().toISOString() : null,
         stats: connected
           ? [{ label: t('connectorsPage.stats.webhook'), value: t('connectorsPage.stats.active') }]
+          : undefined,
+      };
+    }
+
+    if (def.id === 'softfacture') {
+      const connected = !!softfacture?.configured;
+      return {
+        ...def,
+        status: connected ? 'connected' : 'disconnected',
+        accountLabel: softfacture?.baseUrl || softfacture?.website || 'www.softfacture.com',
+        lastSyncAt: connected ? new Date().toISOString() : null,
+        stats: connected
+          ? [
+              { label: t('connectorsPage.stats.api'), value: t('connectorsPage.stats.configured') },
+              { label: t('connectorsPage.stats.billing'), value: t('connectorsPage.stats.active') },
+            ]
           : undefined,
       };
     }
@@ -301,6 +323,14 @@ function ConnectWizard({
         setSuccess(true);
         setTimeout(() => {
           window.location.href = data.url;
+        }, 700);
+        return;
+      }
+      if (connector.externalUrl) {
+        setSuccess(true);
+        setTimeout(() => {
+          window.open(connector.externalUrl, '_blank', 'noopener,noreferrer');
+          onOpenChange(false);
         }, 700);
         return;
       }
@@ -470,6 +500,11 @@ export function Connecteurs() {
     queryFn: () => api.get('/integrations/config').then((r) => r.data),
   });
 
+  const { data: softfactureStatus } = useQuery<SoftfactureStatus>({
+    queryKey: ['softfacture-status'],
+    queryFn: () => api.get('/softfacture/status').then((r) => r.data),
+  });
+
   useEffect(() => {
     if (params.get('gmail') === 'connected') {
       setToast(t('connectorsPage.gmailConnected'));
@@ -480,8 +515,8 @@ export function Connecteurs() {
   }, [params, qc, t]);
 
   const connectors = useMemo(
-    () => resolveConnectors(t, locale, gmailStatus, gmailStats, integrations),
-    [t, locale, gmailStatus, gmailStats, integrations]
+    () => resolveConnectors(t, locale, gmailStatus, gmailStats, integrations, softfactureStatus),
+    [t, locale, gmailStatus, gmailStats, integrations, softfactureStatus]
   );
 
   const byCategory = useMemo(() => {
@@ -502,6 +537,10 @@ export function Connecteurs() {
   };
 
   const onConfigure = (c: ConnectorRuntime) => {
+    if (c.externalUrl) {
+      window.open(c.externalUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (c.configureHref) navigate(c.configureHref);
     else openWizard(c);
   };
