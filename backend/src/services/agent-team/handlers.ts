@@ -561,14 +561,16 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
   if (process.env.OPENAI_API_KEY) {
     try {
       const system = `Tu es l'Assistant commercial Ciblix. JSON uniquement:
-{"companySummary":"...","needsSummary":"...","arguments":["..."],"approachAngle":"...","email":"...","linkedin":"...","nextActions":["..."]}`;
+{"companySummary":"...","needsSummary":"...","arguments":["..."],"approachAngle":"...","email":"...","linkedin":"...","nextActions":["..."]}
+RÈGLE OFFRE : email et linkedin ne doivent citer QUE les produits/services fournis dans « Nos offres ». INTERDIT d'inventer événementiel, agence, BTP, etc. si absents de la liste.`;
       const user = [
         `Entreprise: ${companyName}`,
         `Score: ${payload.score}`,
         `Décision: ${payload.decision}`,
         targeting?.activity ? `Notre activité: ${targeting.activity}` : null,
+        targeting?.companyBrief ? `Notre brief: ${targeting.companyBrief}` : null,
         targeting?.productsServices?.length
-          ? `Offres: ${targeting.productsServices.join(', ')}`
+          ? `Nos offres: ${targeting.productsServices.join(', ')}`
           : null,
         Array.isArray(payload.reasons) ? `Raisons: ${(payload.reasons as string[]).join('; ')}` : null,
         payload.signalSummary ? `Signal: ${payload.signalSummary}` : null,

@@ -659,7 +659,7 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       return res.status(400).json({ error: channelCheck.error });
     }
 
-    const [organization, senderUser] = await Promise.all([
+    const [organization, senderUser, targeting] = await Promise.all([
       prisma.organization.findUnique({
         where: { id: req.organizationId! },
         select: { name: true },
@@ -670,6 +670,17 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
             select: { name: true },
           })
         : Promise.resolve(null),
+      prisma.orgTargetingProfile.findUnique({
+        where: { organizationId: req.organizationId! },
+        select: {
+          activity: true,
+          companyBrief: true,
+          productsServices: true,
+          sectors: true,
+          commercialPriorities: true,
+          missionSummary: true,
+        },
+      }),
     ]);
 
     const hit = {
@@ -688,13 +699,23 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       aiSummary: row.aiSummary,
     };
 
+    const products = targeting?.productsServices?.filter(Boolean) ?? [];
+    const brief =
+      targeting?.companyBrief?.trim() ||
+      targeting?.activity?.trim() ||
+      targeting?.missionSummary?.trim() ||
+      null;
+
     const { body, source, signatureWarning } = await generateOutreachMessage(
       hit,
       messageType as OutreachMessageType,
       tone,
       {
         organizationName: organization?.name || 'Notre entreprise',
-        organizationSector: null,
+        organizationSector: targeting?.sectors?.slice(0, 3).join(', ') || null,
+        organizationBrief: brief,
+        productsServices: products,
+        commercialPriorities: targeting?.commercialPriorities ?? null,
         senderName: senderUser?.name || null,
       }
     );

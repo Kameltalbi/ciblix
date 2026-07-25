@@ -4,7 +4,14 @@ export type OutreachTone = 'doux' | 'commercial' | 'ferme';
 
 export type OutreachSenderContext = {
   organizationName: string;
+  /** Secteur / activité réelle (Mission). */
   organizationSector?: string | null;
+  /** Description libre entreprise (companyBrief / activity). */
+  organizationBrief?: string | null;
+  /** Produits & services réels — ne jamais inventer hors de cette liste. */
+  productsServices?: string[];
+  /** Priorités commerciales Mission (optionnel). */
+  commercialPriorities?: string | null;
   senderName?: string | null;
 };
 
@@ -30,6 +37,16 @@ function signerName(sender: OutreachSenderContext): string {
   return (sender.senderName || sender.organizationName || 'Notre équipe').trim();
 }
 
+function offerSummary(sender: OutreachSenderContext): string {
+  const products = (sender.productsServices || []).map((p) => p.trim()).filter(Boolean);
+  if (products.length) return products.slice(0, 8).join(', ');
+  const brief = sender.organizationBrief?.trim();
+  if (brief) return brief.slice(0, 280);
+  const sector = sender.organizationSector?.trim();
+  if (sector) return sector;
+  return '';
+}
+
 const GENERIC_PROSPECT_TOKENS = new Set([
   'comptable',
   'cabinet',
@@ -52,6 +69,22 @@ const GENERIC_PROSPECT_TOKENS = new Set([
   'les',
 ]);
 
+/** Verticales souvent inventées à tort — à rejeter si absentes de notre offre. */
+const HALLUCINATED_OFFER_PATTERNS: Array<{ re: RegExp; label: string }> = [
+  {
+    re: /solutions?\s+événement|événementiel(?:les)?|organis(?:ation|ons|er)\s+(?:des\s+)?événements?|team[\s-]?building|salon\s+(?:pro|professionnel)/i,
+    label: 'events',
+  },
+  {
+    re: /agence\s+(?:de\s+)?communication|branding\s+stratégique|campagne\s+publicitaire\s+360/i,
+    label: 'agency_comms',
+  },
+  {
+    re: /construction\s+de\s+bâtiments|génie\s+civil|maître\s+d['']œuvre/i,
+    label: 'construction',
+  },
+];
+
 function significantNameTokens(name: string): string[] {
   return name
     .toLowerCase()
@@ -59,6 +92,24 @@ function significantNameTokens(name: string): string[] {
     .replace(/[\u0300-\u036f]/g, '')
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 4 && !GENERIC_PROSPECT_TOKENS.has(t));
+}
+
+function normalizeOfferText(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/** Tokens significatifs de notre offre réelle (produits + brief). */
+export function ourOfferTokens(sender: OutreachSenderContext): string[] {
+  const blob = [
+    ...(sender.productsServices || []),
+    sender.organizationBrief || '',
+    sender.organizationSector || '',
+    sender.commercialPriorities || '',
+  ].join(' ');
+  return significantNameTokens(blob).filter((t) => t.length >= 5).slice(0, 24);
 }
 
 /**
@@ -81,7 +132,6 @@ export function validateGeneratedMessage(
   const lastLine = (lines[lines.length - 1] || '').toLowerCase();
   const closingBlock = lines.slice(-3).join('\n').toLowerCase();
 
-  // Signature = dernières lignes contenant le nom complet ou un token significatif du prospect
   if (lastLine.includes(prospectLower) || closingBlock.includes(prospectLower)) {
     return { ok: false, reason: 'signed_as_prospect' };
   }
@@ -91,7 +141,6 @@ export function validateGeneratedMessage(
     }
   }
 
-  // "Je suis {prenom/nom du prospect}"
   const identitySteal = /(je\s+suis|je\s+m['']appelle|mon\s+nom\s+est)\s+([^\n.,!]{2,60})/gi;
   let m: RegExpExecArray | null;
   while ((m = identitySteal.exec(text)) !== null) {
@@ -101,7 +150,6 @@ export function validateGeneratedMessage(
     }
   }
 
-  // Si le message se présente clairement et ne mentionne jamais l'org alors que le prospect est dans la zone signature
   if (
     orgLower &&
     !text.toLowerCase().includes(orgLower) &&
@@ -109,6 +157,45 @@ export function validateGeneratedMessage(
     tokens.some((t) => lastLine.includes(t))
   ) {
     return { ok: false, reason: 'likely_wrong_identity' };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Rejette les messages qui inventent une offre absente de la Mission / produits.
+ */
+export function validateOfferFidelity(
+  message: string,
+  sender: OutreachSenderContext
+): { ok: boolean; reason?: string } {
+  const offerBlob = normalizeOfferText(
+    [
+      ...(sender.productsServices || []),
+      sender.organizationBrief || '',
+      sender.organizationSector || '',
+      sender.commercialPriorities || '',
+    ].join(' ')
+  );
+  if (!offerBlob.trim()) {
+    // Sans Mission : on refuse les verticales événementielles génériques inventées
+    for (const h of HALLUCINATED_OFFER_PATTERNS) {
+      if (h.re.test(message)) return { ok: false, reason: `hallucinated_${h.label}` };
+    }
+    return { ok: true };
+  }
+
+  for (const h of HALLUCINATED_OFFER_PATTERNS) {
+    if (h.re.test(message) && !h.re.test(offerBlob)) {
+      return { ok: false, reason: `hallucinated_${h.label}` };
+    }
+  }
+
+  const tokens = ourOfferTokens(sender);
+  if (tokens.length >= 2) {
+    const msg = normalizeOfferText(message);
+    const hit = tokens.some((t) => msg.includes(t));
+    if (!hit) return { ok: false, reason: 'missing_real_offer' };
   }
 
   return { ok: true };
@@ -124,27 +211,27 @@ function templateMessage(
   const sector = hit.industry || 'votre secteur';
   const org = sender.organizationName;
   const sign = signerName(sender);
-  const angle = hit.commercialAngle || hit.probableBusinessProblem || null;
+  const offer = offerSummary(sender) || 'nos solutions digitales pour PME';
 
   const opening =
     tone === 'doux'
       ? `Bonjour,\n\nJe me permets de vous écrire de la part de ${org}, après avoir découvert ${prospect}.`
       : tone === 'ferme'
         ? `Bonjour,\n\nJe vous contacte de la part de ${org} au sujet de ${prospect}, avec une proposition très cadrée.`
-        : `Bonjour,\n\nJe vous contacte de la part de ${org} : votre positionnement sur ${sector} correspond à des accompagnements que nous menons avec d’autres structures.`;
+        : `Bonjour,\n\nJe vous contacte de la part de ${org} : votre positionnement sur ${sector} m’a paru pertinent au regard de ce que nous proposons.`;
 
-  const angleLine = angle ? `\n\nNous avons noté notamment : ${angle}` : '';
+  const offerLine = `\n\nChez ${org}, nous proposons : ${offer}.`;
 
   const body =
     type === 'FIRST_CONTACT'
-      ? `${opening}${angleLine}\n\nSeriez-vous ouvert à un échange de 15 minutes cette semaine pour voir si un sujet (organisation commerciale, suivi client) mérite d’être creusé ?`
+      ? `${opening}${offerLine}\n\nSeriez-vous ouvert à un échange de 15 minutes pour voir si cela peut vous être utile ?`
       : type === 'FOLLOW_UP'
-        ? `${opening}\n\nJe souhaitais simplement remonter mon message : avez-vous un créneau court à me proposer ?`
+        ? `${opening}\n\nJe souhaitais simplement remonter mon message au sujet de ${offer}. Avez-vous un créneau court ?`
         : type === 'VALUE_PROPOSITION'
-          ? `${opening}${angleLine}\n\nChez ${org}, nous aidons des PME à structurer la prospection et le suivi des opportunités. Un cas concret du ${sector} pourrait vous parler — intéressé pour en discuter ?`
+          ? `${opening}${offerLine}\n\nUn cas concret auprès de PME du ${sector} pourrait vous parler — intéressé pour en discuter ?`
           : type === 'LINKEDIN'
-            ? `Bonjour — votre activité ${sector} m’a interpellé. Je travaille chez ${org} avec des PME sur la conversion prospection → pipeline. OK pour échanger en MP ?`
-            : /* WHATSAPP */ `Bonjour, je vous contacte de la part de ${org} au sujet de ${prospect} (${sector}). Avez-vous 2 min cette semaine pour un point téléphonique ?`;
+            ? `Bonjour — ${prospect} m’a interpellé. Chez ${org} : ${offer}. OK pour échanger en MP ?`
+            : /* WHATSAPP */ `Bonjour, ${org} — ${offer}. Concernant ${prospect}, avez-vous 2 min cette semaine ?`;
 
   const closing = tone === 'ferme' ? `\n\nCordialement,\n${sign}\n${org}` : `\n\nBien cordialement,\n${sign}\n${org}`;
   return body + closing;
@@ -160,41 +247,49 @@ async function openAiOutreach(
   if (!apiKey) return null;
 
   const sign = signerName(sender);
-  const orgSector = sender.organizationSector?.trim() || 'non précisé';
+  const offer = offerSummary(sender);
+  const productsList = (sender.productsServices || []).filter(Boolean);
+  const brief = sender.organizationBrief?.trim() || '—';
+  const orgSector = sender.organizationSector?.trim() || '—';
+  const priorities = sender.commercialPriorities?.trim() || '—';
 
   const systemPrompt = `Tu rédiges un message de prospection commerciale en français.
 
-RÈGLE ABSOLUE : tu écris CE MESSAGE AU NOM DE L'EXPÉDITEUR, à destination du PROSPECT (destinataire).
-- Ne te présente JAMAIS comme si tu étais le prospect.
-- Ne signe JAMAIS le message avec le nom du prospect.
-- N'écris JAMAIS « Je suis {nom du prospect} » ni « Je travaille dans [secteur du prospect] » en te faisant passer pour lui.
-- Le message doit se terminer par une signature au nom de l'EXPÉDITEUR uniquement.
-- Ton sobre, humain, B2B PME. Pas de liste à puces. Pas de « Cher partenaire ».`;
+RÈGLES ABSOLUES :
+1) Tu écris AU NOM DE L'EXPÉDITEUR, à destination du PROSPECT.
+2) Ne te présente JAMAIS comme le prospect ; ne signe JAMAIS avec le nom du prospect.
+3) OFFRE PRODUIT — CRITIQUE :
+   - Tu ne peux parler QUE des produits/services RÉELS listés pour l'expéditeur.
+   - INTERDIT d'inventer une offre (ex. événementiel, agence comm, BTP…) si elle n'est pas dans la liste.
+   - Ne confonds JAMAIS l'activité du prospect avec l'offre de l'expéditeur.
+   - Si l'expéditeur fait de la facturation / SaaS / logiciel, ne propose PAS d'organiser des événements.
+4) Ton sobre, humain, B2B PME. Pas de liste à puces. Pas de « Cher partenaire ».`;
 
-  const userPrompt = `--- EXPÉDITEUR (qui écrit ce message — c'est TOI dans le message) ---
-Nom de l'entreprise : ${sender.organizationName}
-Secteur d'activité de l'expéditeur : ${orgSector}
+  const userPrompt = `--- EXPÉDITEUR (qui écrit — c'est TOI) ---
+Entreprise : ${sender.organizationName}
+Secteur / activité : ${orgSector}
+Brief Mission : ${brief}
+Produits & services RÉELS (seule offre autorisée) : ${productsList.length ? productsList.join(' · ') : offer || 'non renseigné — reste très général, ne invente rien'}
+Priorités commerciales : ${priorities}
 Signataire : ${sign}
 
---- DESTINATAIRE (à qui ce message est envoyé — NE PAS utiliser ces infos pour te présenter ou signer) ---
-Nom du prospect / entreprise : ${hit.companyName}
-Secteur du prospect : ${hit.industry || '—'}
+--- DESTINATAIRE (prospect — personnalisation uniquement, PAS ton offre) ---
+Entreprise : ${hit.companyName}
+Secteur prospect : ${hit.industry || '—'}
 Site : ${hit.website || '—'}
 Ville / pays : ${hit.city || '—'}, ${hit.country || '—'}
-Problème probable détecté : ${hit.probableBusinessProblem || '—'}
-Angle d'approche suggéré : ${hit.commercialAngle || '—'}
-Résumé IA : ${hit.aiSummary || '—'}
+Contexte prospect (ne pas transformer en ton offre) : ${hit.probableBusinessProblem || '—'} / ${hit.commercialAngle || '—'}
+Résumé : ${hit.aiSummary || '—'}
 
---- CONSIGNES DE RÉDACTION ---
+--- RÉDACTION ---
 Canal : ${channelLabel(type)}
 Ton : ${tone}
-- Utilise les informations du destinataire uniquement pour personnaliser (mentionner son secteur, son contexte).
-- Présente-toi / ton entreprise (${sender.organizationName}) comme expéditeur.
-- Termine par une signature : ${sign} (et éventuellement ${sender.organizationName}), jamais le nom du prospect.
-- Personnalisé, non générique, pas de promesse irréaliste, pas de spam.
-- Une seule question ouverte à la fin si pertinent.
+- Présente clairement ${sender.organizationName} et CE QU'ELLE VEND vraiment.
+- Relie brièvement au contexte du prospect SANS inventer un métier pour ${sender.organizationName}.
+- Signature : ${sign} + ${sender.organizationName} uniquement.
+- Une question ouverte à la fin.
 
-Rédige maintenant uniquement le corps du message (pas d'objet email sauf si indispensable en une ligne courte).`;
+Rédige uniquement le corps du message.`;
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -205,7 +300,7 @@ Rédige maintenant uniquement le corps du message (pas d'objet email sauf si ind
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.45,
+      temperature: 0.35,
       max_tokens: 500,
     }),
   });
@@ -223,11 +318,17 @@ export async function generateOutreachMessage(
   const senderCtx: OutreachSenderContext = {
     organizationName: sender?.organizationName?.trim() || 'Notre entreprise',
     organizationSector: sender?.organizationSector ?? null,
+    organizationBrief: sender?.organizationBrief ?? null,
+    productsServices: sender?.productsServices ?? [],
+    commercialPriorities: sender?.commercialPriorities ?? null,
     senderName: sender?.senderName?.trim() || null,
   };
 
-  const runValidate = (body: string) =>
-    validateGeneratedMessage(body, hit.companyName, senderCtx.organizationName);
+  const runValidate = (body: string) => {
+    const idCheck = validateGeneratedMessage(body, hit.companyName, senderCtx.organizationName);
+    if (!idCheck.ok) return idCheck;
+    return validateOfferFidelity(body, senderCtx);
+  };
 
   let ai = await openAiOutreach(hit, type, tone, senderCtx);
   if (ai) {
@@ -243,7 +344,11 @@ export async function generateOutreachMessage(
     if (check.ok) {
       return { body: ai, source: 'openai', signatureWarning: false };
     }
-    // Toujours renvoyer le texte mais avec avertissement (l'UI relit avant envoi)
+    // Offre inventée → template fidèle plutôt qu'un faux pitch
+    if (check.reason?.startsWith('hallucinated_') || check.reason === 'missing_real_offer') {
+      const fallback = templateMessage(hit, type, tone, senderCtx);
+      return { body: fallback, source: 'template', signatureWarning: false };
+    }
     return { body: ai, source: 'openai', signatureWarning: true };
   }
 
