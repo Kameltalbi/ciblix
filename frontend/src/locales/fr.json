@@ -245,7 +245,7 @@
       "commissions": "Primes"
     },
     "securityTitle": "Sécurité du compte",
-    "securitySubtitle": "Changez votre mot de passe. Après mise à jour, vous serez déconnecté."
+    "securitySubtitle": "Chaque utilisateur peut changer son propre mot de passe ici. Après mise à jour, vous serez déconnecté."
   },
   "organizations": {
     "title": "Mon Organisation",
@@ -484,8 +484,13 @@
     "noPermission": "Vous n'avez pas les permissions pour gérer les utilisateurs. Contactez l’administrateur du compte.",
     "confirmDelete": "Supprimer cet utilisateur ?",
     "managePermissions": "Gérer les permissions",
-    "passwordOptional": "Mot de passe (laisser vide pour ne pas changer)",
-    "passwordRequired": "Mot de passe *",
+    "passwordOptional": "Nouveau mot de passe (laisser vide pour ne pas changer)",
+    "passwordRequired": "Mot de passe initial *",
+    "passwordResetHint": "En tant qu’admin, vous définissez ou réinitialisez le mot de passe. Le collaborateur pourra le changer dans Paramètres → Sécurité.",
+    "seatsLabel": "{{used}} / {{max}} utilisateurs inclus dans votre plan",
+    "seatsUnlimited": "{{used}} utilisateurs (illimité sur votre plan)",
+    "seatsLimitReached": "Limite atteinte pour votre plan. Passez à une offre supérieure pour ajouter des collaborateurs.",
+    "createError": "Impossible d’ajouter l’utilisateur",
     "role": "Rôle",
     "roleOwner": "Administrateur (accès complet)",
     "rolePartner": "Collaborateur (accès limité)",

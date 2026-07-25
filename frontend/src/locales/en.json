@@ -245,7 +245,7 @@
       "commissions": "Bonuses"
     },
     "securityTitle": "Account Security",
-    "securitySubtitle": "Change your password. You will be signed out after the update."
+    "securitySubtitle": "Every user can change their own password here. You will be signed out after the update."
   },
   "organizations": {
     "title": "My Organization",
@@ -484,8 +484,13 @@
     "noPermission": "You don't have permission to manage users. Contact the account administrator.",
     "confirmDelete": "Delete this user?",
     "managePermissions": "Manage permissions",
-    "passwordOptional": "Password (leave blank to keep unchanged)",
-    "passwordRequired": "Password *",
+    "passwordOptional": "New password (leave blank to keep unchanged)",
+    "passwordRequired": "Initial password *",
+    "passwordResetHint": "As admin, you set or reset the password. The user can change it later in Settings → Security.",
+    "seatsLabel": "{{used}} / {{max}} users included in your plan",
+    "seatsUnlimited": "{{used}} users (unlimited on your plan)",
+    "seatsLimitReached": "Seat limit reached for your plan. Upgrade to add more teammates.",
+    "createError": "Could not add user",
     "role": "Role",
     "roleOwner": "Administrator (full access)",
     "rolePartner": "Collaborator (limited access)",

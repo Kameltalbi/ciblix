@@ -40,11 +40,17 @@ export function Users({ embedded = false }: { embedded?: boolean }) {
     PAGES.map(p => ({ page: p.key, canView: true, canCreate: false, canEdit: false, canDelete: false }))
   );
 
-  const { data: usersData } = useQuery<{ data: User[], pagination: any }>({
+  const { data: usersData } = useQuery<{
+    data: User[];
+    pagination: any;
+    seats?: { used: number; max: number | null; canAdd: boolean; plan?: string; tier?: string | null };
+  }>({
     queryKey: ['users'],
     queryFn: () => api.get('/users').then((r) => r.data),
   });
   const users = usersData?.data || [];
+  const seats = usersData?.seats;
+  const canAddUser = seats?.canAdd !== false;
 
   const { data: currentUser } = useQuery<User>({
     queryKey: ['me'],
@@ -61,6 +67,11 @@ export function Users({ embedded = false }: { embedded?: boolean }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
       setOpen(false);
+      setFormError('');
+    },
+    onError: (err: unknown) => {
+      const ax = err as { response?: { data?: { error?: string } } };
+      setFormError(ax.response?.data?.error || t('usersPage.createError'));
     },
   });
 
@@ -137,11 +148,33 @@ export function Users({ embedded = false }: { embedded?: boolean }) {
           )}
         </div>
         {isOwner && (
-          <Button onClick={() => { setForm(EMPTY); setShowPassword(false); setShowConfirmPassword(false); setFormError(''); setOpen(true); }} className="w-full sm:w-auto">
+          <Button
+            onClick={() => {
+              setForm(EMPTY);
+              setShowPassword(false);
+              setShowConfirmPassword(false);
+              setFormError('');
+              setOpen(true);
+            }}
+            className="w-full sm:w-auto"
+            disabled={!canAddUser}
+            title={!canAddUser ? t('usersPage.seatsLimitReached') : undefined}
+          >
             <Plus size={16} />{t('usersPage.newUser')}
           </Button>
         )}
       </div>
+
+      {isOwner && seats && (
+        <p className="text-sm text-muted-foreground">
+          {seats.max == null
+            ? t('usersPage.seatsUnlimited', { used: seats.used })
+            : t('usersPage.seatsLabel', { used: seats.used, max: seats.max })}
+          {!canAddUser ? (
+            <span className="mt-1 block text-amber-700">{t('usersPage.seatsLimitReached')}</span>
+          ) : null}
+        </p>
+      )}
 
       {!isOwner && (
         <Card className="border-amber-200 bg-amber-50">
@@ -219,6 +252,7 @@ export function Users({ embedded = false }: { embedded?: boolean }) {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -228,6 +262,8 @@ export function Users({ embedded = false }: { embedded?: boolean }) {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <p className="text-xs text-muted-foreground">{t('auth.passwordHint')}</p>
+              <p className="text-xs text-muted-foreground">{t('usersPage.passwordResetHint')}</p>
             </div>
             <div className="space-y-1.5">
               <Label>{t('auth.confirmPassword')}</Label>

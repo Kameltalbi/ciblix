@@ -153,23 +153,51 @@ export async function checkProspectLimit(req: AuthRequest, res: Response, next: 
   }
 }
 
+import { TIER_MAX_USERS } from '../config/billingTiers.js';
+import type { BillingTier } from '@prisma/client';
+
+export async function resolveMaxUsers(organizationId: string): Promise<{
+  maxUsers: number;
+  plan: PlanType;
+  tier: BillingTier | null;
+}> {
+  const [organization, billing] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { plan: true },
+    }),
+    prisma.billingSubscription.findUnique({
+      where: { organizationId },
+      select: { tier: true },
+    }),
+  ]);
+
+  const plan = normalizePlan(organization?.plan);
+  const tier = billing?.tier ?? null;
+
+  if (tier && Object.prototype.hasOwnProperty.call(TIER_MAX_USERS, tier)) {
+    const fromTier = TIER_MAX_USERS[tier];
+    return {
+      maxUsers: fromTier == null ? Infinity : fromTier,
+      plan,
+      tier,
+    };
+  }
+
+  return {
+    maxUsers: PLAN_LIMITS[plan].maxUsers,
+    plan,
+    tier,
+  };
+}
+
 export async function checkUserLimit(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     if (!req.organizationId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const organization = await prisma.organization.findUnique({
-      where: { id: req.organizationId },
-      select: { plan: true },
-    });
-
-    if (!organization) {
-      return res.status(404).json({ error: 'Organization not found' });
-    }
-
-    const plan = normalizePlan(organization.plan);
-    const maxUsers = PLAN_LIMITS[plan].maxUsers;
+    const { maxUsers, plan, tier } = await resolveMaxUsers(req.organizationId);
 
     if (maxUsers === Infinity) {
       return next();
@@ -180,11 +208,12 @@ export async function checkUserLimit(req: AuthRequest, res: Response, next: Next
     });
 
     if (currentUsers >= maxUsers) {
-      return res.status(403).json({ 
-        error: 'User limit reached',
+      return res.status(403).json({
+        error: `Limite d’utilisateurs atteinte (${currentUsers}/${maxUsers}) pour votre plan. Passez à une offre supérieure pour en ajouter.`,
         current: currentUsers,
         max: maxUsers,
         plan,
+        tier,
       });
     }
 

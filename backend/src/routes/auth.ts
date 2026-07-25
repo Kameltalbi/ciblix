@@ -59,15 +59,15 @@ function frontendBaseUrl(): string {
   return (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
 }
 
+import { PASSWORD_REGEX, PASSWORD_RULE_MSG } from '../lib/passwordPolicy.js';
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
 
-const passwordRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&+._\-#])[A-Za-z\d@$!%*?&+._\-#]{8,}$/;
-const passwordRuleMsg =
-  'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&+._-#)';
+const passwordRuleMsg = PASSWORD_RULE_MSG;
+const passwordRegex = PASSWORD_REGEX;
 
 const registerSchema = z.object({
   email: z.string().email(),
