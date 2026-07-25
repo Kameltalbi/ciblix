@@ -39,6 +39,17 @@ Softfacture`;
     expect(check.reason).toMatch(/hallucinated_events/);
   });
 
+  it('rejette un développement SaaS inventé pour Softfacture facturation', () => {
+    const body = `Prestations: Développement et mise en place de la solution SaaS pour A2FO.`;
+    const check = validateOfferFidelity(body, {
+      organizationName: 'Softfacture',
+      organizationBrief: 'Application de facturation en ligne',
+      productsServices: ['facturation en ligne', 'devis', 'factures'],
+    });
+    expect(check.ok).toBe(false);
+    expect(check.reason).toMatch(/custom_saas_dev/);
+  });
+
   it('accepte un pitch aligné facturation', () => {
     const body = `Bonjour,
 

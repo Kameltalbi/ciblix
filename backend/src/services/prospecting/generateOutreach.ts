@@ -83,6 +83,10 @@ const HALLUCINATED_OFFER_PATTERNS: Array<{ re: RegExp; label: string }> = [
     re: /construction\s+de\s+bâtiments|génie\s+civil|maître\s+d['']œuvre/i,
     label: 'construction',
   },
+  {
+    re: /développement\s+(?:complet\s+)?(?:et\s+)?mise\s+en\s+place\s+de\s+la\s+solution\s+saas|développement\s+sur[\s-]?mesure|prestation\s+de\s+développement\s+logiciel|création\s+d['']une\s+plateforme\s+saas\s+complète/i,
+    label: 'custom_saas_dev',
+  },
 ];
 
 function significantNameTokens(name: string): string[] {

@@ -8,8 +8,12 @@ import { getContactById } from '../services/agent-memory/contactService.js';
 import { listEventsForContact } from '../services/agent-memory/agentEventService.js';
 import { normalizeEmail } from '../services/agent-memory/normalize.js';
 import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
+import { validateOfferFidelity } from '../services/prospecting/generateOutreach.js';
 
 export const offreBotRoutes = Router();
+
+/** Plafond si le montant n’est pas fourni — évite les millions inventés. */
+const MAX_AUTO_HT = Math.max(100, Number(process.env.OFFRE_BOT_MAX_AUTO_HT) || 25_000);
 
 offreBotRoutes.get('/ping', (_req, res) => {
   res.status(200).json({ ok: true, module: 'offre-bot', at: new Date().toISOString() });
@@ -153,10 +157,63 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
     const { contactId, affaireId, brief, tone, includeConditions, customNotes, language } =
       generateSchema.parse(req.body);
 
-    const org = await prisma.organization.findUnique({
-      where: { id: req.organizationId! },
-      select: { name: true, email: true, phone: true, address: true },
-    });
+    const [org, targeting, catalogProducts] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: req.organizationId! },
+        select: { name: true, email: true, phone: true, address: true },
+      }),
+      prisma.orgTargetingProfile.findUnique({
+        where: { organizationId: req.organizationId! },
+        select: {
+          activity: true,
+          companyBrief: true,
+          productsServices: true,
+          sectors: true,
+          commercialPriorities: true,
+          missionSummary: true,
+        },
+      }),
+      prisma.product.findMany({
+        where: { organizationId: req.organizationId!, active: true, deletedAt: null },
+        select: { name: true, description: true, price: true, type: true },
+        take: 40,
+        orderBy: { updatedAt: 'desc' },
+      }),
+    ]);
+
+    const sellerProducts = [
+      ...catalogProducts.map((p) => p.name),
+      ...(targeting?.productsServices || []),
+    ].filter(Boolean);
+    const sellerBrief =
+      targeting?.companyBrief?.trim() ||
+      targeting?.activity?.trim() ||
+      targeting?.missionSummary?.trim() ||
+      '';
+    const sellerOfferBlock = [
+      sellerBrief ? `Qui nous sommes: ${sellerBrief}` : null,
+      targeting?.sectors?.length ? `Secteurs: ${targeting.sectors.join(', ')}` : null,
+      targeting?.commercialPriorities
+        ? `Priorités commerciales: ${targeting.commercialPriorities}`
+        : null,
+      sellerProducts.length
+        ? `OFFRE RÉELLE À VENDRE (seules prestations autorisées):\n${sellerProducts
+            .map((p) => `- ${p}`)
+            .join('\n')}`
+        : 'OFFRE RÉELLE: non renseignée en Mission — reste général, n’invente PAS de développement sur-mesure ni d’événementiel.',
+      catalogProducts.length
+        ? `CATALOGUE TARIFÉ:\n${catalogProducts
+            .map(
+              (p) =>
+                `- ${p.name}: ${Number(p.price).toFixed(3)} DT (${p.type})${
+                  p.description ? ` — ${p.description.slice(0, 120)}` : ''
+                }`
+            )
+            .join('\n')}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     let clientName = brief?.clientName || '';
     let contactName = brief?.contactName || '';
@@ -168,7 +225,7 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
     let type = 'BRIEF';
     let description = [brief?.need, brief?.context].filter(Boolean).join('\n\n') || 'N/A';
     let productBlock = brief?.productService
-      ? `PRODUIT/SERVICE:\n- Nom: ${brief.productService}`
+      ? `PRODUIT/SERVICE CHOISI PAR L'UTILISATEUR:\n- Nom: ${brief.productService}`
       : '';
     let assignedTo = 'N/A';
     let affaireMeta: { id?: string; title: string | null; type: string } = {
@@ -193,7 +250,7 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
       contactName = contact.name || '';
       clientEmail = contact.email || 'N/A';
       clientPhone = contact.phone || 'N/A';
-      title = `Proposition pour ${clientName}`;
+      title = `Proposition ${org?.name || 'Ciblix'} pour ${clientName}`;
       type = 'CONTACT';
       affaireMeta = { id: contactId, title, type: 'CONTACT' };
 
@@ -207,7 +264,9 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
             }`
         )
         .join('\n');
-      description = historyBlock || description;
+      description = historyBlock
+        ? `Contexte relationnel (ne pas transformer en notre offre):\n${historyBlock}`
+        : description;
     } else if (affaireId) {
       const affaire = await prisma.affaire.findFirst({
         where: {
@@ -240,13 +299,12 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
       assignedTo = affaire.assignedTo?.name || 'N/A';
       affaireMeta = { id: affaire.id, title: affaire.title, type: affaire.type };
       productBlock = affaire.product
-        ? `PRODUIT/SERVICE:
+        ? `PRODUIT/SERVICE (catalogue émetteur):
 - Nom: ${affaire.product.name}
 - Description: ${affaire.product.description || 'N/A'}
 - Prix unitaire: ${Number(affaire.product.price).toFixed(3)} DT`
         : productBlock;
 
-      // Mapping legacy affaire → contact existant si possible
       const emailNorm = normalizeEmail(affaire.client.email);
       if (emailNorm) {
         const mapped = await prisma.contact.findFirst({
@@ -265,6 +323,7 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
       }
     }
 
+    const catalogDefaultHt = catalogProducts.reduce((s, p) => s + Number(p.price || 0), 0);
     const tva = montantHT * 0.19;
     const montantTTC = montantHT + tva;
 
@@ -280,45 +339,53 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
       ar: 'Rédige en arabe.',
     };
 
-    const systemPrompt = `Tu es OffreBot, un expert en rédaction de propositions commerciales pour des entreprises de conseil en Tunisie.
+    const systemPrompt = `Tu es OffreBot. Tu rédiges une proposition commerciale AU NOM DE L'ÉMETTEUR pour VENDRE ses produits au CLIENT.
+
+RÈGLES ABSOLUES — IDENTITÉ & OFFRE :
+1) L'ÉMETTEUR vend UNIQUEMENT l'offre listée (Mission / catalogue). Exemple Softfacture = facturation en ligne, devis, factures — PAS du développement SaaS sur-mesure, PAS d'événementiel.
+2) Le CLIENT est l'ACHETEUR. Tu ne vends JAMAIS les produits / métier / marketplace du client à lui-même.
+3) Ne confonds JAMAIS l'activité du client (ex. place de marché) avec l'offre de l'émetteur.
+4) Prestations = abonnements / modules / services de l'émetteur uniquement.
+5) Prix : réalistes pour un SaaS / service PME. Si aucun montant fourni, estime un abonnement PME raisonnable (centaines à quelques milliers DT), JAMAIS des millions.
+6) Interdit : « développement et mise en place de la solution SaaS » générique, refonte complète, 15M DT, etc. sauf si explicitement dans le catalogue émetteur.
+
 ${toneInstructions[tone]}
 ${langInstructions[language]}
 
-Tu génères des propositions commerciales structurées au format JSON avec les sections suivantes:
+JSON uniquement:
 {
   "reference": "REF-YYYY-NNN",
   "date": "DD/MM/YYYY",
   "validite": "30 jours",
-  "objet": "Objet de la proposition",
-  "introduction": "Paragraphe d'introduction personnalisé",
-  "contexte": "Description du contexte et des besoins du client",
+  "objet": "Objet — produits de l'émetteur pour le client",
+  "introduction": "Présente l'émetteur et son offre réelle",
+  "contexte": "Besoins du client (acheteur) sans lui revendre son métier",
   "prestations": [
     {
-      "titre": "Titre de la prestation",
-      "description": "Description détaillée",
-      "livrables": ["livrable 1", "livrable 2"],
-      "delai": "Délai estimé"
+      "titre": "Titre aligné catalogue émetteur",
+      "description": "Description",
+      "livrables": ["..."],
+      "delai": "..."
     }
   ],
   "montantHT": number,
   "tva": number,
   "montantTTC": number,
-  "conditions": ["condition 1", "condition 2"] ou null,
-  "conclusion": "Paragraphe de conclusion",
-  "signatureBlock": "Nom et fonction du signataire"
-}
+  "conditions": ["..."] ou null,
+  "conclusion": "...",
+  "signatureBlock": "Nom / fonction côté émetteur"
+}`;
 
-Adapte le contenu au type de prestation et au secteur du client. Sois précis et professionnel.`;
+    const prompt = `Génère une proposition commerciale:
 
-    const prompt = `Génère une proposition commerciale pour:
-
-ENTREPRISE ÉMETTRICE:
+=== ÉMETTEUR (VENDEUR — ton client interne Ciblix) ===
 - Nom: ${org?.name || 'N/A'}
 - Email: ${org?.email || 'N/A'}
 - Tél: ${org?.phone || 'N/A'}
 - Adresse: ${org?.address || 'N/A'}
+${sellerOfferBlock}
 
-CLIENT:
+=== CLIENT (ACHETEUR — destinataire de l'offre) ===
 - Entreprise: ${clientName}
 - Contact: ${contactName || 'N/A'}
 - Email: ${clientEmail}
@@ -326,21 +393,22 @@ CLIENT:
 - Adresse: ${clientAddress}
 - Matricule fiscal: ${clientMatricule}
 
-AFFAIRE / BRIEF:
+=== CADRAGE ===
 - Titre: ${title}
 - Type: ${type}
-- Description: ${description}
-- Montant HT: ${montantHT > 0 ? `${montantHT.toFixed(3)} DT` : 'À estimer'}
-- TVA (19%): ${montantHT > 0 ? `${tva.toFixed(3)} DT` : 'À estimer'}
-- Montant TTC: ${montantHT > 0 ? `${montantTTC.toFixed(3)} DT` : 'À estimer'}
+- Description / historique (contexte acheteur seulement): ${description}
+- Montant HT imposé: ${montantHT > 0 ? `${montantHT.toFixed(3)} DT (utilise exactement ces montants)` : `non fourni — estime ≤ ${MAX_AUTO_HT} DT HT, cohérent catalogue`}
+- TVA 19% / TTC: ${montantHT > 0 ? `${tva.toFixed(3)} / ${montantTTC.toFixed(3)} DT` : 'à calculer'}
 
 ${productBlock}
 
-${historyBlock ? `HISTORIQUE DES ÉCHANGES (AgentEvent):\n${historyBlock}\n` : ''}
+${historyBlock ? `(Historique déjà inclus dans description)\n` : ''}
 COMMERCIAL ASSIGNÉ: ${assignedTo}
 
-${includeConditions ? 'Inclure les conditions générales (paiement, validité, propriété intellectuelle).' : 'Ne pas inclure de conditions générales.'}
-${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}`;
+${includeConditions ? 'Inclure les conditions générales (paiement, validité, PI).' : 'Ne pas inclure de conditions générales.'}
+${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}
+
+Rappel final: vends ${org?.name || "l'émetteur"} au client ${clientName}, pas l'inverse.`;
 
     const aiResponse = await callOpenAI(prompt, systemPrompt);
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
@@ -353,6 +421,79 @@ ${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}`;
           proposal.montantHT = montantHT;
           proposal.tva = tva;
           proposal.montantTTC = montantTTC;
+        } else {
+          let ht = Number(proposal.montantHT) || 0;
+          if (!ht || ht > MAX_AUTO_HT || ht < 0) {
+            ht =
+              catalogDefaultHt > 0 && catalogDefaultHt <= MAX_AUTO_HT
+                ? catalogDefaultHt
+                : Math.min(1200, MAX_AUTO_HT);
+          }
+          proposal.montantHT = Math.round(ht * 1000) / 1000;
+          proposal.tva = Math.round(proposal.montantHT * 0.19 * 1000) / 1000;
+          proposal.montantTTC =
+            Math.round((proposal.montantHT + proposal.tva) * 1000) / 1000;
+        }
+
+        // Garde-fou offre inventée (événementiel, etc.)
+        const blob = [
+          proposal.objet,
+          proposal.introduction,
+          proposal.contexte,
+          ...(Array.isArray(proposal.prestations)
+            ? proposal.prestations.map(
+                (p: { titre?: string; description?: string }) =>
+                  `${p.titre || ''} ${p.description || ''}`
+              )
+            : []),
+        ].join('\n');
+        const fidelity = validateOfferFidelity(blob, {
+          organizationName: org?.name || 'Émetteur',
+          organizationBrief: sellerBrief || null,
+          productsServices: sellerProducts,
+        });
+        if (!fidelity.ok) {
+          console.warn('[offre-bot] offer fidelity fail', fidelity.reason, org?.name, clientName);
+          const fallbackHt =
+            montantHT > 0
+              ? montantHT
+              : catalogDefaultHt > 0 && catalogDefaultHt <= MAX_AUTO_HT
+                ? catalogDefaultHt
+                : 990;
+          const fallbackTva = Math.round(fallbackHt * 0.19 * 1000) / 1000;
+          proposal = {
+            reference: `REF-${new Date().getFullYear()}-001`,
+            date: new Date().toLocaleDateString('fr-FR'),
+            validite: '30 jours',
+            objet: `Proposition ${org?.name || ''} — ${sellerProducts[0] || 'nos solutions'} pour ${clientName}`,
+            introduction: `${org?.name || 'Notre entreprise'} propose ${
+              sellerProducts.slice(0, 3).join(', ') || sellerBrief || 'ses solutions digitales pour PME'
+            } à ${clientName}.`,
+            contexte: `Cette proposition s’adresse à ${clientName} en tant que client potentiel de ${org?.name || 'notre offre'}, sans reprendre le métier du client comme prestation vendue.`,
+            prestations: [
+              {
+                titre: sellerProducts[0] || 'Abonnement / solution',
+                description:
+                  sellerBrief ||
+                  `Mise à disposition de ${sellerProducts.join(', ') || 'notre solution'} pour ${clientName}.`,
+                livrables: ['Accès solution', 'Prise en main', 'Support'],
+                delai: 'Sous 7 à 15 jours',
+              },
+            ],
+            montantHT: fallbackHt,
+            tva: fallbackTva,
+            montantTTC: Math.round((fallbackHt + fallbackTva) * 1000) / 1000,
+            conditions: includeConditions
+              ? [
+                  'Acompte 50% à la commande',
+                  'Validité 30 jours',
+                  'Facturation selon conditions Softfacture / émetteur',
+                ]
+              : null,
+            conclusion: `Restant à votre disposition pour finaliser cette proposition.`,
+            signatureBlock: org?.name || 'Émetteur',
+            _fidelityFallback: fidelity.reason,
+          };
         }
       } catch {
         proposal = { raw: aiResponse };
