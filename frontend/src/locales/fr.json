@@ -1337,10 +1337,14 @@
   "contactsPage": {
     "eyebrow": "Résultats agents",
     "title": "Contacts",
-    "subtitle": "Entreprises et personnes détectées par vos agents — pas un pipeline commercial.",
+    "subtitle": "Entreprises détectées par vos agents — séparées par source. Les articles Veilleur ne créent pas de fiche.",
     "export": "Exporter",
     "launchHunt": "Lancer Prospecteur",
     "searchPlaceholder": "Rechercher entreprise, contact, email…",
+    "filterByAgent": "Filtrer par agent",
+    "filters": {
+      "all": "Tous"
+    },
     "company": "Entreprise",
     "contact": "Contact",
     "aiScore": "Score IA",
@@ -1351,6 +1355,8 @@
     "actions": "Actions",
     "loading": "Chargement…",
     "empty": "Aucun résultat pour le moment. Lancez le Prospecteur pour en détecter.",
+    "emptyHunt": "Aucune entreprise du Prospecteur. Lancez une recherche pour trouver des sociétés cibles.",
+    "emptyScout": "Aucune fiche entreprise liée au Veilleur (les articles restent dans Veilleur, pas ici).",
     "results_one": "{{count}} résultat",
     "results_other": "{{count}} résultats",
     "agent": "Agent",

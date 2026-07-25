@@ -3,7 +3,7 @@ set -e
 
 # ═══════════════════════════════════════════════════════════════
 #  SCRIPT DE DÉPLOIEMENT — Bilan CRM
-#  Usage : cd /var/www/crm && bash scripts/deploy.sh
+#  Usage : cd /var/www/ciblix && bash scripts/deploy.sh
 #  (autrefois documenté sous /opt/bilan-crm)
 # ═══════════════════════════════════════════════════════════════
 

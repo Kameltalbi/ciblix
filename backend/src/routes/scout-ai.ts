@@ -366,7 +366,8 @@ Extrais:
 - relevanceScore: 0-100
 - aiSummary: résumé actionnable en 2-3 phrases
 - deadline: date limite ou date de fin d'événement en YYYY-MM-DD (ou null)
-- location, budget, companyName, contactEmail, contactPhone (ou null)
+- location, budget, contactEmail, contactPhone (ou null)
+- companyName: UNIQUEMENT le nom d'une organisation réelle (émetteur, bénéficiaire, entreprise citée). JAMAIS le titre de l'article, JAMAIS un sujet ("ESG en Tunisie", "La décarbonation…"), JAMAIS un appel d'offres générique. Si aucune entreprise claire → null.
 
 Réponds UNIQUEMENT en JSON array:
 [{"index": 1, "relevanceScore": 70, "aiSummary": "...", "deadline": null, "location": null, "budget": null, "companyName": null, "contactEmail": null, "contactPhone": null}]

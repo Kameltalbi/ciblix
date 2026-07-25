@@ -2,6 +2,7 @@ import type { AgentEventSource, AgentEventType, ContactCreatedVia } from '@prism
 import { prisma } from '../../db/prisma.js';
 import { createAgentEvent } from './agentEventService.js';
 import { findOrCreateContact } from './contactService.js';
+import { looksLikeCompanyName } from '../scout/companyNameGuard.js';
 
 type HuntProspectLike = {
   id: string;
@@ -264,30 +265,29 @@ export async function recordScoutOpportunity(opts: {
   createdVia?: ContactCreatedVia;
 }) {
   const { hints } = opts;
+  const safeCompany =
+    hints.companyName?.trim() && looksLikeCompanyName(hints.companyName)
+      ? hints.companyName.trim()
+      : null;
   const hasStrict = Boolean(hints.contactEmail?.trim() || hints.contactPhone?.trim());
-  const hasCompany = Boolean(hints.companyName?.trim() && hints.highConfidence);
-
-  if (!hasStrict && !hasCompany) return null;
+  // Jamais de fiche Contact sur un titre / article : uniquement email/téléphone réel.
+  if (!hasStrict) return null;
   if (await eventExists('SCOUT', opts.organizationId, opts.opportunityId)) return null;
 
-  let contactId: string | null = null;
-  if (hasStrict) {
-    const contact = await findOrCreateContact({
-      organizationId: opts.organizationId,
-      createdVia: 'SCOUT',
-      email: hints.contactEmail,
-      phone: hints.contactPhone,
-      companyName: hints.companyName,
-      conflictSource: 'SCOUT',
-      conflictSourceRef: opts.opportunityId,
-    });
-    contactId = contact.id;
-  }
+  const contact = await findOrCreateContact({
+    organizationId: opts.organizationId,
+    createdVia: 'SCOUT',
+    email: hints.contactEmail,
+    phone: hints.contactPhone,
+    companyName: safeCompany,
+    conflictSource: 'SCOUT',
+    conflictSourceRef: opts.opportunityId,
+  });
 
   return createAgentEvent({
     organizationId: opts.organizationId,
     userId: opts.userId,
-    contactId,
+    contactId: contact.id,
     source: 'SCOUT',
     type: 'OPPORTUNITE',
     resume: `Opportunité détectée : ${opts.title} — ${opts.description}`.slice(0, 2000),

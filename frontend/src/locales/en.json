@@ -1331,10 +1331,14 @@
   "contactsPage": {
     "eyebrow": "Agent results",
     "title": "Contacts",
-    "subtitle": "Companies and people found by your agents — not a sales pipeline.",
+    "subtitle": "Companies found by your agents — separated by source. Scout articles never become contacts.",
     "export": "Export",
     "launchHunt": "Run Hunter",
     "searchPlaceholder": "Search company, contact, email…",
+    "filterByAgent": "Filter by agent",
+    "filters": {
+      "all": "All"
+    },
     "company": "Company",
     "contact": "Contact",
     "aiScore": "AI score",
@@ -1345,6 +1349,8 @@
     "actions": "Actions",
     "loading": "Loading…",
     "empty": "No results yet. Run Hunter to find some.",
+    "emptyHunt": "No Hunter companies yet. Run a search to find target firms.",
+    "emptyScout": "No company cards from Scout (articles stay in Scout, not here).",
     "results_one": "{{count}} result",
     "results_other": "{{count}} results",
     "agent": "Agent",

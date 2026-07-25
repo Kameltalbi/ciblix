@@ -4,11 +4,11 @@ set -euo pipefail
 # Sans Docker. Prérequis : Node 20 LTS, npm, pm2 global, PostgreSQL, Nginx/Caddy.
 #
 # Usage (ex.) :
-#   cd /var/www/crm && bash scripts/deploy-pm2.sh
+#   cd /var/www/ciblix && bash scripts/deploy-pm2.sh
 #
 # Avant la 1ère fois :
-#   cd /var/www/crm && npm ci && cd backend && npm run build && npx prisma migrate deploy
-#   cd /var/www/crm/backend && pm2 start ecosystem.config.cjs
+#   cd /var/www/ciblix && npm ci && cd backend && npm run build && npx prisma migrate deploy
+#   cd /var/www/ciblix/backend && pm2 start ecosystem.config.cjs
 # Configurez le reverse proxy : root → frontend/dist, /api → http://127.0.0.1:PORT_BACKEND
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

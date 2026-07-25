@@ -1,10 +1,11 @@
 import { prisma } from '../../db/prisma.js';
 import { enqueueAgentTask } from './agentTaskService.js';
 import { isPastScoutOpportunity } from '../scout/scoutFreshness.js';
+import { resolveCompanyNameForContact } from '../scout/companyNameGuard.js';
 
 /**
- * Après un scan Veilleur (manuel ou auto) : crée des tâches Prospecteur.
- * Utilisé aussi bien par le scheduler Scout que par WATCH_SIGNALS.
+ * Après un scan Veilleur (manuel ou auto) : crée des tâches Prospecteur
+ * uniquement lorsqu’une vraie entreprise a été extraite (jamais le titre d’article).
  */
 export async function handoffScoutSignalsToHunt(
   organizationId: string,
@@ -47,11 +48,14 @@ export async function handoffScoutSignalsToHunt(
       }
       continue;
     }
-    const raw = (full?.rawData || {}) as { companyName?: string };
-    const companyGuess =
-      raw.companyName?.trim() ||
-      opp.title.split(/[|\-–—:]/)[0]?.trim() ||
-      opp.title;
+    const raw = (full?.rawData || {}) as { companyName?: string | null };
+    const companyGuess = resolveCompanyNameForContact({
+      extractedCompanyName: raw.companyName,
+      signalTitle: opp.title,
+    });
+    // Pas d’entreprise identifiable → le signal reste côté Veilleur, pas de fiche Contact.
+    if (!companyGuess) continue;
+
     const n = companyGuess.toLowerCase();
     if (exclude.some((e) => n.includes(e) || e.includes(n))) continue;
 

@@ -26,25 +26,32 @@ interface ContactRow {
   createdAt?: string;
 }
 
+type AgentFilter = 'HUNT' | 'SCOUT' | 'GMAIL' | 'COPILOT' | 'ALL';
+
 function dateLocale(lang: string) {
   if (lang.startsWith('ar')) return 'ar-TN';
   if (lang.startsWith('en')) return 'en-GB';
   return 'fr-FR';
 }
 
+const AGENT_TABS: AgentFilter[] = ['HUNT', 'SCOUT', 'GMAIL', 'COPILOT', 'ALL'];
+
 export function Contacts() {
   const { t, i18n } = useTranslation();
   const locale = dateLocale(i18n.resolvedLanguage || i18n.language || 'fr');
   const [search, setSearch] = useState('');
+  // Priorité entreprises = Prospecteur par défaut
+  const [agent, setAgent] = useState<AgentFilter>('HUNT');
 
   const { data, isPending } = useQuery({
-    queryKey: ['contacts', search],
+    queryKey: ['contacts', search, agent],
     queryFn: () =>
       api
         .get('/contacts', {
           params: {
             limit: 100,
             search: search.trim() || undefined,
+            createdVia: agent === 'ALL' ? undefined : agent,
             sort: 'createdAt',
             sortDir: 'desc',
           },
@@ -74,6 +81,28 @@ export function Contacts() {
             </Link>
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('contactsPage.filterByAgent')}>
+        {AGENT_TABS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={agent === key}
+            onClick={() => setAgent(key)}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-sm transition-colors',
+              agent === key
+                ? 'bg-foreground text-background font-medium'
+                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            {key === 'ALL'
+              ? t('contactsPage.filters.all')
+              : t(`contactsPage.sources.${key}`, { defaultValue: key })}
+          </button>
+        ))}
       </div>
 
       <div className="relative max-w-md">
@@ -111,7 +140,11 @@ export function Contacts() {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                    {t('contactsPage.empty')}
+                    {agent === 'HUNT'
+                      ? t('contactsPage.emptyHunt')
+                      : agent === 'SCOUT'
+                        ? t('contactsPage.emptyScout')
+                        : t('contactsPage.empty')}
                   </td>
                 </tr>
               ) : (

@@ -169,6 +169,7 @@ export async function listContacts(
     skip?: number;
     search?: string;
     status?: ContactPipelineStatus;
+    createdVia?: ContactCreatedVia;
     sort?: 'pipelineStatusAt' | 'createdAt';
     sortDir?: 'asc' | 'desc';
   } = {}
@@ -183,6 +184,7 @@ export async function listContacts(
     organizationId,
     erasedAt: null,
     ...(opts.status ? { pipelineStatus: opts.status } : {}),
+    ...(opts.createdVia ? { createdVia: opts.createdVia } : {}),
     ...(search
       ? {
           OR: [

@@ -3,6 +3,7 @@ import { prisma } from '../../db/prisma.js';
 import { findApproximateMatchByCompany } from './companyMatch.js';
 import { findOrCreateContact } from './contactService.js';
 import { normalizeEmail, normalizePhone, normalizeWhatsapp } from './normalize.js';
+import { looksLikeCompanyName } from '../scout/companyNameGuard.js';
 import {
   MAX_RESOLUTION_ATTEMPTS,
   RESCAN_DEBOUNCE_MS,
@@ -87,7 +88,7 @@ async function loadEventContext(event: AgentEvent): Promise<EventContext> {
       phoneNormalized: normalizePhone(phone),
       emailNormalized: normalizeEmail(email),
       whatsappNormalized: normalizeWhatsapp(phone),
-      companyName: raw.companyName || opp?.title || null,
+      companyName: raw.companyName && looksLikeCompanyName(raw.companyName) ? raw.companyName : null,
       createdVia: 'SCOUT',
     };
   }

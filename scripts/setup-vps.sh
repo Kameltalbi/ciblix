@@ -41,7 +41,7 @@ sudo systemctl enable --now fail2ban
 
 echo ""
 echo "📁 Dossier applicatif…"
-APP_DIR="${APP_DIR:-/var/www/crm}"
+APP_DIR="${APP_DIR:-/var/www/ciblix}"
 sudo mkdir -p "$APP_DIR"
 sudo chown "${SUDO_USER:-$USER}:${SUDO_USER:-$USER}" "$APP_DIR"
 

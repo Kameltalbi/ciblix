@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Déploie le frontend en production après un changement de code / design.
 #
-# Usage (à la racine du dépôt, ex. /var/www/crm) :
+# Usage (à la racine du dépôt, ex. /var/www/ciblix) :
 #
 #   PM2 / Nginx (build seul → frontend/dist, défaut) :
 #     ./scripts/deploy-frontend.sh

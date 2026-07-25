@@ -1,5 +1,5 @@
 import { Router, type NextFunction, type Response } from 'express';
-import type { ContactPipelineStatus } from '@prisma/client';
+import type { ContactCreatedVia, ContactPipelineStatus } from '@prisma/client';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { getContactById, listContacts } from '../services/agent-memory/contactService.js';
 import { listEventsForContact } from '../services/agent-memory/agentEventService.js';
@@ -20,6 +20,14 @@ const PIPELINE_STATUSES = new Set<ContactPipelineStatus>([
   'ARCHIVE',
 ]);
 
+const CREATED_VIA = new Set<ContactCreatedVia>([
+  'HUNT',
+  'COPILOT',
+  'GMAIL',
+  'SCOUT',
+  'MANUAL_IMPORT',
+]);
+
 contactsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const take = Math.min(Number(req.query.limit) || 30, 100);
@@ -30,6 +38,9 @@ contactsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFuncti
       statusRaw && PIPELINE_STATUSES.has(statusRaw as ContactPipelineStatus)
         ? (statusRaw as ContactPipelineStatus)
         : undefined;
+    const viaRaw = typeof req.query.createdVia === 'string' ? req.query.createdVia.toUpperCase() : undefined;
+    const createdVia =
+      viaRaw && CREATED_VIA.has(viaRaw as ContactCreatedVia) ? (viaRaw as ContactCreatedVia) : undefined;
     const sort = req.query.sort === 'createdAt' ? 'createdAt' : 'pipelineStatusAt';
     const sortDir = req.query.sortDir === 'asc' ? 'asc' : 'desc';
 
@@ -38,6 +49,7 @@ contactsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFuncti
       skip,
       search,
       status,
+      createdVia,
       sort,
       sortDir,
     });

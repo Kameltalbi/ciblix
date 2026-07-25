@@ -8,7 +8,7 @@ Production sur **Ubuntu** avec **Node.js 20**, **PM2** pour l’API, **build Vit
 - VPS avec SSH, Ubuntu 22.04 / 24.04 recommandé  
 - Nom de domaine (ex. `crm.example.com`) en **A** vers l’IP du VPS  
 - **PostgreSQL** installé sur le VPS (ou base managée), accès URL + utilisateur  
-- Repo cloné sur le serveur (ex. `/var/www/crm`)
+- Repo cloné sur le serveur (ex. `/var/www/ciblix`)
 
 ---
 
@@ -22,7 +22,7 @@ Sur le serveur :
 bash scripts/setup-vps.sh
 ```
 
-Installe Node 20 (NodeSource), PM2, UFW, fail2ban et crée `/var/www/crm`. Reconnectez-vous si besoin après les paquets.
+Installe Node 20 (NodeSource), PM2, UFW, fail2ban et crée `/var/www/ciblix`. Reconnectez-vous si besoin après les paquets.
 
 ### Option B — À la main
 
@@ -31,10 +31,10 @@ Installez Node 20 LTS, `npm`, puis `sudo npm i -g pm2`. Ouvrez les ports **22**,
 ### Cloner le projet et variables d’environnement
 
 ```bash
-sudo mkdir -p /var/www/crm
-sudo chown $USER:$USER /var/www/crm
-cd /var/www/crm
-git clone git@github.com:VOTRE_ORG/crm.git .
+sudo mkdir -p /var/www/ciblix
+sudo chown $USER:$USER /var/www/ciblix
+cd /var/www/ciblix
+git clone git@github.com:VOTRE_ORG/ciblix.git .
 
 cp .env.example .env
 nano .env
@@ -61,7 +61,7 @@ npm ci
 ### Backend (build + Prisma + PM2)
 
 ```bash
-cd /var/www/crm/backend
+cd /var/www/ciblix/backend
 npm run build
 npx prisma migrate deploy
 pm2 start ecosystem.config.cjs
@@ -74,7 +74,7 @@ Le process PM2 s’appelle **`backend`** (voir `backend/ecosystem.config.cjs`). 
 ### Frontend (build statique)
 
 ```bash
-cd /var/www/crm
+cd /var/www/ciblix
 npm run build -w bilan-crm-frontend
 ```
 
@@ -95,7 +95,7 @@ server {
 server {
   listen 443 ssl http2;
   server_name ciblix.com;
-  root /var/www/crm/frontend/dist;
+  root /var/www/ciblix/frontend/dist;
   index index.html;
   location / { try_files $uri $uri/ /index.html; }
   location /api/ {
@@ -126,7 +126,7 @@ Adaptez le port backend et les certificats TLS (Let’s Encrypt, etc.).
 Sur le VPS, à la racine du dépôt :
 
 ```bash
-cd /var/www/crm && npm run deploy
+cd /var/www/ciblix && npm run deploy
 ```
 
 Équivalent :

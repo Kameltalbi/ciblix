@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Supprime le chatbot de la home en prod : pull + build + vérif + sync Nginx si besoin.
-# Usage sur le VPS : cd /var/www/crm && sudo bash scripts/purge-chatbot-frontend.sh
+# Usage sur le VPS : cd /var/www/ciblix && sudo bash scripts/purge-chatbot-frontend.sh
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

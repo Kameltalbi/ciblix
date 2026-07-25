@@ -5,6 +5,7 @@ import { createAgentEvent } from '../agent-memory/agentEventService.js';
 import { findOrCreateContact } from '../agent-memory/contactService.js';
 import { enqueueAgentTask } from './agentTaskService.js';
 import { isPastDatedContent, isPastScoutOpportunity } from '../scout/scoutFreshness.js';
+import { resolveCompanyNameForContact } from '../scout/companyNameGuard.js';
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -114,15 +115,16 @@ export async function handleWatchSignals(task: AgentTask): Promise<Record<string
 /** Prospecteur : enrichit une entreprise / signal → tâche Analyste. */
 export async function handleEnrichCompany(task: AgentTask): Promise<Record<string, unknown>> {
   const payload = asRecord(task.payload);
-  const companyName = str(payload.companyName) || str(payload.signalTitle);
-  if (!companyName) throw new Error('companyName manquant');
+  const signalTitle = str(payload.signalTitle);
+  let extractedName = str(payload.companyName);
+  // Jamais le titre d’article / AO comme nom d’entreprise
+  if (extractedName && signalTitle && extractedName.toLowerCase() === signalTitle.toLowerCase()) {
+    extractedName = null;
+  }
 
   const targeting = await prisma.orgTargetingProfile.findUnique({
     where: { organizationId: task.organizationId },
   });
-  if (targeting && isExcluded(companyName, targeting.excludeCompanies)) {
-    return { skipped: true, reason: 'excluded' };
-  }
 
   const userId = await getIntegrationUserId(task.organizationId);
   const scoutOppId = str(payload.scoutOpportunityId);
@@ -131,6 +133,7 @@ export async function handleEnrichCompany(task: AgentTask): Promise<Record<strin
   let website: string | null = str(payload.signalUrl);
   let city: string | null = targeting?.cities[0] ?? null;
   let summary = str(payload.aiSummary);
+  let placesCompanyName: string | null = null;
 
   if (scoutOppId) {
     const opp = await prisma.scoutOpportunity.findFirst({
@@ -159,27 +162,33 @@ export async function handleEnrichCompany(task: AgentTask): Promise<Record<strin
       phone = str(raw.contactPhone) || phone;
       summary = opp.aiSummary || summary;
       website = opp.url || website;
+      if (!extractedName) extractedName = str(raw.companyName);
     }
   }
 
-  const signalBlob = [str(payload.signalTitle), summary, str(payload.aiSummary)].filter(Boolean).join('\n');
+  const signalBlob = [signalTitle, summary, str(payload.aiSummary)].filter(Boolean).join('\n');
   if (isPastDatedContent(signalBlob)) {
     return { skipped: true, reason: 'past_event' };
   }
 
-  // Enrichissement Places si clé dispo et peu d’infos
-  if (process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.PLACES_API_KEY) {
+  const searchHint = extractedName || signalTitle;
+  // Enrichissement Places si clé dispo
+  if (
+    searchHint &&
+    (process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.PLACES_API_KEY)
+  ) {
     try {
       const { resolveProspectingSearchProvider } = await import('../prospecting/getSearchProvider.js');
       const provider = resolveProspectingSearchProvider();
       const hits = await provider.searchCompanies({
-        keywords: companyName,
+        keywords: searchHint,
         sector: targeting?.sectors[0],
         city: targeting?.cities[0],
         country: targeting?.countries[0],
       });
       const hit = hits[0];
       if (hit) {
+        placesCompanyName = hit.companyName || null;
         website = hit.website || website;
         city = hit.city || city;
         phone = (hit as { phone?: string | null }).phone || phone;
@@ -189,12 +198,25 @@ export async function handleEnrichCompany(task: AgentTask): Promise<Record<strin
     }
   }
 
+  const companyName = resolveCompanyNameForContact({
+    extractedCompanyName: extractedName,
+    placesCompanyName,
+    signalTitle,
+  });
+  if (!companyName) {
+    return { skipped: true, reason: 'not_a_company' };
+  }
+
+  if (targeting && isExcluded(companyName, targeting.excludeCompanies)) {
+    return { skipped: true, reason: 'excluded' };
+  }
+
   const contact = await upsertCompanyContact({
     organizationId: task.organizationId,
     companyName,
     phone,
     email,
-    createdVia: 'SCOUT',
+    createdVia: scoutOppId ? 'SCOUT' : 'HUNT',
   });
 
   await createAgentEvent({

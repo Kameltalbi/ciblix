@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# À lancer sur le VPS (racine du dépôt /var/www/crm) pour comprendre pourquoi
+# À lancer sur le VPS (racine du dépôt /var/www/ciblix) pour comprendre pourquoi
 # le site affiche encore l’ancienne version après un build.
 set -u
 
