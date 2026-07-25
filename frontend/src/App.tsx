@@ -5,6 +5,7 @@ import { isPublicMarketingPath } from './lib/publicPaths';
 import './i18n';
 import { Layout } from './components/Layout';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
+import { MissionGate } from './components/mission/MissionGate';
 
 // Public / auth pages: kept eager since they must render fast on cold load and
 // represent the first impression for new visitors.
@@ -25,6 +26,7 @@ const LandingSales = lazy(() =>
   import('./pages/LandingSales').then((m) => ({ default: m.LandingSales }))
 );
 const Legal = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Legal })));
+const Mission = lazy(() => import('./pages/Mission').then((m) => ({ default: m.MissionWizard })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const Tarifs = lazy(() => import('./pages/Tarifs').then((m) => ({ default: m.Tarifs })));
 const Fonctionnalites = lazy(() =>
@@ -119,7 +121,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/legal/:type" element={<Legal />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/onboarding" element={<Navigate to="/mission" replace />} />
           <Route path="/pricing" element={<Tarifs />} />
           <Route path="/tarifs" element={<Tarifs />} />
           <Route path="/fonctionnalites" element={<Fonctionnalites />} />
@@ -160,21 +162,64 @@ export default function App() {
                         <Route path="/settings/billing/choose-agent" element={<ChooseDiscoveryAgent />} />
                         <Route path="/settings/organizations" element={<Organizations />} />
                         <Route path="/users" element={<Users />} />
-                        <Route path="/prospection-ia" element={<ProspectionIA />} />
+                        <Route path="/mission" element={<Mission />} />
+                        <Route
+                          path="/prospection-ia"
+                          element={
+                            <MissionGate>
+                              <ProspectionIA />
+                            </MissionGate>
+                          }
+                        />
                         <Route path="/agents" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/agents/scout-ai" element={<ScoutAI />} />
-                        <Route path="/agents/analyste-ai" element={<AnalysteAI />} />
-                        <Route path="/agents/offre-bot" element={<OffreBot />} />
+                        <Route
+                          path="/agents/scout-ai"
+                          element={
+                            <MissionGate>
+                              <ScoutAI />
+                            </MissionGate>
+                          }
+                        />
+                        <Route
+                          path="/agents/analyste-ai"
+                          element={
+                            <MissionGate>
+                              <AnalysteAI />
+                            </MissionGate>
+                          }
+                        />
+                        <Route
+                          path="/agents/offre-bot"
+                          element={
+                            <MissionGate>
+                              <OffreBot />
+                            </MissionGate>
+                          }
+                        />
                         <Route path="/agents/factcheck-ai" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/agents/brand-pulse" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/agents/gmail-ai" element={<GmailAI />} />
+                        <Route
+                          path="/agents/gmail-ai"
+                          element={
+                            <MissionGate>
+                              <GmailAI />
+                            </MissionGate>
+                          }
+                        />
                         <Route path="/agents/comm-bot" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/agents/:agentId" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/contacts" element={<Contacts />} />
                         <Route path="/contacts/:id" element={<ContactDetail />} />
                         <Route path="/connecteurs" element={<Connecteurs />} />
                         <Route path="/all-prospects" element={<AllProspects />} />
-                        <Route path="/ai-assistant" element={<AIAssistant />} />
+                        <Route
+                          path="/ai-assistant"
+                          element={
+                            <MissionGate>
+                              <AIAssistant />
+                            </MissionGate>
+                          }
+                        />
                         <Route path="/support" element={<SupportTickets />} />
                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                       </Routes>

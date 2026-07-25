@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Check,
   CheckCircle2,
@@ -17,7 +19,6 @@ import { cn } from '@/lib/utils';
 import { CONNECTOR_CATALOG } from '@/lib/connectors/catalog';
 import { ConnectorBrandIcon } from '@/lib/connectors/icons';
 import {
-  CONNECTOR_CATEGORY_LABELS,
   CONNECTOR_CATEGORY_ORDER,
   type ConnectorDefinition,
   type ConnectorRuntime,
@@ -38,25 +39,43 @@ type IntegrationsConfig = {
   outboundWebhook: { targetUrl: string; enabled: boolean } | null;
 };
 
-function formatRelative(iso?: string | null): string | null {
+function dateLocale(lang: string) {
+  if (lang.startsWith('ar')) return 'ar-TN';
+  if (lang.startsWith('en')) return 'en-GB';
+  return 'fr-FR';
+}
+
+function formatRelative(iso: string | null | undefined, t: TFunction, locale: string): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   const diff = Date.now() - d.getTime();
   const mins = Math.round(diff / 60000);
-  if (mins < 1) return 'À l’instant';
-  if (mins < 60) return `Il y a ${mins} min`;
+  if (mins < 1) return t('connectorsPage.justNow');
+  if (mins < 60) return t('connectorsPage.minutesAgo', { count: mins });
   const hours = Math.round(mins / 60);
-  if (hours < 24) return `Il y a ${hours} h`;
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  if (hours < 24) return t('connectorsPage.hoursAgo', { count: hours });
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function connectorCopy(t: TFunction, id: string, fallback: ConnectorDefinition) {
+  const base = `connectorsPage.items.${id}`;
+  const capabilities = t(`${base}.capabilities`, { returnObjects: true, defaultValue: fallback.capabilities });
+  const permissions = t(`${base}.permissions`, { returnObjects: true, defaultValue: fallback.permissions });
+  return {
+    description: t(`${base}.description`, { defaultValue: fallback.description }),
+    capabilities: Array.isArray(capabilities) ? (capabilities as string[]) : fallback.capabilities,
+    permissions: Array.isArray(permissions) ? (permissions as string[]) : fallback.permissions,
+  };
 }
 
 function StatusBadge({ status }: { status: ConnectorStatus }) {
+  const { t } = useTranslation();
   if (status === 'connected') {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        Connecté
+        {t('connectorsPage.connected')}
       </span>
     );
   }
@@ -64,26 +83,28 @@ function StatusBadge({ status }: { status: ConnectorStatus }) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-100">
         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-        Expiré
+        {t('connectorsPage.expired')}
       </span>
     );
   }
   if (status === 'coming_soon') {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-500 ring-1 ring-neutral-200/80">
-        À venir
+        {t('connectorsPage.comingSoon')}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-500 ring-1 ring-neutral-200">
       <span className="h-1.5 w-1.5 rounded-full bg-neutral-300" />
-      Non connecté
+      {t('connectorsPage.disconnected')}
     </span>
   );
 }
 
 function resolveConnectors(
+  t: TFunction,
+  locale: string,
   gmail?: GmailStatus,
   gmailStats?: GmailStats,
   integrations?: IntegrationsConfig
@@ -104,11 +125,11 @@ function resolveConnectors(
         stats: connected
           ? [
               {
-                label: 'Emails traités',
-                value: emails != null ? emails.toLocaleString('fr-FR') : '—',
+                label: t('connectorsPage.stats.emailsProcessed'),
+                value: emails != null ? emails.toLocaleString(locale) : '—',
               },
               {
-                label: 'Brouillons (auj.)',
+                label: t('connectorsPage.stats.draftsToday'),
                 value: String(gmailStats?.today?.draftsCreated ?? 0),
               },
             ]
@@ -127,8 +148,8 @@ function resolveConnectors(
         lastSyncAt: connected ? new Date().toISOString() : null,
         stats: connected
           ? [
-              { label: 'Compte Business', value: 'Configuré' },
-              { label: 'Webhook Meta', value: 'Actif' },
+              { label: t('connectorsPage.stats.businessAccount'), value: t('connectorsPage.stats.configured') },
+              { label: t('connectorsPage.stats.webhookMeta'), value: t('connectorsPage.stats.active') },
             ]
           : undefined,
       };
@@ -141,7 +162,9 @@ function resolveConnectors(
         status: connected ? 'connected' : 'disconnected',
         accountLabel: integrations?.outboundWebhook?.targetUrl || null,
         lastSyncAt: connected ? new Date().toISOString() : null,
-        stats: connected ? [{ label: 'Webhook', value: 'Actif' }] : undefined,
+        stats: connected
+          ? [{ label: t('connectorsPage.stats.webhook'), value: t('connectorsPage.stats.active') }]
+          : undefined,
       };
     }
 
@@ -158,7 +181,10 @@ function ConnectorCard({
   onConnect: (c: ConnectorRuntime) => void;
   onConfigure: (c: ConnectorRuntime) => void;
 }) {
-  const syncLabel = formatRelative(connector.lastSyncAt);
+  const { t, i18n } = useTranslation();
+  const locale = dateLocale(i18n.resolvedLanguage || i18n.language || 'fr');
+  const syncLabel = formatRelative(connector.lastSyncAt, t, locale);
+  const copy = connectorCopy(t, connector.id, connector);
 
   return (
     <article className="flex h-full flex-col rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:border-neutral-300 hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
@@ -173,7 +199,7 @@ function ConnectorCard({
       </div>
 
       <h3 className="text-[15px] font-semibold tracking-tight text-neutral-900">{connector.name}</h3>
-      <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{connector.description}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">{copy.description}</p>
 
       {connector.status === 'connected' && connector.accountLabel ? (
         <p className="mt-3 truncate text-xs text-neutral-400">{connector.accountLabel}</p>
@@ -183,7 +209,7 @@ function ConnectorCard({
         <div className="mt-4 space-y-2 rounded-xl bg-neutral-50/80 px-3 py-2.5">
           {syncLabel ? (
             <p className="text-[11px] font-medium uppercase tracking-wide text-neutral-400">
-              Dernière sync · {syncLabel}
+              {t('connectorsPage.lastSync', { when: syncLabel })}
             </p>
           ) : null}
           {connector.stats?.length ? (
@@ -200,7 +226,7 @@ function ConnectorCard({
       ) : null}
 
       <ul className="mt-4 space-y-1.5">
-        {connector.capabilities.map((cap) => (
+        {copy.capabilities.map((cap) => (
           <li key={cap} className="flex items-start gap-2 text-[13px] text-neutral-600">
             <Check size={14} className="mt-0.5 shrink-0 text-[#016AEB]" strokeWidth={2.5} />
             {cap}
@@ -211,24 +237,24 @@ function ConnectorCard({
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
         {connector.status === 'coming_soon' ? (
           <Button variant="outline" size="sm" disabled className="rounded-xl">
-            Bientôt disponible
+            {t('connectorsPage.soonAvailable')}
           </Button>
         ) : connector.status === 'connected' || connector.status === 'expired' ? (
           <>
             <Button variant="outline" size="sm" className="rounded-xl" onClick={() => onConfigure(connector)}>
               <Settings2 size={14} className="mr-1.5" />
-              Configurer
+              {t('connectorsPage.configure')}
             </Button>
             {connector.id === 'gmail' ? (
               <Button variant="ghost" size="sm" className="rounded-xl text-neutral-500" onClick={() => onConnect(connector)}>
                 <Unplug size={14} className="mr-1.5" />
-                Reconnecter
+                {t('connectorsPage.reconnect')}
               </Button>
             ) : null}
           </>
         ) : (
           <Button size="sm" className="rounded-xl" onClick={() => onConnect(connector)}>
-            Connecter
+            {t('connectorsPage.connect')}
             <ChevronRight size={14} className="ml-1" />
           </Button>
         )}
@@ -246,6 +272,7 @@ function ConnectWizard({
   connector: ConnectorDefinition | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [success, setSuccess] = useState(false);
@@ -262,6 +289,8 @@ function ConnectWizard({
   }, [open, connector?.id]);
 
   if (!connector) return null;
+
+  const copy = connectorCopy(t, connector.id, connector);
 
   const finishConnect = async () => {
     setBusy(true);
@@ -286,11 +315,18 @@ function ConnectWizard({
       setSuccess(true);
       setTimeout(() => onOpenChange(false), 1200);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Connexion impossible');
+      setError(e instanceof Error ? e.message : t('connectorsPage.connectFailed'));
     } finally {
       setBusy(false);
     }
   };
+
+  const authBody =
+    connector.authType === 'oauth'
+      ? t('connectorsPage.authOauth', { name: connector.name })
+      : connector.authType === 'webhook'
+        ? t('connectorsPage.authWebhook', { name: connector.name })
+        : t('connectorsPage.authApi', { name: connector.name });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -300,11 +336,11 @@ function ConnectWizard({
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 animate-in zoom-in-50 duration-300">
               <CheckCircle2 size={36} />
             </div>
-            <p className="text-lg font-semibold text-neutral-900">{connector.name} prêt</p>
+            <p className="text-lg font-semibold text-neutral-900">
+              {t('connectorsPage.ready', { name: connector.name })}
+            </p>
             <p className="mt-1 text-sm text-neutral-500">
-              {connector.id === 'gmail'
-                ? 'Redirection vers Google pour autoriser l’accès…'
-                : 'Ouverture de la configuration…'}
+              {connector.id === 'gmail' ? t('connectorsPage.redirectGoogle') : t('connectorsPage.openConfig')}
             </p>
           </div>
         ) : (
@@ -318,8 +354,10 @@ function ConnectWizard({
                   <ConnectorBrandIcon id={connector.id} />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-semibold">Connecter {connector.name}</DialogTitle>
-                  <p className="text-xs text-neutral-500">Assistant en 3 étapes</p>
+                  <DialogTitle className="text-base font-semibold">
+                    {t('connectorsPage.connectName', { name: connector.name })}
+                  </DialogTitle>
+                  <p className="text-xs text-neutral-500">{t('connectorsPage.wizardSteps')}</p>
                 </div>
               </div>
               <div className="mt-4 flex gap-1.5">
@@ -338,26 +376,22 @@ function ConnectWizard({
             <div className="px-6 py-5">
               {step === 1 && (
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-neutral-900">1. Connexion</h4>
-                  <p className="text-sm leading-relaxed text-neutral-500">
-                    {connector.authType === 'oauth'
-                      ? `Vous allez être redirigé vers ${connector.name} pour autoriser Ciblix en toute sécurité (OAuth).`
-                      : connector.authType === 'webhook'
-                        ? `Vous configurerez l’URL webhook et les identifiants ${connector.name} pour que Ciblix reçoive les événements.`
-                        : `Vous fournirez une clé API ou une URL pour connecter ${connector.name}.`}
-                  </p>
+                  <h4 className="text-sm font-semibold text-neutral-900">{t('connectorsPage.stepConnect')}</h4>
+                  <p className="text-sm leading-relaxed text-neutral-500">{authBody}</p>
                   <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 text-xs text-neutral-500">
-                    Type d’auth ·{' '}
-                    <span className="font-semibold uppercase text-neutral-700">{connector.authType.replace('_', ' ')}</span>
+                    {t('connectorsPage.authType')} ·{' '}
+                    <span className="font-semibold uppercase text-neutral-700">
+                      {connector.authType.replace('_', ' ')}
+                    </span>
                   </div>
                 </div>
               )}
               {step === 2 && (
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-neutral-900">2. Autorisations</h4>
-                  <p className="text-sm text-neutral-500">Ciblix demandera uniquement ce qui est nécessaire aux agents :</p>
+                  <h4 className="text-sm font-semibold text-neutral-900">{t('connectorsPage.stepPerms')}</h4>
+                  <p className="text-sm text-neutral-500">{t('connectorsPage.permsIntro')}</p>
                   <ul className="space-y-2">
-                    {connector.permissions.map((p) => (
+                    {copy.permissions.map((p) => (
                       <li
                         key={p}
                         className="flex items-start gap-2 rounded-xl border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-700"
@@ -371,10 +405,9 @@ function ConnectWizard({
               )}
               {step === 3 && (
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-neutral-900">3. Confirmation</h4>
+                  <h4 className="text-sm font-semibold text-neutral-900">{t('connectorsPage.stepConfirm')}</h4>
                   <p className="text-sm leading-relaxed text-neutral-500">
-                    Les agents pourront utiliser <strong className="font-semibold text-neutral-800">{connector.name}</strong>{' '}
-                    pour travailler automatiquement. Vous pourrez déconnecter à tout moment.
+                    {t('connectorsPage.confirmBody', { name: connector.name })}
                   </p>
                   {error ? <p className="text-sm text-red-600">{error}</p> : null}
                 </div>
@@ -389,15 +422,17 @@ function ConnectWizard({
                 disabled={busy || step === 1}
                 onClick={() => setStep((s) => Math.max(1, s - 1))}
               >
-                Retour
+                {t('connectorsPage.back')}
               </Button>
               {step < 3 ? (
                 <Button size="sm" className="rounded-xl" onClick={() => setStep((s) => s + 1)}>
-                  Continuer
+                  {t('connectorsPage.continue')}
                 </Button>
               ) : (
                 <Button size="sm" className="rounded-xl" disabled={busy} onClick={() => void finishConnect()}>
-                  {busy ? 'Connexion…' : `Connecter ${connector.name}`}
+                  {busy
+                    ? t('connectorsPage.connecting')
+                    : t('connectorsPage.connectName', { name: connector.name })}
                 </Button>
               )}
             </div>
@@ -409,6 +444,8 @@ function ConnectWizard({
 }
 
 export function Connecteurs() {
+  const { t, i18n } = useTranslation();
+  const locale = dateLocale(i18n.resolvedLanguage || i18n.language || 'fr');
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -435,25 +472,25 @@ export function Connecteurs() {
 
   useEffect(() => {
     if (params.get('gmail') === 'connected') {
-      setToast('Gmail connecté avec succès');
+      setToast(t('connectorsPage.gmailConnected'));
       void qc.invalidateQueries({ queryKey: ['gmail-status'] });
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
     }
-  }, [params, qc]);
+  }, [params, qc, t]);
 
   const connectors = useMemo(
-    () => resolveConnectors(gmailStatus, gmailStats, integrations),
-    [gmailStatus, gmailStats, integrations]
+    () => resolveConnectors(t, locale, gmailStatus, gmailStats, integrations),
+    [t, locale, gmailStatus, gmailStats, integrations]
   );
 
   const byCategory = useMemo(() => {
     return CONNECTOR_CATEGORY_ORDER.map((cat) => ({
       id: cat,
-      label: CONNECTOR_CATEGORY_LABELS[cat],
+      label: t(`connectorsPage.categories.${cat}`),
       items: connectors.filter((c) => c.category === cat),
     })).filter((g) => g.items.length > 0);
-  }, [connectors]);
+  }, [connectors, t]);
 
   const availableToConnect = connectors.filter(
     (c) => c.status === 'disconnected' || c.status === 'expired'
@@ -483,14 +520,12 @@ export function Connecteurs() {
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-500">
               <Plug size={12} className="text-[#016AEB]" />
-              Plateforme ouverte
+              {t('connectorsPage.openPlatform')}
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-[2rem]">
-              Connecteurs
+              {t('connectorsPage.title')}
             </h1>
-            <p className="mt-2 text-base leading-relaxed text-neutral-500">
-              Connectez vos outils pour permettre aux agents IA de travailler automatiquement.
-            </p>
+            <p className="mt-2 text-base leading-relaxed text-neutral-500">{t('connectorsPage.subtitle')}</p>
           </div>
           <Button
             className="shrink-0 rounded-xl shadow-sm"
@@ -498,7 +533,7 @@ export function Connecteurs() {
             disabled={availableToConnect.length === 0}
           >
             <Plus size={16} className="mr-1.5" />
-            Connecter un outil
+            {t('connectorsPage.connectTool')}
           </Button>
         </header>
 
@@ -526,8 +561,7 @@ export function Connecteurs() {
         </div>
 
         <p className="mt-14 max-w-2xl text-sm leading-relaxed text-neutral-400">
-          Ciblix s’intègre à votre écosystème — messagerie, agenda, CRM et sources publiques —
-          pour que chaque agent travaille avec le même contexte que votre équipe.
+          {t('connectorsPage.footer')}
         </p>
       </div>
 
@@ -536,36 +570,39 @@ export function Connecteurs() {
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent className="max-w-md rounded-2xl sm:rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Choisir un outil</DialogTitle>
+            <DialogTitle>{t('connectorsPage.pickTool')}</DialogTitle>
           </DialogHeader>
           <ul className="max-h-[60vh] space-y-1 overflow-y-auto py-1">
-            {availableToConnect.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-neutral-50"
-                  onClick={() => {
-                    setPickerOpen(false);
-                    openWizard(c);
-                  }}
-                >
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `${c.accent}14` }}
+            {availableToConnect.map((c) => {
+              const copy = connectorCopy(t, c.id, c);
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-neutral-50"
+                    onClick={() => {
+                      setPickerOpen(false);
+                      openWizard(c);
+                    }}
                   >
-                    <ConnectorBrandIcon id={c.id} className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-neutral-900">{c.name}</p>
-                    <p className="truncate text-xs text-neutral-500">{c.description}</p>
-                  </div>
-                  <ChevronRight size={16} className="shrink-0 text-neutral-300" />
-                </button>
-              </li>
-            ))}
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: `${c.accent}14` }}
+                    >
+                      <ConnectorBrandIcon id={c.id} className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-neutral-900">{c.name}</p>
+                      <p className="truncate text-xs text-neutral-500">{copy.description}</p>
+                    </div>
+                    <ChevronRight size={16} className="shrink-0 text-neutral-300" />
+                  </button>
+                </li>
+              );
+            })}
             {availableToConnect.length === 0 ? (
               <li className="px-3 py-6 text-center text-sm text-neutral-500">
-                Tous les connecteurs disponibles sont déjà actifs.
+                {t('connectorsPage.allConnected')}
               </li>
             ) : null}
           </ul>

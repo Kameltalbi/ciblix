@@ -1,0 +1,233 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
+import { prisma } from '../db/prisma.js';
+import { overnightTeamStats } from '../services/agent-team/agentTaskService.js';
+import { enqueueAgentTask } from '../services/agent-team/agentTaskService.js';
+import { runOrchestratorTickNow } from '../services/agent-team/orchestrator.js';
+
+export const agentTeamRoutes = Router();
+
+agentTeamRoutes.use(auth);
+agentTeamRoutes.use(requirePaymentApproved);
+
+const targetingSchema = z.object({
+  activity: z.string().max(4000).nullable().optional(),
+  productsServices: z.array(z.string().max(200)).max(40).optional(),
+  markets: z.array(z.string().max(120)).max(40).optional(),
+  countries: z.array(z.string().max(120)).max(40).optional(),
+  cities: z.array(z.string().max(120)).max(40).optional(),
+  targetClients: z.array(z.string().max(200)).max(40).optional(),
+  sectors: z.array(z.string().max(120)).max(40).optional(),
+  keywords: z.array(z.string().max(120)).max(40).optional(),
+  excludeCompanies: z.array(z.string().max(200)).max(80).optional(),
+  orchestratorEnabled: z.boolean().optional(),
+  orchestratorIntervalH: z.number().int().min(1).max(168).optional(),
+  minScoutScoreToHandoff: z.number().int().min(0).max(100).optional(),
+});
+
+agentTeamRoutes.get('/targeting', async (req: AuthRequest, res, next) => {
+  try {
+    const profile = await prisma.orgTargetingProfile.findUnique({
+      where: { organizationId: req.organizationId! },
+    });
+    res.json({
+      profile: profile || {
+        activity: null,
+        productsServices: [],
+        markets: [],
+        countries: [],
+        cities: [],
+        targetClients: [],
+        sectors: [],
+        keywords: [],
+        excludeCompanies: [],
+        orchestratorEnabled: true,
+        orchestratorIntervalH: 1,
+        minScoutScoreToHandoff: 55,
+        lastOrchestratorAt: null,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+agentTeamRoutes.put('/targeting', async (req: AuthRequest, res, next) => {
+  try {
+    const body = targetingSchema.parse(req.body);
+    const organizationId = req.organizationId!;
+
+    const profile = await prisma.orgTargetingProfile.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        activity: body.activity ?? null,
+        productsServices: body.productsServices ?? [],
+        markets: body.markets ?? [],
+        countries: body.countries ?? [],
+        cities: body.cities ?? [],
+        targetClients: body.targetClients ?? [],
+        sectors: body.sectors ?? [],
+        keywords: body.keywords ?? [],
+        excludeCompanies: body.excludeCompanies ?? [],
+        orchestratorEnabled: body.orchestratorEnabled ?? true,
+        orchestratorIntervalH: body.orchestratorIntervalH ?? 1,
+        minScoutScoreToHandoff: body.minScoutScoreToHandoff ?? 55,
+      },
+      update: {
+        ...(body.activity !== undefined ? { activity: body.activity } : {}),
+        ...(body.productsServices !== undefined ? { productsServices: body.productsServices } : {}),
+        ...(body.markets !== undefined ? { markets: body.markets } : {}),
+        ...(body.countries !== undefined ? { countries: body.countries } : {}),
+        ...(body.cities !== undefined ? { cities: body.cities } : {}),
+        ...(body.targetClients !== undefined ? { targetClients: body.targetClients } : {}),
+        ...(body.sectors !== undefined ? { sectors: body.sectors } : {}),
+        ...(body.keywords !== undefined ? { keywords: body.keywords } : {}),
+        ...(body.excludeCompanies !== undefined ? { excludeCompanies: body.excludeCompanies } : {}),
+        ...(body.orchestratorEnabled !== undefined
+          ? { orchestratorEnabled: body.orchestratorEnabled }
+          : {}),
+        ...(body.orchestratorIntervalH !== undefined
+          ? { orchestratorIntervalH: body.orchestratorIntervalH }
+          : {}),
+        ...(body.minScoutScoreToHandoff !== undefined
+          ? { minScoutScoreToHandoff: body.minScoutScoreToHandoff }
+          : {}),
+      },
+    });
+
+    // Aligne le profil Veilleur existant sur le ciblage
+    const geoZones = [...profile.countries, ...profile.cities, ...profile.markets];
+    const scout = await prisma.scoutProfile.findUnique({ where: { organizationId } });
+    if (scout) {
+      await prisma.scoutProfile.update({
+        where: { organizationId },
+        data: {
+          keywords: (profile.keywords.length ? profile.keywords : scout.keywords) as object,
+          sectors: (profile.sectors.length ? profile.sectors : scout.sectors) as object,
+          geoZones: (geoZones.length ? geoZones : scout.geoZones) as object,
+          autoScanEnabled: profile.orchestratorEnabled,
+          scanIntervalH: Math.max(6, profile.orchestratorIntervalH),
+        },
+      });
+    } else if (profile.keywords.length > 0) {
+      await prisma.scoutProfile.create({
+        data: {
+          organizationId,
+          keywords: profile.keywords as object,
+          sectors: profile.sectors as object,
+          geoZones: geoZones as object,
+          autoScanEnabled: profile.orchestratorEnabled,
+          scanIntervalH: Math.max(6, profile.orchestratorIntervalH),
+        },
+      });
+    }
+
+    res.json({ profile });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Résumé de ce que l’équipe IA a fait pendant l’absence. */
+agentTeamRoutes.get('/overnight', async (req: AuthRequest, res, next) => {
+  try {
+    let since: Date;
+    if (typeof req.query.since === 'string' && req.query.since) {
+      const parsed = new Date(req.query.since);
+      since = Number.isNaN(parsed.getTime())
+        ? new Date(Date.now() - 24 * 3600_000)
+        : parsed;
+    } else {
+      const hours = Math.min(168, Math.max(1, Number(req.query.hours) || 24));
+      since = new Date(Date.now() - hours * 3600_000);
+    }
+    // Cap à 7 jours
+    const minSince = new Date(Date.now() - 168 * 3600_000);
+    if (since < minSince) since = minSince;
+
+    const stats = await overnightTeamStats(req.organizationId!, since);
+    const targeting = await prisma.orgTargetingProfile.findUnique({
+      where: { organizationId: req.organizationId! },
+      select: {
+        orchestratorEnabled: true,
+        keywords: true,
+        activity: true,
+        companyBrief: true,
+        lastOrchestratorAt: true,
+        missionStatus: true,
+        missionCompletedAt: true,
+      },
+    });
+    const pendingTasks = await prisma.agentTask.count({
+      where: {
+        organizationId: req.organizationId!,
+        status: { in: ['PENDING', 'RUNNING'] },
+      },
+    });
+
+    const teamConfigured = Boolean(
+      targeting?.missionStatus === 'ACTIVE' && targeting.missionCompletedAt
+    );
+
+    res.json({
+      ...stats,
+      teamConfigured,
+      missionStatus: targeting?.missionStatus || 'NONE',
+      orchestratorEnabled: targeting?.orchestratorEnabled ?? false,
+      lastOrchestratorAt: targeting?.lastOrchestratorAt?.toISOString() ?? null,
+      pendingTasks,
+      teamWorking: teamConfigured && (pendingTasks > 0 || Boolean(targeting?.orchestratorEnabled)),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+agentTeamRoutes.get('/tasks', async (req: AuthRequest, res, next) => {
+  try {
+    const tasks = await prisma.agentTask.findMany({
+      where: { organizationId: req.organizationId! },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    res.json({ tasks });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Lance un cycle immédiat (Veilleur) — utile après config du ciblage. */
+agentTeamRoutes.post('/run-now', async (req: AuthRequest, res, next) => {
+  try {
+    const organizationId = req.organizationId!;
+    const profile = await prisma.orgTargetingProfile.findUnique({
+      where: { organizationId },
+    });
+    if (!profile || profile.missionStatus !== 'ACTIVE' || !profile.missionCompletedAt) {
+      res.status(403).json({
+        error: 'MISSION_REQUIRED',
+        code: 'MISSION_REQUIRED',
+        message: 'Complétez la Mission IA avant de lancer les agents.',
+      });
+      return;
+    }
+    await prisma.orgTargetingProfile.update({
+      where: { organizationId },
+      data: { lastOrchestratorAt: null, orchestratorEnabled: true },
+    });
+    await enqueueAgentTask({
+      organizationId,
+      assignee: 'SCOUT',
+      kind: 'WATCH_SIGNALS',
+      priority: 95,
+      dedupeKey: `watch:manual:${organizationId}:${Date.now()}`,
+      payload: { triggeredBy: 'manual' },
+    });
+    void runOrchestratorTickNow();
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});

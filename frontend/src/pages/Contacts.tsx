@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   ChevronRight,
@@ -25,17 +26,15 @@ interface ContactRow {
   createdAt?: string;
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  HUNT: 'Prospecteur',
-  COPILOT: 'Assistant',
-  GMAIL: 'Gmail',
-  SCOUT: 'Veilleur',
-  ANALYSTE: 'Analyste',
-  OFFREBOT: 'Propositions',
-  MANUAL_IMPORT: 'Import',
-};
+function dateLocale(lang: string) {
+  if (lang.startsWith('ar')) return 'ar-TN';
+  if (lang.startsWith('en')) return 'en-GB';
+  return 'fr-FR';
+}
 
 export function Contacts() {
+  const { t, i18n } = useTranslation();
+  const locale = dateLocale(i18n.resolvedLanguage || i18n.language || 'fr');
   const [search, setSearch] = useState('');
 
   const { data, isPending } = useQuery({
@@ -60,20 +59,18 @@ export function Contacts() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Résultats agents
+            {t('contactsPage.eyebrow')}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight">Contacts</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Entreprises et personnes détectées par vos agents — pas un pipeline commercial.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('contactsPage.title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('contactsPage.subtitle')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" disabled title="Bientôt">
-            <Download size={14} /> Exporter
+          <Button variant="outline" size="sm" className="gap-1.5" disabled title={t('contactsPage.export')}>
+            <Download size={14} /> {t('contactsPage.export')}
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/prospection-ia" className="gap-1.5">
-              <Crosshair size={14} /> Lancer Prospecteur
+              <Crosshair size={14} /> {t('contactsPage.launchHunt')}
             </Link>
           </Button>
         </div>
@@ -84,7 +81,7 @@ export function Contacts() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher entreprise, contact, email…"
+          placeholder={t('contactsPage.searchPlaceholder')}
           className="pl-9 h-10"
         />
       </div>
@@ -94,27 +91,27 @@ export function Contacts() {
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Entreprise</th>
-                <th className="px-4 py-3 font-medium">Contact</th>
-                <th className="px-4 py-3 font-medium">Score IA</th>
-                <th className="px-4 py-3 font-medium">Téléphone</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Source</th>
-                <th className="px-4 py-3 font-medium">Détecté</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.company')}</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.contact')}</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.aiScore')}</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.phone')}</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.email')}</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.source')}</th>
+                <th className="px-4 py-3 font-medium">{t('contactsPage.detected')}</th>
+                <th className="px-4 py-3 font-medium text-right">{t('contactsPage.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isPending ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                    Chargement…
+                    {t('contactsPage.loading')}
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                    Aucun résultat pour le moment. Lancez le Prospecteur pour en détecter.
+                    {t('contactsPage.empty')}
                   </td>
                 </tr>
               ) : (
@@ -153,12 +150,16 @@ export function Contacts() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs text-muted-foreground">
-                        {SOURCE_LABELS[c.createdVia || ''] || c.createdVia || 'Agent'}
+                        {c.createdVia
+                          ? t(`contactsPage.sources.${c.createdVia}`, {
+                              defaultValue: c.createdVia,
+                            })
+                          : t('contactsPage.agent')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {c.createdAt
-                        ? new Date(c.createdAt).toLocaleDateString('fr-FR', {
+                        ? new Date(c.createdAt).toLocaleDateString(locale, {
                             day: 'numeric',
                             month: 'short',
                           })
@@ -173,12 +174,12 @@ export function Contacts() {
                             </Link>
                           </Button>
                         ) : null}
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild title="Offre">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
                           <Link to={`/agents/offre-bot?contactId=${c.id}`}>
                             <FileSignature size={14} />
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild title="Fiche">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
                           <Link to={`/contacts/${c.id}`}>
                             <ChevronRight size={14} />
                           </Link>
@@ -193,7 +194,9 @@ export function Contacts() {
         </div>
         {data?.total != null ? (
           <div className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
-            {data.total} résultat{data.total > 1 ? 's' : ''}
+            {t(data.total === 1 ? 'contactsPage.results_one' : 'contactsPage.results_other', {
+              count: data.total,
+            })}
           </div>
         ) : null}
       </div>

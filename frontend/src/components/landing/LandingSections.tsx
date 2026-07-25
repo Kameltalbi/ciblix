@@ -87,14 +87,18 @@ export function LandingHeader() {
             <button
               type="button"
               onClick={() => {
-                const languages = ['fr', 'en', 'ar'];
-                const currentIndex = languages.indexOf(i18n.language);
-                i18n.changeLanguage(languages[(currentIndex + 1) % languages.length]);
+                const languages = ['fr', 'en', 'ar'] as const;
+                const raw = i18n.resolvedLanguage || i18n.language || 'fr';
+                const current = languages.find((l) => raw.startsWith(l)) ?? 'fr';
+                const idx = languages.indexOf(current);
+                void i18n.changeLanguage(languages[(idx + 1) % languages.length]);
               }}
               className="flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-[#eef4fc]"
             >
               <Globe size={18} className="text-[#016AEB]" />
-              <span className="font-semibold text-[#0071DD]">{i18n.language.toUpperCase()}</span>
+              <span className="font-semibold text-[#0071DD]">
+                {(i18n.resolvedLanguage || i18n.language || 'fr').slice(0, 2).toUpperCase()}
+              </span>
             </button>
             <button
               type="button"

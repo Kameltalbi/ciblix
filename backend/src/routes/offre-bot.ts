@@ -7,6 +7,7 @@ import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { getContactById } from '../services/agent-memory/contactService.js';
 import { listEventsForContact } from '../services/agent-memory/agentEventService.js';
 import { normalizeEmail } from '../services/agent-memory/normalize.js';
+import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
 
 export const offreBotRoutes = Router();
 
@@ -17,6 +18,7 @@ offreBotRoutes.get('/ping', (_req, res) => {
 offreBotRoutes.use(auth);
 offreBotRoutes.use(requirePaymentApproved);
 offreBotRoutes.use(checkAgentAccess('offre-bot'));
+offreBotRoutes.use(requireMissionForMutations);
 
 // ─── Helpers ────────────────────────────────────────────────
 

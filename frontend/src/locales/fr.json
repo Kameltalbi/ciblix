@@ -71,7 +71,8 @@
     "agentGmail": "Gmail",
     "agentFactCheck": "Vérificateur",
     "agentBrandPulse": "BrandPulse",
-    "agentsMarketplace": "Performance"
+    "agentsMarketplace": "Performance",
+    "mission": "Mission IA"
   },
   "gmailAi": {
     "badge": "Connecteur Gmail",
@@ -720,7 +721,13 @@
           "Scorer et prioriser les prospects",
           "Préparer des messages de première approche"
         ],
-        "tools": ["LinkedIn", "Web public", "RNE", "Bases locales", "Mémoire Ciblix"],
+        "tools": [
+          "LinkedIn",
+          "Web public",
+          "RNE",
+          "Bases locales",
+          "Mémoire Ciblix"
+        ],
         "tasks": [
           "Lister 40 entreprises BTP en Tunis scorées > 70",
           "Trouver le décideur achats d’une société cible",
@@ -742,7 +749,13 @@
           "Filtrer les signaux selon votre métier",
           "Alerter dès qu’une opportunité mérite attention"
         ],
-        "tools": ["TUNEPS", "BOAMP / sources AO", "Sites institutionnels", "LinkedIn", "Web & presse"],
+        "tools": [
+          "TUNEPS",
+          "BOAMP / sources AO",
+          "Sites institutionnels",
+          "LinkedIn",
+          "Web & presse"
+        ],
         "tasks": [
           "Alerter sur un AO compatible avec votre offre",
           "Repérer un recrutement commercial chez un compte cible",
@@ -764,7 +777,13 @@
           "Comparer concurrents et potentiel commercial",
           "Préparer un brief d’approche avant contact"
         ],
-        "tools": ["Sites web", "RNE", "LinkedIn", "Sources publiques", "Mémoire Ciblix"],
+        "tools": [
+          "Sites web",
+          "RNE",
+          "LinkedIn",
+          "Sources publiques",
+          "Mémoire Ciblix"
+        ],
         "tasks": [
           "Brief d’une cible avant un premier appel",
           "Liste des décideurs et angles d’approche",
@@ -786,7 +805,13 @@
           "Préparer emails, CR, offres et réponses AO",
           "Répondre en langage naturel sur votre activité"
         ],
-        "tools": ["Mémoire partagée des agents", "Gmail (connecteur)", "WhatsApp", "Historique contacts", "Documents d’offre"],
+        "tools": [
+          "Mémoire partagée des agents",
+          "Gmail (connecteur)",
+          "WhatsApp",
+          "Historique contacts",
+          "Documents d’offre"
+        ],
         "tasks": [
           "« Qui dois-je relancer cette semaine ? »",
           "Préparer un email de relance après un AO détecté",
@@ -888,8 +913,8 @@
     "agentMemoryFact": "Vérifie les faits avant que vous ne les envoyiez à un client."
   },
   "onboarding": {
-    "step0Title": "Bienvenue !",
-    "step0Body": "Vos agents IA partagent la même mémoire : chaque échange enrichit votre pipeline, sans saisie manuelle. Trois étapes pour démarrer.",
+    "step0Title": "Votre équipe IA commence ici",
+    "step0Body": "Vous ne venez pas chercher des prospects. Vous définissez une stratégie une seule fois — Veilleur, Prospecteur, Analyste et Assistant travaillent ensuite en continu, même lorsque vous êtes déconnecté.",
     "step1Title": "Votre premier contact",
     "step1Body": "Ajoutez une entreprise ou un interlocuteur — vos agents pourront mieux vous guider.",
     "step1Label": "Nom de l'entreprise",
@@ -898,13 +923,42 @@
     "step2Body": "Indiquez un montant ou un contexte estimé : les agents pourront prioriser et détecter les signaux utiles.",
     "step2Label": "Montant estimé (DT)",
     "step2Placeholder": "Ex : 5000",
-    "step3Title": "C'est prêt !",
-    "step3Body": "La solution complète est activée. Votre palier définit surtout le quota d’actions IA et le nombre d’utilisateurs.",
-    "skip": "Passer",
-    "done1": "Accès à la plateforme d'agents IA",
-    "done2": "L'Assistant IA prêt à vous proposer des actions",
-    "done3": "Marketplace agents disponible",
-    "start": "C'est parti"
+    "step3Title": "Activez votre équipe",
+    "step3Body": "Choisissez un palier. Dès maintenant, vos agents démarrent la veille et vous préparèrent des opportunités.",
+    "skip": "Configurer plus tard",
+    "done1": "Profil de prospection enregistré",
+    "done2": "Les agents travaillent en arrière-plan",
+    "done3": "Au retour : découvrez ce qu’ils ont accompli",
+    "start": "Lancer mon équipe IA",
+    "teamBadge": "Collaborateur IA permanent",
+    "missionSellTitle": "Que vendez-vous ?",
+    "missionSellBody": "Décrivez votre activité et vos offres. C’est la mission permanente de vos agents.",
+    "missionWhoTitle": "À qui ?",
+    "missionWhoBody": "Quels clients cibles et secteurs intéressent votre développement commercial ?",
+    "missionWhereTitle": "Où ?",
+    "missionWhereBody": "Pays et villes où vos agents doivent chercher des opportunités.",
+    "missionSignalsTitle": "Quoi surveiller ?",
+    "missionSignalsBody": "Mots-clés, types d’opportunités, et entreprises à éviter.",
+    "fieldActivity": "Votre activité",
+    "fieldProducts": "Produits et services",
+    "fieldTargetClients": "Clients cibles",
+    "fieldSectors": "Secteurs",
+    "fieldCountries": "Pays",
+    "fieldCities": "Villes",
+    "fieldKeywords": "Mots-clés",
+    "fieldOppTypes": "Types d’opportunités",
+    "fieldExclude": "Entreprises à exclure",
+    "phActivity": "Ex. Logiciel SaaS B2B pour distributeurs…",
+    "phList": "Un élément par ligne ou séparés par des virgules",
+    "phTargetClients": "Ex. Directeurs commerciaux, PME industrielles…",
+    "phCountries": "Ex. Tunisie, France, Maroc",
+    "phCities": "Ex. Tunis, Sfax, Casablanca",
+    "phKeywords": "Ex. appel d’offres, usine, recrutement…",
+    "phExclude": "Concurrents ou comptes à ignorer",
+    "oppTenders": "Appels d’offres & marchés publics",
+    "oppNews": "Actualités & signaux business",
+    "oppCompanies": "Nouvelles entreprises / projets",
+    "error": "Impossible de terminer la configuration"
   },
   "onboardingChatbot": {
     "titleLoggedIn": "Assistant CIBLIX",
@@ -1168,5 +1222,424 @@
         "a": "L'essai active la solution complète avec un quota dédié, quel que soit le palier choisi au départ."
       }
     ]
+  },
+  "performance": {
+    "title": "Performance commerciale",
+    "subtitle": "Suivez en temps réel les opportunités détectées, les prospects qualifiés, les actions commerciales réalisées et leur impact sur votre développement.",
+    "loading": "Chargement de la performance…",
+    "loadError": "Impossible de charger la performance commerciale.",
+    "retry": "Réessayer",
+    "evolutionTitle": "Évolution commerciale",
+    "last30Days": "30 derniers jours",
+    "series": {
+      "prospects": "Prospects trouvés",
+      "opportunities": "Opportunités détectées",
+      "proposals": "Propositions envoyées"
+    },
+    "insightNeutral": "Suivez l’évolution de vos opportunités au fil du mois.",
+    "insightUp": "Les opportunités progressent de {{pct}} % ce mois.",
+    "insightDown": "Les opportunités baissent de {{pct}} % ce mois.",
+    "funnelTitle": "Transformation commerciale",
+    "sourcesTitle": "Origine des opportunités",
+    "sourcesSubtitle": "Répartition ce mois",
+    "agentActivityTitle": "Activité de votre équipe IA",
+    "actionsTitle": "Actions à réaliser aujourd'hui",
+    "actionsEmpty": "Rien d’urgent pour le moment — vos agents travaillent.",
+    "timelineTitle": "Activité récente",
+    "timelineEmpty": "Aucune action récente — lancez une recherche ou une veille pour démarrer.",
+    "actionLogged": "Action enregistrée",
+    "teamTitle": "Votre équipe IA",
+    "open": "Ouvrir",
+    "activityTooltip": "{{count}} actions",
+    "kpis": {
+      "prospects": "Nouveaux prospects",
+      "opportunities": "Opportunités détectées",
+      "proposals": "Propositions envoyées",
+      "won": "Affaires gagnées"
+    },
+    "funnel": {
+      "companies": "Entreprises détectées",
+      "qualified": "Prospects qualifiés",
+      "opportunities": "Opportunités",
+      "proposals": "Propositions",
+      "sales": "Ventes"
+    },
+    "sources": {
+      "tenders": "Appels d'offres",
+      "linkedin": "LinkedIn",
+      "prospecting": "Prospection",
+      "referrals": "Recommandations",
+      "website": "Site web"
+    },
+    "agents": {
+      "hunt-ai": {
+        "name": "Prospecteur",
+        "role": "Trouver de nouveaux clients"
+      },
+      "scout-ai": {
+        "name": "Veilleur",
+        "role": "Détecter les opportunités"
+      },
+      "analyste-ai": {
+        "name": "Analyste",
+        "role": "Analyser les entreprises"
+      },
+      "copilot-ia": {
+        "name": "Assistant",
+        "role": "Piloter les actions commerciales"
+      }
+    },
+    "metrics": {
+      "prospectsMonth": "{{count}} prospects ce mois",
+      "opportunitiesDetected": "{{count}} opportunités détectées",
+      "analysesDone": "{{count}} analyses réalisées",
+      "actionsPrepared": "{{count}} actions préparées"
+    },
+    "todaysActions": {
+      "review-opps": {
+        "label": "opportunités à examiner",
+        "cta": "Examiner"
+      },
+      "contact-prospects": {
+        "label": "prospects à contacter",
+        "cta": "Contacter"
+      },
+      "finalize-proposals": {
+        "label": "propositions à finaliser",
+        "cta": "Finaliser"
+      },
+      "follow-ups": {
+        "label": "relances prévues",
+        "cta": "Relancer"
+      }
+    },
+    "sourcesAgents": {
+      "HUNT": "Prospecteur",
+      "COPILOT": "Assistant",
+      "GMAIL": "Gmail",
+      "SCOUT": "Veilleur",
+      "OFFREBOT": "Propositions",
+      "ANALYSTE": "Analyste",
+      "FACTCHECK": "Vérificateur"
+    },
+    "subtitleLiving": "Ce n’est pas un moteur de recherche. Votre équipe IA exécute votre stratégie et livre des opportunités prêtes à exploiter."
+  },
+  "contactsPage": {
+    "eyebrow": "Résultats agents",
+    "title": "Contacts",
+    "subtitle": "Entreprises et personnes détectées par vos agents — pas un pipeline commercial.",
+    "export": "Exporter",
+    "launchHunt": "Lancer Prospecteur",
+    "searchPlaceholder": "Rechercher entreprise, contact, email…",
+    "company": "Entreprise",
+    "contact": "Contact",
+    "aiScore": "Score IA",
+    "phone": "Téléphone",
+    "email": "Email",
+    "source": "Source",
+    "detected": "Détecté",
+    "actions": "Actions",
+    "loading": "Chargement…",
+    "empty": "Aucun résultat pour le moment. Lancez le Prospecteur pour en détecter.",
+    "results_one": "{{count}} résultat",
+    "results_other": "{{count}} résultats",
+    "agent": "Agent",
+    "sources": {
+      "HUNT": "Prospecteur",
+      "COPILOT": "Assistant",
+      "GMAIL": "Gmail",
+      "SCOUT": "Veilleur",
+      "ANALYSTE": "Analyste",
+      "OFFREBOT": "Propositions",
+      "MANUAL_IMPORT": "Import"
+    }
+  },
+  "connectorsPage": {
+    "title": "Connecteurs",
+    "subtitle": "Reliez vos outils pour que vos agents IA travaillent avec vos données réelles.",
+    "connected": "Connecté",
+    "expired": "Expiré",
+    "comingSoon": "À venir",
+    "disconnected": "Non connecté",
+    "justNow": "À l’instant",
+    "minutesAgo": "Il y a {{count}} min",
+    "hoursAgo": "Il y a {{count}} h",
+    "lastSync": "Dernière sync · {{when}}",
+    "configure": "Configurer",
+    "reconnect": "Reconnecter",
+    "connect": "Connecter",
+    "soonAvailable": "Bientôt disponible",
+    "categories": {
+      "communication": "Communication",
+      "professional": "Réseaux professionnels",
+      "calendar": "Agenda",
+      "enterprise": "Données entreprise",
+      "public": "Sources publiques"
+    },
+    "stats": {
+      "emailsProcessed": "Emails traités",
+      "draftsToday": "Brouillons (auj.)",
+      "businessAccount": "Compte Business",
+      "webhookMeta": "Webhook Meta",
+      "webhook": "Webhook",
+      "configured": "Configuré",
+      "active": "Actif"
+    },
+    "items": {
+      "gmail": {
+        "description": "Les agents IA analysent les échanges, détectent les opportunités et préparent les réponses.",
+        "capabilities": [
+          "Analyse des emails",
+          "Détection d’opportunités",
+          "Préparation des réponses",
+          "Résumé automatique"
+        ],
+        "permissions": [
+          "Lire les nouveaux messages",
+          "Créer des brouillons (sans envoi automatique)",
+          "Accéder à l’adresse du compte"
+        ]
+      },
+      "outlook": {
+        "description": "Synchronisez Microsoft Outlook pour que les agents suivent les emails professionnels.",
+        "capabilities": [
+          "Analyse des emails",
+          "Détection d’opportunités",
+          "Préparation des réponses",
+          "Résumé automatique"
+        ],
+        "permissions": [
+          "Lire la messagerie",
+          "Créer des brouillons",
+          "Accéder au calendrier associé"
+        ]
+      },
+      "whatsapp": {
+        "description": "Les agents analysent les conversations, détectent les intentions et préparent les relances.",
+        "capabilities": [
+          "Analyse des conversations",
+          "Relances intelligentes",
+          "Résumé des échanges",
+          "Détection des intentions"
+        ],
+        "permissions": [
+          "Recevoir les messages entrants (webhook Meta)",
+          "Contexte des sessions actives",
+          "Consentement contact requis"
+        ]
+      },
+      "linkedin": {
+        "description": "Identifiez les décideurs, préparez les messages et suivez les signaux entreprise.",
+        "capabilities": [
+          "Analyse des profils",
+          "Identification des décideurs",
+          "Préparation des messages",
+          "Veille entreprise"
+        ],
+        "permissions": [
+          "Lire le profil public",
+          "Suggestions de messages",
+          "Veille pages entreprise"
+        ]
+      },
+      "google-calendar": {
+        "description": "Les agents voient vos créneaux pour proposer des rendez-vous au bon moment.",
+        "capabilities": [
+          "Lecture des disponibilités",
+          "Proposition de créneaux",
+          "Rappels intelligents",
+          "Contexte des réunions"
+        ],
+        "permissions": [
+          "Lire les événements",
+          "Voir les disponibilités"
+        ]
+      },
+      "microsoft-365": {
+        "description": "Agenda Outlook / Microsoft 365 pour orchestrer les rendez-vous avec les agents.",
+        "capabilities": [
+          "Lecture des disponibilités",
+          "Proposition de créneaux",
+          "Rappels intelligents",
+          "Contexte des réunions"
+        ],
+        "permissions": [
+          "Lire le calendrier",
+          "Voir les disponibilités"
+        ]
+      },
+      "website": {
+        "description": "Connectez votre site pour enrichir le contexte métier des agents (pages, offre, actualités).",
+        "capabilities": [
+          "Indexation des pages clés",
+          "Contexte produit / offre",
+          "Détection des actualités",
+          "Alignement messaging"
+        ],
+        "permissions": [
+          "URL publique du site",
+          "Lecture des pages indexables"
+        ]
+      },
+      "crm": {
+        "description": "Poussez les événements Ciblix vers votre CRM via webhook sécurisé (HMAC).",
+        "capabilities": [
+          "Webhook sortant signé",
+          "Événements pipeline",
+          "Emails & notes",
+          "Opportunités"
+        ],
+        "permissions": [
+          "URL de webhook",
+          "Secret HMAC",
+          "Sélection des événements"
+        ]
+      },
+      "erp": {
+        "description": "Reliez votre ERP pour croiser commandes, facturation et pipeline commercial.",
+        "capabilities": [
+          "Sync clients / commandes",
+          "Contexte facturation",
+          "Alertes stock / délai",
+          "Enrichissement contacts"
+        ],
+        "permissions": [
+          "Clé API",
+          "Endpoint sécurisé"
+        ]
+      },
+      "rne": {
+        "description": "Registre National des Entreprises — enrichissement légal et données société (Tunisie).",
+        "capabilities": [
+          "Fiche entreprise",
+          "Dirigeants",
+          "Statut juridique",
+          "Enrichissement leads"
+        ],
+        "permissions": [
+          "Accès API publique / partenaire"
+        ]
+      },
+      "tuneps": {
+        "description": "Marchés publics tunisiens — source pour le Veilleur IA et la détection d’appels d’offres.",
+        "capabilities": [
+          "Veille appels d’offres",
+          "Alertes pertinence",
+          "Enrichissement opportunités",
+          "Histor historique"
+        ],
+        "permissions": [
+          "Accès sources publiques"
+        ]
+      }
+    },
+    "openPlatform": "Plateforme ouverte",
+    "connectTool": "Connecter un outil",
+    "footer": "Ciblix s’intègre à votre écosystème — messagerie, agenda, CRM et sources publiques — pour que chaque agent travaille avec le même contexte que votre équipe.",
+    "pickTool": "Choisir un outil",
+    "allConnected": "Tous les connecteurs disponibles sont déjà actifs.",
+    "gmailConnected": "Gmail connecté avec succès",
+    "connectFailed": "Connexion impossible",
+    "ready": "{{name}} prêt",
+    "redirectGoogle": "Redirection vers Google pour autoriser l’accès…",
+    "openConfig": "Ouverture de la configuration…",
+    "connectName": "Connecter {{name}}",
+    "wizardSteps": "Assistant en 3 étapes",
+    "stepConnect": "1. Connexion",
+    "stepPerms": "2. Autorisations",
+    "stepConfirm": "3. Confirmation",
+    "authOauth": "Vous allez être redirigé vers {{name}} pour autoriser Ciblix en toute sécurité (OAuth).",
+    "authWebhook": "Vous configurerez l’URL webhook et les identifiants {{name}} pour que Ciblix reçoive les événements.",
+    "authApi": "Vous fournirez une clé API ou une URL pour connecter {{name}}.",
+    "authType": "Type d’auth",
+    "permsIntro": "Ciblix demandera uniquement ce qui est nécessaire aux agents :",
+    "confirmBody": "Les agents pourront utiliser {{name}} pour travailler automatiquement. Vous pourrez déconnecter à tout moment.",
+    "back": "Retour",
+    "continue": "Continuer",
+    "connecting": "Connexion…"
+  },
+  "agentTeam": {
+    "title": "Équipe IA — ciblage",
+    "subtitle": "Configurez une fois. Les agents Veilleur, Prospecteur, Analyste et Assistant collaborent ensuite automatiquement.",
+    "activity": "Votre activité",
+    "activityPlaceholder": "Ex. Éditeur SaaS B2B pour la distribution…",
+    "products": "Produits et services",
+    "markets": "Marchés",
+    "countries": "Pays",
+    "cities": "Villes",
+    "targetClients": "Clients cibles",
+    "sectors": "Secteurs",
+    "keywords": "Mots-clés",
+    "exclude": "Entreprises à exclure",
+    "listHint": "Un élément par ligne",
+    "intervalH": "Fréquence (heures)",
+    "minScore": "Score min. handoff Veilleur",
+    "enabled": "Orchestrateur actif",
+    "runNow": "Lancer un cycle maintenant",
+    "saved": "Ciblage enregistré",
+    "runStarted": "Cycle lancé — les agents travaillent en arrière-plan",
+    "overnightTitle": "Pendant votre absence",
+    "overnightSubtitle": "Voici ce que vos agents ont accompli depuis votre dernière visite.",
+    "statDetected": "entreprises / signaux détectés",
+    "statPriority": "opportunités prioritaires",
+    "statTenders": "appels d’offres / signaux",
+    "statEnriched": "entreprises enrichies",
+    "statMessages": "messages préparés",
+    "statScoreUp": "scores élevés (Analyste)",
+    "overnightEyebrow": "Votre équipe IA",
+    "overnightLoading": "Récupération du travail de l’équipe…",
+    "teamWorking": "Agents au travail",
+    "emptyTitle": "Votre équipe est déjà en mission",
+    "emptyBody": "Aucune nouveauté depuis votre dernière visite — les agents continuent de surveiller. Revenez bientôt.",
+    "setupTitle": "Votre équipe IA attend sa mission",
+    "setupBody": "Explorez librement Ciblix. Pour que les agents détectent des opportunités pertinentes, briefez d’abord votre Mission IA.",
+    "setupCta": "Créer ma Mission IA",
+    "statOpps": "opportunités analysées"
+  },
+  "mission": {
+    "badge": "Brief de votre équipe IA",
+    "title": "Mission IA",
+    "subtitle": "Une seule fois — ou à tout moment. Les agents s’adaptent automatiquement.",
+    "stepOf": "Étape {{current}} / {{total}}",
+    "exploreLater": "Explorer l’app",
+    "launch": "Lancer ma mission",
+    "activateError": "Impossible de lancer la mission — vérifiez les étapes.",
+    "gateTitle": "Votre équipe IA est prête, mais elle attend sa mission",
+    "gateBody": "Complétez votre Mission IA pour commencer à détecter automatiquement des opportunités commerciales.",
+    "gateExplore": "Vous pouvez continuer à explorer le reste de Ciblix.",
+    "gateCta": "Compléter la Mission IA",
+    "s1Title": "Présentez votre entreprise",
+    "s1Body": "Décrivez votre entreprise, vos produits, vos services, votre valeur ajoutée et les types de clients que vous recherchez. L’IA extraira automatiquement les mots-clés.",
+    "s1Placeholder": "Ex. Nous installons des centrales photovoltaïques pour les industriels, hôtels et grandes surfaces en Tunisie et en Algérie.",
+    "extractedHint": "Signaux détectés :",
+    "s2Title": "Vos marchés",
+    "countries": "Pays",
+    "regions": "Régions",
+    "cities": "Villes",
+    "listHint": "Un élément par ligne",
+    "s3Title": "Vos clients idéaux",
+    "s3Body": "Créez un ou plusieurs profils d’ICP. L’importance guide la priorisation des agents.",
+    "profileName": "Profil",
+    "profileNamePh": "Ex. Industries agroalimentaires",
+    "profileDescPh": "Description libre du client idéal…",
+    "importance": "Importance",
+    "sector": "Secteur",
+    "companySize": "Taille",
+    "constraints": "Contraintes",
+    "addProfile": "Ajouter un profil",
+    "s4Title": "Ce que les agents doivent détecter",
+    "s5Title": "Priorités commerciales",
+    "s5Body": "Quelles sont vos priorités ?",
+    "s5Placeholder": "Ex. Je privilégie les entreprises qui investissent dans leur outil de production.",
+    "s6Title": "Entreprises / secteurs à exclure",
+    "exClients": "Clients",
+    "exCompetitors": "Concurrents",
+    "exPartners": "Partenaires",
+    "exSectors": "Secteurs",
+    "exCompanies": "Entreprises",
+    "exCountries": "Pays",
+    "s7Title": "Validation IA",
+    "s7Body": "Voici le résumé de la mission que vos agents vont exécuter en continu.",
+    "summaryLoading": "Génération du résumé…"
   }
 }

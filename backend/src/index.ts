@@ -48,6 +48,8 @@ import { factcheckAiRoutes } from './routes/factcheck-ai.js';
 import { commBotRoutes } from './routes/comm-bot.js';
 import { brandPulseRoutes } from './routes/brand-pulse.js';
 import { brandPulsePublicRoutes } from './routes/brand-pulse-public.js';
+import { agentTeamRoutes } from './routes/agent-team.js';
+import { missionRoutes } from './routes/mission.js';
 import { agentsRoutes } from './routes/agents.js';
 import { gmailAiRoutes } from './routes/gmail-ai.js';
 import { contactsRoutes } from './routes/contacts.js';
@@ -225,6 +227,8 @@ app.use('/api/integrations', integrationsWebhookRoutes);
 app.use('/api/integrations', integrationsRoutes);
 app.use('/api/billing', billingWebhookRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/agent-team', agentTeamRoutes);
+app.use('/api/mission', missionRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
 
@@ -256,5 +260,8 @@ app.listen(PORT, '0.0.0.0', () => {
   });
   void import('./services/scout/scoutScheduler.js').then(({ startScoutScheduler }) => {
     startScoutScheduler();
+  });
+  void import('./services/agent-team/orchestrator.js').then(({ startAgentOrchestrator }) => {
+    startAgentOrchestrator();
   });
 });

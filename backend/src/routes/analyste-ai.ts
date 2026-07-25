@@ -3,12 +3,14 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
+import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
 
 export const analysteAiRoutes = Router();
 
 analysteAiRoutes.use(auth);
 analysteAiRoutes.use(requirePaymentApproved);
 analysteAiRoutes.use(checkAgentAccess('analyste-ai'));
+analysteAiRoutes.use(requireMissionForMutations);
 
 async function callOpenAI(prompt: string, systemPrompt: string): Promise<string> {
   const key = process.env.OPENAI_API_KEY;

@@ -477,11 +477,11 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
     const oppGrowthPct = pctDelta(oppCurrHalf, oppPrevHalf);
 
     const funnelStages = [
-      { key: 'companies', label: 'Entreprises détectées', count: companiesDetected },
-      { key: 'qualified', label: 'Prospects qualifiés', count: qualifiedProspects },
-      { key: 'opportunities', label: 'Opportunités', count: opportunitiesTotal },
-      { key: 'proposals', label: 'Propositions', count: proposalsOpen },
-      { key: 'sales', label: 'Ventes', count: salesWon },
+      { key: 'companies', count: companiesDetected },
+      { key: 'qualified', count: qualifiedProspects },
+      { key: 'opportunities', count: opportunitiesTotal },
+      { key: 'proposals', count: proposalsOpen },
+      { key: 'sales', count: salesWon },
     ].map((stage, i, arr) => ({
       ...stage,
       conversionPct:
@@ -491,32 +491,32 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
     }));
 
     const sourceBuckets: Record<string, number> = {
-      'Appels d\'offres': 0,
-      LinkedIn: 0,
-      Prospection: 0,
-      Recommandations: 0,
-      'Site web': 0,
+      tenders: 0,
+      linkedin: 0,
+      prospecting: 0,
+      referrals: 0,
+      website: 0,
     };
 
     for (const row of scoutByCategory) {
       const n = row._count._all;
-      if (row.category === 'TENDER') sourceBuckets["Appels d'offres"] += n;
-      else if (row.category === 'EVENT') sourceBuckets.LinkedIn += n;
-      else sourceBuckets.Prospection += n;
+      if (row.category === 'TENDER') sourceBuckets.tenders += n;
+      else if (row.category === 'EVENT') sourceBuckets.linkedin += n;
+      else sourceBuckets.prospecting += n;
     }
     for (const row of contactsByVia) {
       const n = row._count._all;
-      if (row.createdVia === 'HUNT') sourceBuckets.Prospection += n;
-      else if (row.createdVia === 'SCOUT') sourceBuckets["Appels d'offres"] += n;
-      else if (row.createdVia === 'MANUAL_IMPORT') sourceBuckets.Recommandations += n;
-      else if (row.createdVia === 'GMAIL') sourceBuckets['Site web'] += n;
-      else sourceBuckets.LinkedIn += n;
+      if (row.createdVia === 'HUNT') sourceBuckets.prospecting += n;
+      else if (row.createdVia === 'SCOUT') sourceBuckets.tenders += n;
+      else if (row.createdVia === 'MANUAL_IMPORT') sourceBuckets.referrals += n;
+      else if (row.createdVia === 'GMAIL') sourceBuckets.website += n;
+      else sourceBuckets.linkedin += n;
     }
 
     const sourceTotal = Object.values(sourceBuckets).reduce((a, b) => a + b, 0) || 1;
     let opportunitySources = Object.entries(sourceBuckets)
-      .map(([name, value]) => ({
-        name,
+      .map(([key, value]) => ({
+        key,
         value,
         pct: Math.round((value / sourceTotal) * 100),
       }))
@@ -525,44 +525,40 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
 
     if (opportunitySources.length === 0) {
       opportunitySources = [
-        { name: "Appels d'offres", value: 0, pct: 0 },
-        { name: 'LinkedIn', value: 0, pct: 0 },
-        { name: 'Prospection', value: 0, pct: 0 },
-        { name: 'Recommandations', value: 0, pct: 0 },
-        { name: 'Site web', value: 0, pct: 0 },
+        { key: 'tenders', value: 0, pct: 0 },
+        { key: 'linkedin', value: 0, pct: 0 },
+        { key: 'prospecting', value: 0, pct: 0 },
+        { key: 'referrals', value: 0, pct: 0 },
+        { key: 'website', value: 0, pct: 0 },
       ];
     }
 
     const teamDefs = [
       {
         slug: 'hunt-ai',
-        name: 'Prospecteur',
-        role: 'Trouver de nouveaux clients',
-        metric: `${prospectsThisMonth} prospects ce mois`,
+        metricKey: 'prospectsMonth',
+        metricCount: prospectsThisMonth,
         actions: usageBySlug['hunt-ai'] ?? prospectsThisMonth,
         href: '/prospection-ia',
       },
       {
         slug: 'scout-ai',
-        name: 'Veilleur',
-        role: 'Détecter les opportunités',
-        metric: `${opportunitiesThisMonth} opportunités détectées`,
+        metricKey: 'opportunitiesDetected',
+        metricCount: opportunitiesThisMonth,
         actions: usageBySlug['scout-ai'] ?? opportunitiesThisMonth,
         href: '/agents/scout-ai',
       },
       {
         slug: 'analyste-ai',
-        name: 'Analyste',
-        role: 'Analyser les entreprises',
-        metric: `${usageBySlug['analyste-ai'] ?? 0} analyses réalisées`,
+        metricKey: 'analysesDone',
+        metricCount: usageBySlug['analyste-ai'] ?? 0,
         actions: usageBySlug['analyste-ai'] ?? 0,
         href: '/agents/analyste-ai',
       },
       {
         slug: 'copilot-ia',
-        name: 'Assistant',
-        role: 'Piloter les actions commerciales',
-        metric: `${usageBySlug['copilot-ia'] ?? 0} actions préparées`,
+        metricKey: 'actionsPrepared',
+        metricCount: usageBySlug['copilot-ia'] ?? 0,
         actions: usageBySlug['copilot-ia'] ?? 0,
         href: '/ai-assistant',
       },
@@ -571,30 +567,22 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
     const todaysActions = [
       {
         id: 'review-opps',
-        label: 'opportunités à examiner',
         count: Math.min(opportunitiesThisMonth, 99) || suggestionsPending,
-        cta: 'Examiner',
         href: '/agents/scout-ai',
       },
       {
         id: 'contact-prospects',
-        label: 'prospects à contacter',
         count: hotProspects,
-        cta: 'Contacter',
         href: '/prospection-ia',
       },
       {
         id: 'finalize-proposals',
-        label: 'propositions à finaliser',
         count: proposalsOpen,
-        cta: 'Finaliser',
         href: '/agents/offre-bot',
       },
       {
         id: 'follow-ups',
-        label: 'relances prévues',
         count: followUpsDue,
-        cta: 'Relancer',
         href: '/contacts',
       },
     ].filter((a) => a.count > 0);
@@ -603,7 +591,6 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
       id: e.id,
       at: e.createdAt.toISOString(),
       source: e.source,
-      agentLabel: SOURCE_LABELS[e.source] || e.source,
       resume: e.resume,
       contactId: e.contactId,
       contactName: e.contact?.name ?? null,
@@ -614,44 +601,33 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
       kpis: [
         {
           key: 'prospects',
-          label: 'Nouveaux prospects',
           value: prospectsThisMonth,
           deltaPct: pctDelta(prospectsThisMonth, prospectsPrevMonth),
         },
         {
           key: 'opportunities',
-          label: 'Opportunités détectées',
           value: opportunitiesThisMonth,
           deltaPct: pctDelta(opportunitiesThisMonth, opportunitiesPrevMonth),
         },
         {
           key: 'proposals',
-          label: 'Propositions envoyées',
           value: proposalsThisMonth,
           deltaPct: pctDelta(proposalsThisMonth, proposalsPrevMonth),
         },
         {
           key: 'won',
-          label: 'Affaires gagnées',
           value: wonThisMonth,
           deltaPct: pctDelta(wonThisMonth, wonPrevMonth),
         },
       ],
       evolution: {
         days: evolution,
-        insight:
-          oppGrowthPct == null
-            ? 'Suivez l’évolution de vos opportunités au fil du mois.'
-            : oppGrowthPct >= 0
-              ? `Les opportunités progressent de ${oppGrowthPct} % ce mois.`
-              : `Les opportunités baissent de ${Math.abs(oppGrowthPct)} % ce mois.`,
         growthPct: oppGrowthPct,
       },
       funnel: funnelStages,
       opportunitySources,
       agentActivity: teamDefs.map((t) => ({
         slug: t.slug,
-        name: t.name,
         actions: t.actions,
         active: activeSlugs.has(t.slug),
       })),
@@ -659,9 +635,8 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
       timeline,
       team: teamDefs.map((t) => ({
         slug: t.slug,
-        name: t.name,
-        role: t.role,
-        metric: t.metric,
+        metricKey: t.metricKey,
+        metricCount: t.metricCount,
         href: t.href,
         active: activeSlugs.has(t.slug),
       })),

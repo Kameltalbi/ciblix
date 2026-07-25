@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Users,
   Target,
@@ -40,7 +41,6 @@ type PerformancePayload = {
   generatedAt: string;
   kpis: Array<{
     key: string;
-    label: string;
     value: number;
     deltaPct: number | null;
   }>;
@@ -51,43 +51,36 @@ type PerformancePayload = {
       opportunities: number;
       proposals: number;
     }>;
-    insight: string;
     growthPct: number | null;
   };
   funnel: Array<{
     key: string;
-    label: string;
     count: number;
     conversionPct: number | null;
   }>;
-  opportunitySources: Array<{ name: string; value: number; pct: number }>;
+  opportunitySources: Array<{ key: string; value: number; pct: number }>;
   agentActivity: Array<{
     slug: string;
-    name: string;
     actions: number;
     active: boolean;
   }>;
   todaysActions: Array<{
     id: string;
-    label: string;
     count: number;
-    cta: string;
     href: string;
   }>;
   timeline: Array<{
     id: string;
     at: string;
     source: string;
-    agentLabel: string;
     resume: string | null;
     contactId: string | null;
     contactName: string | null;
   }>;
   team: Array<{
     slug: string;
-    name: string;
-    role: string;
-    metric: string;
+    metricKey: string;
+    metricCount: number;
     href: string;
     active: boolean;
   }>;
@@ -107,7 +100,6 @@ const AGENT_ICONS: Record<string, LucideIcon> = {
   'copilot-ia': Bot,
 };
 
-/** Couleurs variées saturées — contraste fort, pas de pastels. */
 const CHART = {
   blue: '#016AEB',
   teal: '#0D9488',
@@ -118,19 +110,17 @@ const CHART = {
 
 const SOURCE_COLORS = [CHART.blue, CHART.teal, CHART.amber, CHART.violet, CHART.rose];
 
-const SERIES = [
-  { key: 'prospects' as const, label: 'Prospects trouvés', color: CHART.blue },
-  { key: 'opportunities' as const, label: 'Opportunités détectées', color: CHART.teal },
-  { key: 'proposals' as const, label: 'Propositions envoyées', color: CHART.amber },
-];
+const SERIES_KEYS = ['prospects', 'opportunities', 'proposals'] as const;
+const SERIES_COLORS: Record<(typeof SERIES_KEYS)[number], string> = {
+  prospects: CHART.blue,
+  opportunities: CHART.teal,
+  proposals: CHART.amber,
+};
 
-function formatDay(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+function dateLocale(lang: string) {
+  if (lang.startsWith('ar')) return 'ar-TN';
+  if (lang.startsWith('en')) return 'en-GB';
+  return 'fr-FR';
 }
 
 function DeltaBadge({ delta }: { delta: number | null }) {
@@ -175,8 +165,116 @@ function Surface({
   );
 }
 
+const LAST_VISIT_KEY = 'ciblix-last-dashboard-visit';
+
+function OvernightTeamStrip() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const sinceIso = useMemo(() => {
+    const raw = localStorage.getItem(LAST_VISIT_KEY);
+    if (raw) {
+      const d = new Date(raw);
+      if (!Number.isNaN(d.getTime())) return d.toISOString();
+    }
+    return new Date(Date.now() - 24 * 3600_000).toISOString();
+  }, []);
+
+  const { data, isPending } = useQuery({
+    queryKey: ['agent-team-overnight', sinceIso],
+    queryFn: () =>
+      api.get('/agent-team/overnight', { params: { since: sinceIso } }).then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    return () => {
+      localStorage.setItem(LAST_VISIT_KEY, new Date().toISOString());
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem(LAST_VISIT_KEY, new Date().toISOString());
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isPending) {
+    return (
+      <Surface className="border-[#BED6F6]/80 bg-gradient-to-br from-white to-[#F0F7FF]">
+        <p className="text-sm text-slate-500">{t('agentTeam.overnightLoading')}</p>
+      </Surface>
+    );
+  }
+
+  if (!data?.teamConfigured) {
+    return (
+      <Surface className="border-amber-200/80 bg-gradient-to-br from-amber-50/50 to-white">
+        <h2 className="text-lg font-semibold text-slate-900">{t('agentTeam.setupTitle')}</h2>
+        <p className="mt-1 max-w-2xl text-sm text-slate-600">{t('agentTeam.setupBody')}</p>
+          <Button className="mt-4 rounded-xl" onClick={() => navigate('/mission')}>
+            {t('agentTeam.setupCta')}
+          </Button>
+      </Surface>
+    );
+  }
+
+  const items = [
+    { value: data.companiesDetected ?? data.scoutSignals ?? 0, label: t('agentTeam.statDetected') },
+    { value: data.opportunitiesAnalyzed ?? data.priorityOpportunities ?? 0, label: t('agentTeam.statOpps') },
+    { value: data.priorityOpportunities ?? 0, label: t('agentTeam.statPriority') },
+    { value: data.scoutSignals ?? 0, label: t('agentTeam.statTenders') },
+    { value: data.companiesEnriched ?? 0, label: t('agentTeam.statEnriched') },
+    { value: data.messagesPrepared ?? 0, label: t('agentTeam.statMessages') },
+  ];
+
+  const hasActivity = items.some((i) => i.value > 0);
+
+  return (
+    <Surface className="border-[#BED6F6]/80 bg-gradient-to-br from-white to-[#F0F7FF]">
+      <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#016AEB]">
+            {t('agentTeam.overnightEyebrow')}
+          </p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+            {t('agentTeam.overnightTitle')}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">{t('agentTeam.overnightSubtitle')}</p>
+        </div>
+        {data.teamWorking ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            {t('agentTeam.teamWorking')}
+          </span>
+        ) : null}
+      </div>
+
+      {hasActivity ? (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {items.map((item) => (
+            <div key={item.label} className="rounded-xl bg-white/90 px-3 py-3 ring-1 ring-slate-100">
+              <p className="text-2xl font-semibold tabular-nums text-[#016AEB]">{item.value}</p>
+              <p className="mt-1 text-xs leading-snug text-slate-500">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-xl bg-white/80 px-4 py-6 text-center ring-1 ring-slate-100">
+          <p className="text-sm font-medium text-slate-800">{t('agentTeam.emptyTitle')}</p>
+          <p className="mt-1 text-sm text-slate-500">{t('agentTeam.emptyBody')}</p>
+        </div>
+      )}
+    </Surface>
+  );
+}
+
 export function Dashboard() {
-  const [visibleSeries, setVisibleSeries] = useState<Record<(typeof SERIES)[number]['key'], boolean>>({
+  const { t, i18n } = useTranslation();
+  const locale = dateLocale(i18n.resolvedLanguage || i18n.language || 'fr');
+
+  const [visibleSeries, setVisibleSeries] = useState<Record<(typeof SERIES_KEYS)[number], boolean>>({
     prospects: true,
     opportunities: true,
     proposals: true,
@@ -189,22 +287,41 @@ export function Dashboard() {
     retry: 1,
   });
 
+  const series = useMemo(
+    () =>
+      SERIES_KEYS.map((key) => ({
+        key,
+        label: t(`performance.series.${key}`),
+        color: SERIES_COLORS[key],
+      })),
+    [t]
+  );
+
   const chartData = useMemo(
     () =>
       (data?.evolution.days || []).map((d) => ({
         ...d,
-        label: formatDay(d.date),
+        label: new Date(d.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
       })),
-    [data?.evolution.days]
+    [data?.evolution.days, locale]
   );
 
   const maxFunnel = Math.max(...(data?.funnel.map((f) => f.count) || [1]), 1);
   const maxAgentActions = Math.max(...(data?.agentActivity.map((a) => a.actions) || [1]), 1);
 
+  const agentActivityChart = useMemo(
+    () =>
+      (data?.agentActivity || []).map((a) => ({
+        ...a,
+        name: t(`performance.agents.${a.slug}.name`, { defaultValue: a.slug }),
+      })),
+    [data?.agentActivity, t]
+  );
+
   if (isPending) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-slate-400">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Chargement de la performance…
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t('performance.loading')}
       </div>
     );
   }
@@ -212,31 +329,39 @@ export function Dashboard() {
   if (isError || !data) {
     return (
       <div className="mx-auto max-w-md space-y-4 py-24 text-center">
-        <p className="text-sm text-slate-500">Impossible de charger la performance commerciale.</p>
+        <p className="text-sm text-slate-500">{t('performance.loadError')}</p>
         <Button variant="outline" size="sm" disabled={isFetching} onClick={() => void refetch()}>
           {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Réessayer
+          {t('performance.retry')}
         </Button>
       </div>
     );
   }
 
+  const growth = data.evolution.growthPct;
+  const insight =
+    growth == null
+      ? t('performance.insightNeutral')
+      : growth >= 0
+        ? t('performance.insightUp', { pct: growth })
+        : t('performance.insightDown', { pct: Math.abs(growth) });
+
   return (
     <div className="-mx-5 -my-6 min-h-[calc(100vh-4rem)] bg-[#F7F8FA] px-5 py-6 md:-mx-8 md:-my-8 md:px-8 md:py-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <TrialEndingBanner />
-        {/* Header */}
+
+        <OvernightTeamStrip />
+
         <header className="max-w-3xl">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-            Performance commerciale
+            {t('performance.title')}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-500 sm:text-[15px]">
-            Suivez en temps réel les opportunités détectées, les prospects qualifiés, les actions
-            commerciales réalisées et leur impact sur votre développement.
+            {t('performance.subtitleLiving')}
           </p>
         </header>
 
-        {/* 1. KPIs */}
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {data.kpis.map((kpi) => {
             const Icon = KPI_ICONS[kpi.key] || Target;
@@ -254,21 +379,20 @@ export function Dashboard() {
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-4xl">
                   {kpi.value}
                 </p>
-                <p className="mt-1 text-sm text-slate-500">{kpi.label}</p>
+                <p className="mt-1 text-sm text-slate-500">{t(`performance.kpis.${kpi.key}`)}</p>
               </Surface>
             );
           })}
         </section>
 
-        {/* 2. Evolution */}
         <Surface className="p-5 sm:p-6">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Évolution commerciale</h2>
-              <p className="mt-0.5 text-xs text-slate-500">30 derniers jours</p>
+              <h2 className="text-base font-semibold text-slate-900">{t('performance.evolutionTitle')}</h2>
+              <p className="mt-0.5 text-xs text-slate-500">{t('performance.last30Days')}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {SERIES.map((s) => (
+              {series.map((s) => (
                 <button
                   key={s.key}
                   type="button"
@@ -295,7 +419,7 @@ export function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                 <defs>
-                  {SERIES.map((s) => (
+                  {series.map((s) => (
                     <linearGradient key={s.key} id={`grad-${s.key}`} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={s.color} stopOpacity={0.35} />
                       <stop offset="100%" stopColor={s.color} stopOpacity={0} />
@@ -324,7 +448,7 @@ export function Dashboard() {
                     fontSize: 12,
                   }}
                 />
-                {SERIES.map(
+                {series.map(
                   (s) =>
                     visibleSeries[s.key] && (
                       <Area
@@ -343,13 +467,12 @@ export function Dashboard() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-3 text-sm font-medium text-slate-600">{data.evolution.insight}</p>
+          <p className="mt-3 text-sm font-medium text-slate-600">{insight}</p>
         </Surface>
 
-        {/* 3 + 4 : Funnel + Donut */}
         <section className="grid gap-4 lg:grid-cols-5">
           <Surface className="lg:col-span-3">
-            <h2 className="mb-5 text-base font-semibold text-slate-900">Transformation commerciale</h2>
+            <h2 className="mb-5 text-base font-semibold text-slate-900">{t('performance.funnelTitle')}</h2>
             <div className="space-y-3">
               {data.funnel.map((stage, idx) => {
                 const widthPct = Math.max(12, Math.round((stage.count / maxFunnel) * 100));
@@ -367,7 +490,9 @@ export function Dashboard() {
                           style={{ width: `${widthPct}%`, minWidth: '9rem' }}
                         >
                           <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <span className="text-sm font-medium opacity-95">{stage.label}</span>
+                            <span className="text-sm font-medium opacity-95">
+                              {t(`performance.funnel.${stage.key}`)}
+                            </span>
                             <span className="text-lg font-semibold tabular-nums">{stage.count}</span>
                           </div>
                         </div>
@@ -387,13 +512,16 @@ export function Dashboard() {
           </Surface>
 
           <Surface className="lg:col-span-2">
-            <h2 className="mb-1 text-base font-semibold text-slate-900">Origine des opportunités</h2>
-            <p className="mb-4 text-xs text-slate-500">Répartition ce mois</p>
+            <h2 className="mb-1 text-base font-semibold text-slate-900">{t('performance.sourcesTitle')}</h2>
+            <p className="mb-4 text-xs text-slate-500">{t('performance.sourcesSubtitle')}</p>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data.opportunitySources}
+                    data={data.opportunitySources.map((s) => ({
+                      ...s,
+                      name: t(`performance.sources.${s.key}`, { defaultValue: s.key }),
+                    }))}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -420,13 +548,13 @@ export function Dashboard() {
             </div>
             <ul className="mt-2 space-y-2">
               {data.opportunitySources.map((s, i) => (
-                <li key={s.name} className="flex items-center justify-between text-sm">
+                <li key={s.key} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 text-slate-600">
                     <span
                       className="h-2 w-2 rounded-full"
                       style={{ backgroundColor: SOURCE_COLORS[i % SOURCE_COLORS.length] }}
                     />
-                    {s.name}
+                    {t(`performance.sources.${s.key}`, { defaultValue: s.key })}
                   </span>
                   <span className="font-semibold tabular-nums text-slate-900">{s.pct}%</span>
                 </li>
@@ -435,16 +563,15 @@ export function Dashboard() {
           </Surface>
         </section>
 
-        {/* 5 + 6 : Agent activity + Actions */}
         <section className="grid gap-4 lg:grid-cols-2">
           <Surface>
             <h2 className="mb-4 text-base font-semibold text-slate-900">
-              Activité de votre équipe IA
+              {t('performance.agentActivityTitle')}
             </h2>
             <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={data.agentActivity}
+                  data={agentActivityChart}
                   layout="vertical"
                   margin={{ top: 0, right: 16, left: 8, bottom: 0 }}
                 >
@@ -459,7 +586,7 @@ export function Dashboard() {
                     tickLine={false}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value} actions`, 'Activité']}
+                    formatter={(value: number) => [t('performance.activityTooltip', { count: value }), '']}
                     contentStyle={{
                       borderRadius: 12,
                       border: '1px solid #E2E8F0',
@@ -467,7 +594,7 @@ export function Dashboard() {
                     }}
                   />
                   <Bar dataKey="actions" radius={[0, 8, 8, 0]} barSize={22} fill={CHART.blue}>
-                    {data.agentActivity.map((_, i) => (
+                    {agentActivityChart.map((_, i) => (
                       <Cell
                         key={i}
                         fill={[CHART.blue, CHART.teal, CHART.amber, CHART.violet][i % 4]}
@@ -482,11 +609,11 @@ export function Dashboard() {
 
           <Surface>
             <h2 className="mb-4 text-base font-semibold text-slate-900">
-              Actions à réaliser aujourd&apos;hui
+              {t('performance.actionsTitle')}
             </h2>
             {data.todaysActions.length === 0 ? (
               <p className="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                Rien d&apos;urgent pour le moment — vos agents travaillent.
+                {t('performance.actionsEmpty')}
               </p>
             ) : (
               <ul className="divide-y divide-slate-100">
@@ -498,7 +625,7 @@ export function Dashboard() {
                     <div>
                       <p className="text-sm font-medium text-slate-900">
                         <span className="tabular-nums text-[#016AEB]">{action.count}</span>{' '}
-                        {action.label}
+                        {t(`performance.todaysActions.${action.id}.label`)}
                       </p>
                     </div>
                     <Button
@@ -506,7 +633,7 @@ export function Dashboard() {
                       className="rounded-xl bg-[#016AEB] px-3.5 text-white hover:bg-[#0158c7]"
                       asChild
                     >
-                      <Link to={action.href}>{action.cta}</Link>
+                      <Link to={action.href}>{t(`performance.todaysActions.${action.id}.cta`)}</Link>
                     </Button>
                   </li>
                 ))}
@@ -515,13 +642,10 @@ export function Dashboard() {
           </Surface>
         </section>
 
-        {/* 7. Timeline */}
         <Surface>
-          <h2 className="mb-4 text-base font-semibold text-slate-900">Activité récente</h2>
+          <h2 className="mb-4 text-base font-semibold text-slate-900">{t('performance.timelineTitle')}</h2>
           {data.timeline.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">
-              Aucune action récente — lancez une recherche ou une veille pour démarrer.
-            </p>
+            <p className="py-8 text-center text-sm text-slate-500">{t('performance.timelineEmpty')}</p>
           ) : (
             <ol className="relative space-y-0 border-l border-slate-200 ml-3">
               {data.timeline.map((item) => (
@@ -529,14 +653,17 @@ export function Dashboard() {
                   <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-[#016AEB] ring-4 ring-white" />
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <span className="text-xs font-semibold tabular-nums text-slate-400">
-                      {formatTime(item.at)}
+                      {new Date(item.at).toLocaleTimeString(locale, {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {item.agentLabel}
+                      {t(`performance.sourcesAgents.${item.source}`, { defaultValue: item.source })}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-slate-700">
-                    {item.resume || 'Action enregistrée'}
+                    {item.resume || t('performance.actionLogged')}
                     {item.contactName ? (
                       <span className="text-slate-400"> · {item.contactName}</span>
                     ) : null}
@@ -547,9 +674,8 @@ export function Dashboard() {
           )}
         </Surface>
 
-        {/* 8. Team */}
         <section>
-          <h2 className="mb-3 text-base font-semibold text-slate-900">Votre équipe IA</h2>
+          <h2 className="mb-3 text-base font-semibold text-slate-900">{t('performance.teamTitle')}</h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {data.team.map((agent) => {
               const Icon = AGENT_ICONS[agent.slug] || Bot;
@@ -563,11 +689,17 @@ export function Dashboard() {
                       <Icon size={16} strokeWidth={1.75} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{agent.name}</p>
-                      <p className="text-xs text-slate-500">{agent.role}</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {t(`performance.agents.${agent.slug}.name`)}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {t(`performance.agents.${agent.slug}.role`)}
+                      </p>
                     </div>
                   </div>
-                  <p className="mt-4 flex-1 text-sm font-medium text-slate-700">{agent.metric}</p>
+                  <p className="mt-4 flex-1 text-sm font-medium text-slate-700">
+                    {t(`performance.metrics.${agent.metricKey}`, { count: agent.metricCount })}
+                  </p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -575,7 +707,7 @@ export function Dashboard() {
                     asChild
                   >
                     <Link to={agent.href}>
-                      Ouvrir
+                      {t('performance.open')}
                       <ChevronRight size={14} />
                     </Link>
                   </Button>

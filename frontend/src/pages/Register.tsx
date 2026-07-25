@@ -53,7 +53,7 @@ export function Register() {
       if (data.user.role === 'SUPERADMIN') {
         navigate('/admin', { replace: true });
       } else {
-        navigate('/dashboard', { replace: true });
+        navigate('/mission', { replace: true });
       }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string } } };

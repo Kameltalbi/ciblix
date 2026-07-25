@@ -4,6 +4,7 @@ import { prisma } from '../db/prisma.js';
 import auth, { AuthRequest } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
+import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
 import {
   buildFollowUpTemplates,
   computeCommercialInsight,
@@ -13,9 +14,9 @@ import {
 
 export const aiAssistantRoutes = Router();
 
-// Apply auth middleware to all routes
 aiAssistantRoutes.use(auth);
 aiAssistantRoutes.use(checkAgentAccess('copilot-ia'));
+aiAssistantRoutes.use(requireMissionForMutations);
 
 const OPEN_PIPELINE = ['PROSPECT', 'QUALIFIE', 'PROPOSITION', 'NEGOCIATION'] as const;
 

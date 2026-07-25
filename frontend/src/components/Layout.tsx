@@ -15,6 +15,7 @@ import {
   Search,
   Bot,
   Plug,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -43,23 +44,25 @@ type NavItem = {
  */
 const NAV_STRUCTURE: NavItem[] = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'COMMAND' },
-  { to: '/connecteurs', labelKey: 'nav.connectors', icon: Plug, page: 'connectors', section: 'COMMAND' },
+  { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'COMMAND' },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'AGENTS' },
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   { to: '/agents/analyste-ai', labelKey: 'nav.agentAnalyste', icon: Search, page: 'analyste-ai', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'RESULTS' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'SUPPORT' },
+  { to: '/connecteurs', labelKey: 'nav.connectors', icon: Plug, page: 'connectors', section: 'BOTTOM' },
 ];
 
 /** Ordre d’affichage des blocs sidebar (libellés i18n : nav.section*). */
-const SIDEBAR_SECTION_ORDER = ['COMMAND', 'AGENTS', 'RESULTS', 'SUPPORT'] as const;
+const SIDEBAR_SECTION_ORDER = ['COMMAND', 'AGENTS', 'RESULTS', 'SUPPORT', 'BOTTOM'] as const;
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
   COMMAND: 'nav.sectionCommand',
   AGENTS: 'nav.sectionAgents',
   RESULTS: 'nav.sectionResults',
   SUPPORT: 'nav.sectionSupport',
+  BOTTOM: '',
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -73,7 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const isRTL = i18n.language === 'ar';
+  const isRTL = (i18n.resolvedLanguage || i18n.language || 'fr').startsWith('ar');
 
   const cycleAppLanguage = () => {
     const order = ['fr', 'en', 'ar'] as const;
@@ -293,18 +296,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {SIDEBAR_SECTION_ORDER.map((section) => {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
-              const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
+              const sectionLabelKey = SECTION_LABEL_KEYS[section];
+              const sectionHeading = sectionLabelKey ? t(sectionLabelKey) : '';
 
               return (
                 <div key={section} className="flex flex-col gap-0.5">
-                  {sidebarExpanded && (
+                  {sidebarExpanded && sectionHeading && (
                     <div className="px-2 pb-1 pt-3">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         {sectionHeading}
                       </span>
                     </div>
                   )}
-                  {!sidebarExpanded && (
+                  {(sidebarExpanded ? !sectionHeading : true) && (
                     <div className="my-1.5 mx-2 border-t border-white/10" />
                   )}
                   {sectionItems.map((item) => {
@@ -428,13 +432,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {SIDEBAR_SECTION_ORDER.map((section) => {
               const sectionItems = filteredNav.filter((item) => item.section === section);
               if (sectionItems.length === 0) return null;
-              const sectionHeading = SECTION_LABEL_KEYS[section] ? t(SECTION_LABEL_KEYS[section]) : section;
+              const sectionLabelKey = SECTION_LABEL_KEYS[section];
+              const sectionHeading = sectionLabelKey ? t(sectionLabelKey) : '';
 
               return (
                 <div key={section} className="flex flex-col gap-0.5">
-                  <div className="px-2 pb-1 pt-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{sectionHeading}</span>
-                  </div>
+                  {sectionHeading ? (
+                    <div className="px-2 pb-1 pt-3">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{sectionHeading}</span>
+                    </div>
+                  ) : (
+                    <div className="my-1.5 mx-2 border-t border-white/10" />
+                  )}
                   {sectionItems.map((item) => {
                     const { to, labelKey, icon: Icon, page, comingSoon } = item;
                     return (

@@ -304,40 +304,133 @@ organizationsRoutes.post('/onboarding/complete', async (req: AuthRequest, res, n
   try {
     const body = z
       .object({
-        sectorTemplateId: z.string().min(1),
+        sectorTemplateId: z.string().min(1).optional().default('generic'),
         tier: z.enum(['DECOUVERTE', 'CROISSANCE', 'PRO', 'ENTERPRISE']).optional(),
         agentSlugs: z.array(z.string()).optional(),
+        startTeam: z.boolean().optional(),
+        targeting: z
+          .object({
+            activity: z.string().max(4000).nullable().optional(),
+            productsServices: z.array(z.string().max(200)).max(40).optional(),
+            markets: z.array(z.string().max(120)).max(40).optional(),
+            countries: z.array(z.string().max(120)).max(40).optional(),
+            cities: z.array(z.string().max(120)).max(40).optional(),
+            targetClients: z.array(z.string().max(200)).max(40).optional(),
+            sectors: z.array(z.string().max(120)).max(40).optional(),
+            keywords: z.array(z.string().max(120)).max(40).optional(),
+            excludeCompanies: z.array(z.string().max(200)).max(80).optional(),
+            orchestratorEnabled: z.boolean().optional(),
+            orchestratorIntervalH: z.number().int().min(1).max(168).optional(),
+            opportunityTypes: z
+              .object({
+                tenders: z.boolean().optional(),
+                news: z.boolean().optional(),
+                companies: z.boolean().optional(),
+              })
+              .optional(),
+          })
+          .optional(),
       })
       .parse(req.body);
 
+    const organizationId = req.organizationId!;
     const template = getSectorTemplate(body.sectorTemplateId) || getSectorTemplate('generic')!;
 
-    await upsertCopilotOrgConfig(req.organizationId!, {
+    await upsertCopilotOrgConfig(organizationId, {
       sector: template.sector,
       businessLexicon: template.businessLexicon,
       scoringGrid: template.scoringGrid,
     });
 
     const tier = (body.tier || 'DECOUVERTE') as BillingTier;
-    await ensureBillingSubscription(req.organizationId!, tier);
+    await ensureBillingSubscription(organizationId, tier);
     if (tier === 'DECOUVERTE') {
-      await changeTier(req.organizationId!, tier);
+      await changeTier(organizationId, tier);
     }
 
     if (body.agentSlugs?.length) {
       for (const slug of body.agentSlugs) {
         await prisma.organizationAgent.upsert({
           where: {
-            organizationId_agentSlug: { organizationId: req.organizationId!, agentSlug: slug },
+            organizationId_agentSlug: { organizationId, agentSlug: slug },
           },
-          create: { organizationId: req.organizationId!, agentSlug: slug, active: true },
+          create: { organizationId, agentSlug: slug, active: true },
           update: { active: true, deactivatedAt: null },
         });
       }
     }
 
+    const t = body.targeting;
+    if (t) {
+      const keywords = t.keywords ?? [];
+      const sectors = t.sectors ?? [];
+      const countries = t.countries ?? [];
+      const cities = t.cities ?? [];
+      const markets = t.markets ?? countries;
+      const geoZones = [...countries, ...cities, ...markets];
+
+      await prisma.orgTargetingProfile.upsert({
+        where: { organizationId },
+        create: {
+          organizationId,
+          activity: t.activity ?? null,
+          productsServices: t.productsServices ?? [],
+          markets,
+          countries,
+          cities,
+          targetClients: t.targetClients ?? [],
+          sectors,
+          keywords,
+          excludeCompanies: t.excludeCompanies ?? [],
+          orchestratorEnabled: t.orchestratorEnabled ?? true,
+          orchestratorIntervalH: t.orchestratorIntervalH ?? 1,
+          lastOrchestratorAt: null,
+        },
+        update: {
+          activity: t.activity ?? null,
+          productsServices: t.productsServices ?? [],
+          markets,
+          countries,
+          cities,
+          targetClients: t.targetClients ?? [],
+          sectors,
+          keywords,
+          excludeCompanies: t.excludeCompanies ?? [],
+          orchestratorEnabled: t.orchestratorEnabled ?? true,
+          orchestratorIntervalH: t.orchestratorIntervalH ?? 1,
+          lastOrchestratorAt: null,
+        },
+      });
+
+      const scoutData = {
+        keywords: keywords.length ? keywords : ['opportunité'],
+        sectors,
+        geoZones: geoZones.length ? geoZones : ['Tunisie'],
+        tenderEnabled: t.opportunityTypes?.tenders !== false,
+        eventEnabled: t.opportunityTypes?.companies !== false,
+        newsEnabled: t.opportunityTypes?.news !== false,
+        autoScanEnabled: true,
+        scanIntervalH: Math.max(6, t.orchestratorIntervalH ?? 1),
+      };
+
+      await prisma.scoutProfile.upsert({
+        where: { organizationId },
+        create: { organizationId, ...scoutData, keywords: scoutData.keywords as object, sectors: scoutData.sectors as object, geoZones: scoutData.geoZones as object },
+        update: {
+          keywords: scoutData.keywords as object,
+          sectors: scoutData.sectors as object,
+          geoZones: scoutData.geoZones as object,
+          tenderEnabled: scoutData.tenderEnabled,
+          eventEnabled: scoutData.eventEnabled,
+          newsEnabled: scoutData.newsEnabled,
+          autoScanEnabled: true,
+          scanIntervalH: scoutData.scanIntervalH,
+        },
+      });
+    }
+
     await prisma.organization.update({
-      where: { id: req.organizationId! },
+      where: { id: organizationId },
       data: {
         onboardingCompletedAt: new Date(),
         onboardingSector: template.sector,
@@ -345,7 +438,22 @@ organizationsRoutes.post('/onboarding/complete', async (req: AuthRequest, res, n
       },
     });
 
-    res.json({ ok: true, sector: template.sector, tier });
+    if (body.startTeam !== false && t) {
+      const { enqueueAgentTask } = await import('../services/agent-team/agentTaskService.js');
+      await enqueueAgentTask({
+        organizationId,
+        assignee: 'SCOUT',
+        kind: 'WATCH_SIGNALS',
+        priority: 95,
+        dedupeKey: `watch:onboarding:${organizationId}`,
+        payload: { triggeredBy: 'onboarding' },
+      });
+      void import('../services/agent-team/orchestrator.js').then(({ runOrchestratorTickNow }) =>
+        runOrchestratorTickNow()
+      );
+    }
+
+    res.json({ ok: true, sector: template.sector, tier, teamStarted: Boolean(body.startTeam !== false && t) });
   } catch (e) { next(e); }
 });
 

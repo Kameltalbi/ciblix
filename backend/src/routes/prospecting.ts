@@ -3,6 +3,7 @@ import { z } from 'zod';
 import auth, { AuthRequest, requirePaymentApproved } from '../middleware/auth.js';
 import { checkAgentAccess } from '../middleware/planRestrictions.js';
 import { checkProspectLimit } from '../middleware/planRestrictions.js';
+import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
 import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { prisma } from '../db/prisma.js';
 import { runProspectEnrichmentPipeline } from '../services/prospecting/index.js';
@@ -31,6 +32,7 @@ prospectingRoutes.get('/ping', (_req, res) => {
 prospectingRoutes.use(auth);
 prospectingRoutes.use(requirePaymentApproved);
 prospectingRoutes.use(checkAgentAccess('hunt-ai'));
+prospectingRoutes.use(requireMissionForMutations);
 
 /**
  * GET /api/prospecting/all

@@ -71,7 +71,8 @@
     "agentGmail": "Gmail",
     "agentFactCheck": "Fact-Checker",
     "agentBrandPulse": "BrandPulse",
-    "agentsMarketplace": "Performance"
+    "agentsMarketplace": "Performance",
+    "mission": "AI Mission"
   },
   "gmailAi": {
     "badge": "Gmail AI Agent",
@@ -714,7 +715,13 @@
           "Score and prioritize prospects",
           "Draft personalized first-touch messages"
         ],
-        "tools": ["LinkedIn", "Public web", "Company registries", "Local databases", "Ciblix memory"],
+        "tools": [
+          "LinkedIn",
+          "Public web",
+          "Company registries",
+          "Local databases",
+          "Ciblix memory"
+        ],
         "tasks": [
           "List 40 scored companies in a city",
           "Find the buying decision-maker",
@@ -736,7 +743,13 @@
           "Filter signals for your business",
           "Alert when an opportunity deserves attention"
         ],
-        "tools": ["TUNEPS", "Tender portals", "Institutional sites", "LinkedIn", "Web & press"],
+        "tools": [
+          "TUNEPS",
+          "Tender portals",
+          "Institutional sites",
+          "LinkedIn",
+          "Web & press"
+        ],
         "tasks": [
           "Alert on a relevant tender",
           "Spot hiring at a target account",
@@ -758,7 +771,13 @@
           "Compare competitors and commercial potential",
           "Prepare an approach brief before contact"
         ],
-        "tools": ["Company websites", "Registries", "LinkedIn", "Public sources", "Ciblix memory"],
+        "tools": [
+          "Company websites",
+          "Registries",
+          "LinkedIn",
+          "Public sources",
+          "Ciblix memory"
+        ],
         "tasks": [
           "Brief a target before a first call",
           "List decision-makers and angles",
@@ -780,7 +799,13 @@
           "Prepare emails, notes, proposals and tender replies",
           "Answer in natural language about your pipeline"
         ],
-        "tools": ["Shared agent memory", "Gmail (connector)", "WhatsApp", "Contact history", "Offer documents"],
+        "tools": [
+          "Shared agent memory",
+          "Gmail (connector)",
+          "WhatsApp",
+          "Contact history",
+          "Offer documents"
+        ],
         "tasks": [
           "“Who should I follow up this week?”",
           "Draft a follow-up after a detected tender",
@@ -882,8 +907,8 @@
     "agentMemoryFact": "Verifies facts before you send them to a client."
   },
   "onboarding": {
-    "step0Title": "Welcome!",
-    "step0Body": "Your AI agents share the same memory: every exchange enriches your pipeline, with no manual entry. Three steps to get started.",
+    "step0Title": "Your AI team starts here",
+    "step0Body": "You don’t come looking for prospects. You set a strategy once — Scout, Hunter, Analyst and Assistant then work continuously, even while you’re offline.",
     "step1Title": "Your first contact",
     "step1Body": "Add a company or stakeholder — your agents can guide you better.",
     "step1Label": "Company name",
@@ -892,13 +917,42 @@
     "step2Body": "Add an estimated amount or context so agents can prioritize useful signals.",
     "step2Label": "Estimated amount (TND)",
     "step2Placeholder": "e.g. 5000",
-    "step3Title": "You're ready!",
-    "step3Body": "Open Agents Home and activate Hunt AI, Copilot, or Scout to get started.",
-    "skip": "Skip",
-    "done1": "Access to the AI agents platform",
-    "done2": "Your AI assistant is ready to suggest next actions",
-    "done3": "Agents marketplace available",
-    "start": "Let's go"
+    "step3Title": "Activate your team",
+    "step3Body": "Pick a plan. Your agents start watching immediately and prepare opportunities for you.",
+    "skip": "Set up later",
+    "done1": "Prospecting profile saved",
+    "done2": "Agents work in the background",
+    "done3": "When you return: see what they accomplished",
+    "start": "Launch my AI team",
+    "teamBadge": "Always-on AI collaborator",
+    "missionSellTitle": "What do you sell?",
+    "missionSellBody": "Describe your activity and offers. This becomes your agents’ permanent mission.",
+    "missionWhoTitle": "To whom?",
+    "missionWhoBody": "Which target customers and sectors matter for your growth?",
+    "missionWhereTitle": "Where?",
+    "missionWhereBody": "Countries and cities where agents should look for opportunities.",
+    "missionSignalsTitle": "What should they watch?",
+    "missionSignalsBody": "Keywords, opportunity types, and companies to avoid.",
+    "fieldActivity": "Your activity",
+    "fieldProducts": "Products and services",
+    "fieldTargetClients": "Target customers",
+    "fieldSectors": "Sectors",
+    "fieldCountries": "Countries",
+    "fieldCities": "Cities",
+    "fieldKeywords": "Keywords",
+    "fieldOppTypes": "Opportunity types",
+    "fieldExclude": "Companies to exclude",
+    "phActivity": "e.g. B2B SaaS for distributors…",
+    "phList": "One item per line or comma-separated",
+    "phTargetClients": "e.g. Sales directors, industrial SMEs…",
+    "phCountries": "e.g. Tunisia, France, Morocco",
+    "phCities": "e.g. Tunis, Sfax, Casablanca",
+    "phKeywords": "e.g. tender, factory, hiring…",
+    "phExclude": "Competitors or accounts to ignore",
+    "oppTenders": "Tenders & public markets",
+    "oppNews": "News & business signals",
+    "oppCompanies": "New companies / projects",
+    "error": "Could not finish setup"
   },
   "onboardingChatbot": {
     "titleLoggedIn": "CIBLIX Assistant",
@@ -1162,5 +1216,430 @@
         "a": "The trial activates the full solution with a dedicated quota, whichever plan you pick at signup."
       }
     ]
+  },
+  "performance": {
+    "title": "Sales performance",
+    "subtitle": "Track detected opportunities, qualified prospects, sales actions, and their impact on growth in real time.",
+    "loading": "Loading performance…",
+    "loadError": "Unable to load sales performance.",
+    "retry": "Retry",
+    "evolutionTitle": "Sales trend",
+    "last30Days": "Last 30 days",
+    "series": {
+      "prospects": "Prospects found",
+      "opportunities": "Opportunities detected",
+      "proposals": "Proposals sent"
+    },
+    "insightNeutral": "Track how your opportunities evolve through the month.",
+    "insightUp": "Opportunities are up {{pct}}% this month.",
+    "insightDown": "Opportunities are down {{pct}}% this month.",
+    "funnelTitle": "Sales funnel",
+    "sourcesTitle": "Opportunity sources",
+    "sourcesSubtitle": "Breakdown this month",
+    "agentActivityTitle": "Your AI team activity",
+    "actionsTitle": "Actions for today",
+    "actionsEmpty": "Nothing urgent right now — your agents are working.",
+    "timelineTitle": "Recent activity",
+    "timelineEmpty": "No recent activity — start a search or a watch to get going.",
+    "actionLogged": "Action logged",
+    "teamTitle": "Your AI team",
+    "open": "Open",
+    "activityTooltip": "{{count}} actions",
+    "kpis": {
+      "prospects": "New prospects",
+      "opportunities": "Opportunities detected",
+      "proposals": "Proposals sent",
+      "won": "Deals won"
+    },
+    "funnel": {
+      "companies": "Companies detected",
+      "qualified": "Qualified prospects",
+      "opportunities": "Opportunities",
+      "proposals": "Proposals",
+      "sales": "Wins"
+    },
+    "sources": {
+      "tenders": "Tenders",
+      "linkedin": "LinkedIn",
+      "prospecting": "Prospecting",
+      "referrals": "Referrals",
+      "website": "Website"
+    },
+    "agents": {
+      "hunt-ai": {
+        "name": "Hunter",
+        "role": "Find new customers"
+      },
+      "scout-ai": {
+        "name": "Scout",
+        "role": "Detect opportunities"
+      },
+      "analyste-ai": {
+        "name": "Analyst",
+        "role": "Analyze companies"
+      },
+      "copilot-ia": {
+        "name": "Assistant",
+        "role": "Drive sales actions"
+      }
+    },
+    "metrics": {
+      "prospectsMonth": "{{count}} prospects this month",
+      "opportunitiesDetected": "{{count}} opportunities detected",
+      "analysesDone": "{{count}} analyses completed",
+      "actionsPrepared": "{{count}} actions prepared"
+    },
+    "todaysActions": {
+      "review-opps": {
+        "label": "opportunities to review",
+        "cta": "Review"
+      },
+      "contact-prospects": {
+        "label": "prospects to contact",
+        "cta": "Contact"
+      },
+      "finalize-proposals": {
+        "label": "proposals to finalize",
+        "cta": "Finalize"
+      },
+      "follow-ups": {
+        "label": "follow-ups due",
+        "cta": "Follow up"
+      }
+    },
+    "sourcesAgents": {
+      "HUNT": "Hunter",
+      "COPILOT": "Assistant",
+      "GMAIL": "Gmail",
+      "SCOUT": "Scout",
+      "OFFREBOT": "Proposals",
+      "ANALYSTE": "Analyst",
+      "FACTCHECK": "Fact checker"
+    },
+    "subtitleLiving": "This is not a search engine. Your AI team executes your strategy and delivers ready-to-use opportunities."
+  },
+  "contactsPage": {
+    "eyebrow": "Agent results",
+    "title": "Contacts",
+    "subtitle": "Companies and people found by your agents — not a sales pipeline.",
+    "export": "Export",
+    "launchHunt": "Run Hunter",
+    "searchPlaceholder": "Search company, contact, email…",
+    "company": "Company",
+    "contact": "Contact",
+    "aiScore": "AI score",
+    "phone": "Phone",
+    "email": "Email",
+    "source": "Source",
+    "detected": "Detected",
+    "actions": "Actions",
+    "loading": "Loading…",
+    "empty": "No results yet. Run Hunter to find some.",
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
+    "agent": "Agent",
+    "sources": {
+      "HUNT": "Hunter",
+      "COPILOT": "Assistant",
+      "GMAIL": "Gmail",
+      "SCOUT": "Scout",
+      "ANALYSTE": "Analyst",
+      "OFFREBOT": "Proposals",
+      "MANUAL_IMPORT": "Import"
+    }
+  },
+  "connectorsPage": {
+    "title": "Connectors",
+    "subtitle": "Connect your tools so your AI agents work with your real data.",
+    "connected": "Connected",
+    "expired": "Expired",
+    "comingSoon": "Coming soon",
+    "disconnected": "Not connected",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "lastSync": "Last sync · {{when}}",
+    "configure": "Configure",
+    "reconnect": "Reconnect",
+    "connect": "Connect",
+    "soonAvailable": "Coming soon",
+    "categories": {
+      "communication": "Communication",
+      "professional": "Professional networks",
+      "calendar": "Calendar",
+      "enterprise": "Company data",
+      "public": "Public sources"
+    },
+    "stats": {
+      "emailsProcessed": "Emails processed",
+      "draftsToday": "Drafts (today)",
+      "businessAccount": "Business account",
+      "webhookMeta": "Meta webhook",
+      "webhook": "Webhook",
+      "configured": "Configured",
+      "active": "Active"
+    },
+    "items": {
+      "gmail": {
+        "description": "AI agents analyze conversations, detect opportunities, and prepare replies.",
+        "capabilities": [
+          "Email analysis",
+          "Opportunity detection",
+          "Reply drafting",
+          "Auto summaries"
+        ],
+        "permissions": [
+          "Read new messages",
+          "Create drafts (no auto-send)",
+          "Access account email"
+        ]
+      },
+      "outlook": {
+        "description": "Sync Microsoft Outlook so agents can follow your work email.",
+        "capabilities": [
+          "Email analysis",
+          "Opportunity detection",
+          "Reply drafting",
+          "Auto summaries"
+        ],
+        "permissions": [
+          "Read mailbox",
+          "Create drafts",
+          "Access linked calendar"
+        ]
+      },
+      "whatsapp": {
+        "description": "Agents analyze chats, detect intent, and prepare follow-ups.",
+        "capabilities": [
+          "Conversation analysis",
+          "Smart follow-ups",
+          "Chat summaries",
+          "Intent detection"
+        ],
+        "permissions": [
+          "Receive inbound messages (Meta webhook)",
+          "Active session context",
+          "Contact consent required"
+        ]
+      },
+      "linkedin": {
+        "description": "Identify decision-makers, prepare messages, and watch company signals.",
+        "capabilities": [
+          "Profile analysis",
+          "Decision-maker identification",
+          "Message drafting",
+          "Company watch"
+        ],
+        "permissions": [
+          "Read public profile",
+          "Message suggestions",
+          "Company page watch"
+        ]
+      },
+      "google-calendar": {
+        "description": "Agents see your availability to suggest meetings at the right time.",
+        "capabilities": [
+          "Availability reading",
+          "Slot suggestions",
+          "Smart reminders",
+          "Meeting context"
+        ],
+        "permissions": [
+          "Read events",
+          "View availability"
+        ]
+      },
+      "microsoft-365": {
+        "description": "Outlook / Microsoft 365 calendar to schedule meetings with agents.",
+        "capabilities": [
+          "Availability reading",
+          "Slot suggestions",
+          "Smart reminders",
+          "Meeting context"
+        ],
+        "permissions": [
+          "Read calendar",
+          "View availability"
+        ]
+      },
+      "website": {
+        "description": "Connect your website to enrich agent business context (pages, offer, news).",
+        "capabilities": [
+          "Key page indexing",
+          "Product / offer context",
+          "News detection",
+          "Messaging alignment"
+        ],
+        "permissions": [
+          "Public site URL",
+          "Readable page access"
+        ]
+      },
+      "crm": {
+        "description": "Push Ciblix events to your CRM via a secure HMAC webhook.",
+        "capabilities": [
+          "Signed outbound webhook",
+          "Pipeline events",
+          "Emails & notes",
+          "Opportunities"
+        ],
+        "permissions": [
+          "Webhook URL",
+          "HMAC secret",
+          "Event selection"
+        ]
+      },
+      "erp": {
+        "description": "Connect your ERP to link orders, billing, and the sales pipeline.",
+        "capabilities": [
+          "Customer / order sync",
+          "Billing context",
+          "Stock / delay alerts",
+          "Contact enrichment"
+        ],
+        "permissions": [
+          "API key",
+          "Secure endpoint"
+        ]
+      },
+      "rne": {
+        "description": "Tunisian company registry — legal enrichment and company data.",
+        "capabilities": [
+          "Company profile",
+          "Officers",
+          "Legal status",
+          "Lead enrichment"
+        ],
+        "permissions": [
+          "Public / partner API access"
+        ]
+      },
+      "tuneps": {
+        "description": "Tunisian public tenders — source for Scout AI and tender detection.",
+        "capabilities": [
+          "Tender watch",
+          "Relevance alerts",
+          "Opportunity enrichment",
+          "History map"
+        ],
+        "permissions": [
+          "Public source access"
+        ]
+      }
+    },
+    "openPlatform": "Open platform",
+    "connectTool": "Connect a tool",
+    "footer": "Ciblix plugs into your stack — messaging, calendar, CRM, and public sources — so every agent shares the same context as your team.",
+    "pickTool": "Choose a tool",
+    "allConnected": "All available connectors are already active.",
+    "gmailConnected": "Gmail connected successfully",
+    "connectFailed": "Connection failed",
+    "ready": "{{name}} ready",
+    "redirectGoogle": "Redirecting to Google to authorize access…",
+    "openConfig": "Opening configuration…",
+    "connectName": "Connect {{name}}",
+    "wizardSteps": "3-step wizard",
+    "stepConnect": "1. Connection",
+    "stepPerms": "2. Permissions",
+    "stepConfirm": "3. Confirmation",
+    "authOauth": "You will be redirected to {{name}} to authorize Ciblix securely (OAuth).",
+    "authWebhook": "You will configure the webhook URL and {{name}} credentials so Ciblix can receive events.",
+    "authApi": "You will provide an API key or URL to connect {{name}}.",
+    "authType": "Auth type",
+    "permsIntro": "Ciblix will only request what agents need:",
+    "confirmBody": "Agents will be able to use {{name}} automatically. You can disconnect anytime.",
+    "back": "Back",
+    "continue": "Continue",
+    "connecting": "Connecting…"
+  },
+  "prospecting": {
+    "allProspects": {
+      "title": "All prospects",
+      "subtitle": "prospects"
+    }
+  },
+  "agentTeam": {
+    "title": "AI team — targeting",
+    "subtitle": "Configure once. Scout, Hunter, Analyst and Assistant then collaborate automatically.",
+    "activity": "Your activity",
+    "activityPlaceholder": "e.g. B2B SaaS for distribution…",
+    "products": "Products and services",
+    "markets": "Markets",
+    "countries": "Countries",
+    "cities": "Cities",
+    "targetClients": "Target customers",
+    "sectors": "Sectors",
+    "keywords": "Keywords",
+    "exclude": "Companies to exclude",
+    "listHint": "One item per line",
+    "intervalH": "Frequency (hours)",
+    "minScore": "Min. Scout handoff score",
+    "enabled": "Orchestrator on",
+    "runNow": "Run a cycle now",
+    "saved": "Targeting saved",
+    "runStarted": "Cycle started — agents are working in the background",
+    "overnightTitle": "While you were away",
+    "overnightSubtitle": "Here’s what your agents accomplished since your last visit.",
+    "statDetected": "companies / signals detected",
+    "statPriority": "priority opportunities",
+    "statTenders": "tenders / signals",
+    "statEnriched": "companies enriched",
+    "statMessages": "messages prepared",
+    "statScoreUp": "high scores (Analyst)",
+    "overnightEyebrow": "Your AI team",
+    "overnightLoading": "Fetching team progress…",
+    "teamWorking": "Agents working",
+    "emptyTitle": "Your team is already on mission",
+    "emptyBody": "Nothing new since your last visit — agents keep watching. Come back soon.",
+    "setupTitle": "Your AI team is waiting for its mission",
+    "setupBody": "Explore Ciblix freely. For agents to find relevant opportunities, brief your AI Mission first.",
+    "setupCta": "Create my AI Mission",
+    "statOpps": "opportunities analyzed"
+  },
+  "mission": {
+    "badge": "Brief your AI team",
+    "title": "AI Mission",
+    "subtitle": "Once — or anytime. Agents adapt automatically.",
+    "stepOf": "Step {{current}} / {{total}}",
+    "exploreLater": "Explore the app",
+    "launch": "Launch my mission",
+    "activateError": "Could not launch the mission — check the steps.",
+    "gateTitle": "Your AI team is ready, but waiting for its mission",
+    "gateBody": "Complete your AI Mission to start detecting commercial opportunities automatically.",
+    "gateExplore": "You can keep exploring the rest of Ciblix.",
+    "gateCta": "Complete AI Mission",
+    "s1Title": "Introduce your company",
+    "s1Body": "Describe your company, products, services, value and target customers. AI extracts keywords automatically.",
+    "s1Placeholder": "e.g. We install solar plants for industrials, hotels and large retailers in Tunisia and Algeria.",
+    "extractedHint": "Detected signals:",
+    "s2Title": "Your markets",
+    "countries": "Countries",
+    "regions": "Regions",
+    "cities": "Cities",
+    "listHint": "One item per line",
+    "s3Title": "Your ideal customers",
+    "s3Body": "Create one or more ICP profiles. Importance drives agent prioritization.",
+    "profileName": "Profile",
+    "profileNamePh": "e.g. Food industries",
+    "profileDescPh": "Free description of the ideal customer…",
+    "importance": "Importance",
+    "sector": "Sector",
+    "companySize": "Size",
+    "constraints": "Constraints",
+    "addProfile": "Add a profile",
+    "s4Title": "What agents should detect",
+    "s5Title": "Commercial priorities",
+    "s5Body": "What are your priorities?",
+    "s5Placeholder": "e.g. I prioritize companies investing in production tools.",
+    "s6Title": "Companies / sectors to exclude",
+    "exClients": "Clients",
+    "exCompetitors": "Competitors",
+    "exPartners": "Partners",
+    "exSectors": "Sectors",
+    "exCompanies": "Companies",
+    "exCountries": "Countries",
+    "s7Title": "AI validation",
+    "s7Body": "This is the mission summary your agents will execute continuously.",
+    "summaryLoading": "Generating summary…"
   }
 }

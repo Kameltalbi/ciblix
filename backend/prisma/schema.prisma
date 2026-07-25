@@ -98,6 +98,8 @@ model Organization {
   billingSubscription   BillingSubscription?
   usageQuotas           UsageQuota[]
   llmUsageLogs          LlmUsageLog[]
+  targetingProfile      OrgTargetingProfile?
+  agentTasks            AgentTask[]
 
   @@map("organizations")
 }
@@ -860,6 +862,7 @@ enum NotificationType {
   SUPPORT_TICKET_REPLY   // Réponse sur ticket support
   BRAND_PULSE_ALERT      // Alerte BrandPulse AI
   SCOUT_ALERT            // Alerte Veilleur IA (nouvelle opportunité)
+  AGENT_OPPORTUNITY_READY // Équipe IA : opportunité prête
 }
 
 model SupportTicket {
@@ -1466,6 +1469,7 @@ enum AgentEventSource {
   SCOUT
   OFFREBOT
   FACTCHECK
+  ANALYSTE
 }
 
 enum AgentEventType {
@@ -1831,4 +1835,120 @@ model LlmUsageLog {
   @@index([organizationId, createdAt])
   @@index([service, createdAt])
   @@map("llm_usage_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ÉQUIPE AGENTS — ciblage org + file de tâches collaborative
+// ═══════════════════════════════════════════════════════════════
+
+/// Mission IA — brief permanent de l’équipe agents (obligatoire avant démarrage).
+model OrgTargetingProfile {
+  id                 String   @id @default(cuid())
+  organizationId     String   @unique
+
+  /// NONE = pas commencé · DRAFT = en cours · ACTIVE = mission lancée
+  missionStatus      String   @default("NONE")
+  missionStep        Int      @default(1)
+  missionCompletedAt DateTime?
+  missionSummary     String?  @db.Text
+
+  /// Étape 1 — description libre entreprise
+  companyBrief       String?  @db.Text
+  /// Extraction IA (secteurs, produits, mots-clés, etc.)
+  extractedInsights  Json?
+
+  activity           String?  @db.Text
+  productsServices   String[] @default([])
+  markets            String[] @default([])
+  countries          String[] @default([])
+  regions            String[] @default([])
+  cities             String[] @default([])
+  targetClients      String[] @default([])
+  /// Profils clients idéaux [{name, description, importance, sector, companySize, constraints}]
+  idealProfiles      Json     @default("[]")
+  sectors            String[] @default([])
+  keywords           String[] @default([])
+  /// Signaux à détecter (appels d'offres, recrutements, …)
+  detectSignals      String[] @default([])
+  commercialPriorities String? @db.Text
+
+  excludeCompanies   String[] @default([])
+  excludeClients     String[] @default([])
+  excludeCompetitors String[] @default([])
+  excludePartners    String[] @default([])
+  excludeSectors     String[] @default([])
+  excludeCountries   String[] @default([])
+
+  /// Orchestrateur : désactivé tant que la mission n’est pas ACTIVE
+  orchestratorEnabled    Boolean  @default(false)
+  orchestratorIntervalH  Int      @default(1)
+  lastOrchestratorAt     DateTime?
+  minScoutScoreToHandoff Int      @default(55)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("org_targeting_profiles")
+}
+
+enum AgentRole {
+  SCOUT
+  HUNT
+  ANALYSTE
+  COPILOT
+}
+
+enum AgentTaskKind {
+  WATCH_SIGNALS
+  ENRICH_COMPANY
+  ANALYZE_FIT
+  PREPARE_OUTREACH
+}
+
+enum AgentTaskStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+/// File de collaboration inter-agents (mémoire partagée PostgreSQL).
+model AgentTask {
+  id             String          @id @default(cuid())
+  organizationId String
+
+  assignee       AgentRole
+  kind           AgentTaskKind
+  status         AgentTaskStatus @default(PENDING)
+  priority       Int             @default(50)
+
+  payload        Json            @default("{}")
+  result         Json?
+  error          String?         @db.Text
+
+  parentTaskId   String?
+  contactId      String?
+  dedupeKey      String?
+
+  attempts       Int             @default(0)
+  maxAttempts    Int             @default(3)
+  availableAt    DateTime        @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentTask     AgentTask?      @relation("AgentTaskChain", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  childTasks     AgentTask[]     @relation("AgentTaskChain")
+
+  @@unique([organizationId, dedupeKey])
+  @@index([organizationId, status, availableAt])
+  @@index([organizationId, assignee, status])
+  @@index([status, availableAt])
+  @@map("agent_tasks")
 }

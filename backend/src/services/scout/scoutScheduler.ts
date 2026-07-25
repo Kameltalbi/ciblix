@@ -11,7 +11,17 @@ async function processDueProfiles(): Promise<void> {
   running = true;
   try {
     const profiles = await prisma.scoutProfile.findMany({
-      where: { autoScanEnabled: true },
+      where: {
+        autoScanEnabled: true,
+        organization: {
+          suspended: false,
+          targetingProfile: {
+            missionStatus: 'ACTIVE',
+            missionCompletedAt: { not: null },
+            orchestratorEnabled: true,
+          },
+        },
+      },
       take: 40,
       orderBy: { lastScanAt: 'asc' },
     });
@@ -33,6 +43,11 @@ async function processDueProfiles(): Promise<void> {
         console.log(`[scout-scheduler] scan auto org=${profile.organizationId}`);
         const result = await executeScoutScanAll(profile.organizationId);
         await notifyScoutHighScores(profile.organizationId, result.newOpportunities);
+        void import('../agent-team/scoutHandoff.js')
+          .then(({ handoffScoutSignalsToHunt }) =>
+            handoffScoutSignalsToHunt(profile.organizationId, result.newOpportunities)
+          )
+          .catch((err) => console.warn('[scout-scheduler] handoff', err));
         console.log(
           `[scout-scheduler] org=${profile.organizationId} new=${result.newOpportunities.length} raw=${result.totalRaw}`,
         );

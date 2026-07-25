@@ -13,6 +13,7 @@ import {
   isWatchedHost,
   resolveWatchSites,
 } from '../services/scout/internationalTenderSites.js';
+import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
 
 export const scoutAiRoutes = Router();
 
@@ -23,6 +24,7 @@ scoutAiRoutes.get('/ping', (_req, res) => {
 scoutAiRoutes.use(auth);
 scoutAiRoutes.use(requirePaymentApproved);
 scoutAiRoutes.use(checkAgentAccess('scout-ai'));
+scoutAiRoutes.use(requireMissionForMutations);
 
 // ─── Helpers ────────────────────────────────────────────────
 

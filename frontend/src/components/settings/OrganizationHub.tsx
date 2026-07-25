@@ -6,13 +6,17 @@ import { PipelineSettings } from '@/components/settings/PipelineSettings';
 import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings';
 import { ComplianceSettings } from '@/components/settings/ComplianceSettings';
 import { BillingSettings } from '@/components/settings/BillingSettings';
+import { TargetingSettings } from '@/components/settings/TargetingSettings';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type OrgTab = 'general' | 'metier' | 'pipeline' | 'integrations' | 'compliance' | 'billing';
+type OrgTab = 'general' | 'metier' | 'targeting' | 'pipeline' | 'integrations' | 'compliance' | 'billing';
 
 const TABS: Array<{ id: OrgTab; label: string }> = [
   { id: 'general', label: 'Général' },
   { id: 'metier', label: 'Métier' },
+  { id: 'targeting', label: 'Équipe IA' },
   { id: 'pipeline', label: 'Pipeline' },
   { id: 'integrations', label: 'Intégrations' },
   { id: 'compliance', label: 'Conformité' },
@@ -60,6 +64,17 @@ export function OrganizationHub() {
 
       {tab === 'general' && <OrganizationSettings />}
       {tab === 'metier' && <CopilotOrgSettings />}
+      {tab === 'targeting' && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            La Mission IA est le brief permanent de votre équipe. Modifiez-la à tout moment — les agents s’adaptent automatiquement.
+          </p>
+          <Button asChild className="rounded-xl">
+            <Link to="/mission">Ouvrir la Mission IA</Link>
+          </Button>
+          <TargetingSettings />
+        </div>
+      )}
       {tab === 'pipeline' && <PipelineSettings />}
       {tab === 'integrations' && <IntegrationsSettings />}
       {tab === 'compliance' && <ComplianceSettings />}
