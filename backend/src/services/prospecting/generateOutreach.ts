@@ -123,3 +123,24 @@ export async function generateOutreachMessage(
     qualityAudit: result.qualityAudit,
   };
 }
+
+/** Verrou Rédacteur — à appeler depuis les routes avant génération. */
+export async function assertOutreachOfferGate(organizationId: string): Promise<void> {
+  const { prisma } = await import('../../db/prisma.js');
+  const { assertRedacteurMayGenerate, parseOfferSheet } = await import(
+    '../tenant-onboarding/index.js'
+  );
+  const targeting = await prisma.orgTargetingProfile.findUnique({
+    where: { organizationId },
+    select: { offerSheet: true, productsServices: true },
+  });
+  const gate = assertRedacteurMayGenerate({
+    offerSheet: parseOfferSheet(targeting?.offerSheet),
+    productsServices: targeting?.productsServices,
+  });
+  if (!gate.ok) {
+    const err = new Error(gate.message || gate.code);
+    (err as Error & { code?: string }).code = gate.code;
+    throw err;
+  }
+}

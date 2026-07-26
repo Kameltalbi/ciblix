@@ -149,6 +149,12 @@ export async function importProspectsFromSearch(
     scheduleOrgRescan(organizationId);
   }
 
+  if (created.length > 0) {
+    void import('../tenant-onboarding/index.js').then(({ markTtfrlFirstLead }) =>
+      markTtfrlFirstLead(organizationId)
+    );
+  }
+
   return {
     providerUsed,
     fromCache,

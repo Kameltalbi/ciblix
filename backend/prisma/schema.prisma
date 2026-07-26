@@ -1933,6 +1933,23 @@ model OrgTargetingProfile {
   lastOrchestratorAt     DateTime?
   minScoutScoreToHandoff Int      @default(55)
 
+  /// Onboarding V2 — max 3 champs saisis, reste déduit
+  identitySourceType     String?   // website | facebook | linkedin | pdf | name_brief
+  identitySourceUrl      String?
+  identitySourceLabel    String?
+  referenceClients       String[]  @default([])
+  geoZonePresets         String[]  @default([]) // Tunisie, Maghreb, Afrique Ouest…
+  extractedTenantProfile Json?     // champs sourcés + confiance
+  inverseIcp             Json?
+  inverseIcpText         String?   @db.Text
+  offerSheet             Json?     // fiche offre (validée ou brouillon)
+  offerValidatedAt       DateTime?
+  offerValidatedBy       String?
+  learnedPrefs           Json?     // ton, exclusions, canal, seuil, langue
+  ttfrlStartedAt         DateTime?
+  ttfrlFirstLeadAt       DateTime?
+  onboardingEvents       Json?     // tunnel / analytics
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -8,7 +8,7 @@ import { tryConsumeAgentQuota } from '../services/agentUsage.js';
 import { prisma } from '../db/prisma.js';
 import { runProspectEnrichmentPipeline } from '../services/prospecting/index.js';
 import { qualifyCompanyHit } from '../services/prospecting/qualifyWithAi.js';
-import { generateOutreachMessage } from '../services/prospecting/generateOutreach.js';
+import { generateOutreachMessage, assertOutreachOfferGate } from '../services/prospecting/generateOutreach.js';
 import { assertChannelAvailableForMessageType } from '../services/prospecting/channelAvailability.js';
 import { importProspectsFromSearch } from '../services/prospecting/importProspectsFromSearch.js';
 import type { CompanySearchCriteria, CompanySearchHit, OutreachMessageType, WebEnrichmentResult } from '../services/prospecting/types.js';
@@ -710,6 +710,16 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       targeting?.activity?.trim() ||
       targeting?.missionSummary?.trim() ||
       null;
+
+    try {
+      await assertOutreachOfferGate(req.organizationId!);
+    } catch (gateErr) {
+      const code = (gateErr as Error & { code?: string }).code || 'OFFER_SHEET_REQUIRED';
+      return res.status(403).json({
+        error: gateErr instanceof Error ? gateErr.message : code,
+        code,
+      });
+    }
 
     const { body, source, signatureWarning, needsHumanReview, roleAudit, qualityAudit } =
       await generateOutreachMessage(hit, messageType as OutreachMessageType, tone, {

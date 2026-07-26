@@ -587,7 +587,7 @@ export async function handleAnalyzeFit(task: AgentTask): Promise<Record<string, 
   return scoreResult;
 }
 
-/** Assistant : prépare messages + notifie l’utilisateur. */
+/** Assistant / Rédacteur : prépare messages + notifie l’utilisateur. */
 export async function handlePrepareOutreach(task: AgentTask): Promise<Record<string, unknown>> {
   const payload = asRecord(task.payload);
   const companyName = str(payload.companyName) || 'Entreprise';
@@ -596,6 +596,21 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
     where: { organizationId: task.organizationId },
   });
   const userId = await getIntegrationUserId(task.organizationId);
+
+  const { assertRedacteurMayGenerate, parseOfferSheet } = await import(
+    '../tenant-onboarding/index.js'
+  );
+  const gate = assertRedacteurMayGenerate({
+    offerSheet: parseOfferSheet(targeting?.offerSheet),
+    productsServices: targeting?.productsServices,
+  });
+  if (!gate.ok) {
+    return {
+      skipped: true,
+      reason: gate.code || 'OFFER_SHEET_REQUIRED',
+      message: gate.message,
+    };
+  }
 
   let emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
     targeting?.activity || 'leur développement commercial'

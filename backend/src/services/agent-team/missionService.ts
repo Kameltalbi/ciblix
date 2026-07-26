@@ -275,31 +275,57 @@ async function syncScoutFromMission(profile: OrgTargetingProfile): Promise<void>
 
 export async function activateMission(organizationId: string): Promise<OrgTargetingProfile> {
   const profile = await getOrCreateMissionProfile(organizationId);
-  if (!profile.companyBrief?.trim() || profile.companyBrief.trim().length < 20) {
-    throw new Error('MISSION_BRIEF_REQUIRED');
-  }
-  if (!profile.countries.length && !profile.cities.length && !profile.regions.length) {
-    throw new Error('MISSION_MARKETS_REQUIRED');
-  }
+
+  const hasBrief = Boolean(profile.companyBrief?.trim() && profile.companyBrief.trim().length >= 12);
+  const hasGeo =
+    profile.countries.length > 0 ||
+    profile.cities.length > 0 ||
+    profile.regions.length > 0 ||
+    profile.geoZonePresets.length > 0 ||
+    profile.markets.length > 0;
   const ideal = (Array.isArray(profile.idealProfiles) ? profile.idealProfiles : []) as IdealClientProfile[];
-  if (!ideal.some((p) => p.name?.trim())) {
-    throw new Error('MISSION_PROFILES_REQUIRED');
-  }
-  if (!profile.detectSignals.length) {
-    throw new Error('MISSION_SIGNALS_REQUIRED');
-  }
+  const hasIcp =
+    ideal.some((p) => p.name?.trim()) ||
+    profile.referenceClients.length > 0 ||
+    Boolean(profile.inverseIcp);
+
+  if (!hasBrief) throw new Error('MISSION_BRIEF_REQUIRED');
+  if (!hasGeo) throw new Error('MISSION_MARKETS_REQUIRED');
+  if (!hasIcp) throw new Error('MISSION_PROFILES_REQUIRED');
+
+  const signals =
+    profile.detectSignals.length > 0
+      ? profile.detectSignals
+      : ['tenders', 'hiring', 'new_projects', 'investments'];
 
   const insights = (profile.extractedInsights || {}) as Partial<ExtractedInsights>;
-  const products = insights.products || profile.productsServices;
+  const offer = profile.offerSheet as { services_valides?: Array<{ libelle?: string; valide_par_tenant?: boolean }> } | null;
+  const offerProducts = (offer?.services_valides || [])
+    .filter((s) => s.valide_par_tenant !== false && s.libelle?.trim())
+    .map((s) => String(s.libelle).trim());
+  const products =
+    offerProducts.length > 0
+      ? offerProducts
+      : insights.products?.length
+        ? insights.products
+        : profile.productsServices;
   const keywords = [...new Set([...(insights.keywords || []), ...profile.keywords])];
-  const sectors = [...new Set([...(insights.sectors || []), ...profile.sectors])];
-  const targetClients = ideal.map((p) => p.name).filter(Boolean);
+  const sectors = [
+    ...new Set([
+      ...(insights.sectors || []),
+      ...profile.sectors,
+      ...(((profile.inverseIcp as { secteurs_cibles?: string[] } | null)?.secteurs_cibles) || []),
+    ]),
+  ];
+  const targetClients =
+    profile.referenceClients.length > 0
+      ? profile.referenceClients
+      : ideal.map((p) => p.name).filter(Boolean);
   const excludes = [
     ...profile.excludeCompanies,
     ...(insights.potentialExclusions || []),
   ];
 
-  let summary = profile.missionSummary;
   const withSync = await prisma.orgTargetingProfile.update({
     where: { organizationId },
     data: {
@@ -309,27 +335,38 @@ export async function activateMission(organizationId: string): Promise<OrgTarget
       sectors: sectors.length ? sectors : profile.sectors,
       targetClients: targetClients.length ? targetClients : profile.targetClients,
       excludeCompanies: [...new Set(excludes)],
-      markets: profile.markets.length ? profile.markets : profile.countries,
+      markets: profile.markets.length
+        ? profile.markets
+        : profile.geoZonePresets.length
+          ? profile.geoZonePresets
+          : profile.countries,
+      detectSignals: signals,
+      countries:
+        profile.countries.length > 0
+          ? profile.countries
+          : profile.geoZonePresets.includes('Tunisie')
+            ? ['Tunisie']
+            : profile.countries,
     },
   });
 
-  summary = await buildMissionSummary(withSync);
+  const summary = profile.missionSummary || (await buildMissionSummary(withSync));
 
   const activated = await prisma.orgTargetingProfile.update({
     where: { organizationId },
     data: {
       missionStatus: 'ACTIVE',
-      missionStep: 7,
+      missionStep: 5,
       missionCompletedAt: new Date(),
       missionSummary: summary,
       orchestratorEnabled: true,
       lastOrchestratorAt: null,
+      ttfrlStartedAt: profile.ttfrlStartedAt || new Date(),
     },
   });
 
   await syncScoutFromMission(activated);
 
-  // Cœur métier : Prospecteur cherche des entreprises clientes dès l’activation
   await enqueueAgentTask({
     organizationId,
     assignee: 'HUNT',
@@ -339,7 +376,6 @@ export async function activateMission(organizationId: string): Promise<OrgTarget
     payload: { triggeredBy: 'mission_activate', refresh: true, importMax: 40 },
   });
 
-  // Veilleur en second (signaux), priorité basse
   await enqueueAgentTask({
     organizationId,
     assignee: 'SCOUT',
@@ -377,6 +413,9 @@ export async function getMissionStatus(organizationId: string) {
   const profile = await prisma.orgTargetingProfile.findUnique({
     where: { organizationId },
   });
+  const { isOfferSheetValidated, parseOfferSheet } = await import(
+    '../tenant-onboarding/index.js'
+  );
   return {
     configured: isMissionActive(profile),
     status: profile?.missionStatus || 'NONE',
@@ -384,5 +423,8 @@ export async function getMissionStatus(organizationId: string) {
     completedAt: profile?.missionCompletedAt?.toISOString() || null,
     summary: profile?.missionSummary || null,
     orchestratorEnabled: profile?.orchestratorEnabled ?? false,
+    offerValidated: isOfferSheetValidated(parseOfferSheet(profile?.offerSheet)),
+    ttfrlStartedAt: profile?.ttfrlStartedAt?.toISOString() || null,
+    ttfrlFirstLeadAt: profile?.ttfrlFirstLeadAt?.toISOString() || null,
   };
 }
