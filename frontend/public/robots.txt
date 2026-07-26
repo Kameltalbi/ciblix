@@ -1,0 +1,35 @@
+# https://ciblix.com/robots.txt
+User-agent: *
+Allow: /
+Allow: /tarifs
+Allow: /pricing
+Allow: /fonctionnalites
+Allow: /features
+Allow: /solutions
+Allow: /ressources
+Allow: /resources
+Allow: /sales
+Allow: /login
+Allow: /register
+Allow: /legal/
+Allow: /agent/
+
+# Zones app (auth) — pas d’intérêt pour l’indexation
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /mission
+Disallow: /agents/
+Disallow: /contacts
+Disallow: /connecteurs
+Disallow: /all-prospects
+Disallow: /ai-assistant
+Disallow: /support
+Disallow: /users
+Disallow: /admin
+Disallow: /prospection-ia
+Disallow: /api/
+Disallow: /auth/
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://ciblix.com/sitemap.xml

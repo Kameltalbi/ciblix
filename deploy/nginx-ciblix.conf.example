@@ -46,8 +46,18 @@ server {
     # ssl_certificate_key /etc/letsencrypt/live/ciblix.com/privkey.pem;
     # include /etc/letsencrypt/options-ssl-nginx.conf;
 
-    root /var/www/crm/frontend/dist;
+    root /var/www/ciblix/frontend/dist;
     index index.html;
+
+    # SEO — fichiers statiques (ne pas renvoyer le SPA)
+    location = /robots.txt {
+        add_header Content-Type text/plain;
+        try_files $uri =404;
+    }
+    location = /sitemap.xml {
+        add_header Content-Type application/xml;
+        try_files $uri =404;
+    }
 
     # SPA
     location / {
