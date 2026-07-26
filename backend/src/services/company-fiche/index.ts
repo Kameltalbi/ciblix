@@ -46,3 +46,9 @@ export {
   parseFicheData,
 } from './ficheService.js';
 export { ingestScribeInteraction, enqueueScribeIngest } from './scribeService.js';
+export {
+  listTodayContacts,
+  resurfaceDueRelances,
+  isRelanceDue,
+  todayIso,
+} from './relanceResurface.js';

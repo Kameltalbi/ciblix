@@ -59,6 +59,18 @@ contactsRoutes.get('/', async (req: AuthRequest, res: Response, next: NextFuncti
   }
 });
 
+/** Aujourd’hui — jusqu’à 5 fiches dont date_relance ≤ aujourd’hui (écrit par le Scribe). */
+contactsRoutes.get('/today', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { listTodayContacts } = await import('../services/company-fiche/relanceResurface.js');
+    const limit = Math.min(Number(req.query.limit) || 5, 20);
+    const result = await listTodayContacts(req.organizationId!, limit);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 contactsRoutes.get('/:id/events', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const contactId = String(req.params.id);

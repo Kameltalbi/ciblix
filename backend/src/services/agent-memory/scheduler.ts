@@ -61,6 +61,15 @@ async function tickOnce(): Promise<void> {
     } catch (err) {
       console.warn('[agent-memory-scheduler] referentiel freshness', err);
     }
+    try {
+      const { resurfaceDueRelances } = await import('../company-fiche/relanceResurface.js');
+      const r = await resurfaceDueRelances(300);
+      if (r.created > 0) {
+        console.log('[agent-memory-scheduler] relances resurfacées', r.created, '/', r.scanned);
+      }
+    } catch (err) {
+      console.warn('[agent-memory-scheduler] relance resurface', err);
+    }
   }
 
   if (now - lastWeeklyRetry > 7 * DAY_MS) {

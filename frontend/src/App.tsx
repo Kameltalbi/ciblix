@@ -69,6 +69,9 @@ const AllProspects = lazy(() =>
   import('./pages/AllProspects').then((m) => ({ default: m.AllProspects }))
 );
 const Contacts = lazy(() => import('./pages/Contacts').then((m) => ({ default: m.Contacts })));
+const Aujourdhui = lazy(() =>
+  import('./pages/Aujourdhui').then((m) => ({ default: m.Aujourdhui }))
+);
 const ContactDetail = lazy(() =>
   import('./pages/ContactDetail').then((m) => ({ default: m.ContactDetail }))
 );
@@ -167,6 +170,7 @@ export default function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/aujourdhui" element={<Aujourdhui />} />
                         <Route path="/affaires" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/affaires/:id" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/clients" element={<Navigate to="/contacts" replace />} />

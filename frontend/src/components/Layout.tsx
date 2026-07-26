@@ -18,6 +18,7 @@ import {
   Target,
   PanelLeftClose,
   PanelLeft,
+  Sun,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -46,6 +47,7 @@ type NavItem = {
  * Compte une seule fois en bas ; badge Mission ; collapse manuel.
  */
 const NAV_STRUCTURE: NavItem[] = [
+  { to: '/aujourdhui', labelKey: 'nav.today', icon: Sun, page: 'aujourdhui', section: 'OVERVIEW' },
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
   { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'OVERVIEW', missionBadge: true },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'AGENTS' },
@@ -187,7 +189,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (user.role === 'COMMERCIAL') {
         if (page === 'support') return true;
         if (permissionsData === undefined) return true;
-        if (page === 'dashboard' || page === 'connectors' || page === 'settings' || page === 'mission') return true;
+        if (page === 'dashboard' || page === 'aujourdhui' || page === 'connectors' || page === 'settings' || page === 'mission') return true;
         if (!Array.isArray(permissionsData)) return true;
         const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
