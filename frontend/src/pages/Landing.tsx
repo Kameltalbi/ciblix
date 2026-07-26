@@ -7,14 +7,23 @@ import { Button } from '@/components/ui/button';
 import {
   DEMO_URL,
   LandingHeader,
-  LandingProblem,
-  LandingSolution,
-  LandingDifferentiation,
-  LandingPricing,
-  LandingDataTrust,
-  LandingFinalCta,
   LandingFooter,
 } from '@/components/landing/LandingSections';
+import {
+  LandingAnswer,
+  LandingAgents,
+  LandingFaqPrompt,
+  LandingFinalCtaPrompt,
+  LandingHeroPhone,
+  LandingKeepCrm,
+  LandingMarket,
+  LandingMemoryWake,
+  LandingPricingPrompt,
+  LandingProblemPrompt,
+  LandingProof,
+  LandingStartFast,
+  LandingYourData,
+} from '@/components/landing/LandingHomeSections';
 
 const SCHEMA = {
   '@context': 'https://schema.org',
@@ -23,13 +32,13 @@ const SCHEMA = {
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   description:
-    'Le commercial qui ne dort jamais. Cinq entreprises à contacter chaque matin, avec la raison et le message — dictée après appel, zéro saisie.',
+    'Chaque matin, cinq entreprises à contacter avec la raison et le message déjà écrit. Vos commerciaux ne saisissent plus rien.',
   url: 'https://ciblix.com',
   offers: {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'TND',
-    description: 'Essai gratuit 7 jours — à partir de 65 TND/mois',
+    description: 'Essai gratuit — première liste en cinq minutes',
   },
   inLanguage: ['fr', 'ar', 'en'],
 };
@@ -64,78 +73,75 @@ export function Landing() {
     <div className="min-h-screen bg-white">
       <LandingHeader />
 
-      {/* Hero — textes du prompt landing */}
-      <section className="relative">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#f7faff] via-white to-[#e8f1fc]/60" />
-        <div className="pointer-events-none absolute -left-32 top-0 h-[28rem] w-[28rem] rounded-full bg-[#BED6F6]/40 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 bottom-0 h-[24rem] w-[24rem] rounded-full bg-[#016AEB]/10 blur-3xl" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pb-10 pt-12 sm:px-6 md:gap-12 md:pb-14 md:pt-16 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:pb-16 lg:pt-20">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-            <p className="mb-4 text-sm font-semibold tracking-wide text-[#1E72B9]">{t('landing.badge')}</p>
-            <h1 className="mb-5 font-serif text-4xl font-bold leading-[1.12] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
+      {/* §1 Hero */}
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#f7faff] via-white to-white" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-14 pt-12 sm:px-6 md:pb-20 md:pt-16 lg:grid-cols-2 lg:gap-16 lg:px-8">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <h1 className="font-serif text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-[3.35rem]">
               {t('landing.heroTitle1')}
             </h1>
-            <p className="mb-8 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
               {t('landing.heroSubtitle')}
             </p>
-            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link to="/register">
-                <Button size="lg" className="w-full px-8 text-base shadow-glow sm:w-auto">
+                <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto">
                   {t('landing.cta')}
                   <ArrowRight size={18} className="ml-2" />
                 </Button>
               </Link>
               {demoExternal ? (
                 <a href={DEMO_URL} target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="outline" className="w-full px-8 text-base sm:w-auto">
+                  <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto">
                     {t('landing.ctaDemo')}
                   </Button>
                 </a>
               ) : (
                 <a href="#demo">
-                  <Button size="lg" variant="outline" className="w-full px-8 text-base sm:w-auto">
+                  <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto">
                     {t('landing.ctaDemo')}
                   </Button>
                 </a>
               )}
             </div>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {[t('landing.noCommitment'), t('landing.localSupport'), t('landing.secure'), t('landing.multilingual')].map(
-                (label) => (
-                  <div key={label} className="flex items-center gap-1.5">
-                    <CheckCircle2 size={15} className="text-[#016AEB]" />
-                    {label}
-                  </div>
-                )
-              )}
+            <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              {[
+                t('landing.noCommitment'),
+                t('landing.localSupport'),
+                t('landing.secure'),
+                t('landing.multilingual'),
+              ].map((label) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <CheckCircle2 size={15} className="text-[#016AEB]" />
+                  {label}
+                </div>
+              ))}
             </div>
           </motion.div>
           <motion.div
             className="flex justify-center lg:justify-end"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.1 }}
           >
-            <img
-              src="/hero-dashboard.png"
-              alt="Écran Aujourd’hui Ciblix — cinq entreprises à contacter"
-              className="h-auto w-full max-h-[min(520px,58vh)] max-w-[520px] object-contain drop-shadow-xl lg:max-h-[min(560px,62vh)] lg:max-w-[560px]"
-              width={1024}
-              height={1024}
-              decoding="async"
-              {...{ fetchpriority: 'high' as const }}
-            />
+            <LandingHeroPhone />
           </motion.div>
         </div>
       </section>
 
-      <LandingSolution />
-      <LandingProblem />
-
-      <LandingDifferentiation />
-      <LandingPricing />
-      <LandingDataTrust />
-      <LandingFinalCta />
+      <LandingProof />
+      <LandingProblemPrompt />
+      <LandingAnswer />
+      <LandingAgents />
+      <LandingMemoryWake />
+      <LandingMarket />
+      <LandingStartFast />
+      <LandingYourData />
+      <LandingKeepCrm />
+      <LandingPricingPrompt />
+      <LandingFaqPrompt />
+      <LandingFinalCtaPrompt />
       <LandingFooter />
     </div>
   );

@@ -879,14 +879,13 @@ export function LandingFooter() {
 
   const product = [
     { label: t('landing.navFeatures'), href: '/fonctionnalites', isRoute: true },
-    { label: t('landing.navSolutions'), href: '/solutions', isRoute: true },
+    { label: 'Les agents', href: '/solutions', isRoute: true },
     { label: t('landing.navPricing'), href: '/tarifs', isRoute: true },
     { label: t('landing.footerSecurity'), href: '/securite', isRoute: true },
   ];
   const resources = [
-    { label: t('landing.navResources'), href: '/ressources', isRoute: true },
+    { label: 'Guide de démarrage', href: '/documentation', isRoute: true },
     { label: t('landing.footerBlog'), href: '/blog', isRoute: true },
-    { label: t('landing.footerDocs'), href: '/documentation', isRoute: true },
     { label: t('landing.footerFaq'), href: '/faq', isRoute: true },
   ];
   const company: Array<{ label: string; to: string }> = [
@@ -894,6 +893,7 @@ export function LandingFooter() {
     { label: t('landing.footerContact'), to: '/contact' },
     { label: t('landing.footerPrivacy'), to: '/legal/privacy' },
     { label: t('landing.footerTerms'), to: '/legal/cgu' },
+    { label: 'Mentions légales', to: '/legal/terms' },
   ];
 
   return (
