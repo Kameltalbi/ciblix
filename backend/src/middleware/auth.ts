@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db/prisma.js';
+import { setTenantRlsContext } from '../services/referentiel/tenantIsolation.js';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -66,6 +67,8 @@ const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
       role: user.role,
       organizationId: user.organizationId,
     };
+    // Filet RLS Postgres — en plus du filtre organizationId applicatif
+    void setTenantRlsContext(user.organizationId);
     next();
   } catch {
     return res.status(401).json({ error: 'Token invalide ou expiré' });

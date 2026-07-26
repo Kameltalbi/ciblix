@@ -165,7 +165,13 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
     for (const p of freshProspects) {
       if (!p.companyName?.trim()) continue;
       try {
-        await ingestPublicCompanyFromHunt(p);
+        // Pont progressif AiProspect → fiche Contact (source de vérité produit)
+        const refId = await ingestPublicCompanyFromHunt(p);
+        await linkReferentielToTenantFiche({
+          organizationId: task.organizationId,
+          entrepriseId: refId,
+          createdVia: 'HUNT',
+        });
       } catch {
         /* ignore */
       }

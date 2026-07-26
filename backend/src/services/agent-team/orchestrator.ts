@@ -170,6 +170,8 @@ async function tickOnce(): Promise<void> {
   if (running) return;
   running = true;
   try {
+    const { bumpHeartbeat } = await import('../../lib/heartbeats.js');
+    bumpHeartbeat('agentOrchestrator');
     await scheduleTeamJobs();
     for (let i = 0; i < MAX_TASKS_PER_TICK; i++) {
       const did = await processOneTask();

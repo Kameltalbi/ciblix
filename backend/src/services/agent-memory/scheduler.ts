@@ -2,6 +2,7 @@ import { processDueResolutions, weeklyNeedsReviewRetry } from './contactResoluti
 import { purgeExpiredRawContent } from './purgeRawContent.js';
 import { recalculateStaleContacts } from './pipelineStatusService.js';
 import { closeStaleWhatsAppSessions } from '../integrations/whatsappSessionService.js';
+import { bumpHeartbeat } from '../../lib/heartbeats.js';
 
 const TICK_MS = 60_000;
 const DAY_MS = 86_400_000;
@@ -11,6 +12,7 @@ let lastDailyPurge = 0;
 let lastWeeklyRetry = 0;
 
 async function tickOnce(): Promise<void> {
+  bumpHeartbeat('agentMemory');
   try {
     await processDueResolutions(30);
   } catch (err) {
@@ -64,6 +66,7 @@ async function tickOnce(): Promise<void> {
     try {
       const { resurfaceDueRelances } = await import('../company-fiche/relanceResurface.js');
       const r = await resurfaceDueRelances(300);
+      bumpHeartbeat('relanceResurface', `created=${r.created}`);
       if (r.created > 0) {
         console.log('[agent-memory-scheduler] relances resurfacées', r.created, '/', r.scanned);
       }

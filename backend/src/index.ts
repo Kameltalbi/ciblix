@@ -151,7 +151,11 @@ app.get('/api/health', async (_req, res) => {
     dbOk = false;
   }
 
-  const status = dbOk ? 'ok' : 'degraded';
+  const { getHeartbeats } = await import('./lib/heartbeats.js');
+  const heartbeats = getHeartbeats();
+  const schedulerStale = Object.values(heartbeats).some((h) => h.stale && h.ageSec !== null);
+
+  const status = !dbOk ? 'degraded' : schedulerStale ? 'warn' : 'ok';
   res
     .status(dbOk ? 200 : 503)
     .json({
@@ -159,6 +163,7 @@ app.get('/api/health', async (_req, res) => {
       time: new Date().toISOString(),
       uptimeSec: Math.floor(process.uptime()),
       db: { ok: dbOk, latencyMs: dbLatencyMs },
+      heartbeats,
       took: Date.now() - startedAt,
     });
 });

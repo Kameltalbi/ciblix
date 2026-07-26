@@ -17,6 +17,7 @@ export {
   revertCorrection,
 } from './corrections.js';
 export {
+  setTenantRlsContext,
   withTenantRls,
   assertTenantFilterPresent,
   assertContactIsolated,
