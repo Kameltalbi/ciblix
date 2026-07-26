@@ -72,6 +72,8 @@ model Organization {
   contactDedupConflicts ContactDedupConflict[]
   suggestions           Suggestion[]
   ficheTransitions      FicheTransition[]
+  referentielCorrections ReferentielCorrection[]
+  referentielDedupReviews ReferentielDedupReview[] @relation("DedupReporter")
   copilotOrgConfig      CopilotOrgConfig?
   copilotMessages       CopilotMessage[]
   /// TTL transcription brute (jours) — appliqué par le job de purge S3
@@ -1539,12 +1541,16 @@ model Contact {
   ficheData           Json?
   ficheBlockReason    String?  @db.Text
 
+  /// Lien vers le référentiel mutualisé (faits publics uniquement).
+  entrepriseReferentielId String?
+
   whatsappConsentAt DateTime?
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entrepriseReferentiel EntrepriseReferentiel? @relation(fields: [entrepriseReferentielId], references: [id], onDelete: SetNull)
   events         AgentEvent[]
   suggestions    Suggestion[]
   copilotMessages CopilotMessage[]
@@ -1560,6 +1566,8 @@ model Contact {
   @@index([organizationId, pipelineStatus])
   @@index([organizationId, pipelineStatusAt])
   @@index([organizationId, ficheEtat])
+  @@index([entrepriseReferentielId])
+  @@index([organizationId, entrepriseReferentielId])
   @@map("contacts")
 }
 
@@ -1587,6 +1595,135 @@ model FicheTransition {
   @@index([organizationId, contactId, createdAt])
   @@index([organizationId, etatNouveau])
   @@map("fiche_transitions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RÉFÉRENTIEL MUTUALISÉ (couche 1) — faits publics UNIQUEMENT
+//  INTERDIT : décideurs, emails nominatifs, scores, historique tenant
+// ═══════════════════════════════════════════════════════════════
+
+enum EntrepriseStatutActivite {
+  ACTIVE
+  CESSEE
+  EN_LIQUIDATION
+  INCONNUE
+}
+
+/// Faits publics vérifiables — partagés entre tous les tenants.
+model EntrepriseReferentiel {
+  id                      String   @id @default(cuid())
+  identifiantNational     String?
+  paysImmatriculation          String?
+  nomLegal                String
+  nomsAlternatifs         String[] @default([])
+  secteur                 String?
+  codeActivite            String?
+  adresseSiege            String?  @db.Text
+  zoneGeographique        String?
+  siteWeb                 String?
+  /// Domaine normalisé pour dédup niveau 2
+  siteWebDomain           String?
+  presenceDigitale        Json?
+  telephoneStandard       String?
+  emailGenerique          String?
+  tailleEstimee           String?
+  anneeCreation           Int?
+  statutActivite          EntrepriseStatutActivite @default(INCONNUE)
+  /// [{url, date_collecte, type_source}]
+  sources                 Json     @default("[]")
+  /// Traçabilité par champ : { champ: { valeur, source, confiance, date } }
+  fieldProvenance         Json     @default("{}")
+  dateDerniereVerification DateTime?
+  scoreFraicheur          Int      @default(50)
+  scoreConfianceGlobal    Int      @default(50)
+  /// Nom normalisé (sans accents / formes juridiques) pour dédup niveau 3
+  nomNormalise            String
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  contacts                Contact[]
+  corrections             ReferentielCorrection[]
+  dedupAsA                ReferentielDedupReview[] @relation("DedupA")
+  dedupAsB                ReferentielDedupReview[] @relation("DedupB")
+
+  @@index([identifiantNational, paysImmatriculation])
+  @@index([siteWebDomain])
+  @@index([nomNormalise, zoneGeographique])
+  @@index([secteur])
+  @@index([scoreFraicheur])
+  @@index([paysImmatriculation, statutActivite])
+  @@map("entreprises_referentiel")
+}
+
+enum ReferentielCorrectionStatut {
+  PENDING
+  CONFIRMED
+  REJECTED
+  REVERTED
+}
+
+enum ReferentielCorrectionType {
+  ENTREPRISE_FERMEE
+  ADRESSE_ERRONEE
+  TELEPHONE_ERRONE
+  SITE_INVALIDE
+  SECTEUR_FAUX
+  DOUBLON
+}
+
+/// Corrections remontantes (faits publics) — jamais de données personnelles.
+model ReferentielCorrection {
+  id             String   @id @default(cuid())
+  organizationId String
+  entrepriseId   String
+  type           ReferentielCorrectionType
+  champ          String?
+  valeurAvant    String?  @db.Text
+  valeurApres    String?  @db.Text
+  motif          String?  @db.Text
+  statut         ReferentielCorrectionStatut @default(PENDING)
+  validationMode String?  // double_signalement | re_verification | manuel
+  reportedByUserId String?
+  confirmedAt    DateTime?
+  confirmedBy    String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entreprise     EntrepriseReferentiel @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([entrepriseId, statut])
+  @@index([statut, createdAt])
+  @@map("referentiel_corrections")
+}
+
+enum ReferentielDedupStatut {
+  PENDING
+  MERGED
+  DISMISSED
+}
+
+/// File de revue dédup niveau 4 (similarité incertaine).
+model ReferentielDedupReview {
+  id               String   @id @default(cuid())
+  entrepriseAId    String
+  entrepriseBId    String
+  scoreSimilarite  Float
+  motif            String?  @db.Text
+  statut           ReferentielDedupStatut @default(PENDING)
+  reporterOrgId    String?
+  createdAt        DateTime @default(now())
+  resolvedAt       DateTime?
+
+  entrepriseA      EntrepriseReferentiel @relation("DedupA", fields: [entrepriseAId], references: [id], onDelete: Cascade)
+  entrepriseB      EntrepriseReferentiel @relation("DedupB", fields: [entrepriseBId], references: [id], onDelete: Cascade)
+  reporterOrg      Organization? @relation("DedupReporter", fields: [reporterOrgId], references: [id], onDelete: SetNull)
+
+  @@index([statut, createdAt])
+  @@map("referentiel_dedup_reviews")
 }
 
 model AgentEvent {

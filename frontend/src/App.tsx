@@ -34,6 +34,16 @@ const Fonctionnalites = lazy(() =>
 );
 const Solutions = lazy(() => import('./pages/Solutions').then((m) => ({ default: m.Solutions })));
 const Ressources = lazy(() => import('./pages/Ressources').then((m) => ({ default: m.Ressources })));
+const APropos = lazy(() => import('./pages/APropos').then((m) => ({ default: m.APropos })));
+const ContactPublic = lazy(() =>
+  import('./pages/ContactPublic').then((m) => ({ default: m.ContactPublic }))
+);
+const Securite = lazy(() => import('./pages/Securite').then((m) => ({ default: m.Securite })));
+const Faq = lazy(() => import('./pages/Faq').then((m) => ({ default: m.Faq })));
+const Documentation = lazy(() =>
+  import('./pages/Documentation').then((m) => ({ default: m.Documentation }))
+);
+const Blog = lazy(() => import('./pages/Blog').then((m) => ({ default: m.Blog })));
 const AIAssistant = lazy(() =>
   import('./pages/AIAssistant').then((m) => ({ default: m.AIAssistant }))
 );
@@ -129,6 +139,16 @@ export default function App() {
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/ressources" element={<Ressources />} />
           <Route path="/resources" element={<Ressources />} />
+          <Route path="/a-propos" element={<APropos />} />
+          <Route path="/about" element={<APropos />} />
+          <Route path="/contact" element={<ContactPublic />} />
+          <Route path="/securite" element={<Securite />} />
+          <Route path="/security" element={<Securite />} />
+          <Route path="/faq" element={<Faq />} />
+          <Route path="/documentation" element={<Documentation />} />
+          <Route path="/docs" element={<Documentation />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<Blog />} />
           <Route path="/agent/hunt-ai" element={<HuntAIPage />} />
           <Route path="/agent/copilot-ia" element={<CopilotIAPage />} />
           <Route path="/agent/scout-ai" element={<ScoutAIPage />} />

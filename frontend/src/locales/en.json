@@ -655,7 +655,7 @@
     "navContact": "Contact",
     "headerLogin": "Log in",
     "headerRegister": "Sign up",
-    "footerDesc": "AI agents that accelerate your sales growth.",
+    "footerDesc": "Ciblix finds your customers while you sleep, and writes your follow-ups while you sell.",
     "footerProduct": "Product",
     "footerResources": "Resources",
     "footerCompany": "Company",
@@ -1179,8 +1179,8 @@
   },
   "tarifs": {
     "badge": "7-day trial · no credit card",
-    "title": "Three plans. One complete solution.",
-    "subtitle": "Prospecteur, Veilleur, Analyste and Assistant included everywhere. Choose based on usage and team size.",
+    "title": "Priced per active salesperson — not “AI credits”.",
+    "subtitle": "Three tiers: Discovery, Team, Leadership. Scribe and automatic resurgence sit at the Team level.",
     "monthly": "Monthly",
     "yearly": "Yearly (−2 months)",
     "perMonth": "{{symbol}}/mo",
@@ -1205,34 +1205,37 @@
     },
     "tiers": {
       "essentiel": {
-        "name": "Essential",
-        "users": "1 user",
-        "actions": "100 AI actions / month",
+        "name": "Discovery",
+        "users": "1 active salesperson",
+        "actions": "Limited volume · 100 actions / month",
         "features": [
-          "Full solution (4 agents)",
+          "Prospecting + qualification",
+          "Today screen",
+          "Draft messages to approve",
           "7-day trial included"
         ]
       },
       "croissance": {
-        "name": "Growth",
-        "users": "3 users",
-        "actions": "300 AI actions / month",
+        "name": "Team",
+        "users": "Up to 3 active salespeople",
+        "actions": "300 actions / month",
         "features": [
-          "Full solution (4 agents)",
-          "Gmail (connector)",
-          "Shared memory & pipeline",
+          "Everything in Discovery",
+          "Scribe (15s dictation)",
+          "Automatic resurgence",
+          "Commercial memory",
           "7-day trial included"
         ]
       },
       "pro": {
-        "name": "Pro",
-        "users": "10 users",
-        "actions": "1,000 AI actions / month",
+        "name": "Leadership",
+        "users": "Up to 10 active salespeople",
+        "actions": "1,000 actions / month",
         "features": [
-          "Full solution (4 agents)",
-          "Gmail (connector)",
-          "Soft-cap overage allowed",
-          "External CRM webhook",
+          "Everything in Team",
+          "Multiple markets",
+          "CRM connector (webhook)",
+          "Priority support",
           "7-day trial included"
         ]
       }

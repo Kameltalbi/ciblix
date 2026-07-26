@@ -661,7 +661,7 @@
     "navContact": "Contact",
     "headerLogin": "Connexion",
     "headerRegister": "Inscription",
-    "footerDesc": "Des agents IA qui accélèrent la croissance de vos ventes.",
+    "footerDesc": "Ciblix trouve vos clients pendant que vous dormez, et écrit vos comptes rendus pendant que vous vendez.",
     "footerProduct": "Produit",
     "footerResources": "Ressources",
     "footerCompany": "Entreprise",
@@ -1130,8 +1130,8 @@
   },
   "tarifs": {
     "badge": "Essai 7 jours · sans carte bancaire",
-    "title": "Trois plans. Une seule solution complète.",
-    "subtitle": "Prospecteur, Veilleur, Analyste et Assistant inclus partout. Vous choisissez selon votre usage et le nombre d’utilisateurs.",
+    "title": "Facturé par commercial actif — pas par « crédits IA ».",
+    "subtitle": "Trois niveaux : Découverte, Équipe, Direction. Le Scribe et la résurgence sont au cœur de l’offre Équipe.",
     "monthly": "Mensuel",
     "yearly": "Annuel (−2 mois)",
     "perMonth": "{{symbol}}/mois",
@@ -1156,34 +1156,37 @@
     },
     "tiers": {
       "essentiel": {
-        "name": "Essentiel",
-        "users": "1 utilisateur",
-        "actions": "100 actions IA / mois",
+        "name": "Découverte",
+        "users": "1 commercial actif",
+        "actions": "Volume limité · 100 actions / mois",
         "features": [
-          "Solution complète (4 agents)",
+          "Prospection + qualification",
+          "Écran Aujourd’hui",
+          "Messages préparés à valider",
           "Essai 7 jours inclus"
         ]
       },
       "croissance": {
-        "name": "Croissance",
-        "users": "3 utilisateurs",
-        "actions": "300 actions IA / mois",
+        "name": "Équipe",
+        "users": "Jusqu’à 3 commerciaux actifs",
+        "actions": "300 actions / mois",
         "features": [
-          "Solution complète (4 agents)",
-          "Gmail (connecteur)",
-          "Mémoire partagée & pipeline",
+          "Tout Découverte",
+          "Scribe (dictée 15 s)",
+          "Résurgence automatique",
+          "Mémoire commerciale",
           "Essai 7 jours inclus"
         ]
       },
       "pro": {
-        "name": "Pro",
-        "users": "10 utilisateurs",
-        "actions": "1 000 actions IA / mois",
+        "name": "Direction",
+        "users": "Jusqu’à 10 commerciaux actifs",
+        "actions": "1 000 actions / mois",
         "features": [
-          "Solution complète (4 agents)",
-          "Gmail (connecteur)",
-          "Dépassement soft-cap autorisé",
-          "Webhook CRM externe",
+          "Tout Équipe",
+          "Plusieurs marchés",
+          "Connecteur CRM (webhook)",
+          "Support prioritaire",
           "Essai 7 jours inclus"
         ]
       }

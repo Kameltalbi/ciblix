@@ -881,17 +881,17 @@ export function LandingFooter() {
     { label: t('landing.navFeatures'), href: '/fonctionnalites', isRoute: true },
     { label: t('landing.navSolutions'), href: '/solutions', isRoute: true },
     { label: t('landing.navPricing'), href: '/tarifs', isRoute: true },
-    { label: t('landing.footerSecurity'), href: '#resources' },
+    { label: t('landing.footerSecurity'), href: '/securite', isRoute: true },
   ];
   const resources = [
     { label: t('landing.navResources'), href: '/ressources', isRoute: true },
-    { label: t('landing.footerBlog'), href: '/ressources', isRoute: true },
-    { label: t('landing.footerDocs'), href: '/ressources', isRoute: true },
-    { label: t('landing.footerFaq'), href: '/ressources', isRoute: true },
+    { label: t('landing.footerBlog'), href: '/blog', isRoute: true },
+    { label: t('landing.footerDocs'), href: '/documentation', isRoute: true },
+    { label: t('landing.footerFaq'), href: '/faq', isRoute: true },
   ];
-  const company = [
-    { label: t('landing.footerAbout'), href: 'mailto:contact@ciblix.com?subject=%C3%80%20propos%20de%20Ciblix' },
-    { label: t('landing.footerContact'), href: 'mailto:contact@ciblix.com' },
+  const company: Array<{ label: string; to: string }> = [
+    { label: t('landing.footerAbout'), to: '/a-propos' },
+    { label: t('landing.footerContact'), to: '/contact' },
     { label: t('landing.footerPrivacy'), to: '/legal/privacy' },
     { label: t('landing.footerTerms'), to: '/legal/cgu' },
   ];
@@ -954,15 +954,9 @@ export function LandingFooter() {
             <ul className="space-y-3">
               {company.map((item) => (
                 <li key={item.label}>
-                  {'to' in item && item.to ? (
-                    <Link to={item.to} className={footerLinkClass}>
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <a href={'href' in item ? item.href : '#'} className={footerLinkClass}>
-                      {item.label}
-                    </a>
-                  )}
+                  <Link to={item.to} className={footerLinkClass}>
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -95,23 +95,81 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
       ? Math.min(60, Math.floor(payload.importMax))
       : 40;
 
-  const { importProspectsFromSearch } = await import('../prospecting/importProspectsFromSearch.js');
-  const { qualifyFoundBatchForOrganization } = await import(
-    '../prospecting/qualifyFoundBatchOrg.js'
-  );
-
-  const imp = await importProspectsFromSearch(task.organizationId, criteria, {
-    refresh: payload.refresh === true,
-    importMax,
+  // 1) Interroger d’abord le référentiel mutualisé
+  const { queryReferentielForTenant, linkReferentielToTenantFiche, ingestPublicCompanyFromHunt } =
+    await import('../referentiel/index.js');
+  const refHits = await queryReferentielForTenant(task.organizationId, {
+    sectors: targeting.sectors,
+    zones: [...targeting.cities, ...targeting.regions, ...targeting.markets],
+    countries: targeting.countries,
+    keywords: targeting.keywords,
+    excludeCompanyNames: targeting.excludeCompanies,
+    take: importMax,
   });
 
+  let fromReferentiel = 0;
+  for (const hit of refHits) {
+    const linked = await linkReferentielToTenantFiche({
+      organizationId: task.organizationId,
+      entrepriseId: hit.id,
+      createdVia: 'HUNT',
+    });
+    if (linked.created) fromReferentiel++;
+  }
+
+  // 2) Si couverture insuffisante → collecte externe, puis enrichir le référentiel
+  const needExternal = refHits.length < Math.max(8, Math.floor(importMax / 3));
+  let imp = {
+    count: 0,
+    skippedExisting: 0,
+    rawHits: 0,
+    providerUsed: 'none' as string,
+    fromCache: false,
+  };
   let qualified = 0;
-  if (imp.count > 0) {
-    const q = await qualifyFoundBatchForOrganization(
-      task.organizationId,
-      Math.min(80, Math.max(10, importMax))
+
+  if (needExternal) {
+    const { importProspectsFromSearch } = await import('../prospecting/importProspectsFromSearch.js');
+    const { qualifyFoundBatchForOrganization } = await import(
+      '../prospecting/qualifyFoundBatchOrg.js'
     );
-    qualified = q.qualifiedCount;
+
+    imp = await importProspectsFromSearch(task.organizationId, criteria, {
+      refresh: payload.refresh === true,
+      importMax,
+    });
+
+    if (imp.count > 0) {
+      const q = await qualifyFoundBatchForOrganization(
+        task.organizationId,
+        Math.min(80, Math.max(10, importMax))
+      );
+      qualified = q.qualifiedCount;
+    }
+
+    const freshProspects = await prisma.aiProspect.findMany({
+      where: { organizationId: task.organizationId, deletedAt: null },
+      orderBy: { updatedAt: 'desc' },
+      take: Math.min(40, importMax),
+      select: {
+        companyName: true,
+        website: true,
+        city: true,
+        country: true,
+        industry: true,
+        phone: true,
+        email: true,
+        companySize: true,
+      },
+    });
+    for (const p of freshProspects) {
+      if (!p.companyName?.trim()) continue;
+      try {
+        await ingestPublicCompanyFromHunt(p);
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   const prospects = await prisma.aiProspect.findMany({
@@ -160,8 +218,42 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
     handedToEnrich += 1;
   }
 
+  if (fromReferentiel > 0) {
+    const ficheContacts = await prisma.contact.findMany({
+      where: {
+        organizationId: task.organizationId,
+        erasedAt: null,
+        ficheEtat: 'DECOUVERTE',
+        entrepriseReferentielId: { not: null },
+      },
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, companyName: true },
+    });
+    for (const c of ficheContacts) {
+      if (!c.companyName) continue;
+      await enqueueAgentTask({
+        organizationId: task.organizationId,
+        assignee: 'ANALYSTE',
+        kind: 'ANALYZE_FIT',
+        priority: 70,
+        contactId: c.id,
+        dedupeKey: `analyze:ref:${c.id}`,
+        payload: {
+          contactId: c.id,
+          companyName: c.companyName,
+          triggeredBy: 'referentiel',
+        },
+      });
+    }
+  }
+
   return {
     criteria,
+    fromReferentiel,
+    referentielHits: refHits.length,
+    usedExternalCollecte: needExternal,
+    coverageWithoutExternal: !needExternal,
     imported: imp.count,
     fromCache: imp.fromCache,
     providerUsed: imp.providerUsed,

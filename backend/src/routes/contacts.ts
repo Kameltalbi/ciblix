@@ -76,6 +76,47 @@ contactsRoutes.get('/:id/events', async (req: AuthRequest, res: Response, next: 
 
 contactsRoutes.get('/:id/suggestions', listContactSuggestionsHandler);
 
+/** Reprendre le contact → Rédacteur (PREPARE_OUTREACH). Pas d’édition de champs. */
+contactsRoutes.post('/:id/reprendre', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const contactId = String(req.params.id);
+    const contact = await getContactById(req.organizationId!, contactId);
+    if (!contact) return res.status(404).json({ error: 'Contact introuvable' });
+
+    const { enqueueAgentTask } = await import('../services/agent-team/agentTaskService.js');
+    await enqueueAgentTask({
+      organizationId: req.organizationId!,
+      assignee: 'COPILOT',
+      kind: 'PREPARE_OUTREACH',
+      priority: 85,
+      contactId,
+      dedupeKey: `outreach:reprendre:${contactId}:${Date.now()}`,
+      payload: {
+        contactId,
+        companyName: contact.companyName || contact.name,
+        triggeredBy: 'reprendre_contact',
+      },
+    });
+
+    // Remettre dans le flux actif si archivée / perdue (sans édition de champs métier)
+    if (contact.ficheEtat === 'ARCHIVEE' || contact.ficheEtat === 'PERDUE') {
+      const { prisma } = await import('../db/prisma.js');
+      await prisma.contact.update({
+        where: { id: contactId },
+        data: {
+          ficheEtat: 'CONTACTEE',
+          ficheEtatAt: new Date(),
+          ficheBlockReason: null,
+        },
+      });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 contactsRoutes.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const contactId = String(req.params.id);

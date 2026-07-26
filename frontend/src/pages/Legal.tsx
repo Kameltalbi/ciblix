@@ -1,153 +1,151 @@
 import { useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LandingFooter, LandingHeader } from '@/components/landing/LandingSections';
+import { Link } from 'react-router-dom';
+import { PublicHero, PublicPageShell, PublicSection } from '@/components/landing/PublicPageShell';
+
+type Section = { title: string; content: string };
+
+const CONTENT: Record<string, { title: string; sections: Section[] }> = {
+  cgu: {
+    title: "Conditions Générales d'Utilisation",
+    sections: [
+      {
+        title: '1. Acceptation',
+        content:
+          'En utilisant la plateforme Ciblix, vous acceptez les présentes conditions. Si vous n’acceptez pas ces conditions, n’utilisez pas le service.',
+      },
+      {
+        title: '2. Description du service',
+        content:
+          'Ciblix est une plateforme d’agents IA pour le développement commercial, destinée aux PME en Tunisie et en Afrique francophone. Elle aide à identifier des entreprises à contacter, préparer des messages, et capturer le suivi après échange (notamment par dictée). Ciblix n’est pas un CRM classique : les fiches sont principalement écrites par les agents et lues par l’humain.',
+      },
+      {
+        title: '3. Compte utilisateur',
+        content:
+          'Vous êtes responsable de la confidentialité de vos identifiants. Toute activité réalisée via votre compte est réputée effectuée sous votre responsabilité.',
+      },
+      {
+        title: '4. Données et cloisonnement',
+        content:
+          'Vos échanges, contacts et notes appartiennent à votre organisation et ne sont pas partagés avec d’autres clients. Les faits publics d’entreprise (ex. raison sociale, secteur) peuvent alimenter un référentiel mutualisé distinct de votre intelligence commerciale. Voir la Politique de confidentialité.',
+      },
+      {
+        title: '5. Contenu généré par IA',
+        content:
+          'Les messages et suggestions générés sont des aides à la décision. Rien n’est envoyé à vos clients sans votre validation lorsque le produit le prévoit. Vous restez responsable du contenu finalement transmis.',
+      },
+      {
+        title: '6. Paiements',
+        content:
+          'Les abonnements sont facturés selon les tarifs en vigueur (notamment par commercial actif). Les modalités de renouvellement et d’essai sont indiquées lors de l’inscription et dans l’espace facturation.',
+      },
+      {
+        title: '7. Limitation de responsabilité',
+        content:
+          'Ciblix ne peut être tenu responsable des dommages indirects résultant de l’usage du service, dans les limites autorisées par la loi applicable.',
+      },
+      {
+        title: '8. Résiliation',
+        content:
+          'Vous pouvez cesser d’utiliser le service selon les modalités de votre abonnement. Ciblix peut suspendre un compte en cas de violation des présentes conditions.',
+      },
+    ],
+  },
+  privacy: {
+    title: 'Politique de Confidentialité',
+    sections: [
+      {
+        title: '1. Responsable',
+        content: 'Pour toute question relative aux données : contact@ciblix.com',
+      },
+      {
+        title: '2. Données collectées',
+        content:
+          'Compte (identité, email), données d’organisation, fiches commerciales et historiques d’interaction liés à votre usage, données techniques de connexion et d’usage nécessaires au service.',
+      },
+      {
+        title: '3. Finalités',
+        content:
+          'Fournir le service (prospection assistée, qualification, préparation de messages, suivi dicté), améliorer la pertinence des propositions pour votre organisation, assurer la sécurité, et respecter les obligations légales.',
+      },
+      {
+        title: '4. Cloisonnement multi-client',
+        content:
+          'L’intelligence commerciale de votre organisation (historique, décideurs, scores, notes) est isolée. Un autre client ne peut pas y accéder. Les faits publics d’entreprise peuvent être traités séparément dans un référentiel mutualisé.',
+      },
+      {
+        title: '5. Partage',
+        content:
+          'Pas de vente de vos données commerciales. Partage limité aux prestataires nécessaires au fonctionnement (hébergement, paiement, APIs IA) sous contrat, ou obligation légale.',
+      },
+      {
+        title: '6. Conservation',
+        content:
+          'Les fiches et historiques commerciaux sont conservés pour la durée utile du service et de la relation contractuelle, sauf demande d’effacement ou obligation légale contraire. Certains contenus bruts sensibles peuvent être soumis à une durée de rétention limitée.',
+      },
+      {
+        title: '7. Vos droits',
+        content:
+          'Selon la législation applicable (notamment en Tunisie), vous pouvez demander l’accès, la rectification ou l’effacement de données personnelles. Contact : contact@ciblix.com',
+      },
+      {
+        title: '8. Cookies',
+        content:
+          'Des cookies techniques sont utilisés pour le fonctionnement du service (session, préférences). Vous pouvez configurer votre navigateur pour les limiter.',
+      },
+    ],
+  },
+  terms: {
+    title: 'Mentions légales',
+    sections: [
+      {
+        title: '1. Éditeur',
+        content:
+          'Ciblix — plateforme d’agents IA pour le développement commercial. Contact : contact@ciblix.com — Téléphone : +216 55 053 505.',
+      },
+      {
+        title: '2. Hébergement',
+        content:
+          'Le service est hébergé sur une infrastructure sécurisée opérée pour Ciblix. Les détails d’hébergement peuvent être communiqués sur demande légitime.',
+      },
+      {
+        title: '3. Propriété intellectuelle',
+        content:
+          'Ciblix, le logiciel, le design et les contenus éditoriaux sont protégés. Toute reproduction non autorisée est interdite.',
+      },
+      {
+        title: '4. Documents liés',
+        content: 'CGU : /legal/cgu — Confidentialité : /legal/privacy — Sécurité : /securite',
+      },
+    ],
+  },
+};
 
 export function Legal() {
-  const { t } = useTranslation();
-  const { type } = useParams<{ type: 'cgu' | 'privacy' | 'terms' }>();
-
-  const content = {
-    cgu: {
-      title: "Conditions Générales d'Utilisation",
-      sections: [
-        {
-          title: '1. Acceptation des CGU',
-          content:
-            "En utilisant la plateforme CIBLIX, vous acceptez les présentes conditions générales d'utilisation.",
-        },
-        {
-          title: '2. Description du service',
-          content:
-            "CIBLIX est une plateforme d'intelligence commerciale et de prospection assistée par IA, destinée aux entreprises tunisiennes. Elle permet de suivre contacts, opportunités, relances et activités liées à la vente.",
-        },
-        {
-          title: '3. Compte utilisateur',
-          content:
-            "L'utilisateur est responsable de la confidentialité de ses identifiants de connexion. Toute utilisation du compte par un tiers est sous la responsabilité de l'utilisateur.",
-        },
-        {
-          title: '4. Données personnelles',
-          content:
-            "Les données personnelles sont traitées conformément à notre politique de confidentialité et à la législation applicable. Ciblix fournit les mécanismes techniques de consentement et d'effacement ; le client reste responsable de l'obtention du consentement auprès de ses propres contacts (WhatsApp, enregistrement d'appels).",
-        },
-        {
-          title: '5. Paiements',
-          content:
-            'Les paiements sont effectués via notre partenaire de paiement sécurisé. Les abonnements sont renouvelables automatiquement sauf annulation.',
-        },
-        {
-          title: '6. Limitation de responsabilité',
-          content:
-            "CIBLIX ne peut être tenu responsable des dommages directs ou indirects résultant de l'utilisation ou de l'impossibilité d'utiliser le service.",
-        },
-        {
-          title: '7. Propriété intellectuelle',
-          content:
-            'Tous les éléments du service (logiciel, design, contenu) sont la propriété exclusive de CIBLIX.',
-        },
-        {
-          title: '8. Résiliation',
-          content:
-            "L'utilisateur peut résilier son compte à tout moment. CIBLIX se réserve le droit de suspendre ou résilier un compte en cas de violation des CGU.",
-        },
-      ],
-    },
-    privacy: {
-      title: 'Politique de Confidentialité',
-      sections: [
-        {
-          title: '1. Collecte des données',
-          content:
-            "Nous collectons les données nécessaires à l'utilisation du service : informations de compte, données clients, opportunités commerciales, et données d'utilisation.",
-        },
-        {
-          title: '2. Utilisation des données',
-          content:
-            "Vos données sont utilisées pour : fournir le service, améliorer l'expérience utilisateur, assurer la sécurité, et respecter nos obligations légales.",
-        },
-        {
-          title: '3. Partage des données',
-          content:
-            'Nous ne partageons pas vos données avec des tiers, sauf : (a) avec votre consentement, (b) pour fournir le service, (c) obligation légale.',
-        },
-        {
-          title: '4. Sécurité des données',
-          content:
-            "Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles pour protéger vos données (encryption, backups, contrôles d'accès).",
-        },
-        {
-          title: '5. Vos droits',
-          content:
-            "Vous avez le droit d'accéder, rectifier, supprimer vos données personnelles. Contactez-nous pour exercer ces droits.",
-        },
-        {
-          title: '6. Conservation des données',
-          content:
-            'Vos données sont conservées tant que votre compte est actif. Après résiliation, elles sont supprimées conformément à la législation tunisienne.',
-        },
-        {
-          title: '7. Cookies',
-          content:
-            "Nous utilisons des cookies pour améliorer l'expérience utilisateur. Vous pouvez configurer votre navigateur pour refuser les cookies.",
-        },
-        {
-          title: '8. Contact',
-          content: 'Pour toute question sur vos données personnelles : contact@crmtunisie.tn',
-        },
-      ],
-    },
-    terms: {
-      title: 'Mentions Légales',
-      sections: [
-        {
-          title: '1. Éditeur du service',
-          content: 'CIBLIX - [Adresse légale] - [Matricule fiscal] - [Registre commerce]',
-        },
-        {
-          title: '2. Contact',
-          content: 'Email : contact@crmtunisie.tn - Téléphone : +216 55 053 505',
-        },
-        {
-          title: '3. Hébergement',
-          content: 'Le service est hébergé sur des serveurs situés en Tunisie.',
-        },
-        {
-          title: '4. Propriété intellectuelle',
-          content: 'CIBLIX est une marque déposée. Tous droits réservés.',
-        },
-      ],
-    },
-  };
-
-  const currentContent = content[type as keyof typeof content] || content.cgu;
+  const { type } = useParams<{ type: string }>();
+  const current = CONTENT[type || ''] || CONTENT.cgu;
 
   return (
-    <div className="min-h-screen bg-white">
-      <LandingHeader />
-      <main className="bg-gray-50 px-4 py-12">
-        <div className="mx-auto max-w-4xl">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl">{currentContent.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {currentContent.sections.map((section, idx) => (
-                  <div key={idx}>
-                    <h3 className="mb-2 text-xl font-semibold">{section.title}</h3>
-                    <p className="whitespace-pre-line text-gray-600">{section.content}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 border-t pt-8 text-sm text-gray-500">
-                <p>{t('legal.lastUpdated', { defaultValue: 'Dernière mise à jour : Mai 2026' })}</p>
-              </div>
-            </CardContent>
-          </Card>
+    <PublicPageShell>
+      <PublicHero eyebrow="Légal" title={current.title} subtitle="Dernière mise à jour : juillet 2026" />
+      <PublicSection>
+        <div className="space-y-8">
+          {current.sections.map((section) => (
+            <div key={section.title}>
+              <h2 className="mb-2 text-lg font-semibold">{section.title}</h2>
+              <p className="whitespace-pre-line text-muted-foreground leading-relaxed">{section.content}</p>
+            </div>
+          ))}
         </div>
-      </main>
-      <LandingFooter />
-    </div>
+        <p className="mt-10 text-sm text-muted-foreground">
+          <Link to="/securite" className="font-semibold text-[#016AEB] hover:underline">
+            Page Sécurité
+          </Link>
+          {' · '}
+          <Link to="/contact" className="font-semibold text-[#016AEB] hover:underline">
+            Contact
+          </Link>
+        </p>
+      </PublicSection>
+    </PublicPageShell>
   );
 }

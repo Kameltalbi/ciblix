@@ -296,3 +296,54 @@ agentTeamRoutes.get('/fiches/:contactId/journal', async (req: AuthRequest, res, 
     next(err);
   }
 });
+
+const correctionSchema = z.object({
+  entrepriseId: z.string().min(1),
+  type: z.enum([
+    'ENTREPRISE_FERMEE',
+    'ADRESSE_ERRONEE',
+    'TELEPHONE_ERRONE',
+    'SITE_INVALIDE',
+    'SECTEUR_FAUX',
+    'DOUBLON',
+  ]),
+  champ: z.string().max(80).optional().nullable(),
+  valeurApres: z.string().max(2000).optional().nullable(),
+  motif: z.string().max(1000).optional().nullable(),
+});
+
+/** Signalement remontant (faits publics) — jamais de décideur / score / historique. */
+agentTeamRoutes.post('/referentiel/corrections', async (req: AuthRequest, res, next) => {
+  try {
+    const body = correctionSchema.parse(req.body);
+    const { reportReferentielCorrection } = await import('../services/referentiel/index.js');
+    const created = await reportReferentielCorrection({
+      organizationId: req.organizationId!,
+      userId: req.userId!,
+      entrepriseId: body.entrepriseId,
+      type: body.type,
+      champ: body.champ,
+      valeurApres: body.valeurApres,
+      motif: body.motif,
+    });
+    res.json({ correction: created });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'CORRECTION_RATE_LIMIT') {
+      return res.status(429).json({ error: 'Trop de signalements aujourd’hui' });
+    }
+    next(err);
+  }
+});
+
+agentTeamRoutes.get('/referentiel/corrections', async (req: AuthRequest, res, next) => {
+  try {
+    const rows = await prisma.referentielCorrection.findMany({
+      where: { organizationId: req.organizationId! },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    res.json({ corrections: rows });
+  } catch (err) {
+    next(err);
+  }
+});

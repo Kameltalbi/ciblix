@@ -54,6 +54,13 @@ async function tickOnce(): Promise<void> {
     } catch (err) {
       console.warn('[agent-memory-scheduler] trial tick', err);
     }
+    try {
+      const { refreshReferentielFreshnessScores } = await import('../referentiel/freshness.js');
+      const n = await refreshReferentielFreshnessScores(400);
+      if (n > 0) console.log('[agent-memory-scheduler] referentiel freshness updated', n);
+    } catch (err) {
+      console.warn('[agent-memory-scheduler] referentiel freshness', err);
+    }
   }
 
   if (now - lastWeeklyRetry > 7 * DAY_MS) {

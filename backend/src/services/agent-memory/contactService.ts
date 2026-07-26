@@ -173,7 +173,7 @@ export async function listContacts(
     sort?: 'pipelineStatusAt' | 'createdAt';
     sortDir?: 'asc' | 'desc';
   } = {}
-): Promise<{ items: Contact[]; total: number }> {
+): Promise<{ items: Array<Partial<Contact> & { id: string }>; total: number }> {
   const take = Math.min(opts.take ?? 30, 100);
   const skip = opts.skip ?? 0;
   const search = opts.search?.trim();
@@ -203,6 +203,19 @@ export async function listContacts(
       orderBy: { [sortField]: sortDir },
       take,
       skip,
+      select: {
+        id: true,
+        name: true,
+        companyName: true,
+        email: true,
+        phone: true,
+        createdVia: true,
+        createdAt: true,
+        ficheEtat: true,
+        ficheData: true,
+        pipelineStatus: true,
+        pipelineStatusAt: true,
+      },
     }),
     prisma.contact.count({ where }),
   ]);
@@ -210,8 +223,29 @@ export async function listContacts(
   return { items, total };
 }
 
-export async function getContactById(organizationId: string, contactId: string): Promise<Contact | null> {
+export async function getContactById(organizationId: string, contactId: string) {
   return prisma.contact.findFirst({
     where: { id: contactId, organizationId, erasedAt: null },
+    include: {
+      entrepriseReferentiel: {
+        select: {
+          id: true,
+          nomLegal: true,
+          secteur: true,
+          zoneGeographique: true,
+          adresseSiege: true,
+          telephoneStandard: true,
+          emailGenerique: true,
+          siteWeb: true,
+          identifiantNational: true,
+          anneeCreation: true,
+          tailleEstimee: true,
+          statutActivite: true,
+          scoreFraicheur: true,
+          dateDerniereVerification: true,
+          sources: true,
+        },
+      },
+    },
   });
 }

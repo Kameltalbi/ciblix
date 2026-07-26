@@ -1,20 +1,44 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Bot, ExternalLink } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import {
-  ContactTimeline,
-  CrossAgentBanner,
-  type AgentEventItem,
-} from '@/components/contact/ContactTimeline';
-import { SuggestionBanner, type SuggestionItem } from '@/components/contact/SuggestionBanner';
+import { FicheEntreprise } from '@/components/fiche-entreprise';
+import type { FicheEntrepriseDataView } from '@/components/fiche-entreprise/types';
+
+type ContactApi = {
+  id: string;
+  name?: string | null;
+  companyName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  whatsappId?: string | null;
+  ficheEtat?: string | null;
+  ficheData?: FicheEntrepriseDataView | null;
+  entrepriseReferentiel?: {
+    nomLegal?: string | null;
+    secteur?: string | null;
+    zoneGeographique?: string | null;
+    adresseSiege?: string | null;
+    telephoneStandard?: string | null;
+    emailGenerique?: string | null;
+    siteWeb?: string | null;
+    identifiantNational?: string | null;
+    anneeCreation?: number | null;
+    tailleEstimee?: string | null;
+    statutActivite?: string | null;
+    scoreFraicheur?: number | null;
+    dateDerniereVerification?: string | null;
+  } | null;
+};
 
 export function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const [dictationOpen, setDictationOpen] = useState(false);
+  const [dictationText, setDictationText] = useState('');
+  const [dictationPrompt, setDictationPrompt] = useState<string | null>(null);
 
   const { data, isPending, error } = useQuery({
     queryKey: ['contact', id],
@@ -22,137 +46,178 @@ export function ContactDetail() {
     enabled: Boolean(id),
   });
 
-  const consentMutation = useMutation({
-    mutationFn: () => api.post(`/integrations/whatsapp/consent/${id}`).then((r) => r.data),
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const raw = sessionStorage.getItem(`ciblix_outbound_${id}`);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { canal?: string; name?: string; at?: number };
+      if (!parsed.at || Date.now() - parsed.at > 2 * 3600_000) {
+        sessionStorage.removeItem(`ciblix_outbound_${id}`);
+        return;
+      }
+      const who = parsed.name || 'le contact';
+      const verb = parsed.canal === 'whatsapp' ? 'écrit sur WhatsApp à' : 'appelé';
+      setDictationPrompt(`Vous venez d’${verb} ${who}. Dictez votre note ?`);
+    } catch {
+      /* ignore */
+    }
+  }, [id]);
+
+  const reprendre = useMutation({
+    mutationFn: () => api.post(`/contacts/${id}/reprendre`).then((r) => r.data),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['contact', id] }),
   });
 
-  if (isPending) return <p className="text-sm text-muted-foreground p-4">Chargement…</p>;
-  if (error || !data?.contact) {
-    return <p className="text-sm text-destructive p-4">Contact introuvable.</p>;
+  const scribe = useMutation({
+    mutationFn: (texteBrut: string) =>
+      api
+        .post('/agent-team/scribe/ingest', {
+          contactId: id,
+          texteBrut,
+          canal: 'vocal',
+        })
+        .then((r) => r.data),
+    onSuccess: () => {
+      setDictationOpen(false);
+      setDictationText('');
+      setDictationPrompt(null);
+      if (id) sessionStorage.removeItem(`ciblix_outbound_${id}`);
+      void qc.invalidateQueries({ queryKey: ['contact', id] });
+    },
+  });
+
+  const contact = data?.contact as ContactApi | undefined;
+  const fiche = (contact?.ficheData || {}) as FicheEntrepriseDataView;
+  const ref = contact?.entrepriseReferentiel;
+
+  const mapped = useMemo(() => {
+    if (!contact) return null;
+    const decideur = fiche.decideur
+      ? {
+          nom: fiche.decideur.nom,
+          fonction: fiche.decideur.fonction,
+          canal_prefere: fiche.decideur.canal_prefere,
+          phone: contact.phone,
+          email: contact.email,
+          whatsapp: contact.whatsappId || contact.phone,
+        }
+      : contact.phone || contact.email || contact.whatsappId
+        ? {
+            nom: contact.name,
+            phone: contact.phone,
+            email: contact.email,
+            whatsapp: contact.whatsappId || contact.phone,
+          }
+        : null;
+
+    return {
+      nomLegal:
+        fiche.identite_entreprise?.nom_legal ||
+        ref?.nomLegal ||
+        contact.companyName ||
+        contact.name ||
+        'Entreprise',
+      secteur: fiche.secteur_declare || ref?.secteur,
+      ville: fiche.zone_geographique || ref?.zoneGeographique,
+      decideur,
+      besoinDetecte: fiche.besoin_detecte,
+      raisonDuScore: fiche.raison_du_score,
+      prochaineAction: fiche.prochaine_action,
+      dateRelance: fiche.date_relance,
+      messageBrouillon: fiche.message_brouillon,
+      messageCanal: fiche.message_canal,
+      historique: fiche.historique_interactions,
+      objections: fiche.objections_detectees,
+      signaux: fiche.signaux_externes,
+      scoreFit: fiche.score_fit,
+      ficheEtat: contact.ficheEtat,
+      referentiel: ref
+        ? {
+            adresseSiege: ref.adresseSiege,
+            telephoneStandard: ref.telephoneStandard,
+            emailGenerique: ref.emailGenerique,
+            siteWeb: ref.siteWeb,
+            identifiantNational: ref.identifiantNational,
+            anneeCreation: ref.anneeCreation,
+            tailleEstimee: ref.tailleEstimee || fiche.taille_estimee,
+            statutActivite: ref.statutActivite,
+            scoreFraicheur: ref.scoreFraicheur,
+            dateDerniereVerification: ref.dateDerniereVerification,
+            sourceLabel: 'Référentiel Ciblix',
+          }
+        : {
+            telephoneStandard: contact.phone,
+            emailGenerique: contact.email,
+            tailleEstimee: fiche.taille_estimee,
+          },
+      resurgence: Boolean(fiche.signaux_externes?.length && fiche.historique_interactions?.length),
+    };
+  }, [contact, fiche, ref]);
+
+  if (isPending) return <p className="p-4 text-sm text-muted-foreground">Chargement…</p>;
+  if (error || !contact || !mapped) {
+    return <p className="p-4 text-sm text-destructive">Contact introuvable.</p>;
   }
 
-  const { contact, events, suggestions } = data as {
-    contact: {
-      id: string;
-      name?: string | null;
-      companyName?: string | null;
-      email?: string | null;
-      phone?: string | null;
-      whatsappId?: string | null;
-      whatsappConsentAt?: string | null;
-      createdVia?: string;
-      pipelineStatusScore?: number | null;
-      createdAt?: string;
-    };
-    events: AgentEventItem[];
-    suggestions?: SuggestionItem[];
-  };
-  const timelineEvents = events || [];
-  const pendingSuggestions = suggestions || [];
-  const score = contact.pipelineStatusScore;
-  const whyDetected = timelineEvents.find((e) => e.resume)?.resume;
-
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="relative min-h-[70vh]">
+      <div className="mx-auto mb-3 flex max-w-lg items-center gap-2 px-1">
         <Link to="/contacts">
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button variant="ghost" size="sm" className="h-10 gap-1.5 px-2">
             <ArrowLeft size={14} /> Retour
           </Button>
         </Link>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
-            <span>{contact.companyName || contact.name || 'Résultat agent'}</span>
-            {score != null ? (
-              <span
-                className={cn(
-                  'text-xs font-semibold px-2 py-0.5 rounded-md tabular-nums',
-                  score >= 70
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : score >= 40
-                      ? 'bg-amber-50 text-amber-700'
-                      : 'bg-slate-100 text-slate-600'
-                )}
+      <FicheEntreprise
+        contactId={contact.id}
+        {...mapped}
+        dictationPrompt={dictationPrompt}
+        onDismissDictationPrompt={() => {
+          setDictationPrompt(null);
+          if (id) sessionStorage.removeItem(`ciblix_outbound_${id}`);
+        }}
+        onReprendre={() => reprendre.mutate()}
+        onVoirMessage={() => reprendre.mutate()}
+        onDicter={() => setDictationOpen(true)}
+      />
+
+      {dictationOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h2 className="text-base font-medium">Dicter une note</h2>
+            <p className="mt-1 text-xs text-neutral-500">
+              Quinze secondes suffisent. Le Scribe écrit le suivi — aucun champ à remplir.
+            </p>
+            <textarea
+              className="mt-4 min-h-[120px] w-full rounded-xl border border-neutral-200 px-3 py-2 text-[13px] outline-none focus:border-[#016AEB]"
+              placeholder="J’ai eu Trabelsi, intéressé mais budget bloqué jusqu’en septembre…"
+              value={dictationText}
+              onChange={(e) => setDictationText(e.target.value)}
+              autoFocus
+            />
+            <div className="mt-4 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 flex-1"
+                onClick={() => setDictationOpen(false)}
               >
-                Score IA {Math.round(score)}
-              </span>
-            ) : null}
-          </CardTitle>
-          {whyDetected ? (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              Pourquoi détecté : {whyDetected}
-            </p>
-          ) : null}
-        </CardHeader>
-        <CardContent className="text-sm space-y-1 text-muted-foreground">
-          {contact.name ? <p>Contact : {contact.name}</p> : null}
-          {contact.companyName ? <p>Entreprise : {contact.companyName}</p> : null}
-          {contact.email ? <p>Email : {contact.email}</p> : null}
-          {contact.phone ? <p>Téléphone : {contact.phone}</p> : null}
-          {contact.createdVia ? <p>Source : {contact.createdVia}</p> : null}
-          {contact.createdAt ? (
-            <p>
-              Détecté le{' '}
-              {new Date(contact.createdAt).toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
-          ) : null}
-          {contact.whatsappId ? (
-            <p>
-              WhatsApp : {contact.whatsappId}
-              {contact.whatsappConsentAt ? (
-                <span className="text-emerald-700"> · consentement OK</span>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-2 h-7"
-                  onClick={() => consentMutation.mutate()}
-                  disabled={consentMutation.isPending}
-                >
-                  Enregistrer consentement WhatsApp
-                </Button>
-              )}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-wrap gap-2">
-        <Link to={`/agents/offre-bot?contactId=${contact.id}`}>
-          <Button variant="secondary" size="sm">
-            Générer une offre
-          </Button>
-        </Link>
-        <Link to="/ai-assistant">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Bot size={14} /> Ouvrir Copilot
-          </Button>
-        </Link>
-        <Link to="/agents/gmail-ai">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <ExternalLink size={14} /> Gmail IA
-          </Button>
-        </Link>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Historique</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SuggestionBanner contactId={contact.id} suggestions={pendingSuggestions} />
-          <CrossAgentBanner events={timelineEvents} />
-          <ContactTimeline events={timelineEvents} />
-        </CardContent>
-      </Card>
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                className="h-11 flex-1 bg-[#016AEB] hover:bg-[#0159c4]"
+                disabled={dictationText.trim().length < 8 || scribe.isPending}
+                onClick={() => scribe.mutate(dictationText.trim())}
+              >
+                Envoyer au Scribe
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
