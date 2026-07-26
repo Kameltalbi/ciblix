@@ -71,6 +71,7 @@ model Organization {
   agentEvents           AgentEvent[]
   contactDedupConflicts ContactDedupConflict[]
   suggestions           Suggestion[]
+  ficheTransitions      FicheTransition[]
   copilotOrgConfig      CopilotOrgConfig?
   copilotMessages       CopilotMessage[]
   /// TTL transcription brute (jours) — appliqué par le job de purge S3
@@ -1495,6 +1496,18 @@ enum ContactPipelineStatus {
   ARCHIVE
 }
 
+/// Machine à états commerciale (agents) — distincte de pipelineStatus (chaleur).
+enum FicheEntrepriseEtat {
+  DECOUVERTE
+  QUALIFIEE
+  CONTACTEE
+  EN_DISCUSSION
+  GAGNEE
+  PERDUE
+  ARCHIVEE
+  BLOQUEE_HUMAIN
+}
+
 model Contact {
   id             String   @id @default(cuid())
   organizationId String
@@ -1519,6 +1532,13 @@ model Contact {
   pipelineStatusScore Float?
   pipelineStatusAt    DateTime?
 
+  /// État de la fiche entreprise (chaîne Prospecteur→…→Scribe).
+  ficheEtat           FicheEntrepriseEtat?
+  ficheEtatAt         DateTime?
+  /// Payload JSON sous contrat de propriété (voir company-fiche/).
+  ficheData           Json?
+  ficheBlockReason    String?  @db.Text
+
   whatsappConsentAt DateTime?
 
   createdAt      DateTime @default(now())
@@ -1530,6 +1550,7 @@ model Contact {
   copilotMessages CopilotMessage[]
   dedupConflicts ContactDedupConflict[] @relation("ExistingContact")
   whatsappSessions WhatsappSessionBuffer[]
+  ficheTransitions FicheTransition[]
 
   @@index([organizationId])
   @@index([organizationId, phoneNormalized])
@@ -1538,7 +1559,34 @@ model Contact {
   @@index([organizationId, companyName])
   @@index([organizationId, pipelineStatus])
   @@index([organizationId, pipelineStatusAt])
+  @@index([organizationId, ficheEtat])
   @@map("contacts")
+}
+
+/// Journal d’activité / transitions d’état (observabilité).
+model FicheTransition {
+  id             String   @id @default(cuid())
+  organizationId String
+  contactId      String
+
+  etatPrecedent  String?
+  etatNouveau    String
+  agentEmetteur  String
+  champsEcrits   String[] @default([])
+  conditionOk    Boolean  @default(true)
+  raison         String   @db.Text
+  prochainAgent  String?
+  payload        Json?
+
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact        Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, contactId, createdAt])
+  @@index([organizationId, etatNouveau])
+  @@map("fiche_transitions")
 }
 
 model AgentEvent {
@@ -1898,6 +1946,7 @@ enum AgentRole {
   HUNT
   ANALYSTE
   COPILOT
+  SCRIBE
 }
 
 enum AgentTaskKind {
@@ -1906,6 +1955,8 @@ enum AgentTaskKind {
   ENRICH_COMPANY
   ANALYZE_FIT
   PREPARE_OUTREACH
+  /// Scribe — structurer une interaction (note / WhatsApp / email / vocal)
+  PROCESS_INTERACTION
 }
 
 enum AgentTaskStatus {

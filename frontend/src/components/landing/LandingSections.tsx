@@ -402,7 +402,7 @@ function UnifiedMemoryIllustration() {
   );
 }
 
-type TeamAgentId = 'prospecteur' | 'veilleur' | 'analyste' | 'assistant';
+type TeamAgentId = 'prospecteur' | 'analyste' | 'redacteur' | 'scribe';
 
 const TEAM_AGENTS: Array<{
   id: TeamAgentId;
@@ -410,9 +410,9 @@ const TEAM_AGENTS: Array<{
   accent: string;
 }> = [
   { id: 'prospecteur', Icon: Crosshair, accent: '#0EA5E9' },
-  { id: 'veilleur', Icon: Radar, accent: '#016AEB' },
   { id: 'analyste', Icon: Search, accent: '#1E72B9' },
-  { id: 'assistant', Icon: Bot, accent: '#0F766E' },
+  { id: 'redacteur', Icon: Mail, accent: '#0F766E' },
+  { id: 'scribe', Icon: ClipboardList, accent: '#016AEB' },
 ];
 
 function AgentDetailPanel({
@@ -578,9 +578,9 @@ export function LandingSolution() {
                 <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-neutral-500">
                   {t(`landingHome.team.${agent.id}.desc`)}
                 </p>
-                <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-neutral-400 transition group-hover:text-[#016AEB]">
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#016AEB]">
                   {t('landingHome.team.learnMore')}
-                  <ArrowRight size={12} />
+                  <ArrowRight size={14} />
                 </span>
               </button>
             </Reveal>
@@ -588,7 +588,23 @@ export function LandingSolution() {
         </div>
 
         <Reveal delay={0.25}>
-          <p className="mx-auto mt-12 max-w-2xl text-center text-sm leading-relaxed text-neutral-400">
+          <div className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-[#BED6F6]/60 bg-[#f7faff] px-6 py-5 text-center sm:flex-row sm:text-left">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#016AEB]/10 text-[#016AEB]">
+              <Radar size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-neutral-900">
+                {t('landingHome.team.veilleurLayerTitle')}
+              </p>
+              <p className="text-sm text-neutral-500">
+                {t('landingHome.team.veilleurLayerDesc')}
+              </p>
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.3}>
+          <p className="mt-8 text-center text-sm font-medium text-neutral-600 md:text-base">
             {t('landingHome.teamOrchestra')}
           </p>
         </Reveal>

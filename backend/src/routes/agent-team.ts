@@ -5,6 +5,11 @@ import { prisma } from '../db/prisma.js';
 import { overnightTeamStats } from '../services/agent-team/agentTaskService.js';
 import { enqueueAgentTask } from '../services/agent-team/agentTaskService.js';
 import { runOrchestratorTickNow } from '../services/agent-team/orchestrator.js';
+import {
+  ingestScribeInteraction,
+  listBloqueesHumain,
+  listFicheJournal,
+} from '../services/company-fiche/index.js';
 
 export const agentTeamRoutes = Router();
 
@@ -227,6 +232,66 @@ agentTeamRoutes.post('/run-now', async (req: AuthRequest, res, next) => {
     });
     void runOrchestratorTickNow();
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const scribeSchema = z.object({
+  contactId: z.string().min(1),
+  texteBrut: z.string().min(1).max(8000),
+  canal: z.enum(['whatsapp', 'email', 'appel', 'note', 'vocal']).default('note'),
+});
+
+/** Scribe — le commercial dicte / colle une note, le CRM se remplit. */
+agentTeamRoutes.post('/scribe/ingest', async (req: AuthRequest, res, next) => {
+  try {
+    const body = scribeSchema.parse(req.body);
+    const result = await ingestScribeInteraction({
+      organizationId: req.organizationId!,
+      contactId: body.contactId,
+      userId: req.userId!,
+      canal: body.canal,
+      texteBrut: body.texteBrut,
+    });
+    res.json({
+      etat: result.etat,
+      needsHumanChoice: result.needsHumanChoice,
+      options: result.options,
+      structured: result.structured,
+      champsEcrits: result.champsEcrits,
+      raison: result.transition.raison,
+      disclaimer: 'Relisez la prochaine action avant de l’exécuter.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** File « En attente de vous » */
+agentTeamRoutes.get('/attente-humain', async (req: AuthRequest, res, next) => {
+  try {
+    const items = await listBloqueesHumain(req.organizationId!, 50);
+    res.json({
+      count: items.length,
+      items: items.map((c) => ({
+        id: c.id,
+        companyName: c.companyName,
+        name: c.name,
+        motif: c.ficheBlockReason,
+        at: c.ficheEtatAt,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+agentTeamRoutes.get('/fiches/:contactId/journal', async (req: AuthRequest, res, next) => {
+  try {
+    const contactId = req.params.contactId as string;
+    const journal = await listFicheJournal(req.organizationId!, contactId, 40);
+    res.json({ journal });
   } catch (err) {
     next(err);
   }

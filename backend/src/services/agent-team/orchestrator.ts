@@ -12,6 +12,7 @@ import {
   handlePrepareOutreach,
   handleWatchSignals,
 } from './handlers.js';
+import { handleProcessInteraction } from './stateReaction.js';
 
 const TICK_MS = 60_000;
 const MAX_TASKS_PER_TICK = 8;
@@ -114,6 +115,9 @@ async function processOneTask(): Promise<boolean> {
       case 'PREPARE_OUTREACH':
         result = await handlePrepareOutreach(task);
         break;
+      case 'PROCESS_INTERACTION':
+        result = await handleProcessInteraction(task);
+        break;
       default:
         result = { skipped: true, reason: 'unknown_kind' };
     }
@@ -149,7 +153,7 @@ async function tickOnce(): Promise<void> {
 export function startAgentOrchestrator(): void {
   if (intervalId) return;
   console.log(
-    '[agent-orchestrator] actif (tick 60s) — cœur Prospecteur→Analyste→Assistant ; Veilleur secondaire'
+    '[agent-orchestrator] actif (tick 60s) — machine à états fiche ; Veilleur = couche transverse'
   );
   void tickOnce();
   intervalId = setInterval(() => {

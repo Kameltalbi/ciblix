@@ -711,126 +711,126 @@
     "howTitle": "Chaque agent a un rôle précis.",
     "howLead": "Pas besoin de tout activer d’un coup : choisissez l’agent selon le job du jour. Ils partagent la même mémoire prospect.",
     "howCta": "Essayer gratuitement →",
-    "teamTitle": "Une équipe d'agents IA. Un seul objectif : trouver des entreprises clientes.",
-    "teamLead": "Le Prospecteur mène la recherche d’entreprises. L’Analyste qualifie, l’Assistant prépare le contact. Le Veilleur apporte des signaux en complément — pas la liste de clients.",
+    "teamTitle": "Une équipe d'agents IA. Un seul objectif : remplir votre pipeline.",
+    "teamLead": "Chaque agent a un livrable clair. Vous validez. Ils exécutent.",
     "teamLearnMore": "En savoir plus",
-    "teamOrchestra": "L’orchestrateur priorise le Prospecteur (entreprises), puis Analyste et Assistant. Le Veilleur reste secondaire (signaux).",
+    "teamOrchestra": "Vous validez. Ils exécutent.",
     "team": {
       "learnMore": "En savoir plus",
       "panelMissions": "Missions détaillées",
       "panelTools": "Outils & sources",
       "panelTasks": "Exemples de tâches",
       "panelResults": "Résultats concrets",
+      "veilleurLayerTitle": "Veilleur — couche transverse",
+      "veilleurLayerDesc": "Vos agents restent à l’écoute du marché en continu (appels d’offres, recrutements, signaux) et injectent l’info au bon endroit — sans polluer votre pipeline.",
       "prospecteur": {
         "name": "Prospecteur",
-        "mission": "Trouver de nouveaux clients",
-        "desc": "Identifie les entreprises correspondant à vos critères, enrichit les contacts, qualifie les prospects et prépare vos campagnes de prospection.",
+        "mission": "20 entreprises qui correspondent à votre cible, chaque matin.",
+        "desc": "Trouve des entreprises. Il ne qualifie pas, n’enrichit pas les décideurs, ne rédige rien.",
         "missions": [
-          "Identifier des entreprises cibles selon secteur, zone et taille",
-          "Enrichir les fiches (contacts, décideurs, signaux)",
-          "Scorer et prioriser les prospects",
-          "Préparer des messages de première approche"
+          "Identifier des entreprises cibles selon votre ICP",
+          "Dédupliquer avant création de fiche",
+          "Tracer la source de découverte",
+          "Matcher au moins un critère ICP"
         ],
-        "tools": [
-          "LinkedIn",
-          "Web public",
-          "RNE",
-          "Bases locales",
-          "Mémoire Ciblix"
-        ],
+        "tools": ["LinkedIn", "Web public", "RNE", "Annuaires", "Signaux Veilleur"],
         "tasks": [
-          "Lister 40 entreprises BTP en Tunis scorées > 70",
-          "Trouver le décideur achats d’une société cible",
-          "Rédiger 5 accroches personnalisées"
+          "Lister 20 PME BTP à Tunis ce matin",
+          "Importer uniquement les nouvelles entreprises",
+          "Exclure les comptes déjà en base"
         ],
         "results": [
-          "Pipeline enrichi sans saisie manuelle",
-          "Liste de prospects prêts à contacter",
-          "Contacts décideurs rattachés à chaque fiche"
+          "Pipeline rempli sans recherche manuelle",
+          "Fiches au statut découverte",
+          "Zéro fiche partielle « au cas où »"
+        ]
+      },
+      "analyste": {
+        "name": "Analyste",
+        "mission": "Celles qui méritent votre temps, avec le nom du décideur.",
+        "desc": "Qualifie. Il ne cherche pas de nouvelles entreprises, il ne rédige pas.",
+        "missions": [
+          "Identifier un décideur sourcé (jamais inventé)",
+          "Formuler le besoin détecté",
+          "Scorer avec une raison obligatoire",
+          "Archiver si score sous seuil"
+        ],
+        "tools": ["Sites web", "RNE", "LinkedIn", "Signaux Veilleur", "Mémoire Ciblix"],
+        "tasks": [
+          "Sur 20 découvertes, en garder 6 avec décideur",
+          "Bloquer si aucun canal fiable",
+          "Justifier chaque score en une phrase"
+        ],
+        "results": [
+          "Liste courte priorisée",
+          "Décideurs sourcés",
+          "Moins de temps perdu sur de mauvais comptes"
+        ]
+      },
+      "redacteur": {
+        "name": "Rédacteur",
+        "mission": "Le message prêt à envoyer, en français ou en arabe.",
+        "desc": "Prépare le contact. Il ne décide pas qui contacter. Validation séparation tenant/cible obligatoire.",
+        "missions": [
+          "Rédiger le brouillon email / WhatsApp / LinkedIn",
+          "Valider séparation expéditeur / destinataire",
+          "Contrôler ton et longueur",
+          "Attendre votre validation avant envoi"
+        ],
+        "tools": ["Fiche offre validée", "Pipeline rédaction", "WhatsApp", "Email"],
+        "tasks": [
+          "Brouillon WhatsApp 60 mots",
+          "Email FR ou AR selon le canal",
+          "Retry unique si confusion détectée"
+        ],
+        "results": [
+          "Message prêt en un tap",
+          "Plus de pitch inventé",
+          "Envoi sous votre contrôle"
+        ]
+      },
+      "scribe": {
+        "name": "Scribe",
+        "mission": "Votre CRM se remplit tout seul après chaque appel.",
+        "desc": "Supprime la saisie. Vous parlez ou écrivez ; il structure l’historique, la prochaine action et la relance.",
+        "missions": [
+          "Structurer notes, WhatsApp, emails, vocaux",
+          "Détecter objections et montant cité",
+          "Proposer la prochaine action",
+          "Calculer une date de relance précise"
+        ],
+        "tools": ["WhatsApp Business", "Email", "Notes vocales", "Mémoire Ciblix"],
+        "tasks": [
+          "Coller le CR d’appel → fiche à jour",
+          "Deux options en un tap si ambigu",
+          "Zéro formulaire à remplir"
+        ],
+        "results": [
+          "Temps de saisie économisé",
+          "Pipeline à jour après chaque contact",
+          "Commercial recentré sur la vente"
         ]
       },
       "veilleur": {
         "name": "Veilleur",
         "mission": "Détecter les opportunités d'affaires",
-        "desc": "Surveille en continu les appels d'offres, les investissements, les recrutements, les projets, les marchés publics et les signaux du marché afin d'identifier de nouvelles opportunités.",
+        "desc": "Couche transverse : surveille les signaux et les injecte vers Prospecteur, Analyste ou Scribe — jamais comme 4e étape du pipeline.",
         "missions": [
           "Surveiller appels d’offres et marchés publics",
-          "Détecter investissements, projets et recrutements",
-          "Filtrer les signaux selon votre métier",
-          "Alerter dès qu’une opportunité mérite attention"
+          "Détecter recrutements et investissements",
+          "Router chaque signal sourcé au bon agent",
+          "Ne jamais écrire hors signaux_externes"
         ],
-        "tools": [
-          "TUNEPS",
-          "BOAMP / sources AO",
-          "Sites institutionnels",
-          "LinkedIn",
-          "Web & presse"
-        ],
+        "tools": ["TUNEPS", "Sources AO", "LinkedIn", "Presse"],
         "tasks": [
-          "Alerter sur un AO compatible avec votre offre",
-          "Repérer un recrutement commercial chez un compte cible",
-          "Suivre un projet d’investissement dans votre secteur"
+          "Signal AO → Prospecteur si entreprise nouvelle",
+          "Signal recrutement → Analyste si fiche découverte",
+          "Moment opportun → suggestion Scribe"
         ],
         "results": [
-          "Alertes opportunités scorées",
-          "Opportunités sauvées pour suivi",
+          "Signaux sourcés et datés",
+          "Pipeline enrichi sans bruit",
           "Moins d’opportunités manquées"
-        ]
-      },
-      "analyste": {
-        "name": "Analyste",
-        "mission": "Analyser les entreprises",
-        "desc": "Étudie les entreprises, leurs activités, leurs décideurs, leurs concurrents et leur potentiel afin de mieux préparer chaque approche commerciale.",
-        "missions": [
-          "Cartographier activité, offre et positionnement",
-          "Identifier décideurs et organigramme utile",
-          "Comparer concurrents et potentiel commercial",
-          "Préparer un brief d’approche avant contact"
-        ],
-        "tools": [
-          "Sites web",
-          "RNE",
-          "LinkedIn",
-          "Sources publiques",
-          "Mémoire Ciblix"
-        ],
-        "tasks": [
-          "Brief d’une cible avant un premier appel",
-          "Liste des décideurs et angles d’approche",
-          "Synthèse concurrentielle en 1 page"
-        ],
-        "results": [
-          "Approches mieux préparées",
-          "Argumentaires alignés sur le contexte client",
-          "Moins de temps de recherche manuelle"
-        ]
-      },
-      "assistant": {
-        "name": "Assistant",
-        "mission": "Piloter vos actions commerciales",
-        "desc": "Répond à vos questions, coordonne les autres agents, recommande les prochaines actions, prépare les emails, les comptes rendus, les propositions commerciales et les réponses aux appels d'offres.",
-        "missions": [
-          "Coordonner Prospecteur, Veilleur et Analyste",
-          "Recommander la prochaine action prioritaire",
-          "Préparer emails, CR, offres et réponses AO",
-          "Répondre en langage naturel sur votre activité"
-        ],
-        "tools": [
-          "Mémoire partagée des agents",
-          "Gmail (connecteur)",
-          "WhatsApp",
-          "Historique contacts",
-          "Documents d’offre"
-        ],
-        "tasks": [
-          "« Qui dois-je relancer cette semaine ? »",
-          "Préparer un email de relance après un AO détecté",
-          "Générer une proposition à partir de l’historique"
-        ],
-        "results": [
-          "Priorités claires chaque jour",
-          "Documents prêts à valider / envoyer",
-          "Temps commercial recentré sur la relation"
         ]
       }
     },

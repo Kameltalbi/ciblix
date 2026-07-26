@@ -326,7 +326,7 @@ export async function handleEnrichCompany(task: AgentTask): Promise<Record<strin
     type: 'NOTE',
     resume:
       summary ||
-      `Entreprise enrichie automatiquement à partir du signal « ${str(payload.signalTitle) || companyName} ».`,
+      `Entreprise découverte : ${companyName}.`,
     score: typeof payload.relevanceScore === 'number' ? Number(payload.relevanceScore) : null,
     sourceRef: scoutOppId ? `scout:${scoutOppId}` : undefined,
     analysisJson: {
@@ -336,28 +336,76 @@ export async function handleEnrichCompany(task: AgentTask): Promise<Record<strin
       phone,
       email,
       signalUrl: website,
-      enrichedBy: 'agent-team',
+      enrichedBy: 'prospecteur',
     },
   });
 
-  await enqueueAgentTask({
-    organizationId: task.organizationId,
-    assignee: 'ANALYSTE',
-    kind: 'ANALYZE_FIT',
-    parentTaskId: task.id,
-    contactId: contact.id,
-    priority: 60,
-    dedupeKey: `analyze:contact:${contact.id}`,
-    payload: {
+  // Contrat fiche : Prospecteur écrit UNIQUEMENT ses champs → état decouverte
+  const { persistAgentWrite } = await import('../company-fiche/ficheService.js');
+  const { checkProspecteurExit } = await import('../company-fiche/exitConditions.js');
+  const { reactToFicheStateChange } = await import('./stateReaction.js');
+  const { ficheEtatFromDb } = await import('../company-fiche/ficheService.js');
+
+  if (!ficheEtatFromDb(contact.ficheEtat)) {
+    const patch = {
+      identite_entreprise: { nom_legal: companyName },
+      source_decouverte: {
+        source: scoutOppId ? 'veilleur' : 'prospecteur',
+        url: website,
+        at: new Date().toISOString(),
+      },
+      secteur_declare: targeting?.sectors?.[0] ?? null,
+      zone_geographique: city || targeting?.cities?.[0] || null,
+      taille_estimee: null as string | null,
+      critere_de_match: [
+        targeting?.sectors?.[0],
+        targeting?.keywords?.[0],
+        city,
+      ]
+        .filter(Boolean)
+        .join(' · ') || 'match ICP',
+    };
+    const exit = checkProspecteurExit(patch);
+    if (exit.ok && exit.etatCible) {
+      await persistAgentWrite({
+        organizationId: task.organizationId,
+        contactId: contact.id,
+        agent: 'prospecteur',
+        patch,
+        etatCible: 'decouverte',
+        raison: exit.raison,
+        conditionSortieRemplie: true,
+        onStateChange: async ({ etatNouveau, prochainAgent }) => {
+          await reactToFicheStateChange({
+            organizationId: task.organizationId,
+            contactId: contact.id,
+            etatNouveau,
+            prochainAgent,
+          });
+        },
+      });
+    }
+  } else {
+    // Déjà dans la chaîne — Analyste via réaction d’état / dédup tâche
+    await enqueueAgentTask({
+      organizationId: task.organizationId,
+      assignee: 'ANALYSTE',
+      kind: 'ANALYZE_FIT',
+      parentTaskId: task.id,
       contactId: contact.id,
-      companyName,
-      website,
-      city,
-      phone,
-      email,
-      signalSummary: summary,
-    },
-  });
+      priority: 60,
+      dedupeKey: `analyze:contact:${contact.id}`,
+      payload: {
+        contactId: contact.id,
+        companyName,
+        website,
+        city,
+        phone,
+        email,
+        signalSummary: summary,
+      },
+    });
+  }
 
   return {
     contactId: contact.id,

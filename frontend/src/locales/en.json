@@ -705,10 +705,10 @@
     "howTitle": "Each agent has a clear job.",
     "howLead": "You don’t need to turn everything on at once: pick the agent for today’s job. They share the same prospect memory.",
     "howCta": "Start free trial →",
-    "teamTitle": "An AI agent team. One goal: find client companies.",
-    "teamLead": "Hunter leads company search. Analyst qualifies, Assistant prepares outreach. Scout adds signals only — it does not replace the client list.",
+    "teamTitle": "An AI agent team. One goal: fill your pipeline.",
+    "teamLead": "Each agent has one clear deliverable. You approve. They execute.",
     "teamLearnMore": "Learn more",
-    "teamOrchestra": "The orchestrator prioritizes Hunter (companies), then Analyst and Assistant. Scout stays secondary (signals).",
+    "teamOrchestra": "You approve. They execute.",
     "team": {
       "learnMore": "Learn more",
       "panelMissions": "Detailed missions",
@@ -717,36 +717,36 @@
       "panelResults": "Concrete results",
       "prospecteur": {
         "name": "Prospector",
-        "mission": "Find new customers",
-        "desc": "Identifies companies that match your criteria, enriches contacts, qualifies prospects, and prepares your outreach campaigns.",
+        "mission": "20 companies that match your ICP, every morning.",
+        "desc": "Finds companies. Does not qualify, enrich decision-makers, or write messages.",
         "missions": [
-          "Find target companies by sector, region and size",
-          "Enrich records (contacts, decision-makers, signals)",
-          "Score and prioritize prospects",
-          "Draft personalized first-touch messages"
+          "Find ICP-matching companies",
+          "Deduplicate before create",
+          "Trace discovery source",
+          "Match at least one ICP criterion"
         ],
         "tools": [
           "LinkedIn",
           "Public web",
-          "Company registries",
-          "Local databases",
-          "Ciblix memory"
+          "Registries",
+          "Directories",
+          "Scout signals"
         ],
         "tasks": [
-          "List 40 scored companies in a city",
-          "Find the buying decision-maker",
-          "Write 5 personalized openers"
+          "List 20 SMEs this morning",
+          "Import only new companies",
+          "Exclude accounts already in CRM"
         ],
         "results": [
-          "Pipeline enriched without manual entry",
-          "Ready-to-contact prospect lists",
-          "Decision-makers linked to each record"
+          "Pipeline filled without manual search",
+          "Records in discovered state",
+          "No half-empty records"
         ]
       },
       "veilleur": {
         "name": "Scout",
         "mission": "Detect business opportunities",
-        "desc": "Continuously monitors tenders, investments, hiring, projects, public markets and market signals to surface new opportunities.",
+        "desc": "Transverse layer: watches signals and routes them to Prospector, Analyst or Scribe — never a 4th pipeline step.",
         "missions": [
           "Watch tenders and public markets",
           "Detect investments, projects and hiring",
@@ -773,58 +773,113 @@
       },
       "analyste": {
         "name": "Analyst",
-        "mission": "Analyze companies",
-        "desc": "Studies companies, activities, decision-makers, competitors and potential to better prepare every sales approach.",
+        "mission": "The ones worth your time — with the decision-maker’s name.",
+        "desc": "Qualifies. Does not hunt new companies or write outreach.",
         "missions": [
-          "Map activity, offer and positioning",
-          "Identify useful decision-makers",
-          "Compare competitors and commercial potential",
-          "Prepare an approach brief before contact"
+          "Identify a sourced decision-maker",
+          "State the detected need",
+          "Score with a mandatory reason",
+          "Archive under threshold"
         ],
         "tools": [
-          "Company websites",
+          "Websites",
           "Registries",
           "LinkedIn",
-          "Public sources",
+          "Scout signals",
           "Ciblix memory"
         ],
         "tasks": [
-          "Brief a target before a first call",
-          "List decision-makers and angles",
-          "One-page competitive summary"
+          "Keep 6 of 20 with a decision-maker",
+          "Block if no reliable channel",
+          "Justify every score in one sentence"
         ],
         "results": [
-          "Better-prepared approaches",
-          "Messaging aligned with client context",
-          "Less manual research time"
+          "Short prioritized list",
+          "Sourced decision-makers",
+          "Less time on bad accounts"
         ]
       },
       "assistant": {
-        "name": "Assistant",
-        "mission": "Drive your sales actions",
-        "desc": "Answers your questions, coordinates the other agents, recommends next actions, and prepares emails, meeting notes, proposals and tender responses.",
+        "name": "Writer",
+        "mission": "The message ready to send, in French or Arabic.",
+        "desc": "Prepares contact. Does not decide who to contact. Mandatory tenant/target separation checks.",
         "missions": [
-          "Coordinate Prospector, Scout and Analyst",
-          "Recommend the next priority action",
-          "Prepare emails, notes, proposals and tender replies",
-          "Answer in natural language about your pipeline"
+          "Draft email / WhatsApp / LinkedIn",
+          "Validate sender vs recipient",
+          "Check tone and length",
+          "Wait for your send approval"
         ],
         "tools": [
-          "Shared agent memory",
-          "Gmail (connector)",
+          "Validated offer sheet",
+          "Writing pipeline",
           "WhatsApp",
-          "Contact history",
-          "Offer documents"
+          "Email"
         ],
         "tasks": [
-          "“Who should I follow up this week?”",
-          "Draft a follow-up after a detected tender",
-          "Generate a proposal from conversation history"
+          "60-word WhatsApp draft",
+          "FR or AR by channel",
+          "Single retry if role confusion"
         ],
         "results": [
-          "Clear daily priorities",
-          "Documents ready to review or send",
-          "More time spent on relationships"
+          "Ready message in one tap",
+          "No invented pitch",
+          "Send under your control"
+        ]
+      },
+      "veilleurLayerTitle": "Scout — transverse layer",
+      "veilleurLayerDesc": "Your agents continuously listen to the market (tenders, hiring, signals) and inject info where it belongs — without cluttering your pipeline.",
+      "redacteur": {
+        "name": "Writer",
+        "mission": "The message ready to send, in French or Arabic.",
+        "desc": "Prepares contact. Does not decide who to contact. Mandatory tenant/target separation checks.",
+        "missions": [
+          "Draft email / WhatsApp / LinkedIn",
+          "Validate sender vs recipient",
+          "Check tone and length",
+          "Wait for your send approval"
+        ],
+        "tools": [
+          "Validated offer sheet",
+          "Writing pipeline",
+          "WhatsApp",
+          "Email"
+        ],
+        "tasks": [
+          "60-word WhatsApp draft",
+          "FR or AR by channel",
+          "Single retry if role confusion"
+        ],
+        "results": [
+          "Ready message in one tap",
+          "No invented pitch",
+          "Send under your control"
+        ]
+      },
+      "scribe": {
+        "name": "Scribe",
+        "mission": "Your CRM fills itself after every call.",
+        "desc": "Removes data entry. You speak or type; it structures history, next action and follow-up.",
+        "missions": [
+          "Structure notes, WhatsApp, email, voice",
+          "Detect objections and quoted amounts",
+          "Propose next action",
+          "Set a precise follow-up date"
+        ],
+        "tools": [
+          "WhatsApp Business",
+          "Email",
+          "Voice notes",
+          "Ciblix memory"
+        ],
+        "tasks": [
+          "Paste call notes → updated record",
+          "Two one-tap options if ambiguous",
+          "Zero forms to fill"
+        ],
+        "results": [
+          "Data-entry time saved",
+          "Pipeline updated after each contact",
+          "Reps focused on selling"
         ]
       }
     },
