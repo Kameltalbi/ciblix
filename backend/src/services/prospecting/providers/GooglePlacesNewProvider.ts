@@ -5,6 +5,68 @@ import {
   getCityCoords,
   hitMatchesSearchCity,
 } from '../geoFilter.js';
+import { pickIncludedTypeForSector } from './sectorGoogleTypes.js';
+
+export type PlacesSearchBodyParams = {
+  textQuery: string;
+  sector?: string | null;
+  country?: string | null;
+  city?: string | null;
+  /** Index de variante pour faire tourner les types Table A. */
+  variantIndex?: number;
+  maxResultCount?: number;
+  pageToken?: string;
+  radiusM?: number;
+};
+
+/**
+ * Construit le body Places Text Search (New).
+ * Conserve toujours Places — ajoute seulement `includedType` si le secteur est mappé.
+ * (L’API New n’accepte qu’un type, pas un tableau `includedTypes`.)
+ */
+export function buildPlacesSearchBody(params: PlacesSearchBodyParams): Record<string, unknown> {
+  const maxResults = params.maxResultCount ?? 20;
+  const body: Record<string, unknown> = {
+    textQuery: params.textQuery,
+    maxResultCount: maxResults,
+    languageCode: 'fr',
+  };
+
+  const regionCode = countryToRegionCode(params.country ?? undefined);
+  if (regionCode) {
+    body.regionCode = regionCode;
+  }
+
+  const coords = getCityCoords(params.city ?? undefined);
+  const radius = Math.min(
+    50000,
+    Math.max(
+      5000,
+      params.radiusM ?? (Number(process.env.PROSPECTING_LOCATION_RADIUS_M) || 45000)
+    )
+  );
+  if (coords) {
+    body.locationBias = {
+      circle: {
+        center: { latitude: coords.lat, longitude: coords.lng },
+        radius,
+      },
+    };
+  }
+
+  const includedType = pickIncludedTypeForSector(params.sector, params.variantIndex ?? 0);
+  if (includedType) {
+    body.includedType = includedType;
+    // Bias de type sans exclure trop agressivement les résultats proches
+    body.strictTypeFiltering = false;
+  }
+
+  if (params.pageToken) {
+    body.pageToken = params.pageToken;
+  }
+
+  return body;
+}
 
 /**
  * Google Places API (New) — endpoint moderne avec pagination améliorée.
@@ -67,40 +129,26 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     textQuery: string,
     criteria: CompanySearchCriteria,
     pageToken?: string,
-    maxResults: number = 20
+    maxResults: number = 20,
+    variantIndex: number = 0
   ): Promise<{ places: Array<any>; nextPageToken?: string }> {
     const url = 'https://places.googleapis.com/v1/places:searchText';
 
-    const body: Record<string, unknown> = {
+    const body = buildPlacesSearchBody({
       textQuery,
+      sector: criteria.sector ?? criteria.keywords,
+      country: criteria.country,
+      city: criteria.city,
+      variantIndex,
       maxResultCount: maxResults,
-      languageCode: 'fr',
-    };
+      pageToken,
+    });
 
-    const regionCode = countryToRegionCode(criteria.country);
-    if (regionCode) {
-      body.regionCode = regionCode;
-    }
-
-    const coords = getCityCoords(criteria.city);
-    const radius = Math.min(
-      50000,
-      Math.max(5000, Number(process.env.PROSPECTING_LOCATION_RADIUS_M) || 45000)
-    );
-    if (coords) {
-      // Bias fort autour de la ville demandée (ex. Nabeul) pour éviter Paris/FR
-      // Note: locationRestriction n'accepte qu'un viewport rectangulaire, pas un cercle.
-      body.locationBias = {
-        circle: {
-          center: { latitude: coords.lat, longitude: coords.lng },
-          radius,
-        },
-      };
-    }
-
-    if (pageToken) {
-      body.pageToken = pageToken;
-    }
+    const regionCode = typeof body.regionCode === 'string' ? body.regionCode : null;
+    const bias = body.locationBias as
+      | { circle?: { center?: { latitude?: number; longitude?: number }; radius?: number } }
+      | undefined;
+    const includedType = typeof body.includedType === 'string' ? body.includedType : null;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -110,7 +158,11 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     };
 
     console.log(
-      `[GooglePlaces New] "${textQuery}" region=${regionCode || '—'} bias=${coords ? `${coords.lat},${coords.lng} r=${radius}` : '—'}`
+      `[GooglePlaces New] "${textQuery}" region=${regionCode || '—'} bias=${
+        bias?.circle?.center
+          ? `${bias.circle.center.latitude},${bias.circle.center.longitude} r=${bias.circle.radius}`
+          : '—'
+      } type=${includedType || '—'}`
     );
 
     try {
@@ -155,7 +207,12 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
     }
   }
 
-  private async fetchAllPages(query: string, criteria: CompanySearchCriteria, maxPages: number): Promise<Array<any>> {
+  private async fetchAllPages(
+    query: string,
+    criteria: CompanySearchCriteria,
+    maxPages: number,
+    variantIndex: number
+  ): Promise<Array<any>> {
     const results: Array<any> = [];
     let pageToken: string | undefined;
 
@@ -164,7 +221,13 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
         await this.sleep(2100);
       }
 
-      const { places, nextPageToken } = await this.searchPage(query, criteria, pageToken);
+      const { places, nextPageToken } = await this.searchPage(
+        query,
+        criteria,
+        pageToken,
+        20,
+        variantIndex
+      );
       console.log(`[GooglePlaces New] "${query}" page ${page + 1} → ${places.length} résultats`);
       results.push(...places);
 
@@ -183,8 +246,9 @@ export class GooglePlacesNewProvider implements CompanySearchPort {
 
     console.log(`[GooglePlaces New] Running ${queryVariants.length} query variants:`, queryVariants);
 
-    for (const query of queryVariants) {
-      const batch = await this.fetchAllPages(query, criteria, maxPages);
+    for (let i = 0; i < queryVariants.length; i++) {
+      const query = queryVariants[i]!;
+      const batch = await this.fetchAllPages(query, criteria, maxPages, i);
       merged.push(...batch);
     }
 

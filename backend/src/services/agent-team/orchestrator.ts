@@ -13,6 +13,13 @@ import {
   handleWatchSignals,
 } from './handlers.js';
 import { handleProcessInteraction } from './stateReaction.js';
+import {
+  hasMissionLock,
+  missionLockKey,
+  releaseMissionLock,
+  runningMissions,
+  tryAcquireMissionLock,
+} from './orchestratorLocks.js';
 
 const TICK_MS = 60_000;
 const MAX_TASKS_PER_TICK = 8;
@@ -39,6 +46,11 @@ async function scheduleTeamJobs(): Promise<void> {
   });
 
   for (const p of profiles) {
+    if (hasMissionLock(p.organizationId, 'FIND_COMPANIES')) {
+      // Prospecteur encore en cours pour cette org — skip silencieux
+      continue;
+    }
+
     const intervalMs = Math.max(1, p.orchestratorIntervalH) * 3600_000;
     if (p.lastOrchestratorAt && now.getTime() - p.lastOrchestratorAt.getTime() < intervalMs) {
       continue;
@@ -97,6 +109,22 @@ async function processOneTask(): Promise<boolean> {
     return true;
   }
 
+  const needsOrgLock = task.kind === 'FIND_COMPANIES' || task.kind === 'WATCH_SIGNALS';
+
+  if (needsOrgLock && !tryAcquireMissionLock(task.organizationId, task.kind)) {
+    // Remettre en file pour un tick ultérieur (évite double Places / doublons)
+    await prisma.agentTask.update({
+      where: { id: task.id },
+      data: {
+        status: 'PENDING',
+        startedAt: null,
+        availableAt: new Date(Date.now() + 30_000),
+        attempts: { decrement: 1 },
+      },
+    });
+    return true;
+  }
+
   try {
     let result: Record<string, unknown>;
     switch (task.kind) {
@@ -129,6 +157,10 @@ async function processOneTask(): Promise<boolean> {
     const msg = err instanceof Error ? err.message : String(err);
     await failAgentTask(task.id, msg);
     console.warn(`[agent-orchestrator] ${task.kind} failed`, task.id, msg);
+  } finally {
+    if (needsOrgLock) {
+      releaseMissionLock(task.organizationId, task.kind);
+    }
   }
   return true;
 }
@@ -165,3 +197,6 @@ export function startAgentOrchestrator(): void {
 export async function runOrchestratorTickNow(): Promise<void> {
   await tickOnce();
 }
+
+/** Exposé pour tests — verrou anti-collision. */
+export { runningMissions, missionLockKey };
