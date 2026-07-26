@@ -2,10 +2,12 @@ import { prisma } from '../../db/prisma.js';
 import { enqueueAgentTask } from './agentTaskService.js';
 import { isPastScoutOpportunity } from '../scout/scoutFreshness.js';
 import { resolveCompanyNameForContact } from '../scout/companyNameGuard.js';
+import { wakeDormantFicheFromScout } from './wakeFromScout.js';
 
 /**
- * Après un scan Veilleur (manuel ou auto) : crée des tâches Prospecteur
- * uniquement lorsqu’une vraie entreprise a été extraite (jamais le titre d’article).
+ * Après un scan Veilleur (manuel ou auto) :
+ * 1) si une fiche existe déjà → réveil (signal + suggestion), pas de doublon Hunt
+ * 2) sinon → tâche Prospecteur ENRICH uniquement si entreprise identifiable
  */
 export async function handoffScoutSignalsToHunt(
   organizationId: string,
@@ -58,6 +60,24 @@ export async function handoffScoutSignalsToHunt(
 
     const n = companyGuess.toLowerCase();
     if (exclude.some((e) => n.includes(e) || e.includes(n))) continue;
+
+    // Réveil d’une fiche dormante existante (priorité produit)
+    try {
+      const wake = await wakeDormantFicheFromScout({
+        organizationId,
+        companyName: companyGuess,
+        scoutOpportunityId: opp.id,
+        title: opp.title,
+        url: opp.url,
+        category: opp.category,
+      });
+      if (wake.woken) {
+        count += 1;
+        continue;
+      }
+    } catch (err) {
+      console.warn('[scout-handoff] wake failed', opp.id, err);
+    }
 
     await enqueueAgentTask({
       organizationId,

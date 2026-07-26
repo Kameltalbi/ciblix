@@ -54,18 +54,33 @@ export async function listTodayContacts(
   for (const c of rows) {
     const fiche = parseFicheData(c.ficheData);
     const dr = fiche.date_relance?.slice(0, 10) ?? null;
-    if (!isRelanceDue(dr, asOf) || !dr) continue;
+    const dueByDate = isRelanceDue(dr, asOf) && Boolean(dr);
+
+    const signals = Array.isArray(fiche.signaux_externes) ? fiche.signaux_externes : [];
+    const recentSignal = [...signals]
+      .filter((s) => s?.at && s.at.slice(0, 10) >= fourteenDaysAgo(asOf))
+      .sort((a, b) => (b.at || '').localeCompare(a.at || ''))[0];
+    const dueBySignal = Boolean(recentSignal);
+
+    if (!dueByDate && !dueBySignal) continue;
 
     const company = (c.companyName || c.name || 'Entreprise').trim();
     const action = fiche.prochaine_action?.trim() || null;
-    const pourquoi = action
-      ? `Relance prévue le ${formatRelanceFr(dr)} — ${action}`
-      : `Relance prévue le ${formatRelanceFr(dr)}. Vous les aviez mis de côté ; c’est le moment.`;
+    let pourquoi: string;
+    if (dueBySignal && recentSignal) {
+      pourquoi = `Signal marché : ${recentSignal.titre}`;
+    } else if (action && dr) {
+      pourquoi = `Relance prévue le ${formatRelanceFr(dr)} — ${action}`;
+    } else if (dr) {
+      pourquoi = `Relance prévue le ${formatRelanceFr(dr)}. Vous les aviez mis de côté ; c’est le moment.`;
+    } else {
+      pourquoi = 'À reprendre.';
+    }
 
     items.push({
       contactId: c.id,
       companyName: company,
-      dateRelance: dr,
+      dateRelance: dr || recentSignal?.at?.slice(0, 10) || asOf,
       prochaineAction: action,
       pourquoi,
       messageBrouillon: fiche.message_brouillon?.trim() || null,
@@ -76,6 +91,12 @@ export async function listTodayContacts(
 
   items.sort((a, b) => a.dateRelance.localeCompare(b.dateRelance));
   return { items: items.slice(0, limit), asOf };
+}
+
+function fourteenDaysAgo(asOf: string): string {
+  const d = new Date(`${asOf}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 14);
+  return d.toISOString().slice(0, 10);
 }
 
 /**
