@@ -11,7 +11,7 @@ export function APropos() {
         cta={{ label: 'Essayer gratuitement', to: '/register' }}
       />
 
-      <PublicSection>
+      <PublicSection className="max-w-3xl">
         <h2 className="mb-4 font-serif text-2xl font-bold tracking-tight md:text-3xl">
           Le problème n’est pas de manquer d’outils. C’est de manquer de temps.
         </h2>
@@ -50,7 +50,7 @@ export function APropos() {
         </div>
       </PublicSection>
 
-      <PublicSection>
+      <PublicSection className="max-w-3xl">
         <h2 className="mb-4 font-serif text-2xl font-bold tracking-tight md:text-3xl">
           Et surtout : Ciblix connaît votre marché.
         </h2>

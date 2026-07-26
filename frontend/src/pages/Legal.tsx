@@ -127,7 +127,7 @@ export function Legal() {
   return (
     <PublicPageShell>
       <PublicHero eyebrow="Légal" title={current.title} subtitle="Dernière mise à jour : juillet 2026" />
-      <PublicSection>
+      <PublicSection className="max-w-3xl">
         <div className="space-y-8">
           {current.sections.map((section) => (
             <div key={section.title}>

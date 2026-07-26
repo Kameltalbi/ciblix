@@ -67,7 +67,7 @@ export function Blog() {
     return (
       <PublicPageShell>
         <PublicHero eyebrow="Blog" title={article.title} subtitle={article.excerpt} />
-        <PublicSection>
+        <PublicSection className="max-w-3xl">
           <div className="space-y-4 text-base leading-relaxed text-muted-foreground">
             {article.body.map((p) => (
               <p key={p.slice(0, 40)}>{p}</p>

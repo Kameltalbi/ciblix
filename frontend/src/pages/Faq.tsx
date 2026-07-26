@@ -73,7 +73,7 @@ export function Faq() {
         cta={{ label: 'Essayer gratuitement', to: '/register' }}
       />
 
-      <PublicSection className="max-w-3xl space-y-10">
+      <PublicSection className="space-y-10">
         {FAQ.map((block) => (
           <div key={block.theme}>
             <h2 className="mb-4 font-serif text-xl font-bold">{block.theme}</h2>

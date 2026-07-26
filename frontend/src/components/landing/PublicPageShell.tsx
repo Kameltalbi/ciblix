@@ -35,14 +35,14 @@ export function PublicHero({
   return (
     <section className="relative overflow-hidden border-b border-[#BED6F6]/30 bg-gradient-to-b from-[#f7faff] to-white">
       <div className="pointer-events-none absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#016AEB]/10 blur-3xl" />
-      <div className="relative mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 md:py-24">
+      <div className="relative mx-auto max-w-5xl px-4 py-14 text-center sm:px-6 md:px-8 md:py-20">
         {eyebrow ? (
           <p className="mb-3 text-sm font-semibold tracking-wide text-[#1E72B9]">{eyebrow}</p>
         ) : null}
-        <h1 className="mb-5 font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+        <h1 className="mx-auto mb-5 max-w-3xl font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
           {title}
         </h1>
-        <p className="text-lg leading-relaxed text-muted-foreground md:text-xl">{subtitle}</p>
+        <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">{subtitle}</p>
         {cta ? (
           <div className="mt-8">
             <Button asChild size="lg" className="gap-2 bg-[#016AEB] hover:bg-[#0159c4]">
@@ -67,7 +67,7 @@ export function PublicSection({
   id?: string;
 }) {
   return (
-    <section id={id} className={cn('mx-auto max-w-3xl px-4 py-14 sm:px-6 md:py-16', className)}>
+    <section id={id} className={cn('mx-auto max-w-5xl px-4 py-14 sm:px-6 md:px-8 md:py-16', className)}>
       {children}
     </section>
   );
