@@ -77,6 +77,8 @@ export type FicheEntrepriseProps = {
   onReprendre?: () => void;
   onDicter?: () => void;
   onVoirMessage?: () => void;
+  /** Appelé dès qu’un canal sortant est déclenché (affiche le bandeau Dicter sans recharger). */
+  onOutbound?: (canal: 'appel' | 'whatsapp') => void;
   dictationPrompt?: string | null;
   onDismissDictationPrompt?: () => void;
   className?: string;
@@ -156,6 +158,7 @@ export function FicheEntreprise(props: FicheEntrepriseProps) {
     onReprendre,
     onDicter,
     onVoirMessage,
+    onOutbound,
     dictationPrompt,
     onDismissDictationPrompt,
     className,
@@ -223,6 +226,7 @@ export function FicheEntreprise(props: FicheEntrepriseProps) {
     } catch {
       /* ignore */
     }
+    onOutbound?.(canal);
   };
 
   const identityMeta = [secteur, ville, statutLabel(referentiel?.statutActivite)]

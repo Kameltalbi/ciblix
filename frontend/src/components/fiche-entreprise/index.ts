@@ -1,5 +1,6 @@
 export { CarteOpportunite } from './CarteOpportunite';
 export { FicheEntreprise } from './FicheEntreprise';
+export { DicterNoteModal } from './DicterNoteModal';
 export type {
   FicheEntrepriseProps,
   FicheDecideur,
@@ -7,6 +8,7 @@ export type {
   FicheSignal,
   FicheReferentielFacts,
 } from './FicheEntreprise';
+export type { ScribeResultPreview } from './DicterNoteModal';
 export {
   buildPourquoiMaintenant,
   buildResurgenceBanner,

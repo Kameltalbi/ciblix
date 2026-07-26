@@ -34,15 +34,22 @@ async function structureWithLlm(texte: string, canal: string): Promise<ScribeStr
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
+  const today = new Date().toISOString().slice(0, 10);
   const system = `Tu es le Scribe Ciblix. Tu structures une note commerciale en JSON.
-RÈGLES :
-- Ne jamais inventer engagement, montant, date ou objection non exprimés.
-- Si doute : uncertain=true et laisse null plutôt que d’affirmer.
-- prochaine_action = verbe + objet (ex: "Envoyer devis PDF").
-- date_relance = ISO date si explicite, sinon null.
-- montant_potentiel = nombre uniquement si cité explicitement.
+RÈGLES ABSOLUES :
+- N'extraire QUE ce qui est explicitement dit. Ne jamais inventer.
+- Si doute : uncertain=true et null plutôt qu'affirmer.
+- prochaine_action = verbe + objet concret (ex: "Envoyer devis PDF") ou null.
+- date_relance = YYYY-MM-DD si une date/période est évoquée, sinon null.
+  Aujourd'hui = ${today}. Convertir les dates vagues :
+  "septembre" / "à la rentrée" → premier jour ouvrable de septembre (année en cours ou suivante).
+  "dans 15 jours" → ${today} + 15 jours.
+  Tenir compte du calendrier local TN (Ramadan, Aïd, congés août).
+- montant_potentiel = nombre UNIQUEMENT si un chiffre est cité explicitement.
+- objections_detectees : uniquement parmi budget | timing | concurrent | besoin | decideur_absent | autre
+- statut_deal : interesse | pas_interesse | a_recontacter | sans_reponse | gagne | perdu | null
 JSON strict :
-{"resume":"...","statut_deal":"...|null","prochaine_action":"...|null","date_relance":"...|null","objections_detectees":[],"montant_potentiel":null,"uncertain":false,"options_prochaine_action":null}`;
+{"resume":"2 phrases max, passé composé","statut_deal":null,"prochaine_action":null,"date_relance":null,"objections_detectees":[],"montant_potentiel":null,"uncertain":false,"options_prochaine_action":null}`;
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -55,7 +62,7 @@ JSON strict :
         { role: 'system', content: system },
         { role: 'user', content: `Canal: ${canal}\n\nNote:\n${texte.slice(0, 4000)}` },
       ],
-      max_tokens: 500,
+      max_tokens: 600,
     }),
   });
   if (!res.ok) return null;
@@ -69,31 +76,60 @@ JSON strict :
   }
 }
 
+/** Heuristique locale si LLM indisponible — dates vagues TN + objections. */
+function inferRelanceDate(texte: string): string | null {
+  const t = texte.toLowerCase();
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth(); // 0-based
+
+  if (/septembre|a\s+la\s+rentr[ée]e|rentree/i.test(t)) {
+    const target = new Date(y, 8, 1); // 1er sept
+    if (m > 8 || (m === 8 && now.getDate() > 1)) target.setFullYear(y + 1);
+    return target.toISOString().slice(0, 10);
+  }
+  const inDays = t.match(/dans\s+(\d+)\s+jours?/i);
+  if (inDays) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + Number(inDays[1]));
+    return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+
 function structureLocal(texte: string): ScribeStructured {
   const t = texte.trim();
   const money = t.match(/(\d+[\d\s.,]*)\s*(DT|TND|€|EUR|dinars?)/i);
   const montant = money ? Number(money[1].replace(/\s/g, '').replace(',', '.')) : null;
-  const uncertain =
-    t.length < 20 || !/\b(relanc|devis|rdv|appel|envoyer|gagne|perdu|refus)/i.test(t);
+  const hasSignal = /\b(relanc|devis|rdv|appel|envoyer|gagn[ée]|perdu|refus|int[ée]ress|budget|septembre)/i.test(
+    t
+  );
+  const uncertain = t.length < 20 || !hasSignal;
+
+  const objections: string[] = [];
+  if (/prix|cher|budget/i.test(t)) objections.push('budget');
+  if (/pas\s+maintenant|plus\s+tard|septembre|timing|rentr/i.test(t)) objections.push('timing');
+  if (/concurrent|ailleurs|autre\s+offre/i.test(t)) objections.push('concurrent');
+
+  let statut: string | null = null;
+  if (/gagn[ée]|sign[ée]/i.test(t)) statut = 'gagne';
+  else if (/refus|perdu|pas\s+int[ée]ress/i.test(t)) statut = 'pas_interesse';
+  else if (/rappeler|relanc|septembre|recontact/i.test(t)) statut = 'a_recontacter';
+  else if (/int[ée]ress/i.test(t)) statut = 'interesse';
+  else if (!uncertain) statut = 'en_discussion';
+
+  let action: string | null = null;
+  if (/devis/i.test(t)) action = 'Envoyer devis';
+  else if (/septembre|rentr/i.test(t)) action = 'Relancer à la rentrée';
+  else if (/relanc/i.test(t)) action = 'Relancer le contact';
+  else if (!uncertain) action = 'Faire un suivi';
 
   return {
     resume: t.slice(0, 280),
-    statut_deal: uncertain
-      ? null
-      : /gagne|sign[ée]/i.test(t)
-        ? 'gagnee'
-        : /refus|perdu/i.test(t)
-          ? 'perdue'
-          : 'en_discussion',
-    prochaine_action: uncertain
-      ? null
-      : /devis/i.test(t)
-        ? 'Envoyer devis'
-        : /relanc/i.test(t)
-          ? 'Relancer le contact'
-          : 'Faire un suivi',
-    date_relance: null,
-    objections_detectees: /prix|cher|budget/i.test(t) ? ['Objection prix'] : [],
+    statut_deal: statut,
+    prochaine_action: action,
+    date_relance: inferRelanceDate(t),
+    objections_detectees: objections,
     montant_potentiel: Number.isFinite(montant) ? montant : null,
     uncertain,
     options_prochaine_action: uncertain

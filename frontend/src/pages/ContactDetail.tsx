@@ -5,6 +5,10 @@ import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { FicheEntreprise } from '@/components/fiche-entreprise';
+import {
+  DicterNoteModal,
+  type ScribeResultPreview,
+} from '@/components/fiche-entreprise/DicterNoteModal';
 import type { FicheEntrepriseDataView } from '@/components/fiche-entreprise/types';
 
 type ContactApi = {
@@ -37,14 +41,21 @@ export function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const [dictationOpen, setDictationOpen] = useState(false);
-  const [dictationText, setDictationText] = useState('');
   const [dictationPrompt, setDictationPrompt] = useState<string | null>(null);
+  const [scribeError, setScribeError] = useState<string | null>(null);
+  const [scribeResult, setScribeResult] = useState<ScribeResultPreview | null>(null);
 
   const { data, isPending, error } = useQuery({
     queryKey: ['contact', id],
     queryFn: () => api.get(`/contacts/${id}`).then((r) => r.data),
     enabled: Boolean(id),
   });
+
+  const showOutboundPrompt = (canal: 'appel' | 'whatsapp', name?: string | null) => {
+    const who = name || 'le contact';
+    const verb = canal === 'whatsapp' ? 'écrit sur WhatsApp à' : 'appelé';
+    setDictationPrompt(`Vous venez d’${verb} ${who}. Dictez votre note ?`);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -56,9 +67,10 @@ export function ContactDetail() {
         sessionStorage.removeItem(`ciblix_outbound_${id}`);
         return;
       }
-      const who = parsed.name || 'le contact';
-      const verb = parsed.canal === 'whatsapp' ? 'écrit sur WhatsApp à' : 'appelé';
-      setDictationPrompt(`Vous venez d’${verb} ${who}. Dictez votre note ?`);
+      showOutboundPrompt(
+        parsed.canal === 'whatsapp' ? 'whatsapp' : 'appel',
+        parsed.name
+      );
     } catch {
       /* ignore */
     }
@@ -78,12 +90,30 @@ export function ContactDetail() {
           canal: 'vocal',
         })
         .then((r) => r.data),
-    onSuccess: () => {
-      setDictationOpen(false);
-      setDictationText('');
+    onSuccess: (data: {
+      structured?: ScribeResultPreview;
+      needsHumanChoice?: boolean;
+      options?: [string, string] | null;
+    }) => {
+      setScribeError(null);
+      setScribeResult({
+        resume: data.structured?.resume,
+        prochaine_action: data.structured?.prochaine_action,
+        date_relance: data.structured?.date_relance,
+        statut_deal: data.structured?.statut_deal,
+        objections_detectees: data.structured?.objections_detectees,
+        needsHumanChoice: data.needsHumanChoice,
+        options: data.options,
+      });
       setDictationPrompt(null);
       if (id) sessionStorage.removeItem(`ciblix_outbound_${id}`);
       void qc.invalidateQueries({ queryKey: ['contact', id] });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Impossible d’envoyer la note au Scribe.';
+      setScribeError(msg);
     },
   });
 
@@ -178,46 +208,32 @@ export function ContactDetail() {
           setDictationPrompt(null);
           if (id) sessionStorage.removeItem(`ciblix_outbound_${id}`);
         }}
+        onOutbound={(canal) => showOutboundPrompt(canal, mapped.decideur?.nom || mapped.nomLegal)}
         onReprendre={() => reprendre.mutate()}
         onVoirMessage={() => reprendre.mutate()}
-        onDicter={() => setDictationOpen(true)}
+        onDicter={() => {
+          setScribeResult(null);
+          setScribeError(null);
+          setDictationOpen(true);
+        }}
       />
 
-      {dictationOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
-            <h2 className="text-base font-medium">Dicter une note</h2>
-            <p className="mt-1 text-xs text-neutral-500">
-              Quinze secondes suffisent. Le Scribe écrit le suivi — aucun champ à remplir.
-            </p>
-            <textarea
-              className="mt-4 min-h-[120px] w-full rounded-xl border border-neutral-200 px-3 py-2 text-[13px] outline-none focus:border-[#016AEB]"
-              placeholder="J’ai eu Trabelsi, intéressé mais budget bloqué jusqu’en septembre…"
-              value={dictationText}
-              onChange={(e) => setDictationText(e.target.value)}
-              autoFocus
-            />
-            <div className="mt-4 flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 flex-1"
-                onClick={() => setDictationOpen(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="button"
-                className="h-11 flex-1 bg-[#016AEB] hover:bg-[#0159c4]"
-                disabled={dictationText.trim().length < 8 || scribe.isPending}
-                onClick={() => scribe.mutate(dictationText.trim())}
-              >
-                Envoyer au Scribe
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <DicterNoteModal
+        open={dictationOpen}
+        pending={scribe.isPending}
+        error={scribeError}
+        result={scribeResult}
+        onClose={() => {
+          setDictationOpen(false);
+          setScribeError(null);
+          setScribeResult(null);
+        }}
+        onDone={() => {
+          setDictationOpen(false);
+          setScribeResult(null);
+        }}
+        onSubmit={(texte) => scribe.mutate(texte)}
+      />
     </div>
   );
 }

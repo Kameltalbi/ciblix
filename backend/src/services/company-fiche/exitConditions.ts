@@ -120,7 +120,8 @@ export function checkScribeExit(data: FicheEntrepriseData): ExitCheck {
   const deal = data.statut_deal.toLowerCase();
   let etat: FicheEtat = 'en_discussion';
   if (/(gagn|won|clos[ée]e?\s*gagn)/i.test(deal)) etat = 'gagnee';
-  else if (/(perdu|lost|refus)/i.test(deal)) etat = 'perdue';
+  else if (/(perdu|lost|refus|pas_interesse)/i.test(deal)) etat = 'perdue';
+  else if (/(contactee|a_recontacter|interesse|sans_reponse)/i.test(deal)) etat = 'en_discussion';
 
   return {
     ok: true,
