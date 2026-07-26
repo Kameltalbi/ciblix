@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { validateGeneratedMessage, validateOfferFidelity } from './generateOutreach.js';
+import {
+  validateGeneratedMessage,
+  validateOfferFidelity,
+} from '../commercial-writing/offerFidelity.js';
+import { buildTenantProfile, buildTargetProfile } from '../commercial-writing/buildProfiles.js';
 
 describe('validateGeneratedMessage', () => {
   it('rejects messages signed as the prospect', () => {
@@ -64,5 +68,30 @@ Softfacture`;
       productsServices: ['facturation en ligne', 'devis', 'factures'],
     });
     expect(check.ok).toBe(true);
+  });
+});
+
+describe('buildTenantProfile / buildTargetProfile', () => {
+  it('ne tire les services que de la Mission / catalogue, pas du nom', () => {
+    const tenant = buildTenantProfile({
+      organizationName: 'Softfacture',
+      targeting: {
+        companyBrief: 'Facturation en ligne',
+        productsServices: ['facturation', 'devis'],
+        sectors: ['SaaS'],
+      },
+      catalogProductNames: ['Abonnement Pro'],
+      ton: 'commercial',
+    });
+    expect(tenant.services_offerts).toEqual(['facturation', 'devis', 'Abonnement Pro']);
+    expect(tenant.nom_entreprise).toBe('Softfacture');
+
+    const target = buildTargetProfile({
+      companyName: 'A2FO',
+      industry: 'Place de marché',
+      besoin: 'digitalisation admin',
+    });
+    expect(target.nom_entreprise).toBe('A2FO');
+    expect(target.secteur_activite).toContain('Place de marché');
   });
 });

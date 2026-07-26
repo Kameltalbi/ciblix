@@ -8,7 +8,11 @@ import { getContactById } from '../services/agent-memory/contactService.js';
 import { listEventsForContact } from '../services/agent-memory/agentEventService.js';
 import { normalizeEmail } from '../services/agent-memory/normalize.js';
 import { requireMissionForMutations } from '../middleware/requireMissionMutations.js';
-import { validateOfferFidelity } from '../services/prospecting/generateOutreach.js';
+import { validateOfferFidelity } from '../services/commercial-writing/offerFidelity.js';
+import {
+  buildTargetProfile,
+  buildTenantProfile,
+} from '../services/commercial-writing/buildProfiles.js';
 
 export const offreBotRoutes = Router();
 
@@ -339,15 +343,28 @@ offreBotRoutes.post('/generate', async (req: AuthRequest, res: Response, next: N
       ar: 'Rédige en arabe.',
     };
 
-    const systemPrompt = `Tu es OffreBot. Tu rédiges une proposition commerciale AU NOM DE L'ÉMETTEUR pour VENDRE ses produits au CLIENT.
+    const tenant = buildTenantProfile({
+      organizationName: org?.name || 'Émetteur',
+      targeting,
+      catalogProducts,
+      ton: tone === 'friendly' ? 'chaleureux' : tone === 'concise' ? 'direct' : 'formel',
+    });
+    const target = buildTargetProfile({
+      companyName: clientName,
+      decideur: contactName || null,
+      besoin: [brief?.need, brief?.context, description].filter(Boolean).join(' — ').slice(0, 800),
+      historique: historyBlock || null,
+    });
 
-RÈGLES ABSOLUES — IDENTITÉ & OFFRE :
-1) L'ÉMETTEUR vend UNIQUEMENT l'offre listée (Mission / catalogue). Exemple Softfacture = facturation en ligne, devis, factures — PAS du développement SaaS sur-mesure, PAS d'événementiel.
-2) Le CLIENT est l'ACHETEUR. Tu ne vends JAMAIS les produits / métier / marketplace du client à lui-même.
-3) Ne confonds JAMAIS l'activité du client (ex. place de marché) avec l'offre de l'émetteur.
-4) Prestations = abonnements / modules / services de l'émetteur uniquement.
-5) Prix : réalistes pour un SaaS / service PME. Si aucun montant fourni, estime un abonnement PME raisonnable (centaines à quelques milliers DT), JAMAIS des millions.
-6) Interdit : « développement et mise en place de la solution SaaS » générique, refonte complète, 15M DT, etc. sauf si explicitement dans le catalogue émetteur.
+    const systemPrompt = `Tu es OffreBot. Tu rédiges une proposition commerciale AU NOM de <notre_entreprise> DESTINÉE à <prospect_cible>.
+
+=== RÈGLE ABSOLUE — NE JAMAIS ENFREINDRE ===
+Tu écris DEPUIS <notre_entreprise> VERS <prospect_cible>.
+- <notre_entreprise> = CE QUE NOUS VENDONS (Mission + catalogue Product uniquement).
+- <prospect_cible> = contexte acheteur uniquement — JAMAIS à reformuler comme nos prestations.
+- Softfacture-type: facturation / devis / factures — PAS développement SaaS sur-mesure, PAS événementiel, PAS le métier du client.
+- Prix réalistes PME (centaines à quelques milliers DT). JAMAIS des millions inventés.
+- Prestations = uniquement services listés dans <notre_entreprise>.
 
 ${toneInstructions[tone]}
 ${langInstructions[language]}
@@ -376,39 +393,41 @@ JSON uniquement:
   "signatureBlock": "Nom / fonction côté émetteur"
 }`;
 
-    const prompt = `Génère une proposition commerciale:
+    const prompt = `Génère une proposition commerciale (JSON) à partir des deux blocs séparés:
 
-=== ÉMETTEUR (VENDEUR — ton client interne Ciblix) ===
-- Nom: ${org?.name || 'N/A'}
-- Email: ${org?.email || 'N/A'}
-- Tél: ${org?.phone || 'N/A'}
-- Adresse: ${org?.address || 'N/A'}
+<notre_entreprise>
+Nom: ${tenant.nom_entreprise}
+Secteur: ${tenant.secteur_activite || 'N/A'}
+Services/produits (LES NÔTRES — seules prestations autorisées): ${
+      tenant.services_offerts.join(' · ') || '(non renseigné — reste général, n’invente rien)'
+    }
+Proposition de valeur: ${tenant.value_proposition || 'N/A'}
+Coordonnées: ${org?.email || 'N/A'} | ${org?.phone || 'N/A'} | ${org?.address || 'N/A'}
 ${sellerOfferBlock}
+</notre_entreprise>
 
-=== CLIENT (ACHETEUR — destinataire de l'offre) ===
-- Entreprise: ${clientName}
-- Contact: ${contactName || 'N/A'}
-- Email: ${clientEmail}
-- Tél: ${clientPhone}
-- Adresse: ${clientAddress}
-- Matricule fiscal: ${clientMatricule}
+<prospect_cible>
+Entreprise: ${target.nom_entreprise}
+Contact: ${target.decideur || 'N/A'}
+Email: ${clientEmail} | Tél: ${clientPhone}
+Adresse: ${clientAddress} | Matricule: ${clientMatricule}
+Besoin / contexte (ACHETEUR — jamais nos services): ${target.besoin_detecte || 'N/A'}
+Historique: ${target.contexte_derniere_interaction || 'N/A'}
+</prospect_cible>
 
 === CADRAGE ===
 - Titre: ${title}
 - Type: ${type}
-- Description / historique (contexte acheteur seulement): ${description}
 - Montant HT imposé: ${montantHT > 0 ? `${montantHT.toFixed(3)} DT (utilise exactement ces montants)` : `non fourni — estime ≤ ${MAX_AUTO_HT} DT HT, cohérent catalogue`}
 - TVA 19% / TTC: ${montantHT > 0 ? `${tva.toFixed(3)} / ${montantTTC.toFixed(3)} DT` : 'à calculer'}
 
 ${productBlock}
 
-${historyBlock ? `(Historique déjà inclus dans description)\n` : ''}
 COMMERCIAL ASSIGNÉ: ${assignedTo}
-
 ${includeConditions ? 'Inclure les conditions générales (paiement, validité, PI).' : 'Ne pas inclure de conditions générales.'}
 ${customNotes ? `NOTES SUPPLÉMENTAIRES: ${customNotes}` : ''}
 
-Rappel final: vends ${org?.name || "l'émetteur"} au client ${clientName}, pas l'inverse.`;
+Rappel: vends ${tenant.nom_entreprise} au client ${target.nom_entreprise}, pas l'inverse.`;
 
     const aiResponse = await callOpenAI(prompt, systemPrompt);
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
@@ -451,6 +470,7 @@ Rappel final: vends ${org?.name || "l'émetteur"} au client ${clientName}, pas l
           organizationName: org?.name || 'Émetteur',
           organizationBrief: sellerBrief || null,
           productsServices: sellerProducts,
+          organizationSector: targeting?.sectors?.slice(0, 3).join(', ') || null,
         });
         if (!fidelity.ok) {
           console.warn('[offre-bot] offer fidelity fail', fidelity.reason, org?.name, clientName);
@@ -487,7 +507,7 @@ Rappel final: vends ${org?.name || "l'émetteur"} au client ${clientName}, pas l
               ? [
                   'Acompte 50% à la commande',
                   'Validité 30 jours',
-                  'Facturation selon conditions Softfacture / émetteur',
+                  `Facturation selon conditions ${org?.name || 'émetteur'}`,
                 ]
               : null,
             conclusion: `Restant à votre disposition pour finaliser cette proposition.`,
@@ -495,6 +515,9 @@ Rappel final: vends ${org?.name || "l'émetteur"} au client ${clientName}, pas l
             _fidelityFallback: fidelity.reason,
           };
         }
+
+        // Audit rôles local déjà fait ; flag relecture si fallback
+        proposal._needsHumanReview = Boolean(proposal._fidelityFallback);
       } catch {
         proposal = { raw: aiResponse };
       }
@@ -504,6 +527,7 @@ Rappel final: vends ${org?.name || "l'émetteur"} au client ${clientName}, pas l
 
     res.json({
       proposal,
+      needsHumanReview: Boolean(proposal?._needsHumanReview || proposal?._fidelityFallback),
       affaire: {
         id: affaireMeta.id,
         title: affaireMeta.title,

@@ -659,7 +659,7 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       return res.status(400).json({ error: channelCheck.error });
     }
 
-    const [organization, senderUser, targeting] = await Promise.all([
+    const [organization, senderUser, targeting, catalogProducts] = await Promise.all([
       prisma.organization.findUnique({
         where: { id: req.organizationId! },
         select: { name: true },
@@ -680,6 +680,11 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
           commercialPriorities: true,
           missionSummary: true,
         },
+      }),
+      prisma.product.findMany({
+        where: { organizationId: req.organizationId!, active: true, deletedAt: null },
+        select: { name: true },
+        take: 40,
       }),
     ]);
 
@@ -706,19 +711,16 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       targeting?.missionSummary?.trim() ||
       null;
 
-    const { body, source, signatureWarning } = await generateOutreachMessage(
-      hit,
-      messageType as OutreachMessageType,
-      tone,
-      {
+    const { body, source, signatureWarning, needsHumanReview, roleAudit, qualityAudit } =
+      await generateOutreachMessage(hit, messageType as OutreachMessageType, tone, {
         organizationName: organization?.name || 'Notre entreprise',
         organizationSector: targeting?.sectors?.slice(0, 3).join(', ') || null,
         organizationBrief: brief,
         productsServices: products,
         commercialPriorities: targeting?.commercialPriorities ?? null,
         senderName: senderUser?.name || null,
-      }
-    );
+        catalogProductNames: catalogProducts.map((p) => p.name),
+      });
 
     const channel: 'EMAIL' | 'WHATSAPP' | 'NOTE' =
       messageType === 'WHATSAPP' ? 'WHATSAPP' : messageType === 'LINKEDIN' ? 'NOTE' : 'EMAIL';
@@ -751,6 +753,9 @@ prospectingRoutes.post('/prospects/:id/generate-message', async (req: AuthReques
       signatureWarningText: signatureWarning
         ? '⚠️ Ce message semble mal généré — vérifiez la signature avant envoi (il ne doit pas être signé du nom du prospect).'
         : undefined,
+      needsHumanReview,
+      roleAudit,
+      qualityAudit,
       messageType,
       tone,
       body,
