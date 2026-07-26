@@ -116,7 +116,9 @@ export function LandingHeader() {
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="shadow-glow">{t('landing.headerRegister')}</Button>
+                <Button className="border-0 bg-gradient-to-r from-[#016AEB] via-[#0071DD] to-[#38bdf8] text-white shadow-glow hover:opacity-95">
+                  {t('landing.headerRegister')}
+                </Button>
               </Link>
             </div>
           </div>
@@ -141,7 +143,9 @@ export function LandingHeader() {
               </Button>
             </Link>
             <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-              <Button className="w-full shadow-glow">{t('landing.headerRegister')}</Button>
+              <Button className="w-full border-0 bg-gradient-to-r from-[#016AEB] via-[#0071DD] to-[#38bdf8] text-white shadow-glow hover:opacity-95">
+                {t('landing.headerRegister')}
+              </Button>
             </Link>
           </div>
         </div>

@@ -86,7 +86,10 @@ export function Landing() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link to="/register">
-                <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto">
+                <Button
+                  size="lg"
+                  className="h-12 w-full border-0 bg-gradient-to-r from-[#016AEB] via-[#0071DD] to-[#38bdf8] px-8 text-base text-white shadow-glow hover:opacity-95 sm:w-auto"
+                >
                   {t('landing.cta')}
                   <ArrowRight size={18} className="ml-2" />
                 </Button>
