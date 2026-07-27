@@ -106,6 +106,26 @@ const AVAILABLE_AGENTS = [
     showInFleet: false,
   },
   {
+    slug: 'connect-ai',
+    name: 'Copilote Commercial',
+    role: 'Copilote IA de prospection sur vos canaux',
+    whenToUse:
+      'Quand vous prospectez sur LinkedIn (puis d\'autres canaux) et voulez qualifier, rédiger et affiner vos messages sans envoi automatique.',
+    description:
+      'Copilote commercial via extension navigateur : qualification IA, intelligence contextuelle, multi-produits et messages personnalisés — vous cliquez toujours sur Envoyer.',
+    icon: 'Link2',
+    color: 'blue',
+    features: [
+      'Extension Chrome / Edge / Brave',
+      'Qualification & score IA',
+      'Mode conversationnel',
+      'Mémoire prospect',
+      'Base de connaissances entreprise',
+    ],
+    route: '/agents/connect-ai',
+    defaultActive: false,
+  },
+  {
     slug: 'factcheck-ai',
     name: 'Vérificateur IA',
     role: 'Capacité transverse (non commercialisé)',

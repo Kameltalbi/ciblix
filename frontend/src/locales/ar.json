@@ -75,10 +75,114 @@
     "agentAnalyste": "المحلل",
     "agentOffre": "العروض",
     "agentGmail": "Gmail",
+    "agentConnect": "المساعد التجاري",
     "agentFactCheck": "المدقّق",
     "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "الأداء",
     "mission": "مهمة الذكاء الاصطناعي"
+  },
+  "connectAi": {
+    "badge": "وكيل Ciblix",
+    "title": "المساعد التجاري",
+    "subtitle": "يحلل الملف، يؤهل العميل، يختار المنتج، يصيغ ويُحسّن — أنت ترسل.",
+    "cta": {
+      "knowledge": "قاعدة المعرفة",
+      "extension": "تثبيت الإضافة"
+    },
+    "capabilities": {
+      "qualifyTitle": "تأهيل بالذكاء الاصطناعي",
+      "qualifyDesc": "النتيجة، صاحب القرار، الميزانية، احتمالات الرد والاجتماع، الزوايا وما يجب تجنبه.",
+      "contextTitle": "ذكاء سياقي",
+      "contextDesc": "يقرأ المنصب والشركة والنشاط الأخير والتوقيت لزاوية مناسبة.",
+      "chatTitle": "وضع محادثة",
+      "chatDesc": "« أقصر »، « بالإنجليزية »، « ركّز على التوفير » — تحسين دون البدء من الصفر.",
+      "memoryTitle": "ذاكرة العميل",
+      "memoryDesc": "آخر تواصل، المشاعر، الموعد والمنتج — جاهزة عند العودة.",
+      "productsTitle": "منتجات متعددة",
+      "productsDesc": "يختار المساعد تلقائيًا المنتج الأنسب للملف.",
+      "knowledgeTitle": "معرفة الشركة",
+      "knowledgeDesc": "الموقع وملفات PDF والأسئلة والأسعار تغذي الرسائل تلقائيًا."
+    },
+    "tabs": {
+      "overview": "نظرة عامة",
+      "history": "السجل",
+      "templates": "القوالب",
+      "knowledge": "المعرفة",
+      "analytics": "التحليلات",
+      "extension": "الإضافة",
+      "settings": "الإعدادات"
+    },
+    "stats": {
+      "generated": "رسائل مُولَّدة",
+      "copied": "مُنسوخة",
+      "inserted": "مُدرَجة",
+      "avgTime": "متوسط الوقت"
+    },
+    "overview": {
+      "recent": "رسائل حديثة",
+      "empty": "لا رسائل بعد. ثبّت الإضافة وابدأ على LinkedIn.",
+      "products": "كتالوج المنتجات"
+    },
+    "templates": {
+      "defaultOnly": "قوالب افتراضية — أنشئ نسخًا مخصصة عبر API."
+    },
+    "analytics": {
+      "byChannel": "حسب القناة",
+      "byProduct": "حسب المنتج"
+    },
+    "extension": {
+      "pageTitle": "إضافة المتصفح",
+      "betaNote": "نسخة بيتا للمطورين. تُحمَّل الإضافة محليًا عبر وضع المطور في Chrome أو Edge.",
+      "channelsNote": "القنوات المتاحة حاليًا: LinkedIn (ستُضاف قنوات أخرى تدريجيًا).",
+      "statusInstalled": "الإضافة مثبتة ومتزامنة",
+      "statusPending": "لم تُكتشف الإضافة — اتبع خطوات التثبيت",
+      "account": "الحساب",
+      "browser": "المتصفح",
+      "version": "الإصدار",
+      "lastSync": "آخر مزامنة",
+      "never": "أبدًا",
+      "testCta": "اختبار الإضافة",
+      "reinstallCta": "إعادة التثبيت",
+      "newsCta": "الجديد",
+      "installTitle": "التثبيت",
+      "installStep1": "بناء الإضافة: cd extension && npm run build",
+      "installStep2": "افتح chrome://extensions أو edge://extensions",
+      "installStep3": "فعّل وضع المطور، ثم «تحميل غير معبأ»",
+      "installStep4": "اختر مجلد extension/dist، ثم سجّل الدخول إلى Ciblix",
+      "installHint": "مطلوب حساب Ciblix مع تفعيل المساعد التجاري."
+    },
+    "settings": {
+      "toneTitle": "نبرة المساعد",
+      "toneHint": "الإعداد الوحيد حاليًا — الباقي يُتعلَّم من تعليماتك.",
+      "tones": {
+        "professionnel": "احترافي",
+        "amical": "ودّي",
+        "premium": "فاخر"
+      },
+      "save": "حفظ"
+    },
+    "knowledge": {
+      "title": "قاعدة المعرفة",
+      "hint": "اربط موقعك وكتيباتك وملفات PDF والأسعار والأسئلة الشائعة. يستخدمها المساعد تلقائيًا.",
+      "addUrl": "فهرسة موقع",
+      "addFile": "رفع ملف",
+      "addText": "لصق نص",
+      "name": "الاسم",
+      "nameOptional": "الاسم (اختياري)",
+      "indexUrl": "فهرسة",
+      "fileFormats": "PDF، TXT، MD، CSV، HTML — حتى 8 ميغابايت",
+      "contentPlaceholder": "أسئلة شائعة، أسعار، حجج بيع…",
+      "saveText": "حفظ",
+      "typeText": "نص",
+      "typeFaq": "أسئلة شائعة",
+      "typePricing": "أسعار",
+      "sources": "المصادر المفهرسة",
+      "empty": "لا مصادر بعد.",
+      "chunks": "مقاطع",
+      "reindex": "إعادة الفهرسة",
+      "delete": "حذف",
+      "uploadError": "فشل الرفع"
+    }
   },
   "gmailAi": {
     "badge": "وكيل Gmail الذكي",

@@ -9,6 +9,7 @@ export const ALL_AGENT_SLUGS = [
   'analyste-ai',
   'offre-bot',
   'gmail-ai',
+  'connect-ai',
   'factcheck-ai',
   'brand-pulse-ai',
 ] as const;
@@ -25,6 +26,8 @@ export const AGENT_MIN_PLAN: Record<AgentSlug, PlanType> = {
   'offre-bot': 'FREE',
   /** Connecteur Gmail — à partir de Croissance (BASIC). */
   'gmail-ai': 'BASIC',
+  /** Connect AI — prospection assistée via extension. */
+  'connect-ai': 'BASIC',
   'factcheck-ai': 'ENTERPRISE',
   'brand-pulse-ai': 'ENTERPRISE',
 };

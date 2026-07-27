@@ -15,6 +15,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { GoogleAuthCallback } from './pages/GoogleAuthCallback';
 import { Landing } from './pages/Landing';
+import { ExtensionConnect } from './pages/ExtensionConnect';
 
 // Heavy authenticated pages: lazy-loaded so they don't bloat the initial bundle.
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
@@ -58,6 +59,9 @@ const OffreBot = lazy(() =>
 );
 const GmailAI = lazy(() =>
   import('./pages/GmailAI').then((m) => ({ default: m.GmailAI }))
+);
+const ConnectAI = lazy(() =>
+  import('./pages/ConnectAI').then((m) => ({ default: m.ConnectAI }))
 );
 const Dashboard = lazy(() =>
   import('./pages/Dashboard').then((m) => ({ default: m.Dashboard }))
@@ -129,6 +133,14 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/sales" element={<LandingSales />} />
           <Route path="/login" element={<Login />} />
+          <Route
+            path="/extension/connect"
+            element={
+              <ProtectedRoute>
+                <ExtensionConnect />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/register" element={<Register />} />
           <Route path="/auth/google-callback" element={<GoogleAuthCallback />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -227,6 +239,14 @@ export default function App() {
                           element={
                             <MissionGate>
                               <GmailAI />
+                            </MissionGate>
+                          }
+                        />
+                        <Route
+                          path="/agents/connect-ai"
+                          element={
+                            <MissionGate>
+                              <ConnectAI />
                             </MissionGate>
                           }
                         />

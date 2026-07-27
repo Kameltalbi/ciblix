@@ -14,82 +14,82 @@ datasource db {
 //  ORGANIZATION — Tenant/Client pour le multitenant
 // ═══════════════════════════════════════════════════════════════
 model Organization {
-  id          String   @id @default(cuid())
-  name        String   // ex: "Bilan Tunisie"
-  email       String?  // Email de contact de l'organisation
-  phone       String?
-  address     String?
-  tva         String?  // Numéro TVA
-  logoUrl     String?  // URL du logo
-  paymentStatus String @default("PENDING") // PENDING, APPROVED, REJECTED
-  suspended   Boolean  @default(false)
-  plan        String   @default("FREE") // FREE, BUSINESS, ENTERPRISE
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String // ex: "Bilan Tunisie"
+  email         String? // Email de contact de l'organisation
+  phone         String?
+  address       String?
+  tva           String? // Numéro TVA
+  logoUrl       String? // URL du logo
+  paymentStatus String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  suspended     Boolean  @default(false)
+  plan          String   @default("FREE") // FREE, BUSINESS, ENTERPRISE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
-  users       User[]
-  clients     Client[]
-  leads       Lead[]
-  affaires    Affaire[]
-  products    Product[]
-  activites   Activite[]
-  leadActivites LeadActivite[]
-  calendarEvents CalendarEvent[]
-  expenses    Expense[]
-  emails      Email[]
-  gmailTokens GmailToken[]
-  previsionnels PrevisionMois[]
-  notifications Notification[]
-  supportTickets SupportTicket[]
-  supportTicketMessages SupportTicketMessage[]
-  auditLogs   AuditLog[]
-  customCategories CustomCategory[]
-  emailTemplates EmailTemplate[]
-  subscriptions Subscription[]
-  salesObjectives SalesObjective[]
-  userPermissions UserPermission[]
-  commissionConfigs CommissionConfig[]
-  aiProspects     AiProspect[]
-  prospectingAutomation ProspectingAutomation?
-  agents          OrganizationAgent[]
-  scoutProfile    ScoutProfile?
-  scoutOpportunities ScoutOpportunity[]
-  agentUsageMonthly AgentUsageMonthly[]
-  brandProfiles   BrandProfile[]
-  brandScoreSnapshots BrandScoreSnapshot[]
-  brandArticles   BrandArticle[]
-  brandRecommendations BrandRecommendation[]
-  brandAlerts       BrandAlert[]
-  brandCmsConnections BrandCmsConnection[]
-  brandChannelConnections BrandChannelConnection[]
-  brandCompetitorSnapshots BrandCompetitorSnapshot[]
-  brandApiKeys    BrandApiKey[]
-  gmailAiSyncStates GmailAiSyncState[]
-  gmailAiProcessedMessages GmailAiProcessedMessage[]
-  contacts              Contact[]
-  agentEvents           AgentEvent[]
-  contactDedupConflicts ContactDedupConflict[]
-  suggestions           Suggestion[]
-  ficheTransitions      FicheTransition[]
-  referentielCorrections ReferentielCorrection[]
-  referentielDedupReviews ReferentielDedupReview[] @relation("DedupReporter")
-  copilotOrgConfig      CopilotOrgConfig?
-  copilotMessages       CopilotMessage[]
+  users                      User[]
+  clients                    Client[]
+  leads                      Lead[]
+  affaires                   Affaire[]
+  products                   Product[]
+  activites                  Activite[]
+  leadActivites              LeadActivite[]
+  calendarEvents             CalendarEvent[]
+  expenses                   Expense[]
+  emails                     Email[]
+  gmailTokens                GmailToken[]
+  previsionnels              PrevisionMois[]
+  notifications              Notification[]
+  supportTickets             SupportTicket[]
+  supportTicketMessages      SupportTicketMessage[]
+  auditLogs                  AuditLog[]
+  customCategories           CustomCategory[]
+  emailTemplates             EmailTemplate[]
+  subscriptions              Subscription[]
+  salesObjectives            SalesObjective[]
+  userPermissions            UserPermission[]
+  commissionConfigs          CommissionConfig[]
+  aiProspects                AiProspect[]
+  prospectingAutomation      ProspectingAutomation?
+  agents                     OrganizationAgent[]
+  scoutProfile               ScoutProfile?
+  scoutOpportunities         ScoutOpportunity[]
+  agentUsageMonthly          AgentUsageMonthly[]
+  brandProfiles              BrandProfile[]
+  brandScoreSnapshots        BrandScoreSnapshot[]
+  brandArticles              BrandArticle[]
+  brandRecommendations       BrandRecommendation[]
+  brandAlerts                BrandAlert[]
+  brandCmsConnections        BrandCmsConnection[]
+  brandChannelConnections    BrandChannelConnection[]
+  brandCompetitorSnapshots   BrandCompetitorSnapshot[]
+  brandApiKeys               BrandApiKey[]
+  gmailAiSyncStates          GmailAiSyncState[]
+  gmailAiProcessedMessages   GmailAiProcessedMessage[]
+  contacts                   Contact[]
+  agentEvents                AgentEvent[]
+  contactDedupConflicts      ContactDedupConflict[]
+  suggestions                Suggestion[]
+  ficheTransitions           FicheTransition[]
+  referentielCorrections     ReferentielCorrection[]
+  referentielDedupReviews    ReferentielDedupReview[]  @relation("DedupReporter")
+  copilotOrgConfig           CopilotOrgConfig?
+  copilotMessages            CopilotMessage[]
   /// TTL transcription brute (jours) — appliqué par le job de purge S3
-  agentEventRawRetentionDays Int @default(90)
+  agentEventRawRetentionDays Int                       @default(90)
   pipelineThresholds         Json?
 
   // Phase 5 — intégrations externes (désactivées par défaut)
-  whatsappBusinessAccountId      String?
-  whatsappPhoneNumberId          String?
-  whatsappWebhookToken           String?
-  whatsappSessionTimeoutMinutes  Int      @default(30)
-  zoomOAuthToken                 String?
-  telephonyWebhookSecret         String?
-  telephonyRecordingConsentMode  TelephonyRecordingConsentMode @default(DISABLED)
-  telephonyConsentConfirmedAt    DateTime?
-  telephonyConsentConfirmedBy    String?
+  whatsappBusinessAccountId     String?
+  whatsappPhoneNumberId         String?
+  whatsappWebhookToken          String?
+  whatsappSessionTimeoutMinutes Int                           @default(30)
+  zoomOAuthToken                String?
+  telephonyWebhookSecret        String?
+  telephonyRecordingConsentMode TelephonyRecordingConsentMode @default(DISABLED)
+  telephonyConsentConfirmedAt   DateTime?
+  telephonyConsentConfirmedBy   String?
 
   whatsappSessionBuffers WhatsappSessionBuffer[]
   outboundWebhookConfig  OutboundWebhookConfig?
@@ -98,11 +98,22 @@ model Organization {
   onboardingCompletedAt DateTime?
   onboardingSector      String?
 
-  billingSubscription   BillingSubscription?
-  usageQuotas           UsageQuota[]
-  llmUsageLogs          LlmUsageLog[]
-  targetingProfile      OrgTargetingProfile?
-  agentTasks            AgentTask[]
+  billingSubscription      BillingSubscription?
+  usageQuotas              UsageQuota[]
+  llmUsageLogs             LlmUsageLog[]
+  targetingProfile         OrgTargetingProfile?
+  agentTasks               AgentTask[]
+  connectProspects         ConnectProspect[]
+  connectPromptTemplates   ConnectPromptTemplate[]
+  connectGeneratedMessages ConnectGeneratedMessage[]
+  connectExtensionSessions ConnectExtensionSession[]
+  connectAnalyticsEvents   ConnectAnalyticsEvent[]
+  connectOrgSettings        ConnectOrgSettings?
+  connectConversations      ConnectConversation[]
+  connectExtensionAuthCodes ConnectExtensionAuthCode[]
+  connectCommercialProducts ConnectCommercialProduct[]
+  connectKnowledgeSources   ConnectKnowledgeSource[]
+  connectKnowledgeChunks    ConnectKnowledgeChunk[]
 
   @@map("organizations")
 }
@@ -116,78 +127,86 @@ enum TelephonyRecordingConsentMode {
 //  USER — Utilisateur du CRM
 // ═══════════════════════════════════════════════════════════════
 model User {
-  id           String   @id @default(cuid())
-  organizationId String
-  email        String   @unique
-  passwordHash String
-  name         String
-  phone        String?
+  id                  String    @id @default(cuid())
+  organizationId      String
+  email               String    @unique
+  passwordHash        String
+  name                String
+  phone               String?
   /// Identifiant OpenID Connect Google (« sub ») — connexion SSO
-  googleSub    String?  @unique
-  role         UserRole @default(OWNER)
-  failedLoginAttempts Int @default(0)
-  lockedUntil  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  googleSub           String?   @unique
+  role                UserRole  @default(OWNER)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  clientsCreated   Client[]
-  leadsCreated     Lead[]
-  affairesCreated  Affaire[]
-  assignedAffaires Affaire[] @relation("CommercialAffaires")
-  calendarEventsCreated CalendarEvent[]
-  expensesCreated  Expense[]
-  gmailTokens      GmailToken?
-  gmailAiSyncState GmailAiSyncState?
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientsCreated           Client[]
+  leadsCreated             Lead[]
+  affairesCreated          Affaire[]
+  assignedAffaires         Affaire[]                 @relation("CommercialAffaires")
+  calendarEventsCreated    CalendarEvent[]
+  expensesCreated          Expense[]
+  gmailTokens              GmailToken?
+  gmailAiSyncState         GmailAiSyncState?
   gmailAiProcessedMessages GmailAiProcessedMessage[]
-  notifications    Notification[]
-  createdSupportTickets SupportTicket[] @relation("SupportTicketCreatedBy")
-  assignedSupportTickets SupportTicket[] @relation("SupportTicketAssignedTo")
-  supportTicketMessages SupportTicketMessage[]
-  refreshTokens    RefreshToken[]
-  auditLogs        AuditLog[]
-  salesObjectives  SalesObjective[]
-  permissions      UserPermission[]
-  agentEvents      AgentEvent[]
-  copilotMessages  CopilotMessage[]
+  notifications            Notification[]
+  createdSupportTickets    SupportTicket[]           @relation("SupportTicketCreatedBy")
+  assignedSupportTickets   SupportTicket[]           @relation("SupportTicketAssignedTo")
+  supportTicketMessages    SupportTicketMessage[]
+  refreshTokens            RefreshToken[]
+  auditLogs                AuditLog[]
+  salesObjectives          SalesObjective[]
+  permissions              UserPermission[]
+  agentEvents              AgentEvent[]
+  copilotMessages          CopilotMessage[]
+  connectProspects         ConnectProspect[]
+  connectGeneratedMessages ConnectGeneratedMessage[]
+  connectExtensionSessions ConnectExtensionSession[]
+  connectAnalyticsEvents   ConnectAnalyticsEvent[]
+  connectUserSettings       ConnectUserSettings?
+  connectConversations      ConnectConversation[]
+  connectExtensionAuthCodes ConnectExtensionAuthCode[]
+  connectUserMemory         ConnectUserMemory?
 
   @@index([organizationId])
   @@map("users")
 }
 
 enum UserRole {
-  OWNER       // Accès complet, gestion des utilisateurs
-  PARTNER     // Accès limité, lecture seule sur les données
-  COMMERCIAL  // Accès limité aux opportunités assignées, objectifs
-  SUPERADMIN  // Super admin pour valider les paiements
+  OWNER // Accès complet, gestion des utilisateurs
+  PARTNER // Accès limité, lecture seule sur les données
+  COMMERCIAL // Accès limité aux opportunités assignées, objectifs
+  SUPERADMIN // Super admin pour valider les paiements
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  CLIENT — Entreprises clientes
 // ═══════════════════════════════════════════════════════════════
 model Client {
-  id          String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
-  name        String   // ex: "UBCI"
-  contactName String?  // ex: "Ahmed Ben Ali"
-  email       String?
-  phone       String?
-  address     String?
-  matricule   String?  // Matricule fiscal tunisien
-  qualificatif String?  // ex: "PROSPECT" ou "CLIENT"
-  notes       String?  @db.Text
-  deletedAt   DateTime? // Soft delete
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  name           String // ex: "UBCI"
+  contactName    String? // ex: "Ahmed Ben Ali"
+  email          String?
+  phone          String?
+  address        String?
+  matricule      String? // Matricule fiscal tunisien
+  qualificatif   String? // ex: "PROSPECT" ou "CLIENT"
+  notes          String?   @db.Text
+  deletedAt      DateTime? // Soft delete
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById String?
-  createdBy   User?     @relation(fields: [createdById], references: [id])
-  affaires    Affaire[]
-  leads       Lead[]    @relation("ClientLeads")
-  convertedFromLeads Lead[] @relation("LeadConversions")
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById        String?
+  createdBy          User?        @relation(fields: [createdById], references: [id])
+  affaires           Affaire[]
+  leads              Lead[]       @relation("ClientLeads")
+  convertedFromLeads Lead[]       @relation("LeadConversions")
 
   @@index([organizationId])
   @@index([name])
@@ -199,33 +218,33 @@ model Client {
 //  LEAD — Prospects avant conversion en client/affaire
 // ═══════════════════════════════════════════════════════════════
 model Lead {
-  id            String   @id @default(cuid())
-  organizationId String
-  clientId      String?
-  client        Client?    @relation("ClientLeads", fields: [clientId], references: [id])
-  name          String   // Nom de l'entreprise ou du prospect
-  contactName   String?  // Nom du contact
-  email         String?
-  phone         String?
-  company       String?  // Entreprise (si différent du nom principal)
-  source        LeadSource @default(AUTRE) // Origine du lead
-  status        LeadStatus @default(NEW) // État du lead
-  score         Int      @default(0) // Score de qualification (0-100)
-  estimatedValue Decimal? @db.Decimal(12, 3) // Valeur estimée DT
-  notes         String?  @db.Text
+  id                  String     @id @default(cuid())
+  organizationId      String
+  clientId            String?
+  client              Client?    @relation("ClientLeads", fields: [clientId], references: [id])
+  name                String // Nom de l'entreprise ou du prospect
+  contactName         String? // Nom du contact
+  email               String?
+  phone               String?
+  company             String? // Entreprise (si différent du nom principal)
+  source              LeadSource @default(AUTRE) // Origine du lead
+  status              LeadStatus @default(NEW) // État du lead
+  score               Int        @default(0) // Score de qualification (0-100)
+  estimatedValue      Decimal?   @db.Decimal(12, 3) // Valeur estimée DT
+  notes               String?    @db.Text
   convertedToClientId String?
-  convertedToClient Client?  @relation("LeadConversions", fields: [convertedToClientId], references: [id])
-  deletedAt     DateTime? // Soft delete
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  createdById   String?
-  createdBy     User?    @relation(fields: [createdById], references: [id])
+  convertedToClient   Client?    @relation("LeadConversions", fields: [convertedToClientId], references: [id])
+  deletedAt           DateTime? // Soft delete
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  createdById         String?
+  createdBy           User?      @relation(fields: [createdById], references: [id])
 
   // Relations
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  activites     LeadActivite[]
-  calendarEvents CalendarEvent[]
-  expenses      Expense[]
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  activites        LeadActivite[]
+  calendarEvents   CalendarEvent[]
+  expenses         Expense[]
   aiProspectOrigin AiProspect?
 
   @@index([organizationId])
@@ -248,11 +267,11 @@ enum LeadSource {
 }
 
 enum LeadStatus {
-  NEW        // Nouveau prospect
-  CONTACTED  // Premier contact établi
-  QUALIFIED  // Qualifié, prêt pour conversion
-  CONVERTED  // Converti en client
-  LOST       // Perdu
+  NEW // Nouveau prospect
+  CONTACTED // Premier contact établi
+  QUALIFIED // Qualifié, prêt pour conversion
+  CONVERTED // Converti en client
+  LOST // Perdu
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -267,66 +286,66 @@ enum AiProspectStatus {
 }
 
 model AiProspect {
-  id               String            @id @default(cuid())
-  organizationId   String
-  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  companyName      String
-  website          String?
-  linkedin         String?
-  phone            String?
-  email            String?
-  city             String?
-  country          String?
-  industry         String?
-  companySize      String?
+  companyName String
+  website     String?
+  linkedin    String?
+  phone       String?
+  email       String?
+  city        String?
+  country     String?
+  industry    String?
+  companySize String?
 
-  score            Int               @default(0)
-  scoreReason      String?           @db.Text
-  suggestedPitch   String?           @db.Text
-  aiTags           Json?
-  potentialLevel   String?
-  commercialAngle  String?           @db.Text
-  aiSummary        String?           @db.Text
-  interestProbability Int?           // 0–100
+  score               Int     @default(0)
+  scoreReason         String? @db.Text
+  suggestedPitch      String? @db.Text
+  aiTags              Json?
+  potentialLevel      String?
+  commercialAngle     String? @db.Text
+  aiSummary           String? @db.Text
+  interestProbability Int? // 0–100
 
   /// Enrichissement crawl site (si website présent)
-  websiteTitle          String?
-  websiteDescription    String?      @db.Text
-  detectedEmails        Json?        // string[]
-  facebookUrl           String?
-  instagramUrl          String?
+  websiteTitle            String?
+  websiteDescription      String?  @db.Text
+  detectedEmails          Json? // string[]
+  facebookUrl             String?
+  instagramUrl            String?
   faviconUrl              String?
   hasResponsiveWebsite    Boolean?
   hasSsl                  Boolean?
-  seoScore                Int?       // 0–100 heuristique
-  digitalPresenceLevel    String?    // FORT | MOYEN | FAIBLE
-  technologiesDetected    Json?      // string[] (signaux simples : WordPress, GA, etc.)
-  probableBusinessProblem String?    @db.Text
-  suggestedOffer          String?    @db.Text
+  seoScore                Int? // 0–100 heuristique
+  digitalPresenceLevel    String? // FORT | MOYEN | FAIBLE
+  technologiesDetected    Json? // string[] (signaux simples : WordPress, GA, etc.)
+  probableBusinessProblem String?  @db.Text
+  suggestedOffer          String?  @db.Text
 
   /// Fiche commerciale enrichie (produits, secteurs, opportunités, type clientèle…)
-  commercialProfile       Json?
-  googleMapsUrl           String?
+  commercialProfile Json?
+  googleMapsUrl     String?
 
-  leadId           String?           @unique
-  lead             Lead?             @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  leadId String? @unique
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
-  status           AiProspectStatus  @default(FOUND)
-  lastSearchQuery  String?          @db.Text
-  followUpPlan     Json?
+  status          AiProspectStatus @default(FOUND)
+  lastSearchQuery String?          @db.Text
+  followUpPlan    Json?
 
-  emailOpenedAt    DateTime?
-  linkClickedAt    DateTime?
-  lastReplyAt      DateTime?
-  lastContactAt    DateTime?
-  rawProvider      String?
+  emailOpenedAt DateTime?
+  linkClickedAt DateTime?
+  lastReplyAt   DateTime?
+  lastContactAt DateTime?
+  rawProvider   String?
 
-  activities       AiProspectActivity[]
+  activities AiProspectActivity[]
 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([organizationId])
   @@index([status])
@@ -335,21 +354,22 @@ model AiProspect {
 
 /// Cache résultats recherche (évite appels Google répétés) — TTL côté métier (ex. 7 j.)
 model ProspectingSearchCache {
-  cacheKey      String   @id
-  providerUsed  String
-  payload       Json
-  createdAt     DateTime @default(now())
-  expiresAt     DateTime
+  cacheKey     String   @id
+  providerUsed String
+  payload      Json
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
   @@index([expiresAt])
   @@map("prospecting_search_cache")
 }
 
 /// Cache enrichissement par URL normalisée
 model ProspectingWebsiteCache {
-  urlKey     String   @id
-  payload    Json
-  createdAt  DateTime @default(now())
-  expiresAt  DateTime
+  urlKey    String   @id
+  payload   Json
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 
   @@index([expiresAt])
   @@map("prospecting_website_cache")
@@ -357,28 +377,28 @@ model ProspectingWebsiteCache {
 
 /// Prospection automatique périodique (1 ligne / organisation pour le MVP).
 model ProspectingAutomation {
-  id                  String       @id @default(cuid())
-  organizationId      String       @unique
-  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdByUserId     String?
+  id              String       @id @default(cuid())
+  organizationId  String       @unique
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUserId String?
 
-  active              Boolean      @default(false)
-  name                String       @default("Prospection planifiée")
+  active Boolean @default(false)
+  name   String  @default("Prospection planifiée")
 
-  criteria            Json
-  intervalHours       Int
-  refreshCache        Boolean      @default(false)
-  qualifyAfterSearch  Boolean      @default(true)
-  maxNewPerRun        Int          @default(40)
+  criteria           Json
+  intervalHours      Int
+  refreshCache       Boolean @default(false)
+  qualifyAfterSearch Boolean @default(true)
+  maxNewPerRun       Int     @default(40)
 
-  nextRunAt           DateTime
-  lastRunAt           DateTime?
-  lastRunImported     Int?
-  lastRunQualified    Int?
-  lastRunError        String?      @db.Text
+  nextRunAt        DateTime
+  lastRunAt        DateTime?
+  lastRunImported  Int?
+  lastRunQualified Int?
+  lastRunError     String?   @db.Text
 
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("prospecting_automations")
 }
@@ -389,7 +409,7 @@ model AiProspectActivity {
   organizationId String
   aiProspectId   String
   aiProspect     AiProspect @relation(fields: [aiProspectId], references: [id], onDelete: Cascade)
-  type           String     // NOTE | EMAIL_OPENED | LINK_CLICKED | REPLY | CONTACT | SYSTEM
+  type           String // NOTE | EMAIL_OPENED | LINK_CLICKED | REPLY | CONTACT | SYSTEM
   title          String?
   metadata       Json?
   createdAt      DateTime   @default(now())
@@ -403,29 +423,29 @@ model AiProspectActivity {
 //  CALENDAR EVENT — Événements du calendrier
 // ═══════════════════════════════════════════════════════════════
 model CalendarEvent {
-  id            String   @id @default(cuid())
-  organizationId String
-  title         String
-  description   String?  @db.Text
-  startDate     DateTime
-  endDate       DateTime
-  allDay        Boolean  @default(false)
-  eventType     EventType @default(MEETING)
-  location      String?
+  id               String      @id @default(cuid())
+  organizationId   String
+  title            String
+  description      String?     @db.Text
+  startDate        DateTime
+  endDate          DateTime
+  allDay           Boolean     @default(false)
+  eventType        EventType   @default(MEETING)
+  location         String?
   relatedAffaireId String?
-  relatedAffaire Affaire? @relation(fields: [relatedAffaireId], references: [id], onDelete: SetNull)
-  relatedLeadId String?
-  relatedLead   Lead?    @relation(fields: [relatedLeadId], references: [id], onDelete: SetNull)
-  status        EventStatus @default(SCHEDULED)
-  reminderMinutes Int?   // Minutes avant l'événement pour le rappel
-  deletedAt     DateTime? // Soft delete
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  createdById   String?
-  createdBy     User?    @relation(fields: [createdById], references: [id])
+  relatedAffaire   Affaire?    @relation(fields: [relatedAffaireId], references: [id], onDelete: SetNull)
+  relatedLeadId    String?
+  relatedLead      Lead?       @relation(fields: [relatedLeadId], references: [id], onDelete: SetNull)
+  status           EventStatus @default(SCHEDULED)
+  reminderMinutes  Int? // Minutes avant l'événement pour le rappel
+  deletedAt        DateTime? // Soft delete
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  createdById      String?
+  createdBy        User?       @relation(fields: [createdById], references: [id])
 
   // Relations
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([startDate])
@@ -454,31 +474,31 @@ enum EventStatus {
 //  EXPENSE — Dépense
 // ═══════════════════════════════════════════════════════════════
 model Expense {
-  id            String   @id @default(cuid())
-  organizationId String
-  title         String
-  description   String?  @db.Text
-  amount        Decimal  @db.Decimal(12, 3) // DT
-  currency      String   @default("TND")
-  category      String   @default("Autre")
-  date          DateTime @default(now())
+  id               String        @id @default(cuid())
+  organizationId   String
+  title            String
+  description      String?       @db.Text
+  amount           Decimal       @db.Decimal(12, 3) // DT
+  currency         String        @default("TND")
+  category         String        @default("Autre")
+  date             DateTime      @default(now())
   relatedAffaireId String?
-  relatedAffaire Affaire? @relation(fields: [relatedAffaireId], references: [id], onDelete: SetNull)
-  relatedLeadId String?
-  relatedLead   Lead?    @relation(fields: [relatedLeadId], references: [id], onDelete: SetNull)
-  status        ExpenseStatus @default(PENDING)
-  receiptUrl    String?  // URL du justificatif
-  isRecurrent   Boolean  @default(false)
-  recurrenceMonths String?  // e.g., "1,2,3" for months to repeat
-  notes         String?  @db.Text
-  deletedAt     DateTime? // Soft delete
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  createdById   String?
-  createdBy     User?    @relation(fields: [createdById], references: [id])
+  relatedAffaire   Affaire?      @relation(fields: [relatedAffaireId], references: [id], onDelete: SetNull)
+  relatedLeadId    String?
+  relatedLead      Lead?         @relation(fields: [relatedLeadId], references: [id], onDelete: SetNull)
+  status           ExpenseStatus @default(PENDING)
+  receiptUrl       String? // URL du justificatif
+  isRecurrent      Boolean       @default(false)
+  recurrenceMonths String? // e.g., "1,2,3" for months to repeat
+  notes            String?       @db.Text
+  deletedAt        DateTime? // Soft delete
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  createdById      String?
+  createdBy        User?         @relation(fields: [createdById], references: [id])
 
   // Relations
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([date])
@@ -504,14 +524,14 @@ enum ExpenseCategory {
 //  CUSTOM CATEGORY — Catégories personnalisées (dépenses/revenus)
 // ═══════════════════════════════════════════════════════════════
 model CustomCategory {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
   name           String
   type           CategoryType
-  createdAt      DateTime @default(now())
+  createdAt      DateTime     @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  products       Product[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products     Product[]
 
   @@unique([organizationId, name, type])
   @@index([organizationId, type])
@@ -534,41 +554,41 @@ enum ExpenseStatus {
 //  AFFAIRE — Deal / Opportunité (cœur du CRM)
 // ═══════════════════════════════════════════════════════════════
 model Affaire {
-  id            String        @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
-  clientId      String
-  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   // Détails prestation
-  productId     String?
-  product       Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
-  type          String        @default("Autre")
-  title         String?       // ex: "Bilan Carbone UBCI 2026" - auto-généré si non fourni
-  description   String?       @db.Text
-  montantHT     Decimal       @db.Decimal(12, 3) // DT, 3 décimales
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  type        String   @default("Autre")
+  title       String? // ex: "Bilan Carbone UBCI 2026" - auto-généré si non fourni
+  description String?  @db.Text
+  montantHT   Decimal  @db.Decimal(12, 3) // DT, 3 décimales
 
   // Pipeline
-  statut        StatutAffaire @default(PROSPECT)
-  probabilite   Int           @default(50) // 0-100 %
-  score         Int           @default(0) // Lead score 0-100
+  statut      StatutAffaire @default(PROSPECT)
+  probabilite Int           @default(50) // 0-100 %
+  score       Int           @default(0) // Lead score 0-100
 
   // Planning
-  moisPrevu     Int           // 1-12
-  anneePrevue   Int           // 2026, 2027, 2028
-  dateClotureReelle DateTime?
-  prochaineAction String?      // ex: "Appeler client", "Envoyer devis"
+  moisPrevu           Int // 1-12
+  anneePrevue         Int // 2026, 2027, 2028
+  dateClotureReelle   DateTime?
+  prochaineAction     String? // ex: "Appeler client", "Envoyer devis"
   dateProchaineAction DateTime?
 
   // Partenaire & commission
-  viaPartenaire Boolean       @default(false)
-  tauxCommission Decimal      @db.Decimal(5, 2) @default(40.00) // 40%
+  viaPartenaire  Boolean @default(false)
+  tauxCommission Decimal @default(40.00) @db.Decimal(5, 2) // 40%
 
   // Commercial assigné
   assignedToId String?
-  assignedTo    User?         @relation("CommercialAffaires", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedTo   User?   @relation("CommercialAffaires", fields: [assignedToId], references: [id], onDelete: SetNull)
 
   // Liens vers Softfacture (quand devis/facture créés)
-  devisId       String?       // ID retourné par Softfacture API
+  devisId       String? // ID retourné par Softfacture API
   devisNumero   String?
   devisPdfUrl   String?
   factureId     String?
@@ -576,19 +596,19 @@ model Affaire {
   facturePdfUrl String?
 
   // Méta
-  notes         String?       @db.Text
-  deletedAt     DateTime?     // Soft delete
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  createdById   String?
-  createdBy     User?         @relation(fields: [createdById], references: [id])
+  notes       String?   @db.Text
+  deletedAt   DateTime? // Soft delete
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  createdBy   User?     @relation(fields: [createdById], references: [id])
 
   // Relations
-  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  activites     Activite[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  activites      Activite[]
   calendarEvents CalendarEvent[]
-  expenses      Expense[]
-  emails        Email[]
+  expenses       Expense[]
+  emails         Email[]
 
   @@index([organizationId])
   @@index([statut, anneePrevue])
@@ -602,26 +622,26 @@ model Affaire {
 // AffaireType is now a free-form String managed via custom categories
 
 enum StatutAffaire {
-  PROSPECT     // 🟡 Premier contact
-  QUALIFIE     // 🔵 Intérêt confirmé
-  PROPOSITION  // � Offre envoyée
-  NEGOCIATION  // 🟣 En discussion
-  GAGNE        // ✅ Signé
-  PERDU        // ❌ Refusé ou abandonné
+  PROSPECT // 🟡 Premier contact
+  QUALIFIE // 🔵 Intérêt confirmé
+  PROPOSITION // � Offre envoyée
+  NEGOCIATION // 🟣 En discussion
+  GAGNE // ✅ Signé
+  PERDU // ❌ Refusé ou abandonné
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  ACTIVITE — Historique des actions sur une affaire
 // ═══════════════════════════════════════════════════════════════
 model Activite {
-  id        String        @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  affaireId String
-  affaire   Affaire       @relation(fields: [affaireId], references: [id], onDelete: Cascade)
-  type      ActiviteType
-  title     String
-  content   String?       @db.Text
-  createdAt DateTime      @default(now())
+  affaireId      String
+  affaire        Affaire      @relation(fields: [affaireId], references: [id], onDelete: Cascade)
+  type           ActiviteType
+  title          String
+  content        String?      @db.Text
+  createdAt      DateTime     @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -634,14 +654,14 @@ model Activite {
 //  LEAD ACTIVITE — Historique des actions sur un lead
 // ═══════════════════════════════════════════════════════════════
 model LeadActivite {
-  id        String        @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  leadId    String
-  lead      Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  type      ActiviteType
-  title     String
-  content   String?       @db.Text
-  createdAt DateTime      @default(now())
+  leadId         String
+  lead           Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type           ActiviteType
+  title          String
+  content        String?      @db.Text
+  createdAt      DateTime     @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -666,19 +686,19 @@ enum ActiviteType {
 //  EMAIL — Emails envoyés depuis le CRM via Gmail
 // ═══════════════════════════════════════════════════════════════
 model Email {
-  id          String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
-  affaireId   String?
-  affaire     Affaire? @relation(fields: [affaireId], references: [id], onDelete: SetNull)
-  messageId   String?  // ID Gmail
-  fromEmail   String
-  toEmail     String
-  subject     String
-  body        String   @db.Text
-  sent        Boolean  @default(false)
-  sentAt      DateTime?
-  error       String?
-  createdAt   DateTime @default(now())
+  affaireId      String?
+  affaire        Affaire?  @relation(fields: [affaireId], references: [id], onDelete: SetNull)
+  messageId      String? // ID Gmail
+  fromEmail      String
+  toEmail        String
+  subject        String
+  body           String    @db.Text
+  sent           Boolean   @default(false)
+  sentAt         DateTime?
+  error          String?
+  createdAt      DateTime  @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -692,17 +712,17 @@ model Email {
 // SECURITY: Tokens stored in plain text. In production, consider encryption-at-rest (AES-256)
 // ═══════════════════════════════════════════════════════════════
 model GmailToken {
-  id           String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken  String   @db.Text // Encrypted at rest
-  refreshToken String   @db.Text // Encrypted at rest
-  expiresAt    DateTime
-  scope        String
-  lastRefreshAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken    String    @db.Text // Encrypted at rest
+  refreshToken   String    @db.Text // Encrypted at rest
+  expiresAt      DateTime
+  scope          String
+  lastRefreshAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -724,22 +744,22 @@ enum GmailAiPriority {
 
 /// Curseur de sync History API pour l’agent Gmail IA (nouveaux mails uniquement).
 model GmailAiSyncState {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String   @unique
-  enabled        Boolean  @default(true)
-  historyId      String?
-  labelId        String?
-  activatedAt    DateTime @default(now())
-  lastSyncAt     DateTime?
-  replyLanguage  String   @default("fr")
-  replyTone      String   @default("professionnel")
-  signature      String?  @db.Text
-  ignoreNewsletters Boolean @default(true)
-  ignorePromotions  Boolean @default(true)
-  ignoreSocial      Boolean @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String    @id @default(cuid())
+  organizationId    String
+  userId            String    @unique
+  enabled           Boolean   @default(true)
+  historyId         String?
+  labelId           String?
+  activatedAt       DateTime  @default(now())
+  lastSyncAt        DateTime?
+  replyLanguage     String    @default("fr")
+  replyTone         String    @default("professionnel")
+  signature         String?   @db.Text
+  ignoreNewsletters Boolean   @default(true)
+  ignorePromotions  Boolean   @default(true)
+  ignoreSocial      Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -783,23 +803,23 @@ model GmailAiProcessedMessage {
 //  PREVISIONNEL — Hypothèses mensuelles paramétrables
 // ═══════════════════════════════════════════════════════════════
 model PrevisionMois {
-  id               String  @id @default(cuid())
-  organizationId    String
-  annee            Int
-  mois             Int     // 1-12
-  nbBilansPrevu    Int     @default(0)
-  prixMoyenBilan   Decimal @db.Decimal(12, 3) @default(0)
-  joursFormation   Int     @default(0)
-  tarifJourFormation Decimal @db.Decimal(12, 3) @default(0)
-  estEte           Boolean @default(false)
-  tauxPartenaire   Decimal @db.Decimal(5, 2) @default(0) // % d'affaires via partenaire
-  notes            String?
-  updatedAt        DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  organizationId     String
+  annee              Int
+  mois               Int // 1-12
+  nbBilansPrevu      Int      @default(0)
+  prixMoyenBilan     Decimal  @default(0) @db.Decimal(12, 3)
+  joursFormation     Int      @default(0)
+  tarifJourFormation Decimal  @default(0) @db.Decimal(12, 3)
+  estEte             Boolean  @default(false)
+  tauxPartenaire     Decimal  @default(0) @db.Decimal(5, 2) // % d'affaires via partenaire
+  notes              String?
+  updatedAt          DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId])
   @@unique([organizationId, annee, mois])
+  @@index([organizationId])
   @@map("prevision_mois")
 }
 
@@ -807,22 +827,22 @@ model PrevisionMois {
 //  PRODUCT — Produits/Services proposés
 // ═══════════════════════════════════════════════════════════════
 model Product {
-  id          String   @id @default(cuid())
+  id             String      @id @default(cuid())
   organizationId String
-  name        String   // ex: "Bilan Carbone Standard"
-  description String?  @db.Text
-  price       Decimal  @db.Decimal(12, 3) // Prix unitaire DT
-  type        ProductType @default(SERVICE)
-  categoryId  String?
-  active      Boolean  @default(true)
-  deletedAt   DateTime? // Soft delete
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  name           String // ex: "Bilan Carbone Standard"
+  description    String?     @db.Text
+  price          Decimal     @db.Decimal(12, 3) // Prix unitaire DT
+  type           ProductType @default(SERVICE)
+  categoryId     String?
+  active         Boolean     @default(true)
+  deletedAt      DateTime? // Soft delete
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   category     CustomCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  affaires    Affaire[]
+  affaires     Affaire[]
 
   @@index([organizationId])
   @@index([active])
@@ -835,18 +855,18 @@ model Product {
 //  NOTIFICATION — Notifications pour les utilisateurs
 // ═══════════════════════════════════════════════════════════════
 model Notification {
-  id            String   @id @default(cuid())
+  id             String           @id @default(cuid())
   organizationId String
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type          NotificationType
-  title         String
-  content       String?  @db.Text
-  link          String?  // URL to navigate to when clicked
-  read          Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           NotificationType
+  title          String
+  content        String?          @db.Text
+  link           String? // URL to navigate to when clicked
+  read           Boolean          @default(false)
+  createdAt      DateTime         @default(now())
 
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([userId, read])
@@ -854,38 +874,38 @@ model Notification {
 }
 
 enum NotificationType {
-  AFFAIRE_SANS_ACTIVITE  // Affaire sans activité depuis X jours
-  TASK_OVERDUE           // Tâche en retard
-  AFFAIRE_PERDUE         // Affaire perdue
-  AFFAIRE_GAGNEE         // Affaire gagnée
-  DEVIS_CREE             // Devis créé
-  FACTURE_CREEE          // Facture créée
-  RAPPEL                 // Rappel personnalisé
-  SUPPORT_TICKET_NEW     // Nouveau ticket support
-  SUPPORT_TICKET_REPLY   // Réponse sur ticket support
-  BRAND_PULSE_ALERT      // Alerte BrandPulse AI
-  SCOUT_ALERT            // Alerte Veilleur IA (nouvelle opportunité)
+  AFFAIRE_SANS_ACTIVITE // Affaire sans activité depuis X jours
+  TASK_OVERDUE // Tâche en retard
+  AFFAIRE_PERDUE // Affaire perdue
+  AFFAIRE_GAGNEE // Affaire gagnée
+  DEVIS_CREE // Devis créé
+  FACTURE_CREEE // Facture créée
+  RAPPEL // Rappel personnalisé
+  SUPPORT_TICKET_NEW // Nouveau ticket support
+  SUPPORT_TICKET_REPLY // Réponse sur ticket support
+  BRAND_PULSE_ALERT // Alerte BrandPulse AI
+  SCOUT_ALERT // Alerte Veilleur IA (nouvelle opportunité)
   AGENT_OPPORTUNITY_READY // Équipe IA : opportunité prête
 }
 
 model SupportTicket {
-  id            String   @id @default(cuid())
+  id             String                 @id @default(cuid())
   organizationId String
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdById   String
-  createdBy     User     @relation("SupportTicketCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  assigneeId    String?
-  assignee      User?    @relation("SupportTicketAssignedTo", fields: [assigneeId], references: [id], onDelete: SetNull)
-  subject       String
-  description   String   @db.Text
-  status        SupportTicketStatus @default(OPEN)
-  priority      SupportTicketPriority @default(MEDIUM)
-  category      SupportTicketCategory @default(OTHER)
-  lastMessageAt DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  closedAt      DateTime?
-  messages      SupportTicketMessage[]
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User                   @relation("SupportTicketCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  assigneeId     String?
+  assignee       User?                  @relation("SupportTicketAssignedTo", fields: [assigneeId], references: [id], onDelete: SetNull)
+  subject        String
+  description    String                 @db.Text
+  status         SupportTicketStatus    @default(OPEN)
+  priority       SupportTicketPriority  @default(MEDIUM)
+  category       SupportTicketCategory  @default(OTHER)
+  lastMessageAt  DateTime               @default(now())
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  closedAt       DateTime?
+  messages       SupportTicketMessage[]
 
   @@index([organizationId, status])
   @@index([createdById, createdAt])
@@ -894,15 +914,15 @@ model SupportTicket {
 }
 
 model SupportTicketMessage {
-  id            String   @id @default(cuid())
+  id             String        @id @default(cuid())
   organizationId String
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  ticketId      String
-  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorId      String
-  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  body          String   @db.Text
-  createdAt     DateTime @default(now())
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ticketId       String
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body           String        @db.Text
+  createdAt      DateTime      @default(now())
 
   @@index([organizationId, ticketId, createdAt])
   @@index([authorId])
@@ -936,12 +956,12 @@ enum SupportTicketCategory {
 // SECURITY: Token stored in plain text. In production, hash with bcrypt for verification
 // ═══════════════════════════════════════════════════════════════
 model RefreshToken {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String   @unique // Hashed with bcrypt
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique // Hashed with bcrypt
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([token])
@@ -949,28 +969,28 @@ model RefreshToken {
 }
 
 enum ProductType {
-  SERVICE  // Bilan carbone, formation, conseil
-  PRODUCT  // Produit physique
+  SERVICE // Bilan carbone, formation, conseil
+  PRODUCT // Produit physique
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  AUDIT LOG — Logs d'audit pour traçabilité des actions
 // ═══════════════════════════════════════════════════════════════
 model AuditLog {
-  id            String   @id @default(cuid())
+  id             String      @id @default(cuid())
   organizationId String
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action        AuditAction
-  entityType    String   // ex: "Client", "Affaire", "User"
-  entityId      String   // ID de l'entité concernée
-  oldValues     String?  @db.Text // Valeurs avant modification (JSON)
-  newValues     String?  @db.Text // Valeurs après modification (JSON)
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime @default(now())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action         AuditAction
+  entityType     String // ex: "Client", "Affaire", "User"
+  entityId       String // ID de l'entité concernée
+  oldValues      String?     @db.Text // Valeurs avant modification (JSON)
+  newValues      String?     @db.Text // Valeurs après modification (JSON)
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime    @default(now())
 
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([userId])
@@ -993,15 +1013,15 @@ enum AuditAction {
 //  EMAIL TEMPLATE — Templates d'emails personnalisables
 // ═══════════════════════════════════════════════════════════════
 model EmailTemplate {
-  id            String   @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
-  name          String   // ex: "Suivi devis", "Rappel échéance"
-  subject       String   // Sujet avec variables : {client}, {montant}, etc.
-  body          String   @db.Text // Corps avec variables
-  variables     String   // JSON: ["client", "montant", "date", "statut"]
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  name           String // ex: "Suivi devis", "Rappel échéance"
+  subject        String // Sujet avec variables : {client}, {montant}, etc.
+  body           String   @db.Text // Corps avec variables
+  variables      String // JSON: ["client", "montant", "date", "statut"]
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1016,7 +1036,7 @@ model BackupLog {
   id        String   @id @default(cuid())
   path      String
   size      BigInt
-  status    String   // SUCCESS, FAILED
+  status    String // SUCCESS, FAILED
   error     String?
   createdAt DateTime @default(now())
 
@@ -1029,17 +1049,17 @@ model BackupLog {
 //  SUBSCRIPTION — Gestion des abonnements
 // ═══════════════════════════════════════════════════════════════
 model Subscription {
-  id            String   @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
-  plan          String   // FREE tier via org only ; subscriptions: BASIC, BUSINESS, ENTERPRISE (legacy STARTER / PRO supportés au mapping)
-  price         Int      // Montant DT pour la période facturée (voir billingPeriod)
-  billingPeriod String   @default("YEARLY") // MONTHLY | YEARLY
-  paymentMethod String   // VIREMENT, ESPECES
-  paymentStatus String   // PENDING, PAID, EXPIRED
-  startDate     DateTime
-  endDate       DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  plan           String // FREE tier via org only ; subscriptions: BASIC, BUSINESS, ENTERPRISE (legacy STARTER / PRO supportés au mapping)
+  price          Int // Montant DT pour la période facturée (voir billingPeriod)
+  billingPeriod  String   @default("YEARLY") // MONTHLY | YEARLY
+  paymentMethod  String // VIREMENT, ESPECES
+  paymentStatus  String // PENDING, PAID, EXPIRED
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1052,20 +1072,20 @@ model Subscription {
 //  SALES OBJECTIVE — Objectifs commerciaux par commercial
 // ═══════════════════════════════════════════════════════════════
 model SalesObjective {
-  id            String   @id @default(cuid())
+  id             String          @id @default(cuid())
   organizationId String
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  year          Int
-  period        ObjectivePeriod @default(MONTHLY)
-  month         Int?     // 1-12, null for quarterly/semi-annual/annual
-  quarter       Int?     // 1-4, null for monthly/semi-annual/annual
-  semester      Int?     // 1-2, null for monthly/quarterly/annual
-  targetAmount  Decimal  @db.Decimal(12, 3) // Objectif en DT
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year           Int
+  period         ObjectivePeriod @default(MONTHLY)
+  month          Int? // 1-12, null for quarterly/semi-annual/annual
+  quarter        Int? // 1-4, null for monthly/semi-annual/annual
+  semester       Int? // 1-2, null for monthly/quarterly/annual
+  targetAmount   Decimal         @db.Decimal(12, 3) // Objectif en DT
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId, year, period, month, quarter, semester])
   @@index([organizationId])
@@ -1074,29 +1094,29 @@ model SalesObjective {
 }
 
 enum ObjectivePeriod {
-  MONTHLY      // Mensuel
-  QUARTERLY    // Trimestriel
-  SEMI_ANNUAL  // Semestriel
-  ANNUAL       // Annuel
+  MONTHLY // Mensuel
+  QUARTERLY // Trimestriel
+  SEMI_ANNUAL // Semestriel
+  ANNUAL // Annuel
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  USER PERMISSION — Permissions d'accès aux pages par utilisateur
 // ═══════════════════════════════════════════════════════════════
 model UserPermission {
-  id            String   @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  page          String   // dashboard, affaires, clients, leads, calendar, expenses, activites, email-templates, ai-assistant, prospection-ia, objectifs, settings
-  canView       Boolean  @default(true)
-  canCreate     Boolean  @default(false)
-  canEdit       Boolean  @default(false)
-  canDelete     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  page           String // dashboard, affaires, clients, leads, calendar, expenses, activites, email-templates, ai-assistant, prospection-ia, objectifs, settings
+  canView        Boolean  @default(true)
+  canCreate      Boolean  @default(false)
+  canEdit        Boolean  @default(false)
+  canDelete      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId, page])
   @@index([organizationId])
@@ -1108,78 +1128,78 @@ model UserPermission {
 //  COMMISSION CONFIG — Configuration des primes commerciales
 // ═══════════════════════════════════════════════════════════════
 model CommissionConfig {
-  id            String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   // Nom du mécanisme de prime
-  name          String   @default("Prime par défaut")
-  
+  name String @default("Prime par défaut")
+
   // Type de calcul
   calculationType CommissionType @default(SIMPLE)
-  
+
   // Périodicité
-  periodicity   CommissionPeriodicity @default(MONTHLY)
-  
+  periodicity CommissionPeriodicity @default(MONTHLY)
+
   // Configuration simple (pourcentage fixe)
-  simpleRate    Decimal  @db.Decimal(5, 2) @default(0)
-  
+  simpleRate Decimal @default(0) @db.Decimal(5, 2)
+
   // Configuration par paliers (JSON)
-  tierConfig    String?  @db.Text // JSON: [{"min": 0, "max": 50, "rate": 0}, {"min": 50, "max": 80, "rate": 5}, ...]
-  
+  tierConfig String? @db.Text // JSON: [{"min": 0, "max": 50, "rate": 0}, {"min": 50, "max": 80, "rate": 5}, ...]
+
   // Configuration progressive (JSON)
   progressiveConfig String? @db.Text // JSON: [{"min": 80, "max": 100, "multiplier": 1}, {"min": 100, "max": 110, "multiplier": 1.07}, ...]
-  
+
   // Configuration personnalisée (formule)
-  customFormula String?  @db.Text // Formule personnalisée
-  
+  customFormula String? @db.Text // Formule personnalisée
+
   // Paramètres additionnels
-  minThreshold   Decimal  @db.Decimal(12, 3) @default(0) // Seuil minimum pour prime
-  maxCap         Decimal? @db.Decimal(12, 3) // Plafond maximum
-  
+  minThreshold Decimal  @default(0) @db.Decimal(12, 3) // Seuil minimum pour prime
+  maxCap       Decimal? @db.Decimal(12, 3) // Plafond maximum
+
   // Configuration des types de ventes
   includeNewClients Boolean @default(true)
-  includeRenewals Boolean @default(true)
-  includeRecurring Boolean @default(true)
-  
+  includeRenewals   Boolean @default(true)
+  includeRecurring  Boolean @default(true)
+
   // Délai de paiement (jours)
-  paymentDelay  Int      @default(30) // Délai minimum de paiement client pour que la vente compte
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  paymentDelay Int @default(30) // Délai minimum de paiement client pour que la vente compte
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@map("commission_configs")
 }
 
 enum CommissionType {
-  SIMPLE       // Pourcentage fixe sur tout le CA
-  TIERS        // Paliers par seuils d'atteinte
-  PROGRESSIVE  // Progressif linéaire (votre exemple)
-  CUSTOM       // Formule personnalisée
+  SIMPLE // Pourcentage fixe sur tout le CA
+  TIERS // Paliers par seuils d'atteinte
+  PROGRESSIVE // Progressif linéaire (votre exemple)
+  CUSTOM // Formule personnalisée
 }
 
 enum CommissionPeriodicity {
-  MONTHLY      // Mensuel
-  QUARTERLY    // Trimestriel
-  SEMI_ANNUAL  // Semestriel
-  ANNUAL       // Annuel
+  MONTHLY // Mensuel
+  QUARTERLY // Trimestriel
+  SEMI_ANNUAL // Semestriel
+  ANNUAL // Annuel
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  ORGANIZATION AGENT — Agents IA activés par tenant
 // ═══════════════════════════════════════════════════════════════
 model OrganizationAgent {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
-  agentSlug      String   // hunt-ai, copilot-ia, scout-ai, offre-bot, factcheck-ai
-  active         Boolean  @default(true)
-  activatedAt    DateTime @default(now())
+  agentSlug      String // hunt-ai, copilot-ia, scout-ai, offre-bot, factcheck-ai
+  active         Boolean   @default(true)
+  activatedAt    DateTime  @default(now())
   deactivatedAt  DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, agentSlug])
   @@index([organizationId])
@@ -1189,13 +1209,13 @@ model OrganizationAgent {
 model AgentUsageMonthly {
   id             String   @id @default(cuid())
   organizationId String
-  monthKey       String   // YYYY-MM
+  monthKey       String // YYYY-MM
   agentSlug      String
   usageCount     Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, monthKey, agentSlug])
   @@index([organizationId])
@@ -1206,49 +1226,49 @@ model AgentUsageMonthly {
 //  SCOUT AI — Profil de veille + opportunités détectées
 // ═══════════════════════════════════════════════════════════════
 model ScoutProfile {
-  id             String   @id @default(cuid())
-  organizationId String   @unique
-  keywords       Json     // string[] — mots-clés métier
-  sectors        Json     // string[] — secteurs d'activité
-  geoZones       Json     // string[] — zones géographiques
-  watchSites     Json     @default("[]") // string[] — ids presets (ungm, undp…) ou URLs
-  tenderEnabled  Boolean  @default(true)
-  eventEnabled   Boolean  @default(true)
-  newsEnabled    Boolean  @default(true)
-  autoScanEnabled Boolean @default(false)
-  scanIntervalH  Int      @default(24) // intervalle en heures
-  alertEmailEnabled Boolean @default(true)
-  alertMinScore  Int      @default(70) // alerte si score >= seuil
-  lastScanAt     DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String    @id @default(cuid())
+  organizationId    String    @unique
+  keywords          Json // string[] — mots-clés métier
+  sectors           Json // string[] — secteurs d'activité
+  geoZones          Json // string[] — zones géographiques
+  watchSites        Json      @default("[]") // string[] — ids presets (ungm, undp…) ou URLs
+  tenderEnabled     Boolean   @default(true)
+  eventEnabled      Boolean   @default(true)
+  newsEnabled       Boolean   @default(true)
+  autoScanEnabled   Boolean   @default(false)
+  scanIntervalH     Int       @default(24) // intervalle en heures
+  alertEmailEnabled Boolean   @default(true)
+  alertMinScore     Int       @default(70) // alerte si score >= seuil
+  lastScanAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("scout_profiles")
 }
 
 model ScoutOpportunity {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
-  category       String   // TENDER, EVENT, NEWS
+  category       String // TENDER, EVENT, NEWS
   title          String
   url            String
   source         String
-  snippet        String?  @db.Text
-  aiSummary      String?  @db.Text
-  relevanceScore Int      @default(50) // 0-100
+  snippet        String?   @db.Text
+  aiSummary      String?   @db.Text
+  relevanceScore Int       @default(50) // 0-100
   deadline       String?
   location       String?
   budget         String?
   publishedAt    DateTime?
-  status         String   @default("NEW") // NEW, SAVED, DISMISSED, APPLIED
+  status         String    @default("NEW") // NEW, SAVED, DISMISSED, APPLIED
   searchQuery    String?
   rawData        Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, category])
   @@index([organizationId, status])
@@ -1260,30 +1280,30 @@ model ScoutOpportunity {
 //  BRAND PULSE AI — Profil marque, scores, articles, CMS
 // ═══════════════════════════════════════════════════════════════
 model BrandProfile {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   organizationId  String
-  slug            String   @default("primary")
-  isPrimary       Boolean  @default(true)
+  slug            String    @default("primary")
+  isPrimary       Boolean   @default(true)
   brandName       String
   websiteUrl      String
   sector          String?
   competitorName  String?
   competitorUrl   String?
-  brandKeywords   Json     @default("[]") // string[]
-  editorialTone   String   @default("professionnel")
-  articlesPerWeek Int      @default(2)
-  onboardingDone  Boolean  @default(false)
+  brandKeywords   Json      @default("[]") // string[]
+  editorialTone   String    @default("professionnel")
+  articlesPerWeek Int       @default(2)
+  onboardingDone  Boolean   @default(false)
   lastAuditAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  scoreSnapshots  BrandScoreSnapshot[]
-  articles        BrandArticle[]
-  recommendations BrandRecommendation[]
-  alerts          BrandAlert[]
-  cmsConnections  BrandCmsConnection[]
-  channelConnections BrandChannelConnection[]
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scoreSnapshots      BrandScoreSnapshot[]
+  articles            BrandArticle[]
+  recommendations     BrandRecommendation[]
+  alerts              BrandAlert[]
+  cmsConnections      BrandCmsConnection[]
+  channelConnections  BrandChannelConnection[]
   competitorSnapshots BrandCompetitorSnapshot[]
 
   @@unique([organizationId, slug])
@@ -1295,44 +1315,44 @@ model BrandScoreSnapshot {
   id             String   @id @default(cuid())
   organizationId String
   brandProfileId String
-  channel        String   // SEO, SOCIAL, REVIEWS, PRESS, LLM, WEBSITE, GLOBAL
-  score          Int      // 0-100
+  channel        String // SEO, SOCIAL, REVIEWS, PRESS, LLM, WEBSITE, GLOBAL
+  score          Int // 0-100
   weight         Float    @default(0)
   details        Json?
   computedAt     DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, brandProfileId, channel, computedAt])
   @@map("brand_score_snapshots")
 }
 
 model BrandArticle {
-  id               String    @id @default(cuid())
-  organizationId   String
-  brandProfileId   String
-  status           String    @default("PROPOSED") // PROPOSED, DRAFTING, PENDING_REVIEW, APPROVED, REJECTED, SCHEDULED, PUBLISHED
-  format           String    @default("SEO") // SEO, LONGFORM, FAQ, COMPARATIVE
-  title            String?
-  slug             String?
-  metaTitle        String?
-  metaDescription  String?   @db.Text
-  contentMarkdown  String?   @db.Text
-  targetKeywords   Json      @default("[]")
-  topicReason      Json?
-  estimatedImpact  Int?
+  id                String    @id @default(cuid())
+  organizationId    String
+  brandProfileId    String
+  status            String    @default("PROPOSED") // PROPOSED, DRAFTING, PENDING_REVIEW, APPROVED, REJECTED, SCHEDULED, PUBLISHED
+  format            String    @default("SEO") // SEO, LONGFORM, FAQ, COMPARATIVE
+  title             String?
+  slug              String?
+  metaTitle         String?
+  metaDescription   String?   @db.Text
+  contentMarkdown   String?   @db.Text
+  targetKeywords    Json      @default("[]")
+  topicReason       Json?
+  estimatedImpact   Int?
   estimatedSeoScore Int?
-  publishedUrl     String?
-  publishedAt      DateTime?
-  scheduledAt      DateTime?
-  cmsPlatform      String?
-  impactSeoDelta   Int?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  publishedUrl      String?
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+  cmsPlatform       String?
+  impactSeoDelta    Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile     BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, brandProfileId, status])
   @@index([organizationId, brandProfileId, createdAt])
@@ -1340,21 +1360,21 @@ model BrandArticle {
 }
 
 model BrandRecommendation {
-  id               String   @id @default(cuid())
-  organizationId   String
-  brandProfileId   String
-  channel          String
-  action           String   @db.Text
-  estimatedImpact  Int      @default(0)
-  difficulty       String   @default("MEDIUM") // EASY, MEDIUM, HARD
-  timeline         String   @default("SHORT") // SHORT, MEDIUM, LONG
-  linkedArticleId  String?
-  cta              String?  // GENERATE_TOPICS, SYNC_CHANNELS, AUDIT_EXISTING, CONNECT_REVIEWS
-  active           Boolean  @default(true)
-  createdAt        DateTime @default(now())
+  id              String   @id @default(cuid())
+  organizationId  String
+  brandProfileId  String
+  channel         String
+  action          String   @db.Text
+  estimatedImpact Int      @default(0)
+  difficulty      String   @default("MEDIUM") // EASY, MEDIUM, HARD
+  timeline        String   @default("SHORT") // SHORT, MEDIUM, LONG
+  linkedArticleId String?
+  cta             String? // GENERATE_TOPICS, SYNC_CHANNELS, AUDIT_EXISTING, CONNECT_REVIEWS
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
 
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile     BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, brandProfileId, channel])
   @@map("brand_recommendations")
@@ -1364,56 +1384,56 @@ model BrandAlert {
   id             String   @id @default(cuid())
   organizationId String
   brandProfileId String
-  type           String   // SEO_DROP, NO_PUBLISH, NEGATIVE_REVIEW, etc.
+  type           String // SEO_DROP, NO_PUBLISH, NEGATIVE_REVIEW, etc.
   severity       String   @default("INFO") // INFO, WARNING, CRITICAL
   message        String   @db.Text
   read           Boolean  @default(false)
   createdAt      DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, brandProfileId, read, createdAt])
   @@map("brand_alerts")
 }
 
 model BrandCmsConnection {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   organizationId  String
   brandProfileId  String
-  platform        String   // WORDPRESS, GHOST, WEBFLOW, SHOPIFY, WIX
+  platform        String // WORDPRESS, GHOST, WEBFLOW, SHOPIFY, WIX
   label           String?
-  encryptedConfig String   @db.Text
+  encryptedConfig String    @db.Text
   blogId          String?
-  defaultStatus   String   @default("draft") // draft | publish
-  active          Boolean  @default(true)
+  defaultStatus   String    @default("draft") // draft | publish
+  active          Boolean   @default(true)
   lastTestedAt    DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile    BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, brandProfileId])
   @@map("brand_cms_connections")
 }
 
 model BrandChannelConnection {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   organizationId  String
   brandProfileId  String
-  channel         String   // SOCIAL, REVIEWS
-  provider        String   @default("MANUAL")
-  encryptedConfig String?  @db.Text
+  channel         String // SOCIAL, REVIEWS
+  provider        String    @default("MANUAL")
+  encryptedConfig String?   @db.Text
   metadata        Json?
   lastSyncAt      DateTime?
   lastScore       Int?
-  active          Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile    BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@unique([brandProfileId, channel])
   @@map("brand_channel_connections")
@@ -1428,24 +1448,24 @@ model BrandCompetitorSnapshot {
   channels       Json
   computedAt     DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, brandProfileId, computedAt])
   @@map("brand_competitor_snapshots")
 }
 
 model BrandApiKey {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   label          String?
   keyHash        String
   keyPrefix      String
-  active         Boolean  @default(true)
+  active         Boolean   @default(true)
   lastUsedAt     DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([keyPrefix])
@@ -1462,6 +1482,7 @@ enum ContactCreatedVia {
   COPILOT
   GMAIL
   SCOUT
+  CONNECT
   MANUAL_IMPORT // scripts/admin uniquement — pas d'API publique
 }
 
@@ -1473,6 +1494,7 @@ enum AgentEventSource {
   OFFREBOT
   FACTCHECK
   ANALYSTE
+  CONNECT
 }
 
 enum AgentEventType {
@@ -1511,52 +1533,52 @@ enum FicheEntrepriseEtat {
 }
 
 model Contact {
-  id             String   @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
 
-  name           String?
-  companyName    String?
+  name        String?
+  companyName String?
 
-  phone          String?
-  email          String?
-  whatsappId     String?
+  phone      String?
+  email      String?
+  whatsappId String?
 
   phoneNormalized    String?
   emailNormalized    String?
   whatsappNormalized String?
 
-  aliases        String[] @default([])
+  aliases String[] @default([])
 
-  createdVia     ContactCreatedVia
-  erasedAt       DateTime?
+  createdVia ContactCreatedVia
+  erasedAt   DateTime?
 
   pipelineStatus      ContactPipelineStatus @default(NOUVEAU)
   pipelineStatusScore Float?
   pipelineStatusAt    DateTime?
 
   /// État de la fiche entreprise (chaîne Prospecteur→…→Scribe).
-  ficheEtat           FicheEntrepriseEtat?
-  ficheEtatAt         DateTime?
+  ficheEtat        FicheEntrepriseEtat?
+  ficheEtatAt      DateTime?
   /// Payload JSON sous contrat de propriété (voir company-fiche/).
-  ficheData           Json?
-  ficheBlockReason    String?  @db.Text
+  ficheData        Json?
+  ficheBlockReason String?              @db.Text
 
   /// Lien vers le référentiel mutualisé (faits publics uniquement).
   entrepriseReferentielId String?
 
   whatsappConsentAt DateTime?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  entrepriseReferentiel EntrepriseReferentiel? @relation(fields: [entrepriseReferentielId], references: [id], onDelete: SetNull)
-  events         AgentEvent[]
-  suggestions    Suggestion[]
-  copilotMessages CopilotMessage[]
-  dedupConflicts ContactDedupConflict[] @relation("ExistingContact")
-  whatsappSessions WhatsappSessionBuffer[]
-  ficheTransitions FicheTransition[]
+  organization          Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entrepriseReferentiel EntrepriseReferentiel?  @relation(fields: [entrepriseReferentielId], references: [id], onDelete: SetNull)
+  events                AgentEvent[]
+  suggestions           Suggestion[]
+  copilotMessages       CopilotMessage[]
+  dedupConflicts        ContactDedupConflict[]  @relation("ExistingContact")
+  whatsappSessions      WhatsappSessionBuffer[]
+  ficheTransitions      FicheTransition[]
 
   @@index([organizationId])
   @@index([organizationId, phoneNormalized])
@@ -1573,23 +1595,23 @@ model Contact {
 
 /// Journal d’activité / transitions d’état (observabilité).
 model FicheTransition {
-  id             String   @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
   contactId      String
 
-  etatPrecedent  String?
-  etatNouveau    String
-  agentEmetteur  String
-  champsEcrits   String[] @default([])
-  conditionOk    Boolean  @default(true)
-  raison         String   @db.Text
-  prochainAgent  String?
-  payload        Json?
+  etatPrecedent String?
+  etatNouveau   String
+  agentEmetteur String
+  champsEcrits  String[] @default([])
+  conditionOk   Boolean  @default(true)
+  raison        String   @db.Text
+  prochainAgent String?
+  payload       Json?
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contact        Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@index([organizationId, contactId, createdAt])
@@ -1611,41 +1633,41 @@ enum EntrepriseStatutActivite {
 
 /// Faits publics vérifiables — partagés entre tous les tenants.
 model EntrepriseReferentiel {
-  id                      String   @id @default(cuid())
-  identifiantNational     String?
-  paysImmatriculation          String?
-  nomLegal                String
-  nomsAlternatifs         String[] @default([])
-  secteur                 String?
-  codeActivite            String?
-  adresseSiege            String?  @db.Text
-  zoneGeographique        String?
-  siteWeb                 String?
+  id                       String                   @id @default(cuid())
+  identifiantNational      String?
+  paysImmatriculation      String?
+  nomLegal                 String
+  nomsAlternatifs          String[]                 @default([])
+  secteur                  String?
+  codeActivite             String?
+  adresseSiege             String?                  @db.Text
+  zoneGeographique         String?
+  siteWeb                  String?
   /// Domaine normalisé pour dédup niveau 2
-  siteWebDomain           String?
-  presenceDigitale        Json?
-  telephoneStandard       String?
-  emailGenerique          String?
-  tailleEstimee           String?
-  anneeCreation           Int?
-  statutActivite          EntrepriseStatutActivite @default(INCONNUE)
+  siteWebDomain            String?
+  presenceDigitale         Json?
+  telephoneStandard        String?
+  emailGenerique           String?
+  tailleEstimee            String?
+  anneeCreation            Int?
+  statutActivite           EntrepriseStatutActivite @default(INCONNUE)
   /// [{url, date_collecte, type_source}]
-  sources                 Json     @default("[]")
+  sources                  Json                     @default("[]")
   /// Traçabilité par champ : { champ: { valeur, source, confiance, date } }
-  fieldProvenance         Json     @default("{}")
+  fieldProvenance          Json                     @default("{}")
   dateDerniereVerification DateTime?
-  scoreFraicheur          Int      @default(50)
-  scoreConfianceGlobal    Int      @default(50)
+  scoreFraicheur           Int                      @default(50)
+  scoreConfianceGlobal     Int                      @default(50)
   /// Nom normalisé (sans accents / formes juridiques) pour dédup niveau 3
-  nomNormalise            String
+  nomNormalise             String
 
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  contacts                Contact[]
-  corrections             ReferentielCorrection[]
-  dedupAsA                ReferentielDedupReview[] @relation("DedupA")
-  dedupAsB                ReferentielDedupReview[] @relation("DedupB")
+  contacts    Contact[]
+  corrections ReferentielCorrection[]
+  dedupAsA    ReferentielDedupReview[] @relation("DedupA")
+  dedupAsB    ReferentielDedupReview[] @relation("DedupB")
 
   @@index([identifiantNational, paysImmatriculation])
   @@index([siteWebDomain])
@@ -1674,25 +1696,25 @@ enum ReferentielCorrectionType {
 
 /// Corrections remontantes (faits publics) — jamais de données personnelles.
 model ReferentielCorrection {
-  id             String   @id @default(cuid())
-  organizationId String
-  entrepriseId   String
-  type           ReferentielCorrectionType
-  champ          String?
-  valeurAvant    String?  @db.Text
-  valeurApres    String?  @db.Text
-  motif          String?  @db.Text
-  statut         ReferentielCorrectionStatut @default(PENDING)
-  validationMode String?  // double_signalement | re_verification | manuel
+  id               String                      @id @default(cuid())
+  organizationId   String
+  entrepriseId     String
+  type             ReferentielCorrectionType
+  champ            String?
+  valeurAvant      String?                     @db.Text
+  valeurApres      String?                     @db.Text
+  motif            String?                     @db.Text
+  statut           ReferentielCorrectionStatut @default(PENDING)
+  validationMode   String? // double_signalement | re_verification | manuel
   reportedByUserId String?
-  confirmedAt    DateTime?
-  confirmedBy    String?
+  confirmedAt      DateTime?
+  confirmedBy      String?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  entreprise     EntrepriseReferentiel @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entreprise   EntrepriseReferentiel @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@index([entrepriseId, statut])
@@ -1708,62 +1730,62 @@ enum ReferentielDedupStatut {
 
 /// File de revue dédup niveau 4 (similarité incertaine).
 model ReferentielDedupReview {
-  id               String   @id @default(cuid())
-  entrepriseAId    String
-  entrepriseBId    String
-  scoreSimilarite  Float
-  motif            String?  @db.Text
-  statut           ReferentielDedupStatut @default(PENDING)
-  reporterOrgId    String?
-  createdAt        DateTime @default(now())
-  resolvedAt       DateTime?
+  id              String                 @id @default(cuid())
+  entrepriseAId   String
+  entrepriseBId   String
+  scoreSimilarite Float
+  motif           String?                @db.Text
+  statut          ReferentielDedupStatut @default(PENDING)
+  reporterOrgId   String?
+  createdAt       DateTime               @default(now())
+  resolvedAt      DateTime?
 
-  entrepriseA      EntrepriseReferentiel @relation("DedupA", fields: [entrepriseAId], references: [id], onDelete: Cascade)
-  entrepriseB      EntrepriseReferentiel @relation("DedupB", fields: [entrepriseBId], references: [id], onDelete: Cascade)
-  reporterOrg      Organization? @relation("DedupReporter", fields: [reporterOrgId], references: [id], onDelete: SetNull)
+  entrepriseA EntrepriseReferentiel @relation("DedupA", fields: [entrepriseAId], references: [id], onDelete: Cascade)
+  entrepriseB EntrepriseReferentiel @relation("DedupB", fields: [entrepriseBId], references: [id], onDelete: Cascade)
+  reporterOrg Organization?         @relation("DedupReporter", fields: [reporterOrgId], references: [id], onDelete: SetNull)
 
   @@index([statut, createdAt])
   @@map("referentiel_dedup_reviews")
 }
 
 model AgentEvent {
-  id             String   @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
   userId         String
 
-  contactId      String?
-  source         AgentEventSource
-  type           AgentEventType
+  contactId String?
+  source    AgentEventSource
+  type      AgentEventType
 
   contenuBrutRef       String?
   contenuBrutExpiresAt DateTime?
 
-  resume              String?  @db.Text
-  score               Float?
-  actionsSuggerees    String[] @default([])
+  resume           String?  @db.Text
+  score            Float?
+  actionsSuggerees String[] @default([])
 
-  consentConfirmedBy  String?
-  consentConfirmedAt  DateTime?
+  consentConfirmedBy String?
+  consentConfirmedAt DateTime?
 
-  resolutionStatus    AgentEventResolutionStatus @default(PENDING)
-  resolutionAttempts  Int                        @default(0)
-  resolutionLastAt    DateTime?
+  resolutionStatus      AgentEventResolutionStatus @default(PENDING)
+  resolutionAttempts    Int                        @default(0)
+  resolutionLastAt      DateTime?
   resolutionNextRetryAt DateTime?
 
-  sourceRef           String?
+  sourceRef String?
 
-  processingStatus    CopilotProcessingStatus?
-  processingError     String?  @db.Text
-  analysisJson        Json?
+  processingStatus CopilotProcessingStatus?
+  processingError  String?                  @db.Text
+  analysisJson     Json?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact         Contact?         @relation(fields: [contactId], references: [id], onDelete: SetNull)
   copilotMessages CopilotMessage[]
-  suggestions    Suggestion[]
+  suggestions     Suggestion[]
 
   @@index([organizationId, createdAt])
   @@index([organizationId, contactId, createdAt])
@@ -1790,22 +1812,22 @@ enum SuggestionStatus {
 }
 
 model Suggestion {
-  id                 String           @id @default(cuid())
+  id                 String  @id @default(cuid())
   organizationId     String
   contactId          String
   triggeredByEventId String?
 
-  type               SuggestionType
-  message            String           @db.Text
-  targetAgent        String?
+  type        SuggestionType
+  message     String         @db.Text
+  targetAgent String?
 
-  status             SuggestionStatus @default(PENDING)
-  createdAt          DateTime         @default(now())
-  respondedAt        DateTime?
+  status      SuggestionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  respondedAt DateTime?
 
-  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contact            Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  triggeredByEvent   AgentEvent?      @relation(fields: [triggeredByEventId], references: [id], onDelete: SetNull)
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact          Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  triggeredByEvent AgentEvent?  @relation(fields: [triggeredByEventId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status])
   @@index([contactId, status])
@@ -1813,7 +1835,7 @@ model Suggestion {
 }
 
 model ContactDedupConflict {
-  id                String   @id @default(cuid())
+  id                String @id @default(cuid())
   organizationId    String
   existingContactId String
 
@@ -1824,10 +1846,10 @@ model ContactDedupConflict {
   source            AgentEventSource
   sourceRef         String?
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  existingContact   Contact      @relation("ExistingContact", fields: [existingContactId], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  existingContact Contact      @relation("ExistingContact", fields: [existingContactId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@map("contact_dedup_conflicts")
@@ -1847,27 +1869,27 @@ model CopilotOrgConfig {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("copilot_org_configs")
 }
 
 model CopilotMessage {
-  id             String   @id @default(cuid())
+  id             String  @id @default(cuid())
   organizationId String
   userId         String
   contactId      String?
   agentEventId   String?
 
-  role           String
-  content        String   @db.Text
+  role    String
+  content String @db.Text
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  agentEvent     AgentEvent?  @relation(fields: [agentEventId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact      Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  agentEvent   AgentEvent?  @relation(fields: [agentEventId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, userId, createdAt])
   @@index([contactId, createdAt])
@@ -1951,25 +1973,25 @@ enum SubscriptionStatus {
 }
 
 model BillingSubscription {
-  id                   String             @id @default(cuid())
-  organizationId       String             @unique
-  tier                 BillingTier        @default(DECOUVERTE)
-  currency             BillingCurrency    @default(TND)
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  status               SubscriptionStatus @default(TRIALING)
-  trialStartedAt       DateTime           @default(now())
-  trialEndsAt          DateTime
-  trialExtendedBy      String?
-  trialExtensionCount  Int                @default(0)
+  id                     String             @id @default(cuid())
+  organizationId         String             @unique
+  tier                   BillingTier        @default(DECOUVERTE)
+  currency               BillingCurrency    @default(TND)
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  status                 SubscriptionStatus @default(TRIALING)
+  trialStartedAt         DateTime           @default(now())
+  trialEndsAt            DateTime
+  trialExtendedBy        String?
+  trialExtensionCount    Int                @default(0)
   /// Agent unique gardé après essai si tier = DECOUVERTE (slug hunt-ai | copilot-ia | offre-bot)
   selectedDiscoveryAgent String?
-  currentPeriodEnd     DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  currentPeriodEnd       DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  extensionLogs    TrialExtensionLog[]
+  organization  Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  extensionLogs TrialExtensionLog[]
 
   @@index([status, trialEndsAt])
   @@map("billing_subscriptions")
@@ -1990,12 +2012,12 @@ model TrialExtensionLog {
 }
 
 model UsageQuota {
-  id                String   @id @default(cuid())
+  id                String  @id @default(cuid())
   organizationId    String
   month             String
-  agentActionsUsed  Int      @default(0)
+  agentActionsUsed  Int     @default(0)
   agentActionsLimit Int
-  overageAllowed    Boolean  @default(false)
+  overageAllowed    Boolean @default(false)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -2005,15 +2027,15 @@ model UsageQuota {
 }
 
 model LlmUsageLog {
-  id             String   @id @default(cuid())
-  organizationId String
-  service        String
-  success        Boolean  @default(true)
-  durationMs     Int      @default(0)
-  tokensEstimate Int?
+  id              String   @id @default(cuid())
+  organizationId  String
+  service         String
+  success         Boolean  @default(true)
+  durationMs      Int      @default(0)
+  tokensEstimate  Int?
   costEstimateUsd Float?
-  errorCode      String?
-  createdAt      DateTime @default(now())
+  errorCode       String?
+  createdAt       DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -2028,34 +2050,34 @@ model LlmUsageLog {
 
 /// Mission IA — brief permanent de l’équipe agents (obligatoire avant démarrage).
 model OrgTargetingProfile {
-  id                 String   @id @default(cuid())
-  organizationId     String   @unique
+  id             String @id @default(cuid())
+  organizationId String @unique
 
   /// NONE = pas commencé · DRAFT = en cours · ACTIVE = mission lancée
-  missionStatus      String   @default("NONE")
-  missionStep        Int      @default(1)
+  missionStatus      String    @default("NONE")
+  missionStep        Int       @default(1)
   missionCompletedAt DateTime?
-  missionSummary     String?  @db.Text
+  missionSummary     String?   @db.Text
 
   /// Étape 1 — description libre entreprise
-  companyBrief       String?  @db.Text
+  companyBrief      String? @db.Text
   /// Extraction IA (secteurs, produits, mots-clés, etc.)
-  extractedInsights  Json?
+  extractedInsights Json?
 
-  activity           String?  @db.Text
-  productsServices   String[] @default([])
-  markets            String[] @default([])
-  countries          String[] @default([])
-  regions            String[] @default([])
-  cities             String[] @default([])
-  targetClients      String[] @default([])
+  activity             String?  @db.Text
+  productsServices     String[] @default([])
+  markets              String[] @default([])
+  countries            String[] @default([])
+  regions              String[] @default([])
+  cities               String[] @default([])
+  targetClients        String[] @default([])
   /// Profils clients idéaux [{name, description, importance, sector, companySize, constraints}]
-  idealProfiles      Json     @default("[]")
-  sectors            String[] @default([])
-  keywords           String[] @default([])
+  idealProfiles        Json     @default("[]")
+  sectors              String[] @default([])
+  keywords             String[] @default([])
   /// Signaux à détecter (appels d'offres, recrutements, …)
-  detectSignals      String[] @default([])
-  commercialPriorities String? @db.Text
+  detectSignals        String[] @default([])
+  commercialPriorities String?  @db.Text
 
   excludeCompanies   String[] @default([])
   excludeClients     String[] @default([])
@@ -2065,27 +2087,27 @@ model OrgTargetingProfile {
   excludeCountries   String[] @default([])
 
   /// Orchestrateur : désactivé tant que la mission n’est pas ACTIVE
-  orchestratorEnabled    Boolean  @default(false)
-  orchestratorIntervalH  Int      @default(1)
+  orchestratorEnabled    Boolean   @default(false)
+  orchestratorIntervalH  Int       @default(1)
   lastOrchestratorAt     DateTime?
-  minScoutScoreToHandoff Int      @default(55)
+  minScoutScoreToHandoff Int       @default(55)
 
   /// Onboarding V2 — max 3 champs saisis, reste déduit
-  identitySourceType     String?   // website | facebook | linkedin | pdf | name_brief
+  identitySourceType     String? // website | facebook | linkedin | pdf | name_brief
   identitySourceUrl      String?
   identitySourceLabel    String?
   referenceClients       String[]  @default([])
   geoZonePresets         String[]  @default([]) // Tunisie, Maghreb, Afrique Ouest…
-  extractedTenantProfile Json?     // champs sourcés + confiance
+  extractedTenantProfile Json? // champs sourcés + confiance
   inverseIcp             Json?
   inverseIcpText         String?   @db.Text
-  offerSheet             Json?     // fiche offre (validée ou brouillon)
+  offerSheet             Json? // fiche offre (validée ou brouillon)
   offerValidatedAt       DateTime?
   offerValidatedBy       String?
-  learnedPrefs           Json?     // ton, exclusions, canal, seuil, langue
+  learnedPrefs           Json? // ton, exclusions, canal, seuil, langue
   ttfrlStartedAt         DateTime?
   ttfrlFirstLeadAt       DateTime?
-  onboardingEvents       Json?     // tunnel / analytics
+  onboardingEvents       Json? // tunnel / analytics
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2123,38 +2145,513 @@ enum AgentTaskStatus {
 
 /// File de collaboration inter-agents (mémoire partagée PostgreSQL).
 model AgentTask {
-  id             String          @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
 
-  assignee       AgentRole
-  kind           AgentTaskKind
-  status         AgentTaskStatus @default(PENDING)
-  priority       Int             @default(50)
+  assignee AgentRole
+  kind     AgentTaskKind
+  status   AgentTaskStatus @default(PENDING)
+  priority Int             @default(50)
 
-  payload        Json            @default("{}")
-  result         Json?
-  error          String?         @db.Text
+  payload Json    @default("{}")
+  result  Json?
+  error   String? @db.Text
 
-  parentTaskId   String?
-  contactId      String?
-  dedupeKey      String?
+  parentTaskId String?
+  contactId    String?
+  dedupeKey    String?
 
-  attempts       Int             @default(0)
-  maxAttempts    Int             @default(3)
-  availableAt    DateTime        @default(now())
-  startedAt      DateTime?
-  completedAt    DateTime?
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  availableAt DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  parentTask     AgentTask?      @relation("AgentTaskChain", fields: [parentTaskId], references: [id], onDelete: SetNull)
-  childTasks     AgentTask[]     @relation("AgentTaskChain")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentTask   AgentTask?   @relation("AgentTaskChain", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  childTasks   AgentTask[]  @relation("AgentTaskChain")
 
   @@unique([organizationId, dedupeKey])
   @@index([organizationId, status, availableAt])
   @@index([organizationId, assignee, status])
   @@index([status, availableAt])
   @@map("agent_tasks")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONNECT AI — Agent de prospection assistée (extension + API)
+// ═══════════════════════════════════════════════════════════════
+
+enum ConnectChannelSlug {
+  LINKEDIN
+  GMAIL
+  OUTLOOK
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  CRM
+  HUBSPOT
+  SALESFORCE
+}
+
+enum ConnectMessageStrategy {
+  CONNECTION
+  FIRST_MESSAGE
+  FOLLOW_UP
+  POST_MEETING
+  INTRODUCTION
+  DEMO_INVITE
+  MEETING_REQUEST
+  CUSTOM
+}
+
+enum ConnectProductChoice {
+  CARBOSCAN
+  SOFTFACTURE
+  BOTH
+  CUSTOM
+}
+
+enum ConnectAnalyticsEventType {
+  MESSAGE_GENERATED
+  MESSAGE_COPIED
+  MESSAGE_INSERTED
+  MESSAGE_SAVED
+  PROFILE_ANALYZED
+  EXTENSION_SYNC
+}
+
+/// Registre des canaux supportés (plugin architecture).
+model ConnectChannel {
+  id          String             @id @default(cuid())
+  slug        ConnectChannelSlug @unique
+  name        String
+  description String?            @db.Text
+  active      Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  prospects ConnectProspect[]
+  messages  ConnectGeneratedMessage[]
+  analytics ConnectAnalyticsEvent[]
+
+  @@map("connect_channels")
+}
+
+/// Prospect capturé depuis un canal (extension ou intégration).
+model ConnectProspect {
+  id             String  @id @default(cuid())
+  organizationId String
+  userId         String?
+  channelId      String
+  contactId      String?
+
+  firstName       String?
+  lastName        String?
+  fullName        String?
+  company         String?
+  jobTitle        String?
+  country         String?
+  sector          String?
+  profileUrl      String?
+  headline        String?
+  description     String? @db.Text
+  connectionCount Int?
+  experience      Json?
+  education       Json?
+  rawProfile      Json?
+
+  aiScore         Int?
+  aiSummary       String? @db.Text
+  aiOpportunities String? @db.Text
+  aiRisks         String? @db.Text
+  aiAngle         String? @db.Text
+  aiAnalysis      Json?
+  /// Qualification commerciale complète (copilote).
+  aiQualification Json?
+
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  organization Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  channel      ConnectChannel            @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  history       ConnectProspectHistory[]
+  messages      ConnectGeneratedMessage[]
+  conversations ConnectConversation[]
+
+  @@index([organizationId, channelId])
+  @@index([organizationId, profileUrl])
+  @@index([organizationId, updatedAt])
+  @@map("connect_prospects")
+}
+
+/// Historique des snapshots prospect.
+model ConnectProspectHistory {
+  id         String   @id @default(cuid())
+  prospectId String
+  snapshot   Json
+  source     String?
+  createdAt  DateTime @default(now())
+
+  prospect ConnectProspect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId, createdAt])
+  @@map("connect_prospect_history")
+}
+
+/// Template de prompt versionné.
+model ConnectPromptTemplate {
+  id             String                 @id @default(cuid())
+  organizationId String?
+  slug           String
+  name           String
+  strategy       ConnectMessageStrategy
+  channelSlug    ConnectChannelSlug?
+  active         Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  organization Organization?          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  versions     ConnectPromptVersion[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, strategy])
+  @@map("connect_prompt_templates")
+}
+
+/// Version d'un template de prompt.
+model ConnectPromptVersion {
+  id           String   @id @default(cuid())
+  templateId   String
+  version      Int
+  systemPrompt String   @db.Text
+  userPrompt   String   @db.Text
+  metadata     Json?
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  template ConnectPromptTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  messages ConnectGeneratedMessage[]
+
+  @@unique([templateId, version])
+  @@index([templateId, version])
+  @@map("connect_prompt_versions")
+}
+
+/// Message généré par Connect AI.
+model ConnectGeneratedMessage {
+  id              String  @id @default(cuid())
+  organizationId  String
+  userId          String
+  prospectId      String?
+  channelId       String
+  promptVersionId String?
+
+  strategy     ConnectMessageStrategy
+  product      ConnectProductChoice
+  content      String                 @db.Text
+  aiModel      String?
+  generationMs Int?
+  copiedAt     DateTime?
+  insertedAt   DateTime?
+  savedAt      DateTime?
+
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  organization  Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prospect      ConnectProspect?        @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+  channel       ConnectChannel          @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  promptVersion ConnectPromptVersion?   @relation(fields: [promptVersionId], references: [id], onDelete: SetNull)
+  versions      ConnectMessageVersion[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, userId, createdAt])
+  @@index([prospectId, createdAt])
+  @@map("connect_generated_messages")
+}
+
+/// Versions successives d'un message (régénération).
+model ConnectMessageVersion {
+  id        String   @id @default(cuid())
+  messageId String
+  version   Int
+  content   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  message ConnectGeneratedMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, version])
+  @@map("connect_message_versions")
+}
+
+/// Session extension navigateur.
+model ConnectExtensionSession {
+  id               String   @id @default(cuid())
+  organizationId   String
+  userId           String
+  browser          String?
+  extensionVersion String?
+  lastSyncAt       DateTime @default(now())
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId])
+  @@map("connect_extension_sessions")
+}
+
+/// Événements analytics Connect AI.
+model ConnectAnalyticsEvent {
+  id             String                    @id @default(cuid())
+  organizationId String
+  userId         String?
+  channelId      String?
+  eventType      ConnectAnalyticsEventType
+  payload        Json?
+  createdAt      DateTime                  @default(now())
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  channel      ConnectChannel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, eventType, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("connect_analytics_events")
+}
+
+/// Paramètres organisation Connect AI.
+model ConnectOrgSettings {
+  organizationId   String   @id
+  defaultLanguage  String   @default("fr")
+  defaultTone      String   @default("professionnel")
+  defaultStyle     String   @default("concis")
+  defaultLength    String   @default("moyen")
+  favoriteProducts String[] @default([])
+  signature        String?  @db.Text
+  customPrompt     String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("connect_org_settings")
+}
+
+/// Paramètres utilisateur Connect AI (override).
+model ConnectUserSettings {
+  userId           String   @id
+  language         String?
+  tone             String?
+  style            String?
+  length           String?
+  favoriteProducts String[] @default([])
+  signature        String?  @db.Text
+  customPrompt     String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("connect_user_settings")
+}
+
+enum ConnectConversationEventType {
+  MESSAGE_GENERATED
+  MESSAGE_INSERTED
+  MESSAGE_SENT
+  REPLY_RECEIVED
+  MEETING_BOOKED
+  NOTE
+  PIPELINE_UPDATE
+}
+
+enum ConnectProspectObjective {
+  GET_MEETING
+  PRESENT_CARBOSCAN
+  PRESENT_SOFTFACTURE
+  RE_ENGAGE
+  INVITE_DEMO
+  FIRST_CONTACT
+  FOLLOW_UP
+  CUSTOM
+}
+
+/// Fil de conversation par prospect (contexte commercial).
+model ConnectConversation {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  prospectId     String
+  channelId      String
+  objective      ConnectProspectObjective?
+  pipelineStage  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prospect     ConnectProspect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  events       ConnectConversationEvent[]
+
+  @@unique([organizationId, prospectId, userId])
+  @@index([organizationId, updatedAt])
+  @@map("connect_conversations")
+}
+
+/// Événement dans une conversation (historique contextuel).
+model ConnectConversationEvent {
+  id             String                     @id @default(cuid())
+  conversationId String
+  eventType      ConnectConversationEventType
+  content        String?                    @db.Text
+  messageId      String?
+  metadata       Json?
+  createdAt      DateTime                   @default(now())
+
+  conversation ConnectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("connect_conversation_events")
+}
+
+/// Code OAuth PKCE éphémère pour connexion extension.
+model ConnectExtensionAuthCode {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  codeHash       String
+  codeChallenge  String
+  redirectUri    String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("connect_extension_auth_codes")
+}
+
+/// Registre des agents Ciblix (Connect AI, Mail AI, …).
+model CiblixAgent {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?  @db.Text
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ciblix_agents")
+}
+
+/// Catalogue produits commercial (multi-produits, ICP, arguments — piloté par l'IA).
+model ConnectCommercialProduct {
+  id             String   @id @default(cuid())
+  organizationId String?
+  slug           String
+  name           String
+  description    String?  @db.Text
+  icp            String?  @db.Text
+  arguments      String[] @default([])
+  objections     String[] @default([])
+  cta            String?  @db.Text
+  active         Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, active])
+  @@map("connect_commercial_products")
+}
+
+/// Mémoire utilisateur — préférences apprises par l'IA au fil des interactions.
+model ConnectUserMemory {
+  userId        String    @id
+  preferredTone String?   @default("professionnel")
+  messageLength String?   @default("court")
+  avoidPhrases  String[]  @default([])
+  styleNotes    String[]  @default([])
+  lastLearnedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("connect_user_memory")
+}
+
+enum ConnectKnowledgeSourceType {
+  WEBSITE
+  FILE
+  TEXT
+  FAQ
+  PRICING
+}
+
+enum ConnectKnowledgeStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+/// Source de connaissance entreprise (site, PDF, FAQ, tarifs…).
+model ConnectKnowledgeSource {
+  id             String                     @id @default(cuid())
+  organizationId String
+  createdById    String?
+  name           String
+  type           ConnectKnowledgeSourceType
+  sourceUrl      String?
+  storageRef     String?
+  mimeType       String?
+  status         ConnectKnowledgeStatus     @default(PENDING)
+  extractedText  String?                    @db.Text
+  error          String?                    @db.Text
+  chunkCount     Int                        @default(0)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  chunks       ConnectKnowledgeChunk[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, updatedAt])
+  @@map("connect_knowledge_sources")
+}
+
+/// Chunk indexé pour retrieval (full-text PostgreSQL).
+model ConnectKnowledgeChunk {
+  id             String   @id @default(cuid())
+  organizationId String
+  sourceId       String
+  position       Int
+  title          String?
+  content        String   @db.Text
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  source       ConnectKnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, sourceId])
+  @@map("connect_knowledge_chunks")
 }

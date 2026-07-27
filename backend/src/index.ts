@@ -58,6 +58,7 @@ import { opsRoutes } from './routes/ops.js';
 import { copilotRoutes } from './routes/copilot.js';
 import { integrationsRoutes, integrationsWebhookRoutes } from './routes/integrations.js';
 import { billingRoutes, billingWebhookRoutes } from './routes/billing.js';
+import { connectAiRoutes } from './routes/connect-ai.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getUploadsDir } from './lib/uploadsDir.js';
 import { getAllowedCorsOrigins } from './lib/corsOrigins.js';
@@ -234,6 +235,7 @@ app.use('/api/billing', billingWebhookRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/agent-team', agentTeamRoutes);
 app.use('/api/mission', missionRoutes);
+app.use('/api/connect-ai', connectAiRoutes);
 // Compat Nginx : certains proxy_pass enlèvent /api/ → Node reçoit /prospecting/... au lieu de /api/prospecting/...
 app.use('/prospecting', prospectingRoutes);
 

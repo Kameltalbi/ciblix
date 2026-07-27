@@ -75,10 +75,118 @@
     "agentAnalyste": "Analyst",
     "agentOffre": "Proposals",
     "agentGmail": "Gmail",
+    "agentConnect": "Copilote Commercial",
     "agentFactCheck": "Fact-Checker",
     "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "Performance",
     "mission": "AI Mission"
+  },
+  "connectAi": {
+    "badge": "Ciblix agent",
+    "title": "Sales Copilot",
+    "subtitle": "Analyzes the profile, qualifies the prospect, picks the product, drafts and refines — you send.",
+    "cta": {
+      "knowledge": "Knowledge base",
+      "extension": "Install extension"
+    },
+    "capabilities": {
+      "qualifyTitle": "AI qualification",
+      "qualifyDesc": "Score, decision-maker, budget, reply and meeting odds, angles and topics to avoid.",
+      "contextTitle": "Contextual intelligence",
+      "contextDesc": "Reads role, company, recent activity and timing for a relevant angle.",
+      "chatTitle": "Conversational mode",
+      "chatDesc": "“Shorter”, “in English”, “focus on savings” — refine without starting over.",
+      "memoryTitle": "Prospect memory",
+      "memoryDesc": "Last contact, sentiment, meeting and product — ready when you return.",
+      "productsTitle": "Multi-product",
+      "productsDesc": "The copilot automatically picks the best product for the profile.",
+      "knowledgeTitle": "Company RAG",
+      "knowledgeDesc": "Website, PDFs, FAQs and pricing feed messages automatically."
+    },
+    "tabs": {
+      "overview": "Overview",
+      "history": "History",
+      "templates": "Templates",
+      "knowledge": "Knowledge",
+      "analytics": "Analytics",
+      "extension": "Extension",
+      "settings": "Settings"
+    },
+    "stats": {
+      "generated": "Generated",
+      "copied": "Copied",
+      "inserted": "Inserted",
+      "avgTime": "Avg. time"
+    },
+    "overview": {
+      "recent": "Recent messages",
+      "empty": "No messages yet. Install the extension and prospect on LinkedIn.",
+      "products": "Product catalog"
+    },
+    "templates": {
+      "defaultOnly": "Default templates — create custom versions via API."
+    },
+    "analytics": {
+      "funnel": "Sales funnel",
+      "sent": "Sent",
+      "replies": "Replies",
+      "meetings": "Meetings",
+      "byChannel": "By channel",
+      "byProduct": "By product"
+    },
+    "extension": {
+      "pageTitle": "Browser extension",
+      "betaNote": "Developer beta. The extension is loaded locally via Chrome or Edge developer mode.",
+      "channelsNote": "Channels currently available: LinkedIn (more channels coming soon).",
+      "statusInstalled": "Extension installed and synced",
+      "statusPending": "Extension not detected — follow the install steps",
+      "account": "Account",
+      "browser": "Browser",
+      "version": "Version",
+      "lastSync": "Last sync",
+      "never": "Never",
+      "testCta": "Test extension",
+      "reinstallCta": "Reinstall",
+      "newsCta": "What's new",
+      "installTitle": "Installation",
+      "installStep1": "Build the extension: cd extension && npm run build",
+      "installStep2": "Open chrome://extensions or edge://extensions",
+      "installStep3": "Enable developer mode, then “Load unpacked”",
+      "installStep4": "Select the extension/dist folder, then sign in with Ciblix",
+      "installHint": "A Ciblix account with the Sales Copilot agent enabled is required."
+    },
+    "settings": {
+      "toneTitle": "Copilot tone",
+      "toneHint": "Only setting for now — the rest is learned from your refine instructions.",
+      "tones": {
+        "professionnel": "Professional",
+        "amical": "Friendly",
+        "premium": "Premium"
+      },
+      "save": "Save"
+    },
+    "knowledge": {
+      "title": "Knowledge base",
+      "hint": "Connect your website, brochures, PDFs, pricing or FAQs. The copilot uses them automatically to qualify and draft.",
+      "addUrl": "Index a website",
+      "addFile": "Upload a file",
+      "addText": "Paste text",
+      "name": "Name",
+      "nameOptional": "Name (optional)",
+      "indexUrl": "Index",
+      "fileFormats": "PDF, TXT, MD, CSV, HTML — max 8 MB",
+      "contentPlaceholder": "FAQ, pricing, sales arguments…",
+      "saveText": "Save",
+      "typeText": "Text",
+      "typeFaq": "FAQ",
+      "typePricing": "Pricing",
+      "sources": "Indexed sources",
+      "empty": "No sources yet.",
+      "chunks": "chunks",
+      "reindex": "Reindex",
+      "delete": "Delete",
+      "uploadError": "Upload failed"
+    }
   },
   "gmailAi": {
     "badge": "Gmail AI Agent",

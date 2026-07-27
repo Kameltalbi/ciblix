@@ -51,6 +51,11 @@ export function Login() {
     setLoading(true);
     try {
       await login(email, password);
+      const redirect = searchParams.get('redirect');
+      if (redirect && redirect.startsWith('/')) {
+        navigate(redirect, { replace: true });
+        return;
+      }
       const { user: currentUser } = useAuth.getState();
       const next = await resolvePostLoginPath(currentUser?.role);
       navigate(next, { replace: true });

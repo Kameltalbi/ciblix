@@ -75,10 +75,118 @@
     "agentAnalyste": "Analyste",
     "agentOffre": "Propositions",
     "agentGmail": "Gmail",
+    "agentConnect": "Copilote Commercial",
     "agentFactCheck": "Vérificateur",
     "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "Performance",
     "mission": "Mission IA"
+  },
+  "connectAi": {
+    "badge": "Agent Ciblix",
+    "title": "Copilote Commercial",
+    "subtitle": "Analyse le profil, qualifie le prospect, choisit le produit, rédige et affine — vous envoyez.",
+    "cta": {
+      "knowledge": "Base de connaissances",
+      "extension": "Page extension"
+    },
+    "capabilities": {
+      "qualifyTitle": "Qualification IA",
+      "qualifyDesc": "Score, décideur, budget, probabilités de réponse et de RDV, angles et sujets à éviter.",
+      "contextTitle": "Intelligence contextuelle",
+      "contextDesc": "Analyse poste, entreprise, activité récente et timing pour un angle pertinent.",
+      "chatTitle": "Mode conversationnel",
+      "chatDesc": "« Plus court », « en anglais », « insiste sur les économies » — le message s’affine sans repartir de zéro.",
+      "memoryTitle": "Mémoire prospect",
+      "memoryDesc": "Dernier contact, sentiment, RDV et produit — visibles dès que vous revenez.",
+      "productsTitle": "Multi-produits",
+      "productsDesc": "Le copilote choisit automatiquement le produit le plus adapté au profil.",
+      "knowledgeTitle": "RAG entreprise",
+      "knowledgeDesc": "Site, PDF, FAQ et tarifs alimentent automatiquement les messages."
+    },
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "history": "Historique",
+      "templates": "Templates",
+      "knowledge": "Connaissances",
+      "analytics": "Analytics",
+      "extension": "Extension",
+      "settings": "Configuration"
+    },
+    "stats": {
+      "generated": "Messages générés",
+      "copied": "Copiés",
+      "inserted": "Insérés",
+      "avgTime": "Temps moyen"
+    },
+    "overview": {
+      "recent": "Messages récents",
+      "empty": "Aucun message pour l'instant. Installez l'extension et prospectez sur LinkedIn.",
+      "products": "Catalogue produits"
+    },
+    "templates": {
+      "defaultOnly": "Templates par défaut — créez des versions personnalisées via l'API."
+    },
+    "analytics": {
+      "funnel": "Entonnoir commercial",
+      "sent": "Envoyés",
+      "replies": "Réponses",
+      "meetings": "RDV",
+      "byChannel": "Par canal",
+      "byProduct": "Par produit"
+    },
+    "extension": {
+      "pageTitle": "Extension navigateur",
+      "betaNote": "Version bêta développeur. L'extension est chargée localement via le mode développeur de Chrome ou Edge.",
+      "channelsNote": "Canaux actuellement disponibles : LinkedIn (d'autres canaux seront ajoutés progressivement).",
+      "statusInstalled": "Extension installée et synchronisée",
+      "statusPending": "Extension non détectée — suivez les étapes d'installation",
+      "account": "Compte",
+      "browser": "Navigateur",
+      "version": "Version",
+      "lastSync": "Dernière synchronisation",
+      "never": "Jamais",
+      "testCta": "Tester l'extension",
+      "reinstallCta": "Réinstaller",
+      "newsCta": "Voir les nouveautés",
+      "installTitle": "Installation",
+      "installStep1": "Construire l'extension : cd extension && npm run build",
+      "installStep2": "Ouvrir chrome://extensions ou edge://extensions",
+      "installStep3": "Activer le mode développeur, puis « Charger l'extension non empaquetée »",
+      "installStep4": "Sélectionner le dossier extension/dist, puis se connecter avec Ciblix",
+      "installHint": "Un compte Ciblix avec l'agent Copilote Commercial activé est requis."
+    },
+    "settings": {
+      "toneTitle": "Ton du copilote",
+      "toneHint": "Seul réglage pour l’instant — le reste s’apprend au fil de vos instructions.",
+      "tones": {
+        "professionnel": "Professionnel",
+        "amical": "Amical",
+        "premium": "Premium"
+      },
+      "save": "Enregistrer"
+    },
+    "knowledge": {
+      "title": "Base de connaissances",
+      "hint": "Connectez votre site, brochures, PDF, tarifs ou FAQ. Le copilote les utilise automatiquement pour qualifier et rédiger.",
+      "addUrl": "Indexer un site",
+      "addFile": "Uploader un fichier",
+      "addText": "Coller un texte",
+      "name": "Nom",
+      "nameOptional": "Nom (optionnel)",
+      "indexUrl": "Indexer",
+      "fileFormats": "PDF, TXT, MD, CSV, HTML — max 8 Mo",
+      "contentPlaceholder": "FAQ, tarifs, arguments commerciaux…",
+      "saveText": "Enregistrer",
+      "typeText": "Texte",
+      "typeFaq": "FAQ",
+      "typePricing": "Tarifs",
+      "sources": "Sources indexées",
+      "empty": "Aucune source pour l’instant.",
+      "chunks": "extraits",
+      "reindex": "Réindexer",
+      "delete": "Supprimer",
+      "uploadError": "Échec de l’upload"
+    }
   },
   "gmailAi": {
     "badge": "Connecteur Gmail",

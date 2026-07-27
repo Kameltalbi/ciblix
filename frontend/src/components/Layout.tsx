@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Sun,
+  Link2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -54,6 +55,7 @@ const NAV_STRUCTURE: NavItem[] = [
   { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
   { to: '/agents/analyste-ai', labelKey: 'nav.agentAnalyste', icon: Search, page: 'analyste-ai', section: 'AGENTS' },
   { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
+  { to: '/agents/connect-ai', labelKey: 'nav.agentConnect', icon: Link2, page: 'connect-ai', section: 'AGENTS' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'PIPELINE' },
   { to: '/connecteurs', labelKey: 'nav.connectors', icon: Plug, page: 'connectors', section: 'WORKSPACE' },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings, page: 'settings', section: 'WORKSPACE' },

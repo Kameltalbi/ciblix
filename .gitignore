@@ -47,6 +47,10 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
+# Crash dumps / core files
+backend/core
+core
+
 # Tokens / secrets
 *.key
 *.pem

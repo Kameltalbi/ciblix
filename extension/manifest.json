@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Ciblix Copilote Commercial",
+  "description": "Copilote IA de prospection — analyse, qualification et messages. Vous gardez le contrôle.",
+  "version": "0.2.0",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "Copilote Commercial"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "activeTab", "sidePanel", "scripting", "identity"],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://ciblix.com/*",
+    "http://localhost:3000/*",
+    "http://localhost:4000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["content-linkedin.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["https://www.linkedin.com/*"]
+    }
+  ]
+}

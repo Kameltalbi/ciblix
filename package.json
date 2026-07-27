@@ -5,7 +5,8 @@
   "description": "CRM Bilan Carbone & Formations — Tunisie",
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "extension"
   ],
   "scripts": {
     "build:frontend": "npm run build -w bilan-crm-frontend",

@@ -1,0 +1,18 @@
+export * from './core/types.js';
+export { getChannel, getAllChannels, resolveChannelFromUrl } from './channels/channelRegistry.js';
+export { qualifyProspect, analyzeProspect } from './ai/qualificationService.js';
+export { refineMessage, generateInitialMessage } from './ai/refineService.js';
+export { generateMessage } from './ai/generateService.js';
+export { matchProduct, PRODUCT_LABELS } from './ai/productMatcher.js';
+export * from './repositories/prospectRepository.js';
+export * from './repositories/analyticsRepository.js';
+export * from './repositories/settingsRepository.js';
+export * from './repositories/templateRepository.js';
+export * from './repositories/conversationRepository.js';
+export * from './repositories/productCatalogRepository.js';
+export * from './repositories/userMemoryRepository.js';
+export * from './repositories/prospectMemoryRepository.js';
+export * from './repositories/knowledgeRepository.js';
+export * from './knowledge/ingestionService.js';
+export * from './knowledge/retrievalService.js';
+export * from './auth/extensionAuthService.js';
