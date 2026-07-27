@@ -712,20 +712,55 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
 
   let emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
     targeting?.activity || 'leur développement commercial'
-  }. Seriez-vous ouvert à un court échange ?\n\nCordialement`;
+  }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement`;
   let linkedinDraft = `Bonjour, j’ai repéré ${companyName} et croisé un signal pertinent pour ${
     targeting?.productsServices?.[0] || 'notre offre'
   }. Ouvert à échanger 15 min ?`;
   let angle = (payload.reasons as string[] | undefined)?.[0] || 'Adéquation ICP détectée';
-  let nextActions = ['Valider le message', 'Envoyer via Gmail', 'Planifier un suivi'];
+  let nextActions = ['Valider le message', 'Envoyer via WhatsApp ou email', 'Planifier un suivi'];
+
+  const isUsableDraft = (text: string | null | undefined): boolean => {
+    const t = (text || '').trim();
+    if (t.length < 60) return false;
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return false; // juste une adresse email
+    if (!/bonjour|hello|bonsoir|مرحبا/i.test(t) && t.split(/\s+/).length < 12) return false;
+    return true;
+  };
+
+  // Contexte fiche pour un message plus pertinent
+  let ficheContext = '';
+  if (contactId) {
+    const row = await prisma.contact.findFirst({
+      where: { id: contactId, organizationId: task.organizationId, erasedAt: null },
+      select: { ficheData: true, name: true, email: true, phone: true },
+    });
+    const fd =
+      row?.ficheData && typeof row.ficheData === 'object' && !Array.isArray(row.ficheData)
+        ? (row.ficheData as Record<string, unknown>)
+        : {};
+    ficheContext = [
+      row?.name ? `Interlocuteur: ${row.name}` : null,
+      typeof fd.besoin_detecte === 'string' ? `Besoin détecté: ${fd.besoin_detecte}` : null,
+      typeof fd.raison_du_score === 'string' ? `Raison score: ${fd.raison_du_score}` : null,
+      fd.decideur && typeof fd.decideur === 'object'
+        ? `Décideur: ${str((fd.decideur as Record<string, unknown>).nom) || ''} ${str((fd.decideur as Record<string, unknown>).fonction) || ''}`.trim()
+        : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
 
   if (process.env.OPENAI_API_KEY) {
     try {
       const system = `Tu es l'Assistant commercial Ciblix. JSON uniquement:
 {"companySummary":"...","needsSummary":"...","arguments":["..."],"approachAngle":"...","email":"...","linkedin":"...","nextActions":["..."]}
-RÈGLE OFFRE : email et linkedin ne doivent citer QUE les produits/services fournis dans « Nos offres ». INTERDIT d'inventer événementiel, agence, BTP, etc. si absents de la liste.`;
+RÈGLES :
+- "email" = message commercial COMPLET (salutations + 3-6 phrases + formule de politesse). Minimum 80 caractères.
+- INTERDIT de répondre avec seulement une adresse email, un nom, ou une signature seule.
+- Citer UNIQUEMENT les produits/services de « Nos offres ». Ne pas inventer d'autres métiers.
+- Tutoyer ou vouvoyer selon le contexte B2B (vouvoiement par défaut).`;
       const user = [
-        `Entreprise: ${companyName}`,
+        `Entreprise cible: ${companyName}`,
         `Score: ${payload.score}`,
         `Décision: ${payload.decision}`,
         targeting?.activity ? `Notre activité: ${targeting.activity}` : null,
@@ -735,6 +770,7 @@ RÈGLE OFFRE : email et linkedin ne doivent citer QUE les produits/services four
           : null,
         Array.isArray(payload.reasons) ? `Raisons: ${(payload.reasons as string[]).join('; ')}` : null,
         payload.signalSummary ? `Signal: ${payload.signalSummary}` : null,
+        ficheContext || null,
       ]
         .filter(Boolean)
         .join('\n');
@@ -760,14 +796,25 @@ RÈGLE OFFRE : email et linkedin ne doivent citer QUE les produits/services four
         const raw = data.choices?.[0]?.message?.content?.trim() || '';
         const cleaned = raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
         const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-        if (str(parsed.email)) emailDraft = str(parsed.email)!;
-        if (str(parsed.linkedin)) linkedinDraft = str(parsed.linkedin)!;
+        const aiEmail = str(parsed.email);
+        const aiLinkedin = str(parsed.linkedin);
+        if (isUsableDraft(aiEmail)) emailDraft = aiEmail!;
+        if (isUsableDraft(aiLinkedin)) linkedinDraft = aiLinkedin!;
         if (str(parsed.approachAngle)) angle = str(parsed.approachAngle)!;
         if (Array.isArray(parsed.nextActions)) nextActions = parsed.nextActions.map(String).slice(0, 5);
       }
     } catch (err) {
       console.warn('[agent-team] prepare openai', err);
     }
+  }
+
+  // Sécurité finale : ne jamais persister un « message » invalide
+  if (!isUsableDraft(emailDraft)) {
+    emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
+      targeting?.activity || 'leur développement commercial'
+    }${
+      targeting?.productsServices?.[0] ? ` (${targeting.productsServices[0]})` : ''
+    }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement`;
   }
 
   const pack = {

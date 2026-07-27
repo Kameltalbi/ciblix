@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   BadgeCheck,
   Building2,
@@ -189,6 +189,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
 
   const [tab, setTab] = useState<TabId>('apercu');
   const [copied, setCopied] = useState(false);
+  const messagePanelRef = useRef<HTMLDivElement>(null);
 
   const score = typeof scoreFit === 'number' ? Math.round(scoreFit) : null;
   const stars = score != null ? scoreStars(score) : null;
@@ -238,10 +239,6 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
   const closed =
     referentiel?.statutActivite === 'CESSEE' ||
     referentiel?.statutActivite === 'EN_LIQUIDATION';
-
-  const isFresh =
-    !sortedHisto.length &&
-    (ficheEtat === 'DECOUVERTE' || ficheEtat === 'QUALIFIEE' || !ficheEtat);
 
   const resumeIa =
     [raisonDuScore, besoinDetecte].filter(Boolean).join(' ') ||
@@ -429,6 +426,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               </Panel>
             ) : null}
 
+            <div ref={messagePanelRef} id="fiche-message-ia">
             <Panel
               title="Message recommandé par IA"
               action={
@@ -444,7 +442,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               ) : null}
               {messageBrouillon ? (
                 <>
-                  <p className="rounded-xl bg-neutral-50 p-3 text-sm leading-relaxed text-neutral-800">
+                  <p className="whitespace-pre-wrap rounded-xl bg-neutral-50 p-3 text-sm leading-relaxed text-neutral-800">
                     {messageBrouillon}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -495,6 +493,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 </div>
               )}
             </Panel>
+            </div>
           </div>
 
           {/* Colonne centrale — qualification */}
@@ -814,13 +813,26 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               size="sm"
               className="bg-[#016AEB] hover:bg-[#0159c4]"
               disabled={closed || messagePending}
-              onClick={isFresh ? onVoirMessage || onReprendre : onReprendre}
+              onClick={() => {
+                setTab('apercu');
+                const scrollToMsg = () => {
+                  messagePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                };
+                if (messageBrouillon?.trim()) {
+                  // Message déjà là → juste le montrer
+                  requestAnimationFrame(scrollToMsg);
+                  return;
+                }
+                // Sinon générer puis le panneau se mettra à jour
+                (onVoirMessage || onReprendre)?.();
+                window.setTimeout(scrollToMsg, 800);
+              }}
             >
               {messagePending
                 ? 'Génération…'
-                : isFresh
+                : messageBrouillon?.trim()
                   ? 'Voir le message'
-                  : 'Planifier l’action'}
+                  : 'Préparer un message'}
             </Button>
             <Button type="button" size="sm" variant="outline" disabled={closed} onClick={onDicter}>
               <Mic size={14} className="mr-1.5" /> Dicter une note
