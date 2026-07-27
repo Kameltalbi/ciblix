@@ -319,47 +319,47 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
       ) : null}
 
       {/* En-tête fiche */}
-      <header className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm">
+      <header className="rounded-xl border border-white/[0.08] bg-[#152038] p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#016AEB] to-[#1E72B9] text-2xl font-semibold text-white">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#3B6BFB] text-2xl font-semibold text-white shadow-lg shadow-[#3B6BFB]/30">
               {initialsFromName(nomLegal)}
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold text-neutral-900">{nomLegal}</h1>
+                <h1 className="text-2xl font-semibold text-white">{nomLegal}</h1>
                 {score != null ? (
-                  <span className="rounded-lg bg-[#EEF5FF] px-2.5 py-1 text-sm font-semibold text-[#016AEB]">
+                  <span className="rounded-lg bg-[#3B6BFB] px-2.5 py-1 text-sm font-bold text-white">
                     {score}/100
                   </span>
                 ) : null}
                 {stars != null ? (
-                  <span className="inline-flex items-center gap-0.5 text-amber-500">
+                  <span className="inline-flex items-center gap-0.5 text-amber-400">
                     <Star size={14} fill="currentColor" />
-                    <span className="text-sm font-medium text-neutral-700">{stars}</span>
+                    <span className="text-sm font-semibold text-[#D5DCEB]">{stars}</span>
                   </span>
                 ) : null}
               </div>
               {score != null ? (
-                <p className="mt-1 text-sm text-neutral-600">{scoreLabel(score)}</p>
+                <p className="mt-1 text-sm font-medium text-[#A8B4D0]">{scoreLabel(score)}</p>
               ) : null}
-              <p className="mt-1 text-sm text-neutral-500">{metaParts.join(' • ') || 'Informations en cours'}</p>
+              <p className="mt-1 text-sm font-medium text-[#8B93AC]">{metaParts.join(' • ') || 'Informations en cours'}</p>
               {referentiel?.dateDerniereVerification ? (
-                <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#016AEB]">
+                <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#7EB6FF]">
                   <BadgeCheck size={14} />
                   Entreprise vérifiée {formatVerified(referentiel.dateDerniereVerification)}
                 </p>
               ) : freshHint ? (
-                <p className="mt-2 text-xs text-amber-700">{freshHint}</p>
+                <p className="mt-2 text-xs text-amber-300">{freshHint}</p>
               ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
                 {score != null && score >= 80 ? (
-                  <Badge className="border-0 bg-orange-50 text-orange-700 hover:bg-orange-50">
+                  <Badge className="border-0 bg-orange-500/20 text-orange-300 hover:bg-orange-500/20">
                     <Flame size={12} className="mr-1" /> Opportunité chaude
                   </Badge>
                 ) : null}
                 {contactName && contactName !== nomLegal ? (
-                  <Badge variant="outline" className="text-neutral-600">
+                  <Badge variant="outline" className="border-white/15 text-[#A8B4D0]">
                     Contact : {contactName}
                   </Badge>
                 ) : null}
@@ -367,16 +367,26 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <Button type="button" variant="outline" size="sm" className="gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-white/10 bg-white/[0.04] text-[#E8ECF7] hover:bg-white/[0.08] hover:text-white"
+            >
               <UserPlus size={14} /> Ajouter à une liste
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-[#8B93AC] hover:bg-white/[0.06] hover:text-white"
+            >
               <MoreHorizontal size={16} />
             </Button>
           </div>
         </div>
 
-        <nav className="mt-5 flex gap-1 overflow-x-auto border-t border-neutral-100 pt-4">
+        <nav className="mt-5 flex gap-1 overflow-x-auto border-t border-white/[0.06] pt-4">
           {tabsWithCount.map((t) => (
             <button
               key={t.id}
@@ -385,8 +395,8 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               className={cn(
                 'whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition',
                 tab === t.id
-                  ? 'bg-[#016AEB] text-white'
-                  : 'text-neutral-600 hover:bg-neutral-100'
+                  ? 'bg-[#3B6BFB] text-white'
+                  : 'text-[#8B93AC] hover:bg-white/[0.06] hover:text-white'
               )}
             >
               {t.label}
@@ -400,13 +410,13 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
         <div className="mt-5 grid gap-5 xl:grid-cols-12">
           {/* Colonne gauche — IA */}
           <div className="space-y-4 xl:col-span-4">
-            <Panel title="Résumé IA" icon={<Sparkles size={16} className="text-violet-600" />}>
-              <p className="text-sm leading-relaxed text-neutral-700">{resumeIa}</p>
+            <Panel title="Résumé IA" icon={<Sparkles size={16} className="text-[#7EB6FF]" />}>
+              <p className="text-sm leading-relaxed text-[#D5DCEB]">{resumeIa}</p>
               {timingGood ? (
                 <Button
                   type="button"
                   size="sm"
-                  className="mt-3 bg-violet-600 hover:bg-violet-700"
+                  className="mt-3 bg-[#3B6BFB] hover:bg-[#2F5AE8]"
                   disabled={closed}
                 >
                   Très bon moment pour contacter
@@ -418,8 +428,8 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               <Panel title="Angle d'approche conseillé">
                 <ul className="space-y-2">
                   {angles.map((a) => (
-                    <li key={a} className="flex gap-2 text-sm text-neutral-700">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#016AEB]" />
+                    <li key={a} className="flex gap-2 text-sm text-[#D5DCEB]">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#3B6BFB]" />
                       {a}
                     </li>
                   ))}
@@ -431,7 +441,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               title="Message recommandé par IA"
               action={
                 messageBrouillon ? (
-                  <Badge className="border-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
+                  <Badge className="border-0 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/15">
                     Prêt à envoyer
                   </Badge>
                 ) : null
@@ -439,18 +449,24 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
             >
               {messageBrouillon ? (
                 <>
-                  <p className="rounded-xl bg-neutral-50 p-3 text-sm leading-relaxed text-neutral-800">
+                  <p className="rounded-xl bg-[#0F1629] p-3 text-sm leading-relaxed text-[#D5DCEB] ring-1 ring-white/10">
                     {messageBrouillon}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={copyMessage}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-white/10 bg-white/[0.04] text-[#E8ECF7] hover:bg-white/[0.08]"
+                      onClick={copyMessage}
+                    >
                       <Copy size={14} /> {copied ? 'Copié' : 'Copier'}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="gap-1.5"
+                      className="gap-1.5 border-white/10 bg-white/[0.04] text-[#E8ECF7] hover:bg-white/[0.08]"
                       disabled={closed}
                       onClick={onReprendre}
                     >
@@ -460,7 +476,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="gap-1.5"
+                      className="gap-1.5 border-white/10 bg-white/[0.04] text-[#E8ECF7] hover:bg-white/[0.08]"
                       disabled={closed}
                       onClick={onReprendre}
                     >
@@ -469,11 +485,11 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-[#8B93AC]">
                   Aucun message généré.{' '}
                   <button
                     type="button"
-                    className="text-[#016AEB] underline"
+                    className="text-[#7EB6FF] underline"
                     disabled={closed}
                     onClick={onReprendre}
                   >
@@ -490,14 +506,14 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               {whyItems.length ? (
                 <ul className="space-y-2.5">
                   {whyItems.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm text-neutral-700">
-                      <Check size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+                    <li key={item} className="flex items-start gap-2 text-sm text-[#D5DCEB]">
+                      <Check size={16} className="mt-0.5 shrink-0 text-emerald-400" />
                       {item}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-[#8B93AC]">
                   {pourquoi || 'En attente de signaux ou d’interactions.'}
                 </p>
               )}
@@ -508,30 +524,30 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 <div className="flex items-center gap-4">
                   <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
                     <svg className="h-24 w-24 -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="#E5E7EB" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
                       <circle
                         cx="18"
                         cy="18"
                         r="15.5"
                         fill="none"
-                        stroke="#016AEB"
+                        stroke="#3B6BFB"
                         strokeWidth="3"
                         strokeDasharray={`${score} 100`}
                         strokeLinecap="round"
                       />
                     </svg>
-                    <span className="absolute text-lg font-semibold text-neutral-900">{score}</span>
+                    <span className="absolute text-lg font-semibold text-white">{score}</span>
                   </div>
                   <div className="min-w-0 flex-1 space-y-2.5">
                     {dimensions.map((d) => (
                       <div key={d.label}>
                         <div className="mb-1 flex justify-between text-xs">
-                          <span className="text-neutral-600">{d.label}</span>
-                          <span className="font-medium text-neutral-800">{d.value}/100</span>
+                          <span className="text-[#8B93AC]">{d.label}</span>
+                          <span className="font-medium text-[#D5DCEB]">{d.value}/100</span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
                           <div
-                            className="h-full rounded-full bg-[#016AEB]"
+                            className="h-full rounded-full bg-[#3B6BFB]"
                             style={{ width: `${d.value}%` }}
                           />
                         </div>
@@ -555,7 +571,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
 
           {/* Colonne droite — entreprise & actions */}
           <div className="space-y-4 xl:col-span-4">
-            <Panel title="Informations entreprise" icon={<Building2 size={16} className="text-neutral-500" />}>
+            <Panel title="Informations entreprise" icon={<Building2 size={16} className="text-[#8B93AC]" />}>
               <dl className="space-y-2.5 text-sm">
                 <InfoRow label="Industrie" value={secteur} />
                 <InfoRow label="Effectif" value={referentiel?.tailleEstimee} />
@@ -563,13 +579,13 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 <InfoRow label="Identifiant" value={referentiel?.identifiantNational} />
                 {referentiel?.adresseSiege ? (
                   <div>
-                    <dt className="text-xs text-neutral-500">Adresse</dt>
+                    <dt className="text-xs text-[#8B93AC]">Adresse</dt>
                     <dd className="mt-0.5">
                       <a
                         href={mapsLink(referentiel.adresseSiege)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-start gap-1.5 text-[#016AEB] hover:underline"
+                        className="inline-flex items-start gap-1.5 text-[#7EB6FF] hover:underline"
                       >
                         <MapPin size={14} className="mt-0.5 shrink-0" />
                         {referentiel.adresseSiege}
@@ -579,9 +595,9 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 ) : null}
                 {referentiel?.telephoneStandard ? (
                   <div>
-                    <dt className="text-xs text-neutral-500">Téléphone</dt>
+                    <dt className="text-xs text-[#8B93AC]">Téléphone</dt>
                     <dd className="mt-0.5">
-                      <a href={`tel:${referentiel.telephoneStandard}`} className="text-[#016AEB] hover:underline">
+                      <a href={`tel:${referentiel.telephoneStandard}`} className="text-[#7EB6FF] hover:underline">
                         {referentiel.telephoneStandard}
                       </a>
                     </dd>
@@ -589,11 +605,11 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 ) : null}
                 {referentiel?.emailGenerique ? (
                   <div>
-                    <dt className="text-xs text-neutral-500">Email</dt>
+                    <dt className="text-xs text-[#8B93AC]">Email</dt>
                     <dd className="mt-0.5">
                       <a
                         href={mailtoLink(referentiel.emailGenerique, messageBrouillon, nomLegal)}
-                        className="text-[#016AEB] hover:underline"
+                        className="text-[#7EB6FF] hover:underline"
                       >
                         {referentiel.emailGenerique}
                       </a>
@@ -602,13 +618,13 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 ) : null}
                 {referentiel?.siteWeb ? (
                   <div>
-                    <dt className="text-xs text-neutral-500">Site web</dt>
+                    <dt className="text-xs text-[#8B93AC]">Site web</dt>
                     <dd className="mt-0.5">
                       <a
                         href={siteHref(referentiel.siteWeb)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[#016AEB] hover:underline"
+                        className="inline-flex items-center gap-1.5 text-[#7EB6FF] hover:underline"
                       >
                         <Globe size={14} />
                         {referentiel.siteWeb.replace(/^https?:\/\//i, '')}
@@ -618,17 +634,17 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 ) : null}
               </dl>
               {!referentiel?.telephoneStandard && !referentiel?.emailGenerique && decideur?.phone ? (
-                <p className="mt-3 border-t border-neutral-100 pt-3 text-xs text-neutral-500">
+                <p className="mt-3 border-t border-white/[0.06] pt-3 text-xs text-[#8B93AC]">
                   Coordonnées contact :{' '}
                   {decideur.phone ? (
-                    <a href={`tel:${decideur.phone}`} className="text-[#016AEB]">
+                    <a href={`tel:${decideur.phone}`} className="text-[#7EB6FF]">
                       {decideur.phone}
                     </a>
                   ) : null}
                   {decideur.email ? (
                     <>
                       {' · '}
-                      <a href={`mailto:${decideur.email}`} className="text-[#016AEB]">
+                      <a href={`mailto:${decideur.email}`} className="text-[#7EB6FF]">
                         {decideur.email}
                       </a>
                     </>
@@ -642,14 +658,14 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 <ul className="space-y-3">
                   {sortedHisto.slice(0, 5).map((ix, i) => (
                     <li key={`${ix.at}-${i}`} className="relative pl-4">
-                      <span className="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-[#016AEB]" />
+                      <span className="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-[#3B6BFB]" />
                       {i < Math.min(sortedHisto.length, 5) - 1 ? (
-                        <span className="absolute bottom-0 left-[3px] top-3 w-px bg-neutral-200" />
+                        <span className="absolute bottom-0 left-[3px] top-3 w-px bg-white/10" />
                       ) : null}
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-[#8B93AC]">
                         {formatWhen(ix.at)} · {canalLabel(ix.canal)}
                       </p>
-                      <p className="text-sm text-neutral-800">{ix.resume}</p>
+                      <p className="text-sm text-[#D5DCEB]">{ix.resume}</p>
                     </li>
                   ))}
                 </ul>
@@ -732,15 +748,15 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
         <div className="mt-5 max-w-2xl space-y-3">
           {sortedSignals.length ? (
             sortedSignals.map((s, i) => (
-              <div key={`${s.at}-${i}`} className="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
-                <p className="text-xs text-amber-800/80">{formatWhen(s.at)}</p>
-                <p className="mt-1 text-sm font-medium text-neutral-900">{s.titre}</p>
+              <div key={`${s.at}-${i}`} className="rounded-xl border border-amber-400/25 bg-amber-500/10 p-4">
+                <p className="text-xs text-amber-300/80">{formatWhen(s.at)}</p>
+                <p className="mt-1 text-sm font-medium text-[#E8ECF7]">{s.titre}</p>
                 {s.source_url ? (
                   <a
                     href={s.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-block text-xs text-[#016AEB]"
+                    className="mt-2 inline-block text-xs text-[#7EB6FF]"
                   >
                     Voir la source
                   </a>
@@ -759,11 +775,11 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
             <Panel title="Historique complet">
               <ul className="space-y-4">
                 {sortedHisto.map((ix, i) => (
-                  <li key={`${ix.at}-${i}`} className="border-b border-neutral-100 pb-4 last:border-0">
-                    <p className="text-xs text-neutral-500">
+                  <li key={`${ix.at}-${i}`} className="border-b border-white/[0.06] pb-4 last:border-0">
+                    <p className="text-xs text-[#8B93AC]">
                       {formatWhen(ix.at)} · {canalLabel(ix.canal)}
                     </p>
-                    <p className="mt-1 text-sm text-neutral-800">{ix.resume}</p>
+                    <p className="mt-1 text-sm text-[#D5DCEB]">{ix.resume}</p>
                   </li>
                 ))}
               </ul>
@@ -787,12 +803,12 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
       ) : null}
 
       {/* Barre d'action IA */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#C5D4EA] bg-[#0F1629]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-2">
-            <Sparkles size={18} className="mt-0.5 shrink-0 text-violet-600" />
-            <p className="text-sm text-neutral-800">
-              <span className="font-medium">Prochaine action :</span> {footerAction}
+            <Sparkles size={18} className="mt-0.5 shrink-0 text-[#38bdf8]" />
+            <p className="text-sm text-[#E8ECF7]">
+              <span className="font-semibold text-white">Prochaine action :</span> {footerAction}
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
@@ -827,9 +843,9 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+    <section className="rounded-xl border border-white/[0.08] bg-[#152038] p-4">
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
           {icon}
           {title}
         </h2>
@@ -844,8 +860,8 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value?.trim()) return null;
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-neutral-500">{label}</dt>
-      <dd className="text-right font-medium text-neutral-900">{value}</dd>
+      <dt className="text-sm font-medium text-[#8B93AC]">{label}</dt>
+      <dd className="text-right text-sm font-semibold text-[#E8ECF7]">{value}</dd>
     </div>
   );
 }
@@ -866,7 +882,7 @@ function DecideursList({
   expanded?: boolean;
 }) {
   if (!rows.length) {
-    return <p className="text-sm text-neutral-500">Aucun décideur identifié pour le moment.</p>;
+    return <p className="text-sm text-[#8B93AC]">Aucun décideur identifié pour le moment.</p>;
   }
 
   return (
@@ -875,34 +891,34 @@ function DecideursList({
         <li
           key={row.id}
           className={cn(
-            'rounded-xl border border-neutral-100 bg-neutral-50/50 p-3',
+            'rounded-xl border border-white/[0.08] bg-[#0F1629]/60 p-3',
             expanded && 'p-4'
           )}
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF5FF] text-sm font-semibold text-[#016AEB]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#3B6BFB]/20 text-sm font-semibold text-[#7EB6FF]">
               {initialsFromName(row.nom)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-neutral-900">{row.nom}</p>
+                <p className="font-medium text-white">{row.nom}</p>
                 {row.tag ? (
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline" className="border-white/15 text-[10px] text-[#A8B4D0]">
                     {row.tag}
                   </Badge>
                 ) : null}
               </div>
-              {row.fonction ? <p className="text-xs text-neutral-500">{row.fonction}</p> : null}
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600">
+              {row.fonction ? <p className="text-xs text-[#8B93AC]">{row.fonction}</p> : null}
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#A8B4D0]">
                 {row.phone ? (
-                  <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1 text-[#016AEB]">
+                  <a href={`tel:${row.phone}`} className="inline-flex items-center gap-1 text-[#7EB6FF]">
                     <Phone size={12} /> {row.phone}
                   </a>
                 ) : null}
                 {row.email ? (
                   <a
                     href={mailtoLink(row.email, messageBrouillon, nomLegal)}
-                    className="inline-flex items-center gap-1 text-[#016AEB]"
+                    className="inline-flex items-center gap-1 text-[#7EB6FF]"
                   >
                     <Mail size={12} /> {row.email}
                   </a>
@@ -910,7 +926,7 @@ function DecideursList({
                 {row.whatsapp ? (
                   <a
                     href={waLink(row.whatsapp, messageBrouillon)}
-                    className="inline-flex items-center gap-1 text-emerald-700"
+                    className="inline-flex items-center gap-1 text-emerald-400"
                     onClick={() => onOutbound('whatsapp', row.nom)}
                   >
                     WhatsApp
@@ -923,7 +939,7 @@ function DecideursList({
                     href={row.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-[#016AEB] hover:bg-white"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#7EB6FF] hover:bg-white/[0.06]"
                   >
                     <Linkedin size={14} />
                   </a>
@@ -932,7 +948,7 @@ function DecideursList({
                   <a
                     href={mailtoLink(row.email, messageBrouillon, nomLegal)}
                     className={cn(
-                      'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-[#016AEB] hover:bg-white',
+                      'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#7EB6FF] hover:bg-white/[0.06]',
                       closed && 'pointer-events-none opacity-40'
                     )}
                   >
@@ -943,7 +959,7 @@ function DecideursList({
                   <a
                     href={`tel:${row.phone}`}
                     className={cn(
-                      'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-[#016AEB] hover:bg-white',
+                      'inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#7EB6FF] hover:bg-white/[0.06]',
                       closed && 'pointer-events-none opacity-40'
                     )}
                     onClick={() => onOutbound('appel', row.nom)}
@@ -975,11 +991,11 @@ function QuickAction({
 }) {
   const className = cn(
     'inline-flex h-10 items-center justify-center rounded-xl px-3 text-xs font-medium transition',
-    tone === 'green' && 'bg-emerald-600 text-white hover:bg-emerald-700',
-    tone === 'blue' && 'bg-[#016AEB] text-white hover:bg-[#0159c4]',
-    tone === 'outline' && 'border border-[#016AEB] text-[#016AEB] hover:bg-[#EEF5FF]',
-    tone === 'purple' && 'border border-violet-300 text-violet-700 hover:bg-violet-50',
-    tone === 'dark' && 'border border-neutral-800 text-neutral-800 hover:bg-neutral-50',
+    tone === 'green' && 'bg-emerald-600 text-white hover:bg-emerald-500',
+    tone === 'blue' && 'bg-[#3B6BFB] text-white hover:bg-[#2F5AE8]',
+    tone === 'outline' && 'border border-[#3B6BFB]/50 text-[#7EB6FF] hover:bg-[#3B6BFB]/15',
+    tone === 'purple' && 'border border-white/15 text-[#A8B4D0] hover:bg-white/[0.06]',
+    tone === 'dark' && 'border border-white/20 text-[#E8ECF7] hover:bg-white/[0.06]',
     disabled && 'pointer-events-none opacity-40'
   );
 
@@ -999,7 +1015,7 @@ function QuickAction({
 
 function EmptyTab({ message }: { message: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/50 p-8 text-center text-sm text-neutral-500">
+    <div className="rounded-xl border border-dashed border-white/15 bg-[#152038] p-8 text-center text-sm text-[#8B93AC]">
       {message}
     </div>
   );
@@ -1016,9 +1032,9 @@ function AlertBanner({
     <div
       className={cn(
         'mb-4 rounded-xl px-4 py-3 text-sm leading-relaxed',
-        tone === 'amber' && 'bg-amber-50 text-amber-950',
-        tone === 'danger' && 'bg-red-50 text-red-900',
-        tone === 'blue' && 'bg-[#EEF5FF] text-neutral-900'
+        tone === 'amber' && 'bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/25',
+        tone === 'danger' && 'bg-rose-500/15 text-rose-200 ring-1 ring-rose-400/25',
+        tone === 'blue' && 'bg-[#3B6BFB]/15 text-[#D5DCEB] ring-1 ring-[#3B6BFB]/30'
       )}
     >
       {children}
