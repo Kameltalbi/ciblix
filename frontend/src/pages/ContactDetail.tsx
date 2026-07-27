@@ -191,28 +191,15 @@ export function ContactDetail() {
   }
 
   return (
-    <div className="relative -mx-4 -mt-4 min-h-[calc(100vh-4rem)] bg-[#0F1629] px-4 pb-8 pt-4 text-[#E8ECF7] sm:-mx-6 sm:px-6">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 70% 45% at 0% 0%, rgba(59,107,251,0.16), transparent 50%), radial-gradient(ellipse 50% 40% at 100% 10%, rgba(1,106,235,0.10), transparent 45%)',
-        }}
-      />
-      <div className="relative mx-auto mb-4 flex max-w-7xl items-center gap-2">
+    <div className="relative min-h-[70vh]">
+      <div className="mx-auto mb-4 flex max-w-7xl items-center gap-2 px-1">
         <Link to="/contacts">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 gap-1.5 border-white/10 bg-[#152038] text-[#E8ECF7] hover:bg-[#1B2540] hover:text-white"
-          >
+          <Button variant="ghost" size="sm" className="h-10 gap-1.5 px-2">
             <ArrowLeft size={14} /> Retour
           </Button>
         </Link>
       </div>
 
-      <div className="relative mx-auto max-w-7xl">
       <FicheEntrepriseDashboard
         contactId={contact.id}
         contactName={contact.name}
@@ -231,7 +218,6 @@ export function ContactDetail() {
           setDictationOpen(true);
         }}
       />
-      </div>
 
       <DicterNoteModal
         open={dictationOpen}
