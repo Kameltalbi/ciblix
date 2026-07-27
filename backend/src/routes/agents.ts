@@ -107,20 +107,19 @@ const AVAILABLE_AGENTS = [
   },
   {
     slug: 'connect-ai',
-    name: 'Copilote Commercial',
-    role: 'Copilote IA de prospection sur vos canaux',
+    name: 'LinkedIn',
+    role: 'Messages LinkedIn assistés',
     whenToUse:
-      'Quand vous prospectez sur LinkedIn (puis d\'autres canaux) et voulez qualifier, rédiger et affiner vos messages sans envoi automatique.',
+      'Quand vous voulez préparer des messages LinkedIn plus pertinents (extension Chrome bientôt disponible).',
     description:
-      'Copilote commercial via extension navigateur : qualification IA, intelligence contextuelle, multi-produits et messages personnalisés — vous cliquez toujours sur Envoyer.',
+      'Bientôt : ouvrir un profil LinkedIn et laisser Ciblix proposer le message. En attendant, utilisez la fiche contact et vos textes.',
     icon: 'Link2',
     color: 'blue',
     features: [
-      'Extension Chrome / Edge / Brave',
-      'Qualification & score IA',
-      'Mode conversationnel',
-      'Mémoire prospect',
-      'Base de connaissances entreprise',
+      'Messages assistés sur LinkedIn',
+      'Base de textes & documents',
+      'Ton commercial réglable',
+      'Vous validez toujours l’envoi',
     ],
     route: '/agents/connect-ai',
     defaultActive: false,

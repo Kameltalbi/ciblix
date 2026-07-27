@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   History,
   FileText,
-  Puzzle,
   Settings2,
   Loader2,
   BookOpen,
@@ -12,7 +11,6 @@ import {
   Globe,
   Upload,
   ExternalLink,
-  Circle,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,10 +20,10 @@ import { useTranslation } from 'react-i18next';
 
 type Tab = 'overview' | 'history' | 'knowledge' | 'settings';
 
-const TABS: { id: Tab; labelKey: string; icon: typeof Puzzle }[] = [
-  { id: 'overview', labelKey: 'connectAi.tabs.overview', icon: Puzzle },
+const TABS: { id: Tab; labelKey: string; icon: typeof BookOpen }[] = [
+  { id: 'overview', labelKey: 'connectAi.tabs.overview', icon: BookOpen },
   { id: 'history', labelKey: 'connectAi.tabs.history', icon: History },
-  { id: 'knowledge', labelKey: 'connectAi.tabs.knowledge', icon: BookOpen },
+  { id: 'knowledge', labelKey: 'connectAi.tabs.knowledge', icon: FileText },
   { id: 'settings', labelKey: 'connectAi.tabs.settings', icon: Settings2 },
 ];
 
@@ -45,7 +43,7 @@ export function ConnectAI() {
   const { data: settingsData } = useQuery({
     queryKey: ['connect-ai', 'settings'],
     queryFn: async () => (await api.get('/connect-ai/settings')).data,
-    enabled: tab === 'settings' || tab === 'overview',
+    enabled: tab === 'settings',
   });
 
   const { data: knowledgeData, isLoading: knowledgeLoading } = useQuery({
@@ -146,38 +144,20 @@ export function ConnectAI() {
       {tab === 'overview' && (
         <div className="space-y-4">
           <Card>
-            <CardContent className="space-y-5 p-6">
-              <div className="flex items-start gap-3">
-                <Circle
-                  className={cn(
-                    'mt-1 h-3 w-3 shrink-0 fill-current',
-                    settingsData?.session ? 'text-emerald-500' : 'text-amber-500'
-                  )}
-                />
-                <div>
-                  <p className="font-medium">
-                    {settingsData?.session
-                      ? t('connectAi.extension.statusInstalled')
-                      : t('connectAi.overview.notReady')}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">{t('connectAi.overview.startIntro')}</p>
-                </div>
+            <CardContent className="space-y-4 p-6">
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {t('connectAi.overview.comingSoonBadge')}
+                </p>
+                <h2 className="mt-2 text-lg font-semibold">{t('connectAi.overview.comingSoonTitle')}</h2>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                  {t('connectAi.overview.comingSoonBody')}
+                </p>
               </div>
-
-              <ol className="list-decimal space-y-2 pl-5 text-sm text-foreground">
-                <li>{t('connectAi.overview.step1')}</li>
-                <li>{t('connectAi.overview.step2')}</li>
-                <li>{t('connectAi.overview.step3')}</li>
-              </ol>
-
               <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={() =>
-                    document.getElementById('extension-install')?.scrollIntoView({ behavior: 'smooth' })
-                  }
-                >
-                  <Puzzle className="mr-2 h-4 w-4" />
-                  {t('connectAi.overview.ctaExtension')}
+                <Button variant="outline" onClick={() => setTab('knowledge')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  {t('connectAi.overview.ctaKnowledge')}
                 </Button>
                 <Button
                   variant="outline"
@@ -187,20 +167,6 @@ export function ConnectAI() {
                   {t('connectAi.extension.testCta')}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card id="extension-install">
-            <CardHeader>
-              <CardTitle className="text-base">{t('connectAi.extension.installTitle')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <ol className="list-decimal space-y-2 pl-5">
-                <li>{t('connectAi.extension.installStep1')}</li>
-                <li>{t('connectAi.extension.installStep2')}</li>
-                <li>{t('connectAi.extension.installStep3')}</li>
-                <li>{t('connectAi.extension.installStep4')}</li>
-              </ol>
             </CardContent>
           </Card>
 

@@ -84,7 +84,7 @@
   "connectAi": {
     "badge": "Agent Ciblix",
     "title": "LinkedIn",
-    "subtitle": "L’extension rédige le message sur le profil. Vous cliquez Envoyer.",
+    "subtitle": "Messages LinkedIn assistés — bientôt en un clic depuis Chrome.",
     "cta": {
       "knowledge": "Base de connaissances",
       "extension": "Installer"
@@ -104,7 +104,7 @@
       "knowledgeDesc": "Site, PDF, FAQ et tarifs alimentent automatiquement les messages."
     },
     "tabs": {
-      "overview": "Démarrer",
+      "overview": "Accueil",
       "history": "Historique",
       "templates": "Templates",
       "knowledge": "Textes & docs",
@@ -122,14 +122,18 @@
       "recent": "Derniers messages",
       "empty": "Aucun message pour l’instant.",
       "products": "Catalogue produits",
-      "notReady": "Extension pas encore installée",
-      "startTitle": "Démarrer",
-      "startIntro": "Pas de connexion LinkedIn dans Ciblix. Installez l’extension Chrome, ouvrez un profil LinkedIn, puis envoyez.",
-      "step1": "Installer l’extension (étapes ci-dessous)",
-      "step2": "Se connecter avec Ciblix dans l’extension",
-      "step3": "Ouvrir un profil LinkedIn et cliquer Envoyer",
-      "ctaExtension": "Voir l’installation",
-      "noteNoOauth": ""
+      "notReady": "Bientôt disponible",
+      "startTitle": "LinkedIn",
+      "startIntro": "",
+      "step1": "",
+      "step2": "",
+      "step3": "",
+      "ctaExtension": "",
+      "noteNoOauth": "",
+      "comingSoonBadge": "Bientôt disponible",
+      "comingSoonTitle": "Extension Chrome LinkedIn",
+      "comingSoonBody": "Vous pourrez ouvrir un profil LinkedIn et laisser Ciblix proposer le message. En attendant, préparez vos textes dans Textes & docs, et contactez vos prospects depuis la fiche (WhatsApp, email, appel).",
+      "ctaKnowledge": "Préparer mes textes"
     },
     "templates": {
       "defaultOnly": "Templates par défaut — créez des versions personnalisées via l'API."
@@ -147,20 +151,20 @@
       "betaNote": "",
       "channelsNote": "LinkedIn",
       "statusInstalled": "Extension connectée",
-      "statusPending": "Extension non détectée",
+      "statusPending": "Bientôt disponible",
       "account": "Compte",
       "browser": "Navigateur",
       "version": "Version",
       "lastSync": "Dernière synchronisation",
       "never": "Jamais",
       "testCta": "Ouvrir LinkedIn",
-      "reinstallCta": "Installation",
-      "newsCta": "Retour",
-      "installTitle": "Installation",
-      "installStep1": "Terminal : cd extension && npm install && npm run build",
-      "installStep2": "Chrome → chrome://extensions",
-      "installStep3": "Mode développeur → Charger l’extension non empaquetée",
-      "installStep4": "Choisir extension/dist → Se connecter avec Ciblix",
+      "reinstallCta": "",
+      "newsCta": "",
+      "installTitle": "",
+      "installStep1": "",
+      "installStep2": "",
+      "installStep3": "",
+      "installStep4": "",
       "installHint": ""
     },
     "settings": {

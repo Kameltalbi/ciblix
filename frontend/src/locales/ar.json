@@ -83,8 +83,8 @@
   },
   "connectAi": {
     "badge": "وكيل Ciblix",
-    "title": "المساعد التجاري",
-    "subtitle": "يحلل الملف، يؤهل العميل، يختار المنتج، يصيغ ويُحسّن — أنت ترسل.",
+    "title": "LinkedIn",
+    "subtitle": "رسائل LinkedIn بمساعدة الذكاء الاصطناعي — قريبًا بنقرة من Chrome.",
     "cta": {
       "knowledge": "قاعدة المعرفة",
       "extension": "تثبيت الإضافة"
@@ -121,7 +121,12 @@
     "overview": {
       "recent": "رسائل حديثة",
       "empty": "لا رسائل بعد. ثبّت الإضافة وابدأ على LinkedIn.",
-      "products": "كتالوج المنتجات"
+      "products": "كتالوج المنتجات",
+      "comingSoonBadge": "قريبًا",
+      "comingSoonTitle": "إضافة Chrome لـ LinkedIn",
+      "comingSoonBody": "قريبًا ستفتح ملف LinkedIn ويقترح Ciblix الرسالة. في الأثناء جهّز نصوصك وتواصل من بطاقة الاتصال.",
+      "ctaKnowledge": "إعداد نصوصي",
+      "notReady": "قريبًا"
     },
     "templates": {
       "defaultOnly": "قوالب افتراضية — أنشئ نسخًا مخصصة عبر API."
@@ -132,10 +137,10 @@
     },
     "extension": {
       "pageTitle": "إضافة المتصفح",
-      "betaNote": "نسخة بيتا للمطورين. تُحمَّل الإضافة محليًا عبر وضع المطور في Chrome أو Edge.",
+      "betaNote": "",
       "channelsNote": "القنوات المتاحة حاليًا: LinkedIn (ستُضاف قنوات أخرى تدريجيًا).",
       "statusInstalled": "الإضافة مثبتة ومتزامنة",
-      "statusPending": "لم تُكتشف الإضافة — اتبع خطوات التثبيت",
+      "statusPending": "قريبًا",
       "account": "الحساب",
       "browser": "المتصفح",
       "version": "الإصدار",
@@ -145,11 +150,11 @@
       "reinstallCta": "إعادة التثبيت",
       "newsCta": "الجديد",
       "installTitle": "التثبيت",
-      "installStep1": "بناء الإضافة: cd extension && npm run build",
-      "installStep2": "افتح chrome://extensions أو edge://extensions",
-      "installStep3": "فعّل وضع المطور، ثم «تحميل غير معبأ»",
-      "installStep4": "اختر مجلد extension/dist، ثم سجّل الدخول إلى Ciblix",
-      "installHint": "مطلوب حساب Ciblix مع تفعيل المساعد التجاري."
+      "installStep1": "",
+      "installStep2": "",
+      "installStep3": "",
+      "installStep4": "",
+      "installHint": ""
     },
     "settings": {
       "toneTitle": "نبرة المساعد",
