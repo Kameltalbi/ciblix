@@ -10,13 +10,11 @@ import {
   Mail,
   MapPin,
   Mic,
-  MoreHorizontal,
   Phone,
   Pencil,
   RefreshCw,
   Sparkles,
   Star,
-  UserPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,9 +177,12 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
     onReprendre,
     onDicter,
     onVoirMessage,
+    onSaveMessage,
     onOutbound,
     messagePending,
+    messageSavePending,
     messageError,
+    senderHints,
     dictationPrompt,
     onDismissDictationPrompt,
     className,
@@ -189,6 +190,8 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
 
   const [tab, setTab] = useState<TabId>('apercu');
   const [copied, setCopied] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(false);
+  const [draftEdit, setDraftEdit] = useState('');
   const messagePanelRef = useRef<HTMLDivElement>(null);
 
   const score = typeof scoreFit === 'number' ? Math.round(scoreFit) : null;
@@ -286,6 +289,47 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
     }
   };
 
+  const startEditMessage = () => {
+    setDraftEdit(messageBrouillon?.trim() || '');
+    setEditingMessage(true);
+    setTab('apercu');
+    requestAnimationFrame(() => {
+      messagePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+
+  const cancelEditMessage = () => {
+    setEditingMessage(false);
+    setDraftEdit('');
+  };
+
+  const saveEditMessage = async () => {
+    const text = draftEdit.trim();
+    if (!text || !onSaveMessage) return;
+    await onSaveMessage(text);
+    setEditingMessage(false);
+  };
+
+  const appendToDraft = (block: string) => {
+    const chunk = block.trim();
+    if (!chunk) return;
+    setDraftEdit((prev) => {
+      if (prev.toLowerCase().includes(chunk.toLowerCase())) return prev;
+      const base = prev.trimEnd();
+      return base ? `${base}\n\n${chunk}` : chunk;
+    });
+  };
+
+  const signatureBlock = [
+    'Cordialement,',
+    '',
+    senderHints?.userName?.trim() || null,
+    senderHints?.companyName?.trim() || null,
+    senderHints?.website?.trim() || null,
+  ]
+    .filter((line) => line !== null)
+    .join('\n');
+
   const primaryDecideur = decideurs[0];
   const footerAction =
     prochaineAction?.trim() ||
@@ -293,8 +337,21 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
       ? `Contacter ${primaryDecideur.nom}${primaryDecideur.phone ? ' par téléphone' : ''}`
       : 'Planifier la prochaine action');
 
+  const openMessage = () => {
+    setTab('apercu');
+    const scrollToMsg = () => {
+      messagePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    if (messageBrouillon?.trim()) {
+      requestAnimationFrame(scrollToMsg);
+      return;
+    }
+    (onVoirMessage || onReprendre)?.();
+    window.setTimeout(scrollToMsg, 800);
+  };
+
   return (
-    <div className={cn('pb-24', className)}>
+    <div className={cn(className)}>
       {closed ? (
         <AlertBanner tone="danger">
           Entreprise signalée inactive. Actions désactivées — l’historique reste consultable.
@@ -343,6 +400,11 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 <p className="mt-1 text-sm text-neutral-600">{scoreLabel(score)}</p>
               ) : null}
               <p className="mt-1 text-sm text-neutral-500">{metaParts.join(' • ') || 'Informations en cours'}</p>
+              {!closed && footerAction ? (
+                <p className="mt-2 text-sm text-neutral-700">
+                  <span className="font-medium text-neutral-900">Prochaine action :</span> {footerAction}
+                </p>
+              ) : null}
               {referentiel?.dateDerniereVerification ? (
                 <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#016AEB]">
                   <BadgeCheck size={14} />
@@ -365,12 +427,22 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
-            <Button type="button" variant="outline" size="sm" className="gap-1.5">
-              <UserPlus size={14} /> Ajouter à une liste
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="bg-[#016AEB] hover:bg-[#0159c4]"
+              disabled={closed || messagePending}
+              onClick={openMessage}
+            >
+              {messagePending
+                ? 'Génération…'
+                : messageBrouillon?.trim()
+                  ? 'Voir le message'
+                  : 'Préparer un message'}
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
-              <MoreHorizontal size={16} />
+            <Button type="button" size="sm" variant="outline" disabled={closed} onClick={onDicter}>
+              <Mic size={14} className="mr-1.5" /> Dicter une note
             </Button>
           </div>
         </div>
@@ -441,6 +513,60 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{messageError}</p>
               ) : null}
               {messageBrouillon ? (
+                editingMessage ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={draftEdit}
+                      onChange={(e) => setDraftEdit(e.target.value)}
+                      rows={10}
+                      className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm leading-relaxed text-neutral-800 outline-none ring-[#016AEB] focus:ring-2"
+                      placeholder="Modifiez votre message…"
+                      disabled={messageSavePending}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {senderHints?.website?.trim() ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={messageSavePending}
+                          onClick={() => appendToDraft(senderHints.website!.trim())}
+                        >
+                          + Mon site web
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={messageSavePending || !signatureBlock.trim()}
+                        onClick={() => appendToDraft(signatureBlock)}
+                      >
+                        + Signature
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-[#016AEB] hover:bg-[#0159c4]"
+                        disabled={closed || messageSavePending || !draftEdit.trim()}
+                        onClick={() => void saveEditMessage()}
+                      >
+                        {messageSavePending ? 'Enregistrement…' : 'Enregistrer'}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={messageSavePending}
+                        onClick={cancelEditMessage}
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <>
                   <p className="whitespace-pre-wrap rounded-xl bg-neutral-50 p-3 text-sm leading-relaxed text-neutral-800">
                     {messageBrouillon}
@@ -454,8 +580,8 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                       size="sm"
                       variant="outline"
                       className="gap-1.5"
-                      disabled={closed || messagePending}
-                      onClick={onReprendre}
+                      disabled={closed}
+                      onClick={startEditMessage}
                     >
                       <Pencil size={14} /> Modifier
                     </Button>
@@ -472,6 +598,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                     </Button>
                   </div>
                 </>
+                )
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-neutral-500">Aucun message généré pour le moment.</p>
@@ -797,49 +924,6 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
           />
         </div>
       ) : null}
-
-      {/* Barre d'action IA */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/80 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-2">
-            <Sparkles size={18} className="mt-0.5 shrink-0 text-violet-600" />
-            <p className="text-sm text-neutral-800">
-              <span className="font-medium">Prochaine action :</span> {footerAction}
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              className="bg-[#016AEB] hover:bg-[#0159c4]"
-              disabled={closed || messagePending}
-              onClick={() => {
-                setTab('apercu');
-                const scrollToMsg = () => {
-                  messagePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                };
-                if (messageBrouillon?.trim()) {
-                  // Message déjà là → juste le montrer
-                  requestAnimationFrame(scrollToMsg);
-                  return;
-                }
-                // Sinon générer puis le panneau se mettra à jour
-                (onVoirMessage || onReprendre)?.();
-                window.setTimeout(scrollToMsg, 800);
-              }}
-            >
-              {messagePending
-                ? 'Génération…'
-                : messageBrouillon?.trim()
-                  ? 'Voir le message'
-                  : 'Préparer un message'}
-            </Button>
-            <Button type="button" size="sm" variant="outline" disabled={closed} onClick={onDicter}>
-              <Mic size={14} className="mr-1.5" /> Dicter une note
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

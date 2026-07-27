@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { FicheEntrepriseDashboard } from '@/components/fiche-entreprise';
 import {
@@ -40,6 +41,7 @@ type ContactApi = {
 export function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const user = useAuth((s) => s.user);
   const [dictationOpen, setDictationOpen] = useState(false);
   const [dictationPrompt, setDictationPrompt] = useState<string | null>(null);
   const [scribeError, setScribeError] = useState<string | null>(null);
@@ -51,6 +53,37 @@ export function ContactDetail() {
     queryFn: () => api.get(`/contacts/${id}`).then((r) => r.data),
     enabled: Boolean(id),
   });
+
+  const { data: missionData } = useQuery({
+    queryKey: ['mission'],
+    queryFn: () => api.get('/mission').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: orgData } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => api.get('/organizations').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+
+  const senderHints = useMemo(() => {
+    const profile = missionData?.profile as
+      | {
+          identitySourceUrl?: string | null;
+          identitySourceType?: string | null;
+          identitySourceLabel?: string | null;
+        }
+      | undefined;
+    const website =
+      profile?.identitySourceUrl?.trim() ||
+      (profile?.identitySourceType === 'website' ? profile?.identitySourceLabel?.trim() : null) ||
+      null;
+    return {
+      website,
+      companyName: (orgData as { name?: string } | undefined)?.name?.trim() || null,
+      userName: user?.name || null,
+    };
+  }, [missionData, orgData, user]);
 
   const showOutboundPrompt = (canal: 'appel' | 'whatsapp', name?: string | null) => {
     const who = name || 'le contact';
@@ -87,6 +120,21 @@ export function ContactDetail() {
       const msg =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
         'Impossible de préparer le message.';
+      setMessageError(msg);
+    },
+  });
+
+  const saveMessage = useMutation({
+    mutationFn: (message: string) =>
+      api.patch(`/contacts/${id}/message-brouillon`, { message }).then((r) => r.data),
+    onSuccess: () => {
+      setMessageError(null);
+      void qc.invalidateQueries({ queryKey: ['contact', id] });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Impossible d’enregistrer le message.';
       setMessageError(msg);
     },
   });
@@ -215,7 +263,9 @@ export function ContactDetail() {
         contactName={contact.name}
         {...mapped}
         messagePending={reprendre.isPending}
+        messageSavePending={saveMessage.isPending}
         messageError={messageError}
+        senderHints={senderHints}
         dictationPrompt={dictationPrompt}
         onDismissDictationPrompt={() => {
           setDictationPrompt(null);
@@ -229,6 +279,10 @@ export function ContactDetail() {
         onVoirMessage={() => {
           setMessageError(null);
           reprendre.mutate();
+        }}
+        onSaveMessage={async (message) => {
+          setMessageError(null);
+          await saveMessage.mutateAsync(message);
         }}
         onDicter={() => {
           setScribeResult(null);

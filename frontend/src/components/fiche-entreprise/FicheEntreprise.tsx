@@ -77,6 +77,15 @@ export type FicheEntrepriseProps = {
   onReprendre?: () => void;
   onDicter?: () => void;
   onVoirMessage?: () => void;
+  /** Sauvegarde manuelle du brouillon (sans régénération IA). */
+  onSaveMessage?: (message: string) => void | Promise<void>;
+  messageSavePending?: boolean;
+  /** Infos expéditeur pour inserts rapides (site, signature). */
+  senderHints?: {
+    website?: string | null;
+    companyName?: string | null;
+    userName?: string | null;
+  } | null;
   messagePending?: boolean;
   messageError?: string | null;
   /** Appelé dès qu’un canal sortant est déclenché (affiche le bandeau Dicter sans recharger). */

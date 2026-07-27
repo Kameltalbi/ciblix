@@ -162,6 +162,51 @@ contactsRoutes.post('/:id/reprendre', async (req: AuthRequest, res: Response, ne
   }
 });
 
+/** Enregistre une édition manuelle du message (sans régénération IA). */
+contactsRoutes.patch('/:id/message-brouillon', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const contactId = String(req.params.id);
+    const message = typeof req.body?.message === 'string' ? req.body.message : null;
+    if (message == null) {
+      return res.status(400).json({ error: 'message requis' });
+    }
+    const trimmed = message.trim();
+    if (!trimmed) {
+      return res.status(400).json({ error: 'Le message ne peut pas être vide' });
+    }
+    if (trimmed.length > 12000) {
+      return res.status(400).json({ error: 'Message trop long' });
+    }
+
+    const contact = await getContactById(req.organizationId!, contactId);
+    if (!contact) return res.status(404).json({ error: 'Contact introuvable' });
+
+    const { persistAgentWrite, ficheEtatFromDb, parseFicheData } = await import(
+      '../services/company-fiche/index.js'
+    );
+
+    const etat = ficheEtatFromDb(contact.ficheEtat) || 'decouverte';
+    await persistAgentWrite({
+      organizationId: req.organizationId!,
+      contactId,
+      agent: 'redacteur',
+      patch: {
+        message_brouillon: trimmed,
+        message_canal: parseFicheData(contact.ficheData).message_canal || 'email',
+      },
+      etatCible: etat,
+      raison: 'Message modifié manuellement',
+      conditionSortieRemplie: true,
+    });
+
+    const refreshed = await getContactById(req.organizationId!, contactId);
+    const fiche = parseFicheData(refreshed?.ficheData);
+    res.json({ ok: true, message: fiche.message_brouillon?.trim() || trimmed });
+  } catch (err) {
+    next(err);
+  }
+});
+
 contactsRoutes.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const contactId = String(req.params.id);

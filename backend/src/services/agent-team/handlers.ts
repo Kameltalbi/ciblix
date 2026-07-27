@@ -710,9 +710,16 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
     };
   }
 
+  const ourWebsite =
+    targeting?.identitySourceUrl?.trim() ||
+    (targeting?.identitySourceType === 'website' ? targeting?.identitySourceLabel?.trim() : null) ||
+    null;
+
   let emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
     targeting?.activity || 'leur développement commercial'
-  }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement`;
+  }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement${
+    ourWebsite ? `\n\n${ourWebsite}` : ''
+  }`;
   let linkedinDraft = `Bonjour, j’ai repéré ${companyName} et croisé un signal pertinent pour ${
     targeting?.productsServices?.[0] || 'notre offre'
   }. Ouvert à échanger 15 min ?`;
@@ -755,7 +762,8 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
       const system = `Tu es l'Assistant commercial Ciblix. JSON uniquement:
 {"companySummary":"...","needsSummary":"...","arguments":["..."],"approachAngle":"...","email":"...","linkedin":"...","nextActions":["..."]}
 RÈGLES :
-- "email" = message commercial COMPLET (salutations + 3-6 phrases + formule de politesse). Minimum 80 caractères.
+- "email" = message commercial COMPLET (salutations + 3-6 phrases + formule de politesse + signature). Minimum 80 caractères.
+- Terminer par « Cordialement » puis, si fourni, le site web de l’expéditeur.
 - INTERDIT de répondre avec seulement une adresse email, un nom, ou une signature seule.
 - Citer UNIQUEMENT les produits/services de « Nos offres ». Ne pas inventer d'autres métiers.
 - Tutoyer ou vouvoyer selon le contexte B2B (vouvoiement par défaut).`;
@@ -768,6 +776,7 @@ RÈGLES :
         targeting?.productsServices?.length
           ? `Nos offres: ${targeting.productsServices.join(', ')}`
           : null,
+        ourWebsite ? `Notre site web (à inclure en fin de message): ${ourWebsite}` : null,
         Array.isArray(payload.reasons) ? `Raisons: ${(payload.reasons as string[]).join('; ')}` : null,
         payload.signalSummary ? `Signal: ${payload.signalSummary}` : null,
         ficheContext || null,
@@ -814,7 +823,11 @@ RÈGLES :
       targeting?.activity || 'leur développement commercial'
     }${
       targeting?.productsServices?.[0] ? ` (${targeting.productsServices[0]})` : ''
-    }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement`;
+    }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement${
+      ourWebsite ? `\n\n${ourWebsite}` : ''
+    }`;
+  } else if (ourWebsite && !emailDraft.toLowerCase().includes(ourWebsite.toLowerCase())) {
+    emailDraft = `${emailDraft.trimEnd()}\n\n${ourWebsite}`;
   }
 
   const pack = {
