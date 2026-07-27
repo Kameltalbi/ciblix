@@ -77,6 +77,8 @@ export type FicheEntrepriseProps = {
   onReprendre?: () => void;
   onDicter?: () => void;
   onVoirMessage?: () => void;
+  messagePending?: boolean;
+  messageError?: string | null;
   /** Appelé dès qu’un canal sortant est déclenché (affiche le bandeau Dicter sans recharger). */
   onOutbound?: (canal: 'appel' | 'whatsapp') => void;
   dictationPrompt?: string | null;

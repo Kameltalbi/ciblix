@@ -804,6 +804,33 @@ RÈGLE OFFRE : email et linkedin ne doivent citer QUE les produits/services four
         status: 'PENDING',
       },
     });
+
+    // Persister le brouillon sur la fiche (sinon l’UI « Message recommandé » reste vide)
+    try {
+      const { persistAgentWrite, ficheEtatFromDb } = await import('../company-fiche/index.js');
+      const contactRow = await prisma.contact.findFirst({
+        where: { id: contactId, organizationId: task.organizationId, erasedAt: null },
+        select: { ficheEtat: true },
+      });
+      const etat = ficheEtatFromDb(contactRow?.ficheEtat) || 'decouverte';
+      await persistAgentWrite({
+        organizationId: task.organizationId,
+        contactId,
+        agent: 'redacteur',
+        patch: {
+          message_brouillon: emailDraft,
+          message_canal: 'email',
+          message_langue: 'fr',
+          validation_separation: { erreur_detectee: false, details: undefined },
+          validation_qualite: { conforme: true, problemes: [] },
+        },
+        etatCible: etat,
+        raison: 'Message recommandé généré pour envoi humain',
+        conditionSortieRemplie: true,
+      });
+    } catch (ficheErr) {
+      console.warn('[agent-team] prepare outreach fiche write', ficheErr);
+    }
   }
 
   const owners = await prisma.user.findMany({

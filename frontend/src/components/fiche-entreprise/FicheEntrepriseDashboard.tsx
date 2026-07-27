@@ -180,6 +180,8 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
     onDicter,
     onVoirMessage,
     onOutbound,
+    messagePending,
+    messageError,
     dictationPrompt,
     onDismissDictationPrompt,
     className,
@@ -437,6 +439,9 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 ) : null
               }
             >
+              {messageError ? (
+                <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{messageError}</p>
+              ) : null}
               {messageBrouillon ? (
                 <>
                   <p className="rounded-xl bg-neutral-50 p-3 text-sm leading-relaxed text-neutral-800">
@@ -451,7 +456,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                       size="sm"
                       variant="outline"
                       className="gap-1.5"
-                      disabled={closed}
+                      disabled={closed || messagePending}
                       onClick={onReprendre}
                     >
                       <Pencil size={14} /> Modifier
@@ -461,25 +466,33 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                       size="sm"
                       variant="outline"
                       className="gap-1.5"
-                      disabled={closed}
+                      disabled={closed || messagePending}
                       onClick={onReprendre}
                     >
-                      <RefreshCw size={14} /> Régénérer
+                      <RefreshCw size={14} className={messagePending ? 'animate-spin' : undefined} />{' '}
+                      {messagePending ? 'Génération…' : 'Régénérer'}
                     </Button>
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-neutral-500">
-                  Aucun message généré.{' '}
-                  <button
+                <div className="space-y-3">
+                  <p className="text-sm text-neutral-500">Aucun message généré pour le moment.</p>
+                  <Button
                     type="button"
-                    className="text-[#016AEB] underline"
-                    disabled={closed}
+                    size="sm"
+                    className="bg-[#016AEB] hover:bg-[#0159c4]"
+                    disabled={closed || messagePending}
                     onClick={onReprendre}
                   >
-                    Préparer un message
-                  </button>
-                </p>
+                    {messagePending ? (
+                      <>
+                        <RefreshCw size={14} className="mr-1.5 animate-spin" /> Génération en cours…
+                      </>
+                    ) : (
+                      'Préparer un message'
+                    )}
+                  </Button>
+                </div>
               )}
             </Panel>
           </div>
@@ -800,10 +813,14 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               type="button"
               size="sm"
               className="bg-[#016AEB] hover:bg-[#0159c4]"
-              disabled={closed}
+              disabled={closed || messagePending}
               onClick={isFresh ? onVoirMessage || onReprendre : onReprendre}
             >
-              {isFresh ? 'Voir le message' : 'Planifier l’action'}
+              {messagePending
+                ? 'Génération…'
+                : isFresh
+                  ? 'Voir le message'
+                  : 'Planifier l’action'}
             </Button>
             <Button type="button" size="sm" variant="outline" disabled={closed} onClick={onDicter}>
               <Mic size={14} className="mr-1.5" /> Dicter une note

@@ -38,14 +38,14 @@ export function assertRedacteurMayGenerate(opts: {
   productsServices?: string[] | null;
 }): { ok: boolean; code?: string; message?: string } {
   if (isOfferSheetValidated(opts.offerSheet)) return { ok: true };
-  // Compat : ancienne mission avec productsServices mais pas encore offerSheet
-  if ((opts.productsServices || []).filter(Boolean).length > 0 && !opts.offerSheet) {
+  // Compat : produits/services Mission renseignés (même si offerSheet brouillon non validé)
+  if ((opts.productsServices || []).filter(Boolean).length > 0) {
     return { ok: true };
   }
   return {
     ok: false,
     code: 'OFFER_SHEET_REQUIRED',
     message:
-      'Validez votre fiche offre (services) avant de générer un message. La recherche d’entreprises reste disponible.',
+      'Indiquez vos services / produits dans la Mission avant de générer un message. La recherche d’entreprises reste disponible.',
   };
 }

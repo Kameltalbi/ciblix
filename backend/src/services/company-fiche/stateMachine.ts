@@ -67,6 +67,14 @@ export function canAutoTransition(
   if (from === to && agent === 'scribe' && (from === 'en_discussion' || from === 'contactee')) {
     return true; // mise à jour CRM sans changer d’état
   }
+  // Rédacteur : mise à jour du brouillon sans changer d’état (fiche encore découverte / qualifiée / contactée)
+  if (
+    from === to &&
+    agent === 'redacteur' &&
+    (from === 'decouverte' || from === 'qualifiee' || from === 'contactee' || from === 'en_discussion')
+  ) {
+    return true;
+  }
   const table = AUTO_TRANSITIONS[agent];
   const allowed = table[from];
   return Boolean(allowed?.includes(to));

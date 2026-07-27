@@ -1131,16 +1131,19 @@
   "onboardingChatbot": {
     "titleLoggedIn": "CIBLIX Assistant",
     "titlePublic": "Discover CIBLIX",
-    "welcome": "Hi! I'm your CIBLIX assistant. I'll help you find prospects, prioritize opportunities, and launch follow-ups.",
-    "fabLabel": "Onboarding chatbot",
-    "inputPlaceholder": "Ask your onboarding question...",
+    "subtitle": "Ask anything — I’ll guide you",
+    "welcome": "Hi! I’m your CIBLIX guide.\n\nIn short:\n1) Agents find prospects (Dashboard)\n2) Open Contacts → click a company\n3) On the file: “AI recommended message” → Copy / send\n\nAsk me anytime.",
+    "fabLabel": "CIBLIX help",
+    "close": "Close",
+    "thinking": "Thinking…",
+    "inputPlaceholder": "e.g. Where is the message to send?",
     "noAnswerFallback": "I could not generate an answer right now.",
-    "errorFallback": "I am having a temporary issue. Please try again, or ask a simple question like: How do I start?",
+    "errorFallback": "Temporary issue. Try again, or ask: “How do I start?”",
     "quickQuestions": {
-      "start": "How do I find my first prospects with AI?",
-      "difference": "What is the difference between a lead, a contact, and an opportunity?",
-      "convert": "How do I turn a lead into an opportunity?",
-      "kanban": "How do I track opportunities on the board?"
+      "start": "How do I get started?",
+      "message": "Where is the message to send?",
+      "contacts": "What is Contacts for?",
+      "signals": "What are Watcher signals?"
     }
   },
   "auth": {

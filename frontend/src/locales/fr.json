@@ -1082,16 +1082,19 @@
   "onboardingChatbot": {
     "titleLoggedIn": "Assistant CIBLIX",
     "titlePublic": "Découvrir CIBLIX",
-    "welcome": "Bonjour ! Je suis votre assistant CIBLIX. Je vous aide à trouver des prospects, prioriser vos opportunités et lancer vos relances.",
-    "fabLabel": "Chatbot onboarding",
-    "inputPlaceholder": "Posez votre question onboarding...",
+    "subtitle": "Posez vos questions — je vous guide",
+    "welcome": "Bonjour ! Je suis votre guide CIBLIX.\n\nEn bref :\n1) Les agents trouvent des prospects (Dashboard)\n2) Ouvrez Contacts → cliquez une entreprise\n3) Sur la fiche : « Message recommandé par IA » → Copier / envoyer\n\nPosez-moi une question quand vous voulez.",
+    "fabLabel": "Aide CIBLIX",
+    "close": "Fermer",
+    "thinking": "Je réfléchis…",
+    "inputPlaceholder": "Ex. Où trouver le message à envoyer ?",
     "noAnswerFallback": "Je n'ai pas pu répondre pour le moment.",
-    "errorFallback": "Je rencontre un souci temporaire. Vous pouvez réessayer, ou poser une question simple comme: Comment démarrer ?",
+    "errorFallback": "Je rencontre un souci temporaire. Réessayez, ou demandez : « Comment démarrer ? »",
     "quickQuestions": {
-      "start": "Comment trouver mes premiers prospects avec l'IA ?",
-      "difference": "Quelle différence entre un lead, un contact et une opportunité ?",
-      "convert": "Comment transformer un lead en opportunité ?",
-      "kanban": "Comment suivre mes opportunités sur le tableau ?"
+      "start": "Comment démarrer ?",
+      "message": "Où trouver le message à envoyer ?",
+      "contacts": "À quoi sert Contacts ?",
+      "signals": "C’est quoi Signaux Veilleur ?"
     }
   },
   "auth": {

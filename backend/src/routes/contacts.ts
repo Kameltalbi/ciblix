@@ -88,27 +88,12 @@ contactsRoutes.get('/:id/events', async (req: AuthRequest, res: Response, next: 
 
 contactsRoutes.get('/:id/suggestions', listContactSuggestionsHandler);
 
-/** Reprendre le contact → Rédacteur (PREPARE_OUTREACH). Pas d’édition de champs. */
+/** Prépare / régénère le message → écrit message_brouillon sur la fiche (synchrone). */
 contactsRoutes.post('/:id/reprendre', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const contactId = String(req.params.id);
     const contact = await getContactById(req.organizationId!, contactId);
     if (!contact) return res.status(404).json({ error: 'Contact introuvable' });
-
-    const { enqueueAgentTask } = await import('../services/agent-team/agentTaskService.js');
-    await enqueueAgentTask({
-      organizationId: req.organizationId!,
-      assignee: 'COPILOT',
-      kind: 'PREPARE_OUTREACH',
-      priority: 85,
-      contactId,
-      dedupeKey: `outreach:reprendre:${contactId}:${Date.now()}`,
-      payload: {
-        contactId,
-        companyName: contact.companyName || contact.name,
-        triggeredBy: 'reprendre_contact',
-      },
-    });
 
     // Remettre dans le flux actif si archivée / perdue (sans édition de champs métier)
     if (contact.ficheEtat === 'ARCHIVEE' || contact.ficheEtat === 'PERDUE') {
@@ -123,7 +108,55 @@ contactsRoutes.post('/:id/reprendre', async (req: AuthRequest, res: Response, ne
       });
     }
 
-    res.json({ ok: true });
+    const { handlePrepareOutreach } = await import('../services/agent-team/handlers.js');
+    const { parseFicheData } = await import('../services/company-fiche/index.js');
+
+    const syncTask = {
+      id: `sync-reprendre-${contactId}`,
+      organizationId: req.organizationId!,
+      contactId,
+      assignee: 'COPILOT' as const,
+      kind: 'PREPARE_OUTREACH' as const,
+      status: 'RUNNING' as const,
+      priority: 85,
+      attempts: 0,
+      maxAttempts: 1,
+      dedupeKey: `outreach:reprendre:${contactId}`,
+      payload: {
+        contactId,
+        companyName: contact.companyName || contact.name,
+        triggeredBy: 'reprendre_contact',
+      },
+      result: null,
+      error: null,
+      availableAt: new Date(),
+      startedAt: new Date(),
+      completedAt: null,
+      parentTaskId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await handlePrepareOutreach(syncTask as unknown as import('@prisma/client').AgentTask);
+
+    if (result.skipped) {
+      return res.status(400).json({
+        error: (result.message as string) || (result.reason as string) || 'Impossible de préparer le message',
+        code: result.reason,
+      });
+    }
+
+    const refreshed = await getContactById(req.organizationId!, contactId);
+    const fiche = parseFicheData(refreshed?.ficheData);
+    const message =
+      fiche.message_brouillon?.trim() ||
+      (typeof result.email === 'string' ? result.email : null);
+
+    res.json({
+      ok: true,
+      message,
+      approachAngle: result.approachAngle ?? null,
+    });
   } catch (err) {
     next(err);
   }

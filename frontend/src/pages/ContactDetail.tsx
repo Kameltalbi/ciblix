@@ -44,6 +44,7 @@ export function ContactDetail() {
   const [dictationPrompt, setDictationPrompt] = useState<string | null>(null);
   const [scribeError, setScribeError] = useState<string | null>(null);
   const [scribeResult, setScribeResult] = useState<ScribeResultPreview | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   const { data, isPending, error } = useQuery({
     queryKey: ['contact', id],
@@ -78,7 +79,16 @@ export function ContactDetail() {
 
   const reprendre = useMutation({
     mutationFn: () => api.post(`/contacts/${id}/reprendre`).then((r) => r.data),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['contact', id] }),
+    onSuccess: () => {
+      setMessageError(null);
+      void qc.invalidateQueries({ queryKey: ['contact', id] });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Impossible de préparer le message.';
+      setMessageError(msg);
+    },
   });
 
   const scribe = useMutation({
@@ -204,14 +214,22 @@ export function ContactDetail() {
         contactId={contact.id}
         contactName={contact.name}
         {...mapped}
+        messagePending={reprendre.isPending}
+        messageError={messageError}
         dictationPrompt={dictationPrompt}
         onDismissDictationPrompt={() => {
           setDictationPrompt(null);
           if (id) sessionStorage.removeItem(`ciblix_outbound_${id}`);
         }}
         onOutbound={(canal) => showOutboundPrompt(canal, mapped.decideur?.nom || mapped.nomLegal)}
-        onReprendre={() => reprendre.mutate()}
-        onVoirMessage={() => reprendre.mutate()}
+        onReprendre={() => {
+          setMessageError(null);
+          reprendre.mutate();
+        }}
+        onVoirMessage={() => {
+          setMessageError(null);
+          reprendre.mutate();
+        }}
         onDicter={() => {
           setScribeResult(null);
           setScribeError(null);

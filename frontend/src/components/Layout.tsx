@@ -10,7 +10,6 @@ import {
   Globe,
   MessageSquare,
   Crosshair,
-  Sparkles,
   Radar,
   Search,
   Bot,
@@ -29,6 +28,7 @@ import { api } from '@/lib/api';
 import { useOrganizationLogoSrc } from '@/hooks/useOrganizationLogoSrc';
 import type { Organization } from '@/types';
 import { Notifications } from './Notifications';
+import { OnboardingChatWidget } from './OnboardingChatWidget';
 import { useMissionStatus } from './mission/MissionGate';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
@@ -225,7 +225,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       ? `${Math.min(7, Math.max(1, missionStatus.step || 1))}/7`
       : null;
 
-  const showAssistantFab = canViewPage('ai-assistant');
+  const showOnboardingChat = Boolean(user);
 
   const renderNav = (opts: { expanded: boolean; onNavigate?: () => void }) => (
     <nav className={cn('flex flex-1 flex-col overflow-y-auto overflow-x-hidden', opts.expanded ? 'px-2.5 py-2.5' : 'px-2 py-2.5')}>
@@ -479,20 +479,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {showAssistantFab ? (
-        <button
-          type="button"
-          className="fixed bottom-24 end-5 z-[130] flex h-14 w-14 items-center justify-center rounded-full border border-[#BED6F6]/60 bg-white text-[#1E72B9] shadow-xl shadow-[#1E72B9]/25 transition-smooth hover:scale-[1.04] hover:bg-[#eef4fc] sm:bottom-28 sm:end-6"
-          title={t('nav.floatingAssistant')}
-          aria-label={t('nav.floatingAssistant')}
-          onClick={() => {
-            void navigate('/ai-assistant');
-            closeSidebarOnMobile();
-          }}
-        >
-          <Sparkles size={24} strokeWidth={2} className="text-[#0071DD]" />
-        </button>
-      ) : null}
+      {showOnboardingChat ? <OnboardingChatWidget /> : null}
 
       {consentOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">

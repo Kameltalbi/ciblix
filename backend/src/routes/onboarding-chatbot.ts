@@ -22,27 +22,27 @@ function normalizeForMatch(text: string): string {
 const ONBOARDING_GUIDE: Record<Lang, string> = {
   fr:
     `Guide rapide CIBLIX\n\n` +
-    `1) Prospects — ajoutez et qualifiez vos leads (Chasseur IA sur les offres concernées).\n` +
-    `2) Conversion — transformez un lead en client + opportunité.\n` +
-    `3) Affaires — suivez le pipeline en Kanban, prochaines actions et relances.\n` +
-    `4) Exécution — calendrier, activités, modèles d’e-mails.\n` +
-    `5) Pilotage — tableau de bord, KPI et Assistant IA pour prioriser.\n\n` +
-    `Workflow conseillé : Prospect → Conversion → Affaire → Relance → Clôture.`,
+    `1) Mission — définissez à qui vendre (secteur, zone).\n` +
+    `2) Les agents cherchent — Dashboard : nouveaux prospects & signaux Veilleur.\n` +
+    `3) Contacts — liste des entreprises ; cliquez une ligne pour ouvrir la fiche.\n` +
+    `4) Sur la fiche — bloc « Message recommandé par IA » : Copier / envoyer.\n` +
+    `5) L’envoi (WhatsApp, email, appel) reste manuel — les agents préparent, vous contactez.\n\n` +
+    `Parcours : Mission → Prospects trouvés → Contacts → Fiche → Message → Envoi.`,
   en:
     `CIBLIX quick start\n\n` +
-    `1) Prospects — add and qualify leads.\n` +
-    `2) Convert hot leads into client + deal.\n` +
-    `3) Deals — Kanban pipeline, next actions, follow-ups.\n` +
-    `4) Execution — calendar, activities, email templates.\n` +
-    `5) Insights — dashboard, KPIs, AI Assistant for priorities.\n\n` +
-    `Recommended flow: Lead → Convert → Deal → Follow-up → Won.`,
+    `1) Mission — define who you sell to.\n` +
+    `2) Agents search — Dashboard: new prospects & Watcher signals.\n` +
+    `3) Contacts — company list; click a row to open the file.\n` +
+    `4) On the file — “AI recommended message”: Copy / send.\n` +
+    `5) Sending stays manual — agents prepare, you reach out.\n\n` +
+    `Flow: Mission → Prospects → Contacts → File → Message → Send.`,
   ar:
     `دليل البدء السريع في CIBLIX\n\n` +
-    `1) العملاء المحتملون — إضافة وتأهيل.\n` +
-    `2) التحويل — عميل + فرصة.\n` +
-    `3) الفرص — لوحة Kanban والمتابعات.\n` +
-    `4) التنفيذ — التقويم والأنشطة.\n` +
-    `5) المتابعة — لوحة التحكم والمساعد الذكي.`,
+    `1) المهمة — حدّد لمن تبيع.\n` +
+    `2) الوكلاء يبحثون — لوحة الأداء: عملاء جدد وإشارات المراقبة.\n` +
+    `3) Contacts — قائمة الشركات؛ انقر سطراً لفتح البطاقة.\n` +
+    `4) في البطاقة — « رسالة مقترحة »: انسخ / أرسل.\n` +
+    `5) الإرسال يدوي — الوكلاء يجهّزون وأنت تتواصل.`,
 };
 
 function getRuleBasedAnswer(message: string, language: Lang): string | null {
@@ -71,29 +71,109 @@ function getRuleBasedAnswer(message: string, language: Lang): string | null {
       'prospect',
       'lead',
       'chasseur',
+      'prospecteur',
       'trouver client',
       'premiers prospects',
+      'nouveaux prospects',
       'عملاء محتمل',
     ])
   ) {
     const t: Record<Lang, string> = {
       fr:
-        'Pour vos premiers prospects :\n' +
-        '• Créez des leads dans Prospects (manuel ou import).\n' +
-        '• Qualifiez-les (source, score, notes).\n' +
-        '• Avec Chasseur IA (selon votre offre), lancez une recherche ciblée par secteur/zone.\n' +
-        '• Convertissez les leads chauds en client + opportunité.',
+        'Les « Nouveaux prospects » du Dashboard = entreprises trouvées par le Prospecteur ce mois.\n' +
+        'Ensuite (auto) : qualification, fiche Contact, message préparé.\n' +
+        'Pour agir : menu Contacts → ouvrir une fiche → Message recommandé par IA.',
       en:
-        'For your first prospects:\n' +
-        '• Create leads in Prospects (manual or import).\n' +
-        '• Qualify them (source, score, notes).\n' +
-        '• Use Hunt AI (on eligible plans) for targeted search.\n' +
-        '• Convert hot leads to client + deal.',
+        'Dashboard “New prospects” = companies found by the Hunter this month.\n' +
+        'Next (auto): qualify, Contact file, draft message.\n' +
+        'To act: Contacts → open a file → AI recommended message.',
       ar:
-        'لإيجاد أول العملاء المحتملين:\n' +
-        '• أضف العملاء في قسم Prospects.\n' +
-        '• قيّمهم (مصدر، درجة، ملاحظات).\n' +
-        '• حوّل الأفضل إلى عميل + فرصة.',
+        '« محتملون جدد » في لوحة الأداء = شركات وجدها المستكشف هذا الشهر.\n' +
+        'بعدها تلقائياً: تأهيل، بطاقة Contact، مسودة رسالة.\n' +
+        'للعمل: Contacts ← افتح بطاقة ← الرسالة المقترحة.',
+    };
+    return t[language];
+  }
+
+  if (
+    match([
+      'message',
+      'envoyer',
+      'whatsapp',
+      'brouillon',
+      'recommande',
+      'recommande',
+      'recommandé',
+      'copier',
+      'où trouver le message',
+      'ou trouver',
+      'رسالة',
+      'إرسال',
+    ])
+  ) {
+    const t: Record<Lang, string> = {
+      fr:
+        'Le message à envoyer est sur la fiche client :\n' +
+        '1) Contacts → cliquez une entreprise\n' +
+        '2) Onglet Aperçu\n' +
+        '3) Bloc « Message recommandé par IA » → Copier\n' +
+        'Si vide : bouton « Voir le message » / « Planifier l’action » en bas de fiche.',
+      en:
+        'The message to send is on the company file:\n' +
+        '1) Contacts → click a company\n' +
+        '2) Overview tab\n' +
+        '3) “AI recommended message” → Copy\n' +
+        'If empty: use “View message” at the bottom of the file.',
+      ar:
+        'الرسالة في بطاقة الشركة:\n' +
+        '1) Contacts ← انقر شركة\n' +
+        '2) تبويب النظرة العامة\n' +
+        '3) « رسالة مقترحة » ← انسخ\n' +
+        'إن كانت فارغة: زر « عرض الرسالة » أسفل البطاقة.',
+    };
+    return t[language];
+  }
+
+  if (match(['contact', 'contacts', 'liste', 'fiche', 'بطاقة'])) {
+    const t: Record<Lang, string> = {
+      fr:
+        'Contacts = la liste de vos entreprises / prospects.\n' +
+        'Cliquez une ligne pour ouvrir la fiche (score, décideurs, message IA, actions WhatsApp / appel / email).',
+      en:
+        'Contacts = your companies / prospects list.\n' +
+        'Click a row to open the file (score, decision makers, AI message, WhatsApp / call / email).',
+      ar:
+        'Contacts = قائمة شركاتك / العملاء المحتملين.\n' +
+        'انقر سطراً لفتح البطاقة (درجة، صناع القرار، رسالة، واتساب / اتصال).',
+    };
+    return t[language];
+  }
+
+  if (
+    match([
+      'signal',
+      'veilleur',
+      'scout',
+      'opportunite detect',
+      'watcher',
+      'appel d\'offre',
+      'إشارة',
+      'مراقبة',
+    ])
+  ) {
+    const t: Record<Lang, string> = {
+      fr:
+        '« Signaux Veilleur » = alertes (appels d’offres, news, événements).\n' +
+        'Ce ne sont PAS des deals ni des messages à envoyer.\n' +
+        'Pour contacter : utilisez Contacts + message recommandé.',
+      en:
+        '“Watcher signals” = alerts (tenders, news, events).\n' +
+        'They are NOT deals or messages to send.\n' +
+        'To reach out: use Contacts + AI recommended message.',
+      ar:
+        '« إشارات المراقبة » = تنبيهات (مناقصات، أخبار، فعاليات).\n' +
+        'ليست صفقات ولا رسائل للإرسال.\n' +
+        'للتواصل: Contacts + الرسالة المقترحة.',
     };
     return t[language];
   }
@@ -195,14 +275,14 @@ function getRuleBasedAnswer(message: string, language: Lang): string | null {
 
 const FALLBACK_GENERIC: Record<Lang, string> = {
   fr:
-    'Je peux vous guider sur : démarrage, prospects, conversion lead → affaire, Kanban et offres CIBLIX.\n' +
-    'Exemple : « Comment démarrer ? » ou « Comment transformer un lead ? »',
+    'Je peux vous guider sur : démarrage, Contacts, message à envoyer, signaux Veilleur.\n' +
+    'Exemple : « Où trouver le message ? » ou « Comment démarrer ? »',
   en:
-    'I can help with: getting started, prospects, lead conversion, Kanban, and CIBLIX plans.\n' +
-    'Try: "How do I get started?" or "How do I convert a lead?"',
+    'I can help with: getting started, Contacts, message to send, Watcher signals.\n' +
+    'Try: "Where is the message?" or "How do I start?"',
   ar:
-    'يمكنني مساعدتك في: البدء، العملاء المحتملين، التحويل، Kanban، والعروض.\n' +
-    'مثال: « كيف أبدأ؟ »',
+    'يمكنني مساعدتك في: البدء، Contacts، الرسالة، إشارات المراقبة.\n' +
+    'مثال: « أين الرسالة؟ » أو « كيف أبدأ؟ »',
 };
 
 async function callOpenAIForOnboarding(prompt: string, language: Lang): Promise<string> {
@@ -218,12 +298,11 @@ async function callOpenAIForOnboarding(prompt: string, language: Lang): Promise<
   }[language];
 
   const systemPrompt = [
-    'You are an onboarding chatbot for CIBLIX CRM.',
-    'You are independent from the in-app AI assistant.',
-    'Your job is to explain product onboarding and app usage only.',
-    'Focus on: prospects, conversion, clients, affaires pipeline, activities, calendar, support tickets, and first-week setup.',
-    'Do not hallucinate unavailable features. If unsure, provide generic safe guidance.',
-    'Keep responses concise and actionable (3-8 bullets max when suitable).',
+    'You are an onboarding chatbot for CIBLIX (sales AI agents CRM).',
+    'Explain product usage only. Current product flow:',
+    'Mission → Prospecteur finds companies → Contacts list → company file → AI recommended message → user sends manually (WhatsApp/email/call).',
+    'Watcher signals = tender/news/event alerts, NOT deals.',
+    'Do not invent features. Keep answers short and actionable.',
     languageInstruction,
   ].join(' ');
 
