@@ -57,20 +57,28 @@ describe('contrat anti-CRM — routes & UI lecture seule', () => {
     expect(src).toMatch(/contactsRoutes\.post\('\/:id\/reprendre'/);
   });
 
-  it('FicheEntreprise n’expose pas d’input éditable de champ métier', () => {
+  it('FicheEntreprise mobile n’expose pas d’input éditable de champ métier', () => {
     const src = readFileSync(
       join(frontendRoot, 'src/components/fiche-entreprise/FicheEntreprise.tsx'),
       'utf8'
     );
     expect(src).not.toMatch(/contentEditable/);
     expect(src).not.toMatch(/type=["']text["']/);
-    expect(src).not.toMatch(/>\s*Modifier\s*</i);
-    expect(src).not.toMatch(/Score IA|\/100/);
   });
 
-  it('ContactDetail n’affiche plus le score numérique', () => {
+  it('FicheEntrepriseDashboard affiche score et contacts (fiche premium)', () => {
+    const src = readFileSync(
+      join(frontendRoot, 'src/components/fiche-entreprise/FicheEntrepriseDashboard.tsx'),
+      'utf8'
+    );
+    expect(src).toMatch(/\/100/);
+    expect(src).toMatch(/Décideurs identifiés/);
+    expect(src).toMatch(/Informations entreprise/);
+  });
+
+  it('ContactDetail utilise la fiche dashboard premium', () => {
     const src = readFileSync(join(frontendRoot, 'src/pages/ContactDetail.tsx'), 'utf8');
-    expect(src).not.toMatch(/Score IA/);
-    expect(src).not.toMatch(/pipelineStatusScore/);
+    expect(src).toMatch(/FicheEntrepriseDashboard/);
+    expect(src).toMatch(/contactName/);
   });
 });

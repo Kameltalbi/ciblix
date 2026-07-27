@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { FicheEntreprise } from '@/components/fiche-entreprise';
+import { FicheEntrepriseDashboard } from '@/components/fiche-entreprise';
 import {
   DicterNoteModal,
   type ScribeResultPreview,
@@ -192,7 +192,7 @@ export function ContactDetail() {
 
   return (
     <div className="relative min-h-[70vh]">
-      <div className="mx-auto mb-3 flex max-w-lg items-center gap-2 px-1">
+      <div className="mx-auto mb-4 flex max-w-7xl items-center gap-2 px-1">
         <Link to="/contacts">
           <Button variant="ghost" size="sm" className="h-10 gap-1.5 px-2">
             <ArrowLeft size={14} /> Retour
@@ -200,8 +200,9 @@ export function ContactDetail() {
         </Link>
       </div>
 
-      <FicheEntreprise
+      <FicheEntrepriseDashboard
         contactId={contact.id}
+        contactName={contact.name}
         {...mapped}
         dictationPrompt={dictationPrompt}
         onDismissDictationPrompt={() => {

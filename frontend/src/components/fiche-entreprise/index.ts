@@ -1,5 +1,6 @@
 export { CarteOpportunite } from './CarteOpportunite';
 export { FicheEntreprise } from './FicheEntreprise';
+export { FicheEntrepriseDashboard } from './FicheEntrepriseDashboard';
 export { DicterNoteModal } from './DicterNoteModal';
 export type {
   FicheEntrepriseProps,
