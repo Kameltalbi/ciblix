@@ -75,7 +75,7 @@
     "agentAnalyste": "Analyste",
     "agentOffre": "Propositions",
     "agentGmail": "Gmail",
-    "agentConnect": "Copilote Commercial",
+    "agentConnect": "LinkedIn",
     "agentFactCheck": "Vérificateur",
     "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "Performance",
@@ -83,11 +83,11 @@
   },
   "connectAi": {
     "badge": "Agent Ciblix",
-    "title": "Copilote Commercial",
-    "subtitle": "Analyse le profil, qualifie le prospect, choisit le produit, rédige et affine — vous envoyez.",
+    "title": "LinkedIn",
+    "subtitle": "L’extension rédige le message sur le profil. Vous cliquez Envoyer.",
     "cta": {
       "knowledge": "Base de connaissances",
-      "extension": "Page extension"
+      "extension": "Installer"
     },
     "capabilities": {
       "qualifyTitle": "Qualification IA",
@@ -104,13 +104,13 @@
       "knowledgeDesc": "Site, PDF, FAQ et tarifs alimentent automatiquement les messages."
     },
     "tabs": {
-      "overview": "Vue d'ensemble",
+      "overview": "Démarrer",
       "history": "Historique",
       "templates": "Templates",
-      "knowledge": "Connaissances",
+      "knowledge": "Textes & docs",
       "analytics": "Analytics",
       "extension": "Extension",
-      "settings": "Configuration"
+      "settings": "Réglages"
     },
     "stats": {
       "generated": "Messages générés",
@@ -119,9 +119,17 @@
       "avgTime": "Temps moyen"
     },
     "overview": {
-      "recent": "Messages récents",
-      "empty": "Aucun message pour l'instant. Installez l'extension et prospectez sur LinkedIn.",
-      "products": "Catalogue produits"
+      "recent": "Derniers messages",
+      "empty": "Aucun message pour l’instant.",
+      "products": "Catalogue produits",
+      "notReady": "Extension pas encore installée",
+      "startTitle": "Démarrer",
+      "startIntro": "Pas de connexion LinkedIn dans Ciblix. Installez l’extension Chrome, ouvrez un profil LinkedIn, puis envoyez.",
+      "step1": "Installer l’extension (étapes ci-dessous)",
+      "step2": "Se connecter avec Ciblix dans l’extension",
+      "step3": "Ouvrir un profil LinkedIn et cliquer Envoyer",
+      "ctaExtension": "Voir l’installation",
+      "noteNoOauth": ""
     },
     "templates": {
       "defaultOnly": "Templates par défaut — créez des versions personnalisées via l'API."
@@ -135,29 +143,29 @@
       "byProduct": "Par produit"
     },
     "extension": {
-      "pageTitle": "Extension navigateur",
-      "betaNote": "Version bêta développeur. L'extension est chargée localement via le mode développeur de Chrome ou Edge.",
-      "channelsNote": "Canaux actuellement disponibles : LinkedIn (d'autres canaux seront ajoutés progressivement).",
-      "statusInstalled": "Extension installée et synchronisée",
-      "statusPending": "Extension non détectée — suivez les étapes d'installation",
+      "pageTitle": "Extension",
+      "betaNote": "",
+      "channelsNote": "LinkedIn",
+      "statusInstalled": "Extension connectée",
+      "statusPending": "Extension non détectée",
       "account": "Compte",
       "browser": "Navigateur",
       "version": "Version",
       "lastSync": "Dernière synchronisation",
       "never": "Jamais",
-      "testCta": "Tester l'extension",
-      "reinstallCta": "Réinstaller",
-      "newsCta": "Voir les nouveautés",
+      "testCta": "Ouvrir LinkedIn",
+      "reinstallCta": "Installation",
+      "newsCta": "Retour",
       "installTitle": "Installation",
-      "installStep1": "Construire l'extension : cd extension && npm run build",
-      "installStep2": "Ouvrir chrome://extensions ou edge://extensions",
-      "installStep3": "Activer le mode développeur, puis « Charger l'extension non empaquetée »",
-      "installStep4": "Sélectionner le dossier extension/dist, puis se connecter avec Ciblix",
-      "installHint": "Un compte Ciblix avec l'agent Copilote Commercial activé est requis."
+      "installStep1": "Terminal : cd extension && npm install && npm run build",
+      "installStep2": "Chrome → chrome://extensions",
+      "installStep3": "Mode développeur → Charger l’extension non empaquetée",
+      "installStep4": "Choisir extension/dist → Se connecter avec Ciblix",
+      "installHint": ""
     },
     "settings": {
-      "toneTitle": "Ton du copilote",
-      "toneHint": "Seul réglage pour l’instant — le reste s’apprend au fil de vos instructions.",
+      "toneTitle": "Ton des messages",
+      "toneHint": "Appliqué aux messages générés sur LinkedIn.",
       "tones": {
         "professionnel": "Professionnel",
         "amical": "Amical",

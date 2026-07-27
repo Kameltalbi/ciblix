@@ -148,9 +148,16 @@ contactsRoutes.post('/:id/reprendre', async (req: AuthRequest, res: Response, ne
 
     const refreshed = await getContactById(req.organizationId!, contactId);
     const fiche = parseFicheData(refreshed?.ficheData);
-    const message =
+    let message =
       fiche.message_brouillon?.trim() ||
       (typeof result.email === 'string' ? result.email : null);
+    if (message && /\\[nrt]/.test(message)) {
+      message = message
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\n')
+        .replace(/\\t/g, '\t');
+    }
 
     res.json({
       ok: true,
@@ -170,7 +177,7 @@ contactsRoutes.patch('/:id/message-brouillon', async (req: AuthRequest, res: Res
     if (message == null) {
       return res.status(400).json({ error: 'message requis' });
     }
-    const trimmed = message.trim();
+    const trimmed = normalizeMessageEscapes(message.trim());
     if (!trimmed) {
       return res.status(400).json({ error: 'Le message ne peut pas être vide' });
     }
@@ -206,6 +213,18 @@ contactsRoutes.patch('/:id/message-brouillon', async (req: AuthRequest, res: Res
     next(err);
   }
 });
+
+function normalizeMessageEscapes(text: string): string {
+  let t = text.trim();
+  if (/\\[nrt]/.test(t)) {
+    t = t
+      .replace(/\\r\\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\n')
+      .replace(/\\t/g, '\t');
+  }
+  return t.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
 
 contactsRoutes.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

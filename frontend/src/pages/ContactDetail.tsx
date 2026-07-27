@@ -11,6 +11,7 @@ import {
   type ScribeResultPreview,
 } from '@/components/fiche-entreprise/DicterNoteModal';
 import type { FicheEntrepriseDataView } from '@/components/fiche-entreprise/types';
+import { normalizeMessageDraft } from '@/components/fiche-entreprise/ficheDisplay';
 
 type ContactApi = {
   id: string;
@@ -74,10 +75,16 @@ export function ContactDetail() {
           identitySourceLabel?: string | null;
         }
       | undefined;
-    const website =
+    const raw =
       profile?.identitySourceUrl?.trim() ||
       (profile?.identitySourceType === 'website' ? profile?.identitySourceLabel?.trim() : null) ||
       null;
+    let website = raw;
+    if (website) {
+      const cleaned = website.replace(/\s+/g, '').replace(/[.,;:]+$/, '');
+      website = /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned.replace(/^\/+/, '')}`;
+      website = website.replace(/\/$/, '');
+    }
     return {
       website,
       companyName: (orgData as { name?: string } | undefined)?.name?.trim() || null,
@@ -213,7 +220,8 @@ export function ContactDetail() {
       raisonDuScore: fiche.raison_du_score,
       prochaineAction: fiche.prochaine_action,
       dateRelance: fiche.date_relance,
-      messageBrouillon: fiche.message_brouillon,
+      messageBrouillon: normalizeMessageDraft(fiche.message_brouillon),
+
       messageCanal: fiche.message_canal,
       historique: fiche.historique_interactions,
       objections: fiche.objections_detectees,

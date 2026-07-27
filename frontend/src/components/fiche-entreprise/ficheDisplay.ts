@@ -153,3 +153,18 @@ export const FORBIDDEN_WHY_PATTERNS = [
 export function isAppreciativeWhy(text: string): boolean {
   return FORBIDDEN_WHY_PATTERNS.some((p) => p.test(text));
 }
+
+/** Corrige les \\n littéraux parfois stockés dans message_brouillon. */
+export function normalizeMessageDraft(text?: string | null): string | null {
+  if (text == null) return null;
+  let t = text.trim();
+  if (!t) return null;
+  if (/\\[nrt]/.test(t)) {
+    t = t
+      .replace(/\\r\\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\n')
+      .replace(/\\t/g, '\t');
+  }
+  return t.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}

@@ -75,7 +75,7 @@
     "agentAnalyste": "Analyst",
     "agentOffre": "Proposals",
     "agentGmail": "Gmail",
-    "agentConnect": "Copilote Commercial",
+    "agentConnect": "LinkedIn",
     "agentFactCheck": "Fact-Checker",
     "agentBrandPulse": "BrandPulse",
     "agentsMarketplace": "Performance",
@@ -83,8 +83,8 @@
   },
   "connectAi": {
     "badge": "Ciblix agent",
-    "title": "Sales Copilot",
-    "subtitle": "Analyzes the profile, qualifies the prospect, picks the product, drafts and refines — you send.",
+    "title": "LinkedIn",
+    "subtitle": "The extension drafts the message on the profile. You click Send.",
     "cta": {
       "knowledge": "Knowledge base",
       "extension": "Install extension"
@@ -104,10 +104,10 @@
       "knowledgeDesc": "Website, PDFs, FAQs and pricing feed messages automatically."
     },
     "tabs": {
-      "overview": "Overview",
+      "overview": "Start",
       "history": "History",
       "templates": "Templates",
-      "knowledge": "Knowledge",
+      "knowledge": "Docs",
       "analytics": "Analytics",
       "extension": "Extension",
       "settings": "Settings"
@@ -120,8 +120,16 @@
     },
     "overview": {
       "recent": "Recent messages",
-      "empty": "No messages yet. Install the extension and prospect on LinkedIn.",
-      "products": "Product catalog"
+      "empty": "No messages yet.",
+      "products": "Product catalog",
+      "notReady": "Extension not installed yet",
+      "startTitle": "Get started",
+      "startIntro": "No LinkedIn login inside Ciblix. Install the Chrome extension, open a LinkedIn profile, then send.",
+      "step1": "Install the extension (steps below)",
+      "step2": "Sign in with Ciblix in the extension",
+      "step3": "Open a LinkedIn profile and click Send",
+      "ctaExtension": "See install steps",
+      "noteNoOauth": ""
     },
     "templates": {
       "defaultOnly": "Default templates — create custom versions via API."
@@ -135,25 +143,25 @@
       "byProduct": "By product"
     },
     "extension": {
-      "pageTitle": "Browser extension",
-      "betaNote": "Developer beta. The extension is loaded locally via Chrome or Edge developer mode.",
-      "channelsNote": "Channels currently available: LinkedIn (more channels coming soon).",
-      "statusInstalled": "Extension installed and synced",
-      "statusPending": "Extension not detected — follow the install steps",
+      "pageTitle": "Extension",
+      "betaNote": "",
+      "channelsNote": "LinkedIn",
+      "statusInstalled": "Extension connected",
+      "statusPending": "Extension not detected",
       "account": "Account",
       "browser": "Browser",
       "version": "Version",
       "lastSync": "Last sync",
       "never": "Never",
-      "testCta": "Test extension",
-      "reinstallCta": "Reinstall",
-      "newsCta": "What's new",
+      "testCta": "Open LinkedIn",
+      "reinstallCta": "Install",
+      "newsCta": "Back",
       "installTitle": "Installation",
-      "installStep1": "Build the extension: cd extension && npm run build",
-      "installStep2": "Open chrome://extensions or edge://extensions",
-      "installStep3": "Enable developer mode, then “Load unpacked”",
-      "installStep4": "Select the extension/dist folder, then sign in with Ciblix",
-      "installHint": "A Ciblix account with the Sales Copilot agent enabled is required."
+      "installStep1": "Terminal: cd extension && npm install && npm run build",
+      "installStep2": "Chrome → chrome://extensions",
+      "installStep3": "Developer mode → Load unpacked",
+      "installStep4": "Select extension/dist → Sign in with Ciblix",
+      "installHint": ""
     },
     "settings": {
       "toneTitle": "Copilot tone",

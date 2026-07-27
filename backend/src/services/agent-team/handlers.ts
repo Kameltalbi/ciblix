@@ -16,6 +16,36 @@ function str(v: unknown): string | null {
   return typeof v === 'string' && v.trim() ? v.trim() : null;
 }
 
+/** Corrige les \\n littéraux (souvent renvoyés par le modèle) → vrais sauts de ligne. */
+function normalizeOutreachDraft(text: string): string {
+  let t = text.trim();
+  if (/\\[nrt]/.test(t)) {
+    t = t
+      .replace(/\\r\\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\n')
+      .replace(/\\t/g, '\t');
+  }
+  t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  t = t.replace(/\n{3,}/g, '\n\n');
+  return t.trim();
+}
+
+/** URL publique propre (https://…), sans slash final. */
+function formatPublicWebsite(raw: string | null | undefined): string | null {
+  const s = (raw || '').trim().replace(/\s+/g, '');
+  if (!s) return null;
+  let u = s.replace(/[.,;:]+$/, '');
+  if (!/^https?:\/\//i.test(u)) u = `https://${u.replace(/^\/+/, '')}`;
+  try {
+    const url = new URL(u);
+    if (!url.hostname) return null;
+    return `${url.protocol}//${url.host}${url.pathname === '/' ? '' : url.pathname}`.replace(/\/$/, '');
+  } catch {
+    return s.startsWith('http') ? s : `https://${s}`;
+  }
+}
+
 function normalizeCompany(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -710,16 +740,34 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
     };
   }
 
-  const ourWebsite =
+  const ourWebsite = formatPublicWebsite(
     targeting?.identitySourceUrl?.trim() ||
-    (targeting?.identitySourceType === 'website' ? targeting?.identitySourceLabel?.trim() : null) ||
-    null;
+      (targeting?.identitySourceType === 'website' ? targeting?.identitySourceLabel?.trim() : null) ||
+      null
+  );
+
+  const [senderUser, orgRow] = await Promise.all([
+    userId
+      ? prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+      : Promise.resolve(null),
+    prisma.organization.findUnique({
+      where: { id: task.organizationId },
+      select: { name: true },
+    }),
+  ]);
+  const senderName = senderUser?.name?.trim() || null;
+  const orgName = orgRow?.name?.trim() || null;
+  const signatureBlock = [
+    'Cordialement,',
+    '',
+    ...(senderName ? [senderName] : []),
+    ...(orgName ? [orgName] : []),
+    ...(ourWebsite ? [ourWebsite] : []),
+  ].join('\n');
 
   let emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
     targeting?.activity || 'leur développement commercial'
-  }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement${
-    ourWebsite ? `\n\n${ourWebsite}` : ''
-  }`;
+  }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\n${signatureBlock}`;
   let linkedinDraft = `Bonjour, j’ai repéré ${companyName} et croisé un signal pertinent pour ${
     targeting?.productsServices?.[0] || 'notre offre'
   }. Ouvert à échanger 15 min ?`;
@@ -727,7 +775,7 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
   let nextActions = ['Valider le message', 'Envoyer via WhatsApp ou email', 'Planifier un suivi'];
 
   const isUsableDraft = (text: string | null | undefined): boolean => {
-    const t = (text || '').trim();
+    const t = normalizeOutreachDraft(text || '');
     if (t.length < 60) return false;
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return false; // juste une adresse email
     if (!/bonjour|hello|bonsoir|مرحبا/i.test(t) && t.split(/\s+/).length < 12) return false;
@@ -762,8 +810,14 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
       const system = `Tu es l'Assistant commercial Ciblix. JSON uniquement:
 {"companySummary":"...","needsSummary":"...","arguments":["..."],"approachAngle":"...","email":"...","linkedin":"...","nextActions":["..."]}
 RÈGLES :
-- "email" = message commercial COMPLET (salutations + 3-6 phrases + formule de politesse + signature). Minimum 80 caractères.
-- Terminer par « Cordialement » puis, si fourni, le site web de l’expéditeur.
+- "email" = message commercial COMPLET (salutations + 2-4 courts paragraphes + signature). Minimum 80 caractères.
+- Dans "email", utilise de VRAIS sauts de ligne JSON (\\n), jamais le texte littéral "\\n" affiché à l'écran.
+- Signature EXACTEMENT dans cet ordre, sur des lignes séparées :
+  Cordialement,
+  <prénom/nom si fourni>
+  <nom entreprise si fourni>
+  <URL https://… si fournie>
+- INTERDIT : « L'équipe … », signature générique, URL sans https://, www. seul sur une ligne ambiguë.
 - INTERDIT de répondre avec seulement une adresse email, un nom, ou une signature seule.
 - Citer UNIQUEMENT les produits/services de « Nos offres ». Ne pas inventer d'autres métiers.
 - Tutoyer ou vouvoyer selon le contexte B2B (vouvoiement par défaut).`;
@@ -776,7 +830,9 @@ RÈGLES :
         targeting?.productsServices?.length
           ? `Nos offres: ${targeting.productsServices.join(', ')}`
           : null,
-        ourWebsite ? `Notre site web (à inclure en fin de message): ${ourWebsite}` : null,
+        senderName ? `Expéditeur (signature): ${senderName}` : null,
+        orgName ? `Entreprise expéditrice (signature): ${orgName}` : null,
+        ourWebsite ? `Site web à mettre en signature (URL exacte): ${ourWebsite}` : null,
         Array.isArray(payload.reasons) ? `Raisons: ${(payload.reasons as string[]).join('; ')}` : null,
         payload.signalSummary ? `Signal: ${payload.signalSummary}` : null,
         ficheContext || null,
@@ -805,8 +861,8 @@ RÈGLES :
         const raw = data.choices?.[0]?.message?.content?.trim() || '';
         const cleaned = raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
         const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-        const aiEmail = str(parsed.email);
-        const aiLinkedin = str(parsed.linkedin);
+        const aiEmail = str(parsed.email) ? normalizeOutreachDraft(str(parsed.email)!) : null;
+        const aiLinkedin = str(parsed.linkedin) ? normalizeOutreachDraft(str(parsed.linkedin)!) : null;
         if (isUsableDraft(aiEmail)) emailDraft = aiEmail!;
         if (isUsableDraft(aiLinkedin)) linkedinDraft = aiLinkedin!;
         if (str(parsed.approachAngle)) angle = str(parsed.approachAngle)!;
@@ -817,17 +873,23 @@ RÈGLES :
     }
   }
 
+  emailDraft = normalizeOutreachDraft(emailDraft);
+  linkedinDraft = normalizeOutreachDraft(linkedinDraft);
+
   // Sécurité finale : ne jamais persister un « message » invalide
   if (!isUsableDraft(emailDraft)) {
     emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
       targeting?.activity || 'leur développement commercial'
     }${
       targeting?.productsServices?.[0] ? ` (${targeting.productsServices[0]})` : ''
-    }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\nCordialement${
-      ourWebsite ? `\n\n${ourWebsite}` : ''
-    }`;
-  } else if (ourWebsite && !emailDraft.toLowerCase().includes(ourWebsite.toLowerCase())) {
-    emailDraft = `${emailDraft.trimEnd()}\n\n${ourWebsite}`;
+    }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\n${signatureBlock}`;
+  } else if (ourWebsite && !emailDraft.toLowerCase().includes(ourWebsite.replace(/^https?:\/\//i, '').toLowerCase())) {
+    emailDraft = `${emailDraft.trimEnd()}\n${ourWebsite}`;
+  }
+
+  // Remplacer une signature « L'équipe … » trop générique si on a mieux
+  if (/l['’]équipe\s+/i.test(emailDraft) && (senderName || orgName)) {
+    emailDraft = emailDraft.replace(/\n*cordialement,?\s*\n+l['’]équipe[^\n]*/gi, `\n\n${signatureBlock}`);
   }
 
   const pack = {
