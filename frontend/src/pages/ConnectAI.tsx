@@ -18,6 +18,7 @@ import {
   Target,
   MessageSquare,
   Brain,
+  Package,
   ExternalLink,
   Circle,
 } from 'lucide-react';
