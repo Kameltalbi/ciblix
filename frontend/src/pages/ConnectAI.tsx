@@ -146,19 +146,20 @@ export function ConnectAI() {
           <Card>
             <CardContent className="space-y-4 p-6">
               <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  {t('connectAi.overview.comingSoonBadge')}
-                </p>
-                <h2 className="mt-2 text-lg font-semibold">{t('connectAi.overview.comingSoonTitle')}</h2>
+                <h2 className="text-lg font-semibold">{t('connectAi.overview.installTitle')}</h2>
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                  {t('connectAi.overview.comingSoonBody')}
+                  {t('connectAi.overview.installIntro')}
                 </p>
               </div>
+              <ol className="list-decimal space-y-2 pl-5 text-sm">
+                <li>{t('connectAi.overview.installStep1')}</li>
+                <li>{t('connectAi.overview.installStep2')}</li>
+                <li>{t('connectAi.overview.installStep3')}</li>
+                <li>{t('connectAi.overview.installStep4')}</li>
+                <li>{t('connectAi.overview.installStep5')}</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">{t('connectAi.overview.installPath')}</p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => setTab('knowledge')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  {t('connectAi.overview.ctaKnowledge')}
-                </Button>
                 <Button
                   variant="outline"
                   onClick={() => window.open('https://www.linkedin.com/feed/', '_blank', 'noopener')}
@@ -166,7 +167,12 @@ export function ConnectAI() {
                   <ExternalLink className="mr-2 h-4 w-4" />
                   {t('connectAi.extension.testCta')}
                 </Button>
+                <Button variant="outline" onClick={() => setTab('knowledge')}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  {t('connectAi.overview.ctaKnowledge')}
+                </Button>
               </div>
+              <p className="text-xs text-muted-foreground">{t('connectAi.overview.chromeHint')}</p>
             </CardContent>
           </Card>
 

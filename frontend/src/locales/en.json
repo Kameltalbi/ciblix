@@ -84,7 +84,7 @@
   "connectAi": {
     "badge": "Ciblix agent",
     "title": "LinkedIn",
-    "subtitle": "Assisted LinkedIn messages — coming soon in one click from Chrome.",
+    "subtitle": "Install the Chrome extension, open a LinkedIn profile, Ciblix drafts — you send.",
     "cta": {
       "knowledge": "Knowledge base",
       "extension": "Install extension"
@@ -133,7 +133,16 @@
       "comingSoonBadge": "Coming soon",
       "comingSoonTitle": "Chrome extension for LinkedIn",
       "comingSoonBody": "Soon you’ll open a LinkedIn profile and Ciblix will draft the message. For now, prepare your copy in Docs, and reach out from the contact page (WhatsApp, email, call).",
-      "ctaKnowledge": "Prepare my copy"
+      "ctaKnowledge": "Prepare my copy",
+      "installTitle": "Install the LinkedIn extension",
+      "installIntro": "One-time setup on your computer. Then open any LinkedIn profile.",
+      "installStep1": "Open Chrome (or Edge).",
+      "installStep2": "Go to chrome://extensions (Edge: edge://extensions).",
+      "installStep3": "Turn on the “Developer mode” switch (top right).",
+      "installStep4": "Click “Load unpacked” and select the dist folder (path below).",
+      "installStep5": "Open the extension → Sign in with Ciblix → then a LinkedIn profile.",
+      "installPath": "Folder to select: …/Ciblix/extension/dist",
+      "chromeHint": "Tip: paste chrome://extensions into Chrome’s address bar."
     },
     "templates": {
       "defaultOnly": "Default templates — create custom versions via API."
