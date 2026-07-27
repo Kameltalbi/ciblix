@@ -379,7 +379,10 @@ export function Dashboard() {
                 <p className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-4xl">
                   {kpi.value}
                 </p>
-                <p className="mt-1 text-sm text-slate-500">{t(`performance.kpis.${kpi.key}`)}</p>
+                <p className="mt-1 text-sm font-medium text-slate-700">{t(`performance.kpis.${kpi.key}`)}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+                  {t(`performance.kpiHints.${kpi.key}`)}
+                </p>
               </Surface>
             );
           })}
@@ -495,6 +498,11 @@ export function Dashboard() {
                             </span>
                             <span className="text-lg font-semibold tabular-nums">{stage.count}</span>
                           </div>
+                          <p className="mt-1 text-[11px] leading-snug text-white/80">
+                            {t(`performance.funnelHints.${stage.key}`, {
+                              defaultValue: '',
+                            })}
+                          </p>
                         </div>
                       </div>
                       {stage.conversionPct != null ? (

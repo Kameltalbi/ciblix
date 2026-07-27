@@ -1347,7 +1347,7 @@
   },
   "performance": {
     "title": "Performance commerciale",
-    "subtitle": "Suivez en temps réel les opportunités détectées, les prospects qualifiés, les actions commerciales réalisées et leur impact sur votre développement.",
+    "subtitle": "Prospects du mois, signaux Veilleur, propositions et affaires — chiffres cohérents, période claire.",
     "loading": "Chargement de la performance…",
     "loadError": "Impossible de charger la performance commerciale.",
     "retry": "Réessayer",
@@ -1355,14 +1355,14 @@
     "last30Days": "30 derniers jours",
     "series": {
       "prospects": "Prospects trouvés",
-      "opportunities": "Opportunités détectées",
+      "opportunities": "Signaux Veilleur",
       "proposals": "Propositions envoyées"
     },
-    "insightNeutral": "Suivez l’évolution de vos opportunités au fil du mois.",
-    "insightUp": "Les opportunités progressent de {{pct}} % ce mois.",
-    "insightDown": "Les opportunités baissent de {{pct}} % ce mois.",
+    "insightNeutral": "Suivez l’évolution de vos signaux et prospects au fil du mois.",
+    "insightUp": "Les signaux Veilleur progressent de {{pct}} % ce mois.",
+    "insightDown": "Les signaux Veilleur baissent de {{pct}} % ce mois.",
     "funnelTitle": "Transformation commerciale",
-    "sourcesTitle": "Origine des opportunités",
+    "sourcesTitle": "Origine des signaux",
     "sourcesSubtitle": "Répartition ce mois",
     "agentActivityTitle": "Activité de votre équipe IA",
     "actionsTitle": "Actions à réaliser aujourd'hui",
@@ -1375,16 +1375,33 @@
     "activityTooltip": "{{count}} actions",
     "kpis": {
       "prospects": "Nouveaux prospects",
-      "opportunities": "Opportunités détectées",
+      "opportunities": "Signaux Veilleur",
       "proposals": "Propositions envoyées",
       "won": "Affaires gagnées"
     },
+    "kpiHints": {
+      "prospects": "Entreprises trouvées par le Prospecteur ce mois (pas encore forcément contactées).",
+      "opportunities": "Alertes du Veilleur ce mois : appels d’offres, news, événements — ce ne sont pas des deals.",
+      "proposals": "Affaires en proposition ou négociation mises à jour ce mois.",
+      "won": "Affaires marquées gagnées ce mois."
+    },
     "funnel": {
-      "companies": "Entreprises détectées",
-      "qualified": "Prospects qualifiés",
-      "opportunities": "Opportunités",
-      "proposals": "Propositions",
-      "sales": "Ventes"
+      "found": "Prospects trouvés (mois)",
+      "qualified": "Prospects qualifiés (mois)",
+      "contacted": "Prospects contactés (mois)",
+      "proposals": "Propositions (mois)",
+      "sales": "Affaires gagnées (mois)",
+      "companies": "Prospects trouvés (mois)",
+      "opportunities": "Prospects contactés (mois)"
+    },
+    "funnelHints": {
+      "found": "Tous les leads Prospecteur créés ce mois.",
+      "qualified": "Parmi eux, ceux déjà notés qualifiés / en contact / en pipeline.",
+      "contacted": "Parmi eux, ceux déjà contactés ou en pipeline.",
+      "proposals": "Affaires passées en proposition / négociation ce mois.",
+      "sales": "Affaires gagnées ce mois.",
+      "companies": "Tous les leads Prospecteur créés ce mois.",
+      "opportunities": "Parmi eux, ceux déjà contactés ou en pipeline."
     },
     "sources": {
       "tenders": "Appels d'offres",
@@ -1413,7 +1430,7 @@
     },
     "metrics": {
       "prospectsMonth": "{{count}} prospects ce mois",
-      "opportunitiesDetected": "{{count}} opportunités détectées",
+      "opportunitiesDetected": "{{count}} signaux Veilleur",
       "analysesDone": "{{count}} analyses réalisées",
       "actionsPrepared": "{{count}} actions préparées"
     },

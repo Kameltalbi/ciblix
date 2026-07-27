@@ -1404,14 +1404,14 @@
     "last30Days": "Last 30 days",
     "series": {
       "prospects": "Prospects found",
-      "opportunities": "Opportunities detected",
+      "opportunities": "Watcher signals",
       "proposals": "Proposals sent"
     },
-    "insightNeutral": "Track how your opportunities evolve through the month.",
-    "insightUp": "Opportunities are up {{pct}}% this month.",
-    "insightDown": "Opportunities are down {{pct}}% this month.",
+    "insightNeutral": "Track how your watcher signals and prospects evolve through the month.",
+    "insightUp": "Watcher signals are up {{pct}}% this month.",
+    "insightDown": "Watcher signals are down {{pct}}% this month.",
     "funnelTitle": "Sales funnel",
-    "sourcesTitle": "Opportunity sources",
+    "sourcesTitle": "Signal sources",
     "sourcesSubtitle": "Breakdown this month",
     "agentActivityTitle": "Your AI team activity",
     "actionsTitle": "Actions for today",
@@ -1424,16 +1424,33 @@
     "activityTooltip": "{{count}} actions",
     "kpis": {
       "prospects": "New prospects",
-      "opportunities": "Opportunities detected",
+      "opportunities": "Watcher signals",
       "proposals": "Proposals sent",
       "won": "Deals won"
     },
+    "kpiHints": {
+      "prospects": "Companies found by the Hunter this month (not necessarily contacted yet).",
+      "opportunities": "Watcher alerts this month: tenders, news, events — these are not deals.",
+      "proposals": "Deals in proposal or negotiation updated this month.",
+      "won": "Deals marked as won this month."
+    },
     "funnel": {
-      "companies": "Companies detected",
-      "qualified": "Qualified prospects",
-      "opportunities": "Opportunities",
-      "proposals": "Proposals",
-      "sales": "Wins"
+      "found": "Prospects found (month)",
+      "qualified": "Qualified prospects (month)",
+      "contacted": "Contacted prospects (month)",
+      "proposals": "Proposals (month)",
+      "sales": "Deals won (month)",
+      "companies": "Prospects found (month)",
+      "opportunities": "Contacted prospects (month)"
+    },
+    "funnelHints": {
+      "found": "All Hunter leads created this month.",
+      "qualified": "Among them, those already qualified / contacted / in pipeline.",
+      "contacted": "Among them, those already contacted or in pipeline.",
+      "proposals": "Deals moved to proposal / negotiation this month.",
+      "sales": "Deals won this month.",
+      "companies": "All Hunter leads created this month.",
+      "opportunities": "Among them, those already contacted or in pipeline."
     },
     "sources": {
       "tenders": "Tenders",
@@ -1462,7 +1479,7 @@
     },
     "metrics": {
       "prospectsMonth": "{{count}} prospects this month",
-      "opportunitiesDetected": "{{count}} opportunities detected",
+      "opportunitiesDetected": "{{count}} watcher signals",
       "analysesDone": "{{count}} analyses completed",
       "actionsPrepared": "{{count}} actions prepared"
     },

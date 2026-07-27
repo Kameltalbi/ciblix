@@ -292,11 +292,9 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
       proposalsPrevMonth,
       wonThisMonth,
       wonPrevMonth,
-      companiesDetected,
-      qualifiedProspects,
-      opportunitiesTotal,
+      qualifiedThisMonth,
+      contactedThisMonth,
       proposalsOpen,
-      salesWon,
       scoutByCategory,
       contactsByVia,
       usageRows,
@@ -370,17 +368,20 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
         },
       }),
       prisma.aiProspect.count({
-        where: { organizationId, deletedAt: null },
-      }),
-      prisma.contact.count({
         where: {
           organizationId,
-          erasedAt: null,
-          pipelineStatus: { in: ['CHAUD', 'TIEDE'] },
+          deletedAt: null,
+          createdAt: { gte: monthStart },
+          status: { in: ['QUALIFIED', 'CONTACTED', 'IN_PIPELINE'] },
         },
       }),
-      prisma.scoutOpportunity.count({
-        where: { organizationId, status: { not: 'DISMISSED' } },
+      prisma.aiProspect.count({
+        where: {
+          organizationId,
+          deletedAt: null,
+          createdAt: { gte: monthStart },
+          status: { in: ['CONTACTED', 'IN_PIPELINE'] },
+        },
       }),
       prisma.affaire.count({
         where: {
@@ -388,9 +389,6 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
           deletedAt: null,
           statut: { in: ['PROPOSITION', 'NEGOCIATION'] },
         },
-      }),
-      prisma.affaire.count({
-        where: { organizationId, deletedAt: null, statut: 'GAGNE' },
       }),
       prisma.scoutOpportunity.groupBy({
         by: ['category'],
@@ -483,11 +481,11 @@ opsRoutes.get('/performance', async (req: AuthRequest, res: Response, next: Next
     const oppGrowthPct = pctDelta(oppCurrHalf, oppPrevHalf);
 
     const funnelStages = [
-      { key: 'companies', count: companiesDetected },
-      { key: 'qualified', count: qualifiedProspects },
-      { key: 'opportunities', count: opportunitiesTotal },
-      { key: 'proposals', count: proposalsOpen },
-      { key: 'sales', count: salesWon },
+      { key: 'found', count: prospectsThisMonth },
+      { key: 'qualified', count: qualifiedThisMonth },
+      { key: 'contacted', count: contactedThisMonth },
+      { key: 'proposals', count: proposalsThisMonth },
+      { key: 'sales', count: wonThisMonth },
     ].map((stage, i, arr) => ({
       ...stage,
       conversionPct:
