@@ -47,9 +47,8 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
-# Crash dumps / core files
+# Crash dumps (fichier core à la racine backend, pas le dossier services/connect-ai/core/)
 backend/core
-core
 
 # Tokens / secrets
 *.key
