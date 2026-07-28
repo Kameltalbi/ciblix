@@ -1,5 +1,5 @@
-const DEFAULT_API = import.meta.env.VITE_CIBLIX_API || 'http://localhost:4000/api';
-const DEFAULT_FRONTEND = import.meta.env.VITE_CIBLIX_FRONTEND || 'http://localhost:3000';
+const DEFAULT_API = import.meta.env.VITE_CIBLIX_API || 'https://ciblix.com/api';
+const DEFAULT_FRONTEND = import.meta.env.VITE_CIBLIX_FRONTEND || 'https://ciblix.com';
 
 export interface AuthSession {
   accessToken: string;

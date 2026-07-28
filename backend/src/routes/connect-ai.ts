@@ -169,9 +169,8 @@ connectAiRoutes.post('/auth/refresh', async (req, res, next) => {
 
 connectAiRoutes.use(auth);
 connectAiRoutes.use(requirePaymentApproved);
-connectAiRoutes.use(checkAgentAccess('connect-ai'));
 
-/** Crée un code d'autorisation pour l'extension (utilisateur connecté sur Ciblix). */
+/** Crée un code d'autorisation pour l'extension (avant le gate agent — sinon premier login impossible). */
 connectAiRoutes.post('/auth/authorize', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const body = z
@@ -191,6 +190,8 @@ connectAiRoutes.post('/auth/authorize', async (req: AuthRequest, res: Response, 
     next(err);
   }
 });
+
+connectAiRoutes.use(checkAgentAccess('connect-ai'));
 
 /** Analyse / qualification commerciale complète. */
 connectAiRoutes.post('/analyze', async (req: AuthRequest, res: Response, next: NextFunction) => {

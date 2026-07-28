@@ -11,7 +11,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({
         type: MSG.AUTH_TOKEN,
         token: session?.accessToken ?? null,
-        apiBase: session?.apiBase ?? 'http://localhost:4000/api',
+        apiBase: session?.apiBase ?? 'https://ciblix.com/api',
         user: session?.user ?? null,
       });
     });
