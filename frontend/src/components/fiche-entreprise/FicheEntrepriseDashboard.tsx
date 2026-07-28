@@ -580,6 +580,19 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                       size="sm"
                       variant="outline"
                       className="gap-1.5"
+                      disabled={closed || !messageBrouillon?.trim()}
+                      onClick={async () => {
+                        await copyMessage();
+                        window.open('https://www.linkedin.com/messaging/', '_blank', 'noopener');
+                      }}
+                    >
+                      LinkedIn
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
                       disabled={closed}
                       onClick={startEditMessage}
                     >
@@ -838,6 +851,25 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                       ? mailtoLink(decideur.email, messageBrouillon, nomLegal)
                       : undefined
                   }
+                />
+                <QuickAction
+                  label="LinkedIn"
+                  tone="outline"
+                  disabled={closed || !messageBrouillon?.trim()}
+                  onClick={async () => {
+                    if (!messageBrouillon?.trim()) return;
+                    try {
+                      await navigator.clipboard.writeText(messageBrouillon.trim());
+                    } catch {
+                      /* ignore */
+                    }
+                    const profile = decideurs.find((d) => d.linkedin?.trim())?.linkedin;
+                    window.open(
+                      profile?.trim() || 'https://www.linkedin.com/messaging/',
+                      '_blank',
+                      'noopener'
+                    );
+                  }}
                 />
                 <QuickAction label="Créer un RDV" tone="purple" disabled={closed} />
                 <QuickAction

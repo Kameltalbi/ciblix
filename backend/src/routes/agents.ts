@@ -108,18 +108,18 @@ const AVAILABLE_AGENTS = [
   {
     slug: 'connect-ai',
     name: 'LinkedIn',
-    role: 'Messages LinkedIn assistés',
+    role: 'Messages LinkedIn depuis la fiche',
     whenToUse:
-      'Quand vous voulez préparer des messages LinkedIn plus pertinents (extension Chrome bientôt disponible).',
+      'Quand vous voulez préparer un message LinkedIn, le copier depuis la fiche contact, puis l’envoyer vous-même.',
     description:
-      'Bientôt : ouvrir un profil LinkedIn et laisser Ciblix proposer le message. En attendant, utilisez la fiche contact et vos textes.',
+      'Pas d’extension à installer. Le message se prépare sur la fiche contact : copiez, collez sur LinkedIn, envoyez.',
     icon: 'Link2',
     color: 'blue',
     features: [
-      'Messages assistés sur LinkedIn',
-      'Base de textes & documents',
-      'Ton commercial réglable',
-      'Vous validez toujours l’envoi',
+      'Message IA sur la fiche',
+      'Copier vers LinkedIn',
+      'Envoi manuel (vous validez)',
+      'Même flux que WhatsApp / email',
     ],
     route: '/agents/connect-ai',
     defaultActive: false,

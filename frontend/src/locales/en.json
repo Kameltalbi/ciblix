@@ -84,7 +84,7 @@
   "connectAi": {
     "badge": "Ciblix agent",
     "title": "LinkedIn",
-    "subtitle": "3 steps: download, install in Chrome, sign in.",
+    "subtitle": "Prepare the message on the contact page, copy it, paste it on LinkedIn.",
     "cta": {
       "knowledge": "Knowledge base",
       "extension": "Install extension"
@@ -143,7 +143,11 @@
       "installStep5": "",
       "installPath": "",
       "chromeHint": "",
-      "ctaDownload": "Download the extension"
+      "ctaDownload": "Download the extension",
+      "flowStep1": "Open a contact in Contacts.",
+      "flowStep2": "Generate or copy the recommended message.",
+      "flowStep3": "On LinkedIn, paste the message and send (you stay in control).",
+      "ctaContacts": "Go to contacts"
     },
     "templates": {
       "defaultOnly": "Default templates — create custom versions via API."
