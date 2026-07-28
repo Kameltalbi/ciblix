@@ -90,9 +90,19 @@ export async function loginWithCiblix(): Promise<AuthSession> {
     }).toString();
 
   const callbackUrl = await new Promise<string>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error('Connexion trop longue — fermez la fenêtre et réessayez.'));
+    }, 90_000);
+
     chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, (url) => {
+      window.clearTimeout(timer);
       if (chrome.runtime.lastError || !url) {
-        reject(new Error(chrome.runtime.lastError?.message || 'Connexion annulée'));
+        const msg = chrome.runtime.lastError?.message || 'Connexion annulée';
+        if (/user.*cancel|canceled|cancelled/i.test(msg)) {
+          reject(new Error('Connexion annulée. Réessayez et cliquez Autoriser.'));
+          return;
+        }
+        reject(new Error(msg));
         return;
       }
       resolve(url);
@@ -101,7 +111,7 @@ export async function loginWithCiblix(): Promise<AuthSession> {
 
   const parsed = new URL(callbackUrl);
   const code = parsed.searchParams.get('code');
-  if (!code) throw new Error('Code d\'autorisation manquant');
+  if (!code) throw new Error('Code d\'autorisation manquant — réessayez.');
 
   const res = await fetch(`${apiBase}/connect-ai/auth/token`, {
     method: 'POST',
@@ -110,7 +120,7 @@ export async function loginWithCiblix(): Promise<AuthSession> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error((err as { error?: string }).error || 'Échec de connexion');
+    throw new Error((err as { error?: string }).error || `Échec de connexion (${res.status})`);
   }
 
   const data = (await res.json()) as {

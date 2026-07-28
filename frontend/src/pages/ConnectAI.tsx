@@ -144,21 +144,26 @@ export function ConnectAI() {
       {tab === 'overview' && (
         <div className="space-y-4">
           <Card>
-            <CardContent className="space-y-4 p-6">
+            <CardContent className="space-y-5 p-6">
               <div>
                 <h2 className="text-lg font-semibold">{t('connectAi.overview.installTitle')}</h2>
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                   {t('connectAi.overview.installIntro')}
                 </p>
               </div>
-              <ol className="list-decimal space-y-2 pl-5 text-sm">
+
+              <Button asChild className="w-full sm:w-auto">
+                <a href="/downloads/ciblix-linkedin.zip" download>
+                  {t('connectAi.overview.ctaDownload')}
+                </a>
+              </Button>
+
+              <ol className="list-decimal space-y-3 pl-5 text-sm">
                 <li>{t('connectAi.overview.installStep1')}</li>
                 <li>{t('connectAi.overview.installStep2')}</li>
                 <li>{t('connectAi.overview.installStep3')}</li>
-                <li>{t('connectAi.overview.installStep4')}</li>
-                <li>{t('connectAi.overview.installStep5')}</li>
               </ol>
-              <p className="text-xs text-muted-foreground">{t('connectAi.overview.installPath')}</p>
+
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -167,12 +172,7 @@ export function ConnectAI() {
                   <ExternalLink className="mr-2 h-4 w-4" />
                   {t('connectAi.extension.testCta')}
                 </Button>
-                <Button variant="outline" onClick={() => setTab('knowledge')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  {t('connectAi.overview.ctaKnowledge')}
-                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">{t('connectAi.overview.chromeHint')}</p>
             </CardContent>
           </Card>
 

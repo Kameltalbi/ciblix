@@ -24,11 +24,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#016AEB] to-[#38bdf8] shadow-lg shadow-blue-500/20">
           <span className="text-xl font-bold text-white">C</span>
         </div>
-        <h1 className="text-center text-lg font-semibold text-slate-900 dark:text-white">Copilote Commercial</h1>
+        <h1 className="text-center text-lg font-semibold text-slate-900 dark:text-white">LinkedIn · Ciblix</h1>
         <p className="mt-2 text-center text-sm text-slate-500">
-          Bienvenue dans le Copilote Commercial.
-          <br />
-          Connectez votre compte Ciblix.
+          Connectez votre compte Ciblix pour rédiger des messages sur LinkedIn.
         </p>
         {error && (
           <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950 dark:text-red-300">
@@ -52,9 +50,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           }}
           className="mt-8 w-full rounded-xl bg-gradient-to-r from-[#016AEB] to-[#38bdf8] py-3 text-sm font-medium text-white shadow-md hover:opacity-95 disabled:opacity-50"
         >
-          {loading ? 'Connexion…' : 'Se connecter avec Ciblix'}
+          {loading ? 'Une fenêtre s’ouvre…' : 'Se connecter avec Ciblix'}
         </button>
-        <p className="mt-4 text-center text-[10px] text-slate-400">
+        <p className="mt-3 text-center text-[11px] text-slate-400">
+          Une fenêtre Ciblix s’ouvre : cliquez « Autoriser ». Si rien ne se passe, autorisez les pop-ups.
+        </p>
+        <p className="mt-2 text-center text-[10px] text-slate-400">
           Aucun cookie LinkedIn n'est stocké.
         </p>
       </div>

@@ -84,7 +84,7 @@
   "connectAi": {
     "badge": "Agent Ciblix",
     "title": "LinkedIn",
-    "subtitle": "Installez l’extension Chrome, ouvrez un profil LinkedIn, Ciblix propose le message — vous envoyez.",
+    "subtitle": "3 étapes : télécharger, installer dans Chrome, se connecter.",
     "cta": {
       "knowledge": "Base de connaissances",
       "extension": "Installer"
@@ -134,15 +134,16 @@
       "comingSoonTitle": "",
       "comingSoonBody": "",
       "ctaKnowledge": "Préparer mes textes",
-      "installTitle": "Installer l’extension LinkedIn",
-      "installIntro": "Une seule fois. L’extension doit parler à ciblix.com (pas localhost).",
-      "installStep1": "Ouvrez Chrome (ou Edge).",
-      "installStep2": "Dans la barre d’adresse, allez sur chrome://extensions (Edge : edge://extensions).",
-      "installStep3": "En haut à droite, activez le commutateur « Mode développeur ».",
-      "installStep4": "Cliquez « Charger l’extension non empaquetée » et choisissez le dossier dist (chemin ci-dessous).",
-      "installStep5": "Sur chrome://extensions, cliquez Actualiser sur Ciblix, puis Se connecter avec Ciblix (fenêtre ciblix.com) → Autoriser.",
-      "installPath": "Dossier à sélectionner : /Users/kameltalbi/Developpement/Apps-Web/Ciblix/extension/dist",
-      "chromeHint": "Astuce : copiez chrome://extensions et collez-le dans la barre d’adresse Chrome."
+      "installTitle": "Installer LinkedIn",
+      "installIntro": "Pas besoin de chemin technique. Téléchargez le fichier, puis suivez les 3 étapes.",
+      "installStep1": "Cliquez « Télécharger l’extension », puis décompressez le fichier ZIP.",
+      "installStep2": "Dans Chrome, allez sur chrome://extensions → activez le commutateur en haut à droite → « Charger l’extension non empaquetée » → choisissez le dossier décompressé.",
+      "installStep3": "Ouvrez l’extension → Se connecter avec Ciblix → Autoriser. Puis ouvrez un profil LinkedIn.",
+      "installStep4": "",
+      "installStep5": "",
+      "installPath": "",
+      "chromeHint": "",
+      "ctaDownload": "Télécharger l’extension"
     },
     "templates": {
       "defaultOnly": "Templates par défaut — créez des versions personnalisées via l'API."
