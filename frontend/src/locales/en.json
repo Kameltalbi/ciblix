@@ -84,7 +84,7 @@
   "connectAi": {
     "badge": "Ciblix agent",
     "title": "LinkedIn",
-    "subtitle": "Prepare the message on the contact page, copy it, paste it on LinkedIn.",
+    "subtitle": "Prepare your message on the contact page, or use the Chrome extension for LinkedIn.",
     "cta": {
       "knowledge": "Knowledge base",
       "extension": "Install extension"
@@ -123,16 +123,16 @@
       "empty": "No messages yet.",
       "products": "Product catalog",
       "notReady": "Coming soon",
-      "startTitle": "LinkedIn",
-      "startIntro": "",
+      "startTitle": "Simple method",
+      "startIntro": "No installation — same as WhatsApp or email.",
       "step1": "",
       "step2": "",
       "step3": "",
       "ctaExtension": "",
       "noteNoOauth": "",
       "comingSoonBadge": "Coming soon",
-      "comingSoonTitle": "Chrome extension for LinkedIn",
-      "comingSoonBody": "Soon you’ll open a LinkedIn profile and Ciblix will draft the message. For now, prepare your copy in Docs, and reach out from the contact page (WhatsApp, email, call).",
+      "comingSoonTitle": "Chrome extension",
+      "comingSoonBody": "The Chrome extension is coming soon to the Chrome Web Store. For now, use the simple method above.",
       "ctaKnowledge": "Prepare my copy",
       "installTitle": "Install LinkedIn",
       "installIntro": "No technical paths. Download the file, then follow the 3 steps.",
@@ -147,7 +147,8 @@
       "flowStep1": "Open a contact in Contacts.",
       "flowStep2": "Generate or copy the recommended message.",
       "flowStep3": "On LinkedIn, paste the message and send (you stay in control).",
-      "ctaContacts": "Go to contacts"
+      "ctaContacts": "Go to contacts",
+      "ctaChromeStore": "Add to Chrome"
     },
     "templates": {
       "defaultOnly": "Default templates — create custom versions via API."
@@ -161,9 +162,9 @@
       "byProduct": "By product"
     },
     "extension": {
-      "pageTitle": "Extension",
+      "pageTitle": "Chrome extension (optional)",
       "betaNote": "",
-      "channelsNote": "LinkedIn",
+      "channelsNote": "On LinkedIn, your Ciblix message is inserted directly into the conversation. One-click install.",
       "statusInstalled": "Extension connected",
       "statusPending": "Coming soon",
       "account": "Account",
@@ -179,7 +180,10 @@
       "installStep2": "",
       "installStep3": "",
       "installStep4": "",
-      "installHint": ""
+      "installHint": "",
+      "storeStep1": "Click “Add to Chrome”.",
+      "storeStep2": "Sign in with your Ciblix account.",
+      "storeStep3": "Open a LinkedIn profile — the copilot appears on the side."
     },
     "settings": {
       "toneTitle": "Copilot tone",

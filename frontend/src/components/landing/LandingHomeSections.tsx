@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Mic } from 'lucide-react';
+import { ArrowRight, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DEMO_URL } from './LandingSections';
@@ -518,38 +518,18 @@ export function LandingFinalCtaPrompt() {
   );
 }
 
-/** Mini phone mock — écran Aujourd’hui (hero). */
+/** Illustration hero — copilote IA qui travaille pendant que vous dormez. */
 export function LandingHeroPhone() {
-  const rows = [
-    { name: 'Textile Sfax SARL', why: 'Recrute 12 personnes. Aucun logiciel RH détecté.' },
-    { name: 'Industrie Médina', why: 'AO publié le 3 juillet — équipement.' },
-    { name: 'Agro Delta', why: 'Ouvre un second site à Sousse.' },
-    { name: 'Services Atlas', why: 'Budget débloqué en septembre.' },
-    { name: 'LogiTunis', why: 'Changement de dirigeant annoncé.' },
-  ];
-
   return (
-    <div className="relative mx-auto w-full max-w-[280px]">
-      <div className="rounded-[2rem] border-[10px] border-neutral-900 bg-neutral-900 shadow-2xl">
-        <div className="overflow-hidden rounded-[1.35rem] bg-white">
-          <div className="bg-[#016AEB] px-4 pb-4 pt-6 text-white">
-            <p className="text-[11px] font-medium text-white/80">Aujourd’hui</p>
-            <p className="mt-1 text-lg font-semibold">5 à contacter</p>
-          </div>
-          <ul className="divide-y divide-neutral-100 px-3 py-2">
-            {rows.map((r) => (
-              <li key={r.name} className="py-2.5">
-                <p className="text-[13px] font-medium text-neutral-900">{r.name}</p>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-neutral-500">{r.why}</p>
-              </li>
-            ))}
-          </ul>
-          <div className="border-t border-neutral-100 px-3 py-2.5">
-            <p className="flex items-center gap-1.5 text-[11px] text-neutral-500">
-              <Check size={12} className="text-[#016AEB]" /> Message déjà écrit
-            </p>
-          </div>
-        </div>
+    <div className="relative mx-auto w-full max-w-lg">
+      <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/5">
+        <img
+          src="/hero-home.png"
+          alt="Copilote IA Ciblix qui prépare vos contacts LinkedIn pendant que vous dormez"
+          className="h-auto w-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
       </div>
     </div>
   );

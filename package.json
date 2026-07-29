@@ -10,6 +10,8 @@
   ],
   "scripts": {
     "build:frontend": "npm run build -w bilan-crm-frontend",
+    "build:extension": "NODE_ENV=production npm run build -w ciblix-connect-ai-extension",
+    "package:extension": "bash scripts/package-extension.sh",
     "dev": "docker compose up",
     "dev:down": "docker compose down",
     "dev:logs": "docker compose logs -f",

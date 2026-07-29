@@ -84,7 +84,7 @@
   "connectAi": {
     "badge": "وكيل Ciblix",
     "title": "LinkedIn",
-    "subtitle": "رسائل LinkedIn بمساعدة الذكاء الاصطناعي — قريبًا بنقرة من Chrome.",
+    "subtitle": "جهّز رسالتك من بطاقة الاتصال، أو استخدم إضافة Chrome لـ LinkedIn.",
     "cta": {
       "knowledge": "قاعدة المعرفة",
       "extension": "تثبيت الإضافة"
@@ -120,13 +120,20 @@
     },
     "overview": {
       "recent": "رسائل حديثة",
-      "empty": "لا رسائل بعد. ثبّت الإضافة وابدأ على LinkedIn.",
+      "empty": "لا رسائل بعد.",
       "products": "كتالوج المنتجات",
+      "notReady": "قريبًا",
+      "startTitle": "الطريقة البسيطة",
+      "startIntro": "بدون تثبيت — مثل WhatsApp أو البريد الإلكتروني.",
       "comingSoonBadge": "قريبًا",
-      "comingSoonTitle": "إضافة Chrome لـ LinkedIn",
-      "comingSoonBody": "قريبًا ستفتح ملف LinkedIn ويقترح Ciblix الرسالة. في الأثناء جهّز نصوصك وتواصل من بطاقة الاتصال.",
+      "comingSoonTitle": "إضافة Chrome",
+      "comingSoonBody": "إضافة Chrome ستتوفر قريبًا على Chrome Web Store. في الأثناء استخدم الطريقة البسيطة أعلاه.",
       "ctaKnowledge": "إعداد نصوصي",
-      "notReady": "قريبًا"
+      "flowStep1": "افتح جهة اتصال في جهات الاتصال.",
+      "flowStep2": "أنشئ أو انسخ الرسالة الموصى بها.",
+      "flowStep3": "على LinkedIn، الصق الرسالة وأرسلها (أنت تتحكم بالإرسال).",
+      "ctaContacts": "الذهاب إلى جهات الاتصال",
+      "ctaChromeStore": "إضافة إلى Chrome"
     },
     "templates": {
       "defaultOnly": "قوالب افتراضية — أنشئ نسخًا مخصصة عبر API."
@@ -136,9 +143,9 @@
       "byProduct": "حسب المنتج"
     },
     "extension": {
-      "pageTitle": "إضافة المتصفح",
+      "pageTitle": "إضافة Chrome (اختياري)",
       "betaNote": "",
-      "channelsNote": "القنوات المتاحة حاليًا: LinkedIn (ستُضاف قنوات أخرى تدريجيًا).",
+      "channelsNote": "على LinkedIn، تُدرَج رسالة Ciblix مباشرة في المحادثة. تثبيت بنقرة واحدة.",
       "statusInstalled": "الإضافة مثبتة ومتزامنة",
       "statusPending": "قريبًا",
       "account": "الحساب",
@@ -146,7 +153,7 @@
       "version": "الإصدار",
       "lastSync": "آخر مزامنة",
       "never": "أبدًا",
-      "testCta": "اختبار الإضافة",
+      "testCta": "فتح LinkedIn",
       "reinstallCta": "إعادة التثبيت",
       "newsCta": "الجديد",
       "installTitle": "التثبيت",
@@ -154,7 +161,10 @@
       "installStep2": "",
       "installStep3": "",
       "installStep4": "",
-      "installHint": ""
+      "installHint": "",
+      "storeStep1": "انقر على « إضافة إلى Chrome ».",
+      "storeStep2": "سجّل الدخول بحساب Ciblix.",
+      "storeStep3": "افتح ملف LinkedIn — يظهر المساعد على الجانب."
     },
     "settings": {
       "toneTitle": "نبرة المساعد",

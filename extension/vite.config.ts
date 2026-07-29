@@ -12,6 +12,12 @@ export default defineConfig({
         const dist = resolve(__dirname, 'dist');
         mkdirSync(dist, { recursive: true });
         const manifest = JSON.parse(readFileSync(resolve(__dirname, 'manifest.json'), 'utf-8'));
+        const isProd = process.env.NODE_ENV === 'production';
+        if (isProd) {
+          manifest.host_permissions = (manifest.host_permissions as string[]).filter(
+            (p) => !p.includes('localhost'),
+          );
+        }
         writeFileSync(resolve(dist, 'manifest.json'), JSON.stringify(manifest, null, 2));
         try {
           copyFileSync(resolve(__dirname, 'public/icons/icon16.png'), resolve(dist, 'icons/icon16.png'));

@@ -1,15 +1,20 @@
 import { Link } from 'react-router-dom';
-import { ExternalLink, Users } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Chrome, ExternalLink, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
 
+const CHROME_STORE_URL = (import.meta.env.VITE_CHROME_EXTENSION_URL as string | undefined)?.trim() || '';
+
 /**
- * LinkedIn dans Ciblix = message préparé sur la fiche contact.
- * Pas d’extension à installer (envoi manuel, comme WhatsApp / email).
+ * LinkedIn dans Ciblix :
+ * - Par défaut : message préparé sur la fiche contact (copier-coller).
+ * - Optionnel : extension Chrome Web Store pour pré-remplir sur LinkedIn.
  */
 export function ConnectAI() {
   const { t } = useTranslation();
+  const storeAvailable = Boolean(CHROME_STORE_URL);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
@@ -19,7 +24,11 @@ export function ConnectAI() {
       </header>
 
       <Card>
-        <CardContent className="space-y-5 p-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{t('connectAi.overview.startTitle')}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t('connectAi.overview.startIntro')}</p>
+        </CardHeader>
+        <CardContent className="space-y-5">
           <ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed text-foreground">
             <li>{t('connectAi.overview.flowStep1')}</li>
             <li>{t('connectAi.overview.flowStep2')}</li>
@@ -41,6 +50,37 @@ export function ConnectAI() {
               {t('connectAi.extension.testCta')}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle className="text-base">{t('connectAi.extension.pageTitle')}</CardTitle>
+            {!storeAvailable && (
+              <Badge variant="secondary">{t('connectAi.overview.comingSoonBadge')}</Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">{t('connectAi.extension.channelsNote')}</p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {storeAvailable ? (
+            <>
+              <ol className="list-decimal space-y-3 pl-5 text-sm leading-relaxed text-foreground">
+                <li>{t('connectAi.extension.storeStep1')}</li>
+                <li>{t('connectAi.extension.storeStep2')}</li>
+                <li>{t('connectAi.extension.storeStep3')}</li>
+              </ol>
+              <Button onClick={() => window.open(CHROME_STORE_URL, '_blank', 'noopener')}>
+                <Chrome className="mr-2 h-4 w-4" />
+                {t('connectAi.overview.ctaChromeStore')}
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {t('connectAi.overview.comingSoonBody')}
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
