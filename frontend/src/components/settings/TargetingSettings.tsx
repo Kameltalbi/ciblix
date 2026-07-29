@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type TargetingProfile = {
   activity: string | null;
+  commercialPriorities: string | null;
   productsServices: string[];
   markets: string[];
   countries: string[];
@@ -89,6 +90,17 @@ export function TargetingSettings() {
               rows={3}
               placeholder={t('agentTeam.activityPlaceholder')}
             />
+          </div>
+
+          <div className="space-y-1">
+            <Label>{t('agentTeam.commercialPriority')}</Label>
+            <Textarea
+              value={form.commercialPriorities || ''}
+              onChange={(e) => setForm({ ...form, commercialPriorities: e.target.value })}
+              rows={4}
+              placeholder={t('agentTeam.commercialPriorityPlaceholder')}
+            />
+            <p className="text-xs text-muted-foreground">{t('agentTeam.commercialPriorityHint')}</p>
           </div>
 
           {listFields.map((f) => (

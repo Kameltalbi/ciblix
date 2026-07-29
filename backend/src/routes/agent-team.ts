@@ -18,6 +18,7 @@ agentTeamRoutes.use(requirePaymentApproved);
 
 const targetingSchema = z.object({
   activity: z.string().max(4000).nullable().optional(),
+  commercialPriorities: z.string().max(4000).nullable().optional(),
   productsServices: z.array(z.string().max(200)).max(40).optional(),
   markets: z.array(z.string().max(120)).max(40).optional(),
   countries: z.array(z.string().max(120)).max(40).optional(),
@@ -68,6 +69,7 @@ agentTeamRoutes.put('/targeting', async (req: AuthRequest, res, next) => {
       create: {
         organizationId,
         activity: body.activity ?? null,
+        commercialPriorities: body.commercialPriorities ?? null,
         productsServices: body.productsServices ?? [],
         markets: body.markets ?? [],
         countries: body.countries ?? [],
@@ -82,6 +84,9 @@ agentTeamRoutes.put('/targeting', async (req: AuthRequest, res, next) => {
       },
       update: {
         ...(body.activity !== undefined ? { activity: body.activity } : {}),
+        ...(body.commercialPriorities !== undefined
+          ? { commercialPriorities: body.commercialPriorities }
+          : {}),
         ...(body.productsServices !== undefined ? { productsServices: body.productsServices } : {}),
         ...(body.markets !== undefined ? { markets: body.markets } : {}),
         ...(body.countries !== undefined ? { countries: body.countries } : {}),

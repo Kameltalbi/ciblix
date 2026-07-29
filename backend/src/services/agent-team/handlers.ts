@@ -725,7 +725,7 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
   });
   const userId = await getIntegrationUserId(task.organizationId);
 
-  const { assertRedacteurMayGenerate, parseOfferSheet } = await import(
+  const { assertRedacteurMayGenerate, parseOfferSheet, validatedServiceLabels } = await import(
     '../tenant-onboarding/index.js'
   );
   const gate = assertRedacteurMayGenerate({
@@ -739,6 +739,16 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
       message: gate.message,
     };
   }
+
+  const offerSheet = parseOfferSheet(targeting?.offerSheet);
+  const offerLabels = validatedServiceLabels(offerSheet);
+  const ourOffers = [...new Set([...(targeting?.productsServices || []), ...offerLabels].map((s) => s.trim()).filter(Boolean))];
+  const valueProposition =
+    offerSheet?.proposition_de_valeur?.trim() ||
+    targeting?.companyBrief?.trim() ||
+    targeting?.missionSummary?.trim() ||
+    null;
+  const commercialPriority = targeting?.commercialPriorities?.trim() || null;
 
   const ourWebsite = formatPublicWebsite(
     targeting?.identitySourceUrl?.trim() ||
@@ -769,7 +779,7 @@ export async function handlePrepareOutreach(task: AgentTask): Promise<Record<str
     targeting?.activity || 'leur développement commercial'
   }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\n${signatureBlock}`;
   let linkedinDraft = `Bonjour, j’ai repéré ${companyName} et croisé un signal pertinent pour ${
-    targeting?.productsServices?.[0] || 'notre offre'
+    ourOffers[0] || 'notre offre'
   }. Ouvert à échanger 15 min ?`;
   let angle = (payload.reasons as string[] | undefined)?.[0] || 'Adéquation ICP détectée';
   let nextActions = ['Valider le message', 'Envoyer via WhatsApp ou email', 'Planifier un suivi'];
@@ -820,16 +830,16 @@ RÈGLES :
 - INTERDIT : « L'équipe … », signature générique, URL sans https://, www. seul sur une ligne ambiguë.
 - INTERDIT de répondre avec seulement une adresse email, un nom, ou une signature seule.
 - Citer UNIQUEMENT les produits/services de « Nos offres ». Ne pas inventer d'autres métiers.
+- Si « Priorité commerciale » ou une offre mentionne une formation, session, date ou promo : l'email DOIT la présenter clairement (dates, lieu, bénéfice).
 - Tutoyer ou vouvoyer selon le contexte B2B (vouvoiement par défaut).`;
       const user = [
         `Entreprise cible: ${companyName}`,
         `Score: ${payload.score}`,
         `Décision: ${payload.decision}`,
         targeting?.activity ? `Notre activité: ${targeting.activity}` : null,
-        targeting?.companyBrief ? `Notre brief: ${targeting.companyBrief}` : null,
-        targeting?.productsServices?.length
-          ? `Nos offres: ${targeting.productsServices.join(', ')}`
-          : null,
+        valueProposition ? `Notre proposition de valeur: ${valueProposition}` : null,
+        ourOffers.length ? `Nos offres (à citer en priorité): ${ourOffers.join(' | ')}` : null,
+        commercialPriority ? `Priorité commerciale actuelle (à mettre en avant): ${commercialPriority}` : null,
         senderName ? `Expéditeur (signature): ${senderName}` : null,
         orgName ? `Entreprise expéditrice (signature): ${orgName}` : null,
         ourWebsite ? `Site web à mettre en signature (URL exacte): ${ourWebsite}` : null,
@@ -881,7 +891,7 @@ RÈGLES :
     emailDraft = `Bonjour,\n\nNous accompagnons des organisations comme ${companyName} sur ${
       targeting?.activity || 'leur développement commercial'
     }${
-      targeting?.productsServices?.[0] ? ` (${targeting.productsServices[0]})` : ''
+      ourOffers[0] ? ` — notamment : ${ourOffers[0]}` : ''
     }. Seriez-vous ouvert à un court échange de 15 minutes ?\n\n${signatureBlock}`;
   } else if (ourWebsite && !emailDraft.toLowerCase().includes(ourWebsite.replace(/^https?:\/\//i, '').toLowerCase())) {
     emailDraft = `${emailDraft.trimEnd()}\n${ourWebsite}`;
