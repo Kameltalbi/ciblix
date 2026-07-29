@@ -518,14 +518,14 @@ export function LandingFinalCtaPrompt() {
   );
 }
 
-/** Illustration hero — copilote IA qui travaille pendant que vous dormez. */
+/** Illustration hero — commercial satisfait avec Ciblix. */
 export function LandingHeroPhone() {
   return (
-    <div className="relative mx-auto w-full max-w-lg">
+    <div className="relative mx-auto w-full max-w-xl">
       <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/5">
         <img
           src="/hero-home.png"
-          alt="Copilote IA Ciblix qui prépare vos contacts LinkedIn pendant que vous dormez"
+          alt="Commercial utilisant Ciblix au bureau — liste prête, vente conclue"
           className="h-auto w-full object-cover"
           loading="eager"
           decoding="async"

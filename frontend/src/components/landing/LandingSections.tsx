@@ -888,7 +888,7 @@ export function LandingFooter() {
     { label: t('landing.footerSecurity'), href: '/securite', isRoute: true },
   ];
   const resources = [
-    { label: 'Guide de démarrage', href: '/documentation', isRoute: true },
+    { label: t('landing.footerDocs'), href: '/documentation', isRoute: true },
     { label: t('landing.footerBlog'), href: '/blog', isRoute: true },
     { label: t('landing.footerFaq'), href: '/faq', isRoute: true },
   ];
