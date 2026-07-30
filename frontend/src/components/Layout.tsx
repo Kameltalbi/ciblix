@@ -39,9 +39,9 @@ type NavItem = {
  * Sidebar — Intelligence commerciale : Prospecteur, Entreprises (dossiers), Mon offre, Paramètres.
  */
 const NAV_STRUCTURE: NavItem[] = [
+  { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'MAIN', missionBadge: true },
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'MAIN' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'MAIN' },
-  { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'MAIN', missionBadge: true },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings, page: 'settings', section: 'MAIN' },
 ];
 

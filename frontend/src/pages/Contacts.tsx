@@ -432,7 +432,7 @@ export function Contacts() {
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-left">
+          <table className="w-full min-w-[1100px] border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 <th className="px-4 py-3 font-semibold">Entreprise</th>
@@ -518,11 +518,11 @@ export function Contacts() {
                           <span className="text-sm text-slate-300">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         {c.phone ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm text-slate-700">
+                          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-slate-700">
                             <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                            {c.phone}
+                            <span className="whitespace-nowrap tabular-nums">{c.phone}</span>
                           </span>
                         ) : (
                           <span className="text-sm text-slate-300">—</span>
