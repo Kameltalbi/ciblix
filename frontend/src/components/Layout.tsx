@@ -452,7 +452,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
 
         <main className="min-h-0 flex-1 overflow-auto bg-[#EEF1F7]">
-          <div className="mx-auto max-w-[1400px] px-5 py-6 md:px-8 md:py-8">{children}</div>
+          <div
+            className={cn(
+              'mx-auto w-full',
+              location.pathname.startsWith('/mission')
+                ? 'max-w-none px-5 py-5 md:px-8 md:py-6'
+                : 'max-w-[1400px] px-5 py-6 md:px-8 md:py-8'
+            )}
+          >
+            {children}
+          </div>
         </main>
       </div>
 
