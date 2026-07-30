@@ -68,7 +68,7 @@ const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
       organizationId: user.organizationId,
     };
     // Filet RLS Postgres — en plus du filtre organizationId applicatif
-    void setTenantRlsContext(user.organizationId);
+    await setTenantRlsContext(user.organizationId);
     next();
   } catch {
     return res.status(401).json({ error: 'Token invalide ou expiré' });

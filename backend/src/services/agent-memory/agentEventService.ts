@@ -253,8 +253,13 @@ export async function assignEventToContact(
   });
   if (!contact) throw new Error('Contact introuvable');
 
+  const event = await prisma.agentEvent.findFirst({
+    where: { id: eventId, organizationId },
+  });
+  if (!event) throw new Error('Event introuvable');
+
   const updated = await prisma.agentEvent.update({
-    where: { id: eventId },
+    where: { id: event.id },
     data: {
       contactId,
       resolutionStatus: 'RESOLVED',

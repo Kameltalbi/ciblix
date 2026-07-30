@@ -27,7 +27,7 @@ import {
   normalizeObjectionTags,
   OBJECTION_LABELS,
 } from './ficheDisplay';
-import { mailtoLink, mapsLink, siteHref, waLink } from './ficheLinks';
+import { mailtoLink, mapsLink, siteHref, waLink, whatsappEligiblePhone } from './ficheLinks';
 import type { FicheEntrepriseProps } from './FicheEntreprise';
 import {
   DossierFilDuJourPanel,
@@ -120,7 +120,7 @@ function buildDecideurs(
       tag: 'Décideur',
       phone: decideur.phone,
       email: decideur.email,
-      whatsapp: decideur.whatsapp || decideur.phone,
+      whatsapp: whatsappEligiblePhone(decideur.whatsapp || decideur.phone),
     });
   }
   const cn = contactName?.trim();
@@ -132,7 +132,7 @@ function buildDecideurs(
       tag: rows.length ? 'Contact' : 'Décideur',
       phone: decideur?.phone,
       email: decideur?.email,
-      whatsapp: decideur?.whatsapp || decideur?.phone,
+      whatsapp: whatsappEligiblePhone(decideur?.whatsapp || decideur?.phone),
     });
   }
   if (!rows.length && (decideur?.phone || decideur?.email)) {
@@ -141,7 +141,7 @@ function buildDecideurs(
       nom: contactName?.trim() || 'Contact non identifié',
       phone: decideur?.phone,
       email: decideur?.email,
-      whatsapp: decideur?.whatsapp || decideur?.phone,
+      whatsapp: whatsappEligiblePhone(decideur?.whatsapp || decideur?.phone),
     });
   }
   return rows;
@@ -808,15 +808,19 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 <QuickAction
                   label="WhatsApp"
                   tone="green"
-                  disabled={closed || !decideur?.whatsapp && !decideur?.phone}
+                  disabled={
+                    closed ||
+                    !whatsappEligiblePhone(decideur?.whatsapp || decideur?.phone)
+                  }
                   href={
-                    decideur?.whatsapp || decideur?.phone
-                      ? waLink(decideur.whatsapp || decideur.phone!, messageBrouillon)
+                    whatsappEligiblePhone(decideur?.whatsapp || decideur?.phone)
+                      ? waLink(
+                          whatsappEligiblePhone(decideur?.whatsapp || decideur?.phone)!,
+                          messageBrouillon
+                        )
                       : undefined
                   }
-                  onClick={() =>
-                    markOutbound('whatsapp', primaryDecideur?.nom)
-                  }
+                  onClick={() => markOutbound('whatsapp', primaryDecideur?.nom)}
                 />
                 <QuickAction
                   label="Appeler"

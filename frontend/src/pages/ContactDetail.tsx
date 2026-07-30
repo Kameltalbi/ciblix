@@ -13,6 +13,7 @@ import {
 import type { FicheEntrepriseDataView } from '@/components/fiche-entreprise/types';
 import { normalizeMessageDraft } from '@/components/fiche-entreprise/ficheDisplay';
 import type { DossierIntelligenceView } from '@/components/fiche-entreprise/DossierIntelligencePanels';
+import { whatsappEligiblePhone } from '@/components/fiche-entreprise/ficheLinks';
 
 type ContactApi = {
   id: string;
@@ -196,14 +197,14 @@ export function ContactDetail() {
           canal_prefere: fiche.decideur.canal_prefere,
           phone: contact.phone,
           email: contact.email,
-          whatsapp: contact.whatsappId || contact.phone,
+          whatsapp: whatsappEligiblePhone(contact.whatsappId || contact.phone),
         }
       : contact.phone || contact.email || contact.whatsappId
         ? {
             nom: contact.name,
             phone: contact.phone,
             email: contact.email,
-            whatsapp: contact.whatsappId || contact.phone,
+            whatsapp: whatsappEligiblePhone(contact.whatsappId || contact.phone),
           }
         : null;
 

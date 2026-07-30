@@ -125,30 +125,14 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
       ? Math.min(60, Math.floor(payload.importMax))
       : 40;
 
-  // 1) Interroger d’abord le référentiel mutualisé
-  const { queryReferentielForTenant, linkReferentielToTenantFiche, ingestPublicCompanyFromHunt } =
-    await import('../referentiel/index.js');
-  const refHits = await queryReferentielForTenant(task.organizationId, {
-    sectors: targeting.sectors,
-    zones: [...targeting.cities, ...targeting.regions, ...targeting.markets],
-    countries: targeting.countries,
-    keywords: targeting.keywords,
-    excludeCompanyNames: targeting.excludeCompanies,
-    take: importMax,
-  });
+  // 1) Collecte externe org-scopée UNIQUEMENT.
+  // Ne plus seed depuis le référentiel mutualisé : les découvertes Hunt d’un tenant
+  // y étaient réinjectées et redistribuées aux autres (fuite cross-tenant).
+  const { linkReferentielToTenantFiche, ingestPublicCompanyFromHunt } = await import(
+    '../referentiel/index.js'
+  );
 
   let fromReferentiel = 0;
-  for (const hit of refHits) {
-    const linked = await linkReferentielToTenantFiche({
-      organizationId: task.organizationId,
-      entrepriseId: hit.id,
-      createdVia: 'HUNT',
-    });
-    if (linked.created) fromReferentiel++;
-  }
-
-  // 2) Si couverture insuffisante → collecte externe, puis enrichir le référentiel
-  const needExternal = refHits.length < Math.max(8, Math.floor(importMax / 3));
   let imp = {
     count: 0,
     skippedExisting: 0,
@@ -158,7 +142,7 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
   };
   let qualified = 0;
 
-  if (needExternal) {
+  {
     const { importProspectsFromSearch } = await import('../prospecting/importProspectsFromSearch.js');
     const { qualifyFoundBatchForOrganization } = await import(
       '../prospecting/qualifyFoundBatchOrg.js'
@@ -177,6 +161,8 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
       qualified = q.qualifiedCount;
     }
 
+    // Pont AiProspect → Contact pour CE tenant uniquement.
+    // Le référentiel ne reçoit que des faits publics (sans téléphone / email Hunt).
     const freshProspects = await prisma.aiProspect.findMany({
       where: { organizationId: task.organizationId, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
@@ -187,21 +173,44 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
         city: true,
         country: true,
         industry: true,
+        companySize: true,
         phone: true,
         email: true,
-        companySize: true,
       },
     });
     for (const p of freshProspects) {
       if (!p.companyName?.trim()) continue;
       try {
-        // Pont progressif AiProspect → fiche Contact (source de vérité produit)
-        const refId = await ingestPublicCompanyFromHunt(p);
-        await linkReferentielToTenantFiche({
+        const refId = await ingestPublicCompanyFromHunt({
+          companyName: p.companyName,
+          website: p.website,
+          city: p.city,
+          country: p.country,
+          industry: p.industry,
+          companySize: p.companySize,
+          phone: null,
+          email: null,
+        });
+        const linked = await linkReferentielToTenantFiche({
           organizationId: task.organizationId,
           entrepriseId: refId,
           createdVia: 'HUNT',
+          copyCoordinates: false,
         });
+        // Coords restent privées au tenant (depuis AiProspect), jamais via le référentiel
+        if (p.phone || p.email) {
+          await prisma.contact.updateMany({
+            where: {
+              id: linked.contactId,
+              organizationId: task.organizationId,
+            },
+            data: {
+              ...(p.phone?.trim() ? { phone: p.phone.trim() } : {}),
+              ...(p.email?.trim() ? { email: p.email.trim() } : {}),
+            },
+          });
+        }
+        if (linked.created) fromReferentiel++;
       } catch {
         /* ignore */
       }
@@ -287,9 +296,9 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
   return {
     criteria,
     fromReferentiel,
-    referentielHits: refHits.length,
-    usedExternalCollecte: needExternal,
-    coverageWithoutExternal: !needExternal,
+    referentielHits: 0,
+    usedExternalCollecte: true,
+    coverageWithoutExternal: false,
     imported: imp.count,
     fromCache: imp.fromCache,
     providerUsed: imp.providerUsed,

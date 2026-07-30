@@ -18,6 +18,7 @@ import {
   normalizeObjectionTags,
   type ObjectionTag,
 } from './ficheDisplay';
+import { whatsappEligiblePhone } from './ficheLinks';
 
 export type FicheDecideur = {
   nom?: string | null;
@@ -227,7 +228,7 @@ export function FicheEntreprise(props: FicheEntrepriseProps) {
 
   const phone = decideur?.phone || null;
   const email = decideur?.email || null;
-  const whatsapp = decideur?.whatsapp || phone;
+  const whatsapp = whatsappEligiblePhone(decideur?.whatsapp || phone);
   const pref = decideur?.canal_prefere;
 
   const markOutbound = (canal: 'appel' | 'whatsapp') => {

@@ -31,6 +31,12 @@ export async function queryReferentielForTenant(
     emailGenerique: string | null;
   }>
 > {
+  // Sécurité : le référentiel a été pollué par des Hunt multi-tenant.
+  // Ne plus auto-servir ces entrées à d’autres orgs (fuite de recherches).
+  if (process.env.REFERENTIEL_CROSS_TENANT_SEED !== '1') {
+    return [];
+  }
+
   const take = Math.min(60, criteria.take || 40);
   const [linked, targeting] = await Promise.all([
     prisma.contact.findMany({
@@ -118,12 +124,15 @@ export async function queryReferentielForTenant(
 
 /**
  * Crée / rattache une fiche Contact (couche 2) à une entrée référentiel (couche 1).
- * Les faits publics restent sur le référentiel ; le Contact ne reçoit que le lien + identité affichage.
+ * Par défaut : identité + lien seulement — JAMAIS de téléphone/email du référentiel
+ * (données souvent issues d’un Hunt d’un autre tenant).
  */
 export async function linkReferentielToTenantFiche(opts: {
   organizationId: string;
   entrepriseId: string;
   createdVia?: 'HUNT' | 'SCOUT' | 'MANUAL_IMPORT';
+  /** @deprecated dangereux cross-tenant — rester à false */
+  copyCoordinates?: boolean;
 }): Promise<{ contactId: string; created: boolean }> {
   const ent = await prisma.entrepriseReferentiel.findUniqueOrThrow({
     where: { id: opts.entrepriseId },
@@ -149,14 +158,15 @@ export async function linkReferentielToTenantFiche(opts: {
     return { contactId: existing.id, created: false };
   }
 
-  // Email/téléphone : uniquement générique/standard du référentiel (déjà filtrés)
+  const copyCoords = opts.copyCoordinates === true;
+
   const created = await prisma.contact.create({
     data: {
       organizationId: opts.organizationId,
       name: ent.nomLegal,
       companyName: ent.nomLegal,
-      email: ent.emailGenerique,
-      phone: ent.telephoneStandard,
+      email: copyCoords ? ent.emailGenerique : null,
+      phone: copyCoords ? ent.telephoneStandard : null,
       createdVia: opts.createdVia || 'HUNT',
       entrepriseReferentielId: ent.id,
       ficheEtat: 'DECOUVERTE',
@@ -193,8 +203,9 @@ export async function ingestPublicCompanyFromHunt(hit: {
     zoneGeographique: [hit.city, hit.country].filter(Boolean).join(', ') || null,
     paysImmatriculation: hit.country || null,
     secteur: hit.industry || null,
-    telephoneStandard: hit.phone,
-    emailGenerique: hit.email,
+    // Isolation tenant : jamais de coords Hunt dans le pool partagé
+    telephoneStandard: null,
+    emailGenerique: null,
     tailleEstimee: hit.companySize || null,
     source: {
       type_source: 'annuaire',

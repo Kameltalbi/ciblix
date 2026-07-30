@@ -65,18 +65,27 @@ export async function setCachedSearchHits(
   });
 }
 
+function stripPiiFromWebsiteCache(payload: Record<string, unknown>): Record<string, unknown> {
+  const next = { ...payload };
+  delete next.detectedEmails;
+  delete next.phoneFromPage;
+  // Ne jamais partager des emails/téléphones via cache URL global
+  return next;
+}
+
 export async function getCachedWebsiteEnrichment(urlKey: string): Promise<Record<string, unknown> | null> {
   const row = await prisma.prospectingWebsiteCache.findUnique({ where: { urlKey } });
   if (!row || row.expiresAt <= new Date()) return null;
-  return row.payload as Record<string, unknown>;
+  return stripPiiFromWebsiteCache(row.payload as Record<string, unknown>);
 }
 
 export async function setCachedWebsiteEnrichment(urlKey: string, payload: Record<string, unknown>): Promise<void> {
   const expiresAt = new Date(Date.now() + TTL_MS_DEFAULT);
+  const safe = stripPiiFromWebsiteCache(payload);
   await prisma.prospectingWebsiteCache.upsert({
     where: { urlKey },
-    create: { urlKey, payload: payload as object, expiresAt },
-    update: { payload: payload as object, expiresAt },
+    create: { urlKey, payload: safe as object, expiresAt },
+    update: { payload: safe as object, expiresAt },
   });
 }
 

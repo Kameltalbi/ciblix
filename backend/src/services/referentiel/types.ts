@@ -113,8 +113,9 @@ export function onlyGenericEmail(email: string | null | undefined): string | nul
   return e;
 }
 
-/** Téléphone standard — rejette si clairement un mobile perso (heuristique légère). */
-export function onlyStandardPhone(phone: string | null | undefined): string | null {
-  if (!phone?.trim()) return null;
-  return phone.trim().slice(0, 40);
+/** Téléphone standard — ne jamais publier de coords Hunt dans le référentiel partagé. */
+export function onlyStandardPhone(_phone: string | null | undefined): string | null {
+  // Isolation multi-tenant : les téléphones issus de recherches ne doivent pas
+  // alimenter le pool mutualisé (mobiles / fixes perso).
+  return null;
 }
