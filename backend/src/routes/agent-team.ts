@@ -10,6 +10,7 @@ import {
   listBloqueesHumain,
   listFicheJournal,
 } from '../services/company-fiche/index.js';
+import { parseOfferSheet } from '../services/tenant-onboarding/index.js';
 
 export const agentTeamRoutes = Router();
 
@@ -18,7 +19,10 @@ agentTeamRoutes.use(requirePaymentApproved);
 
 const targetingSchema = z.object({
   activity: z.string().max(4000).nullable().optional(),
+  companyBrief: z.string().max(8000).nullable().optional(),
   commercialPriorities: z.string().max(4000).nullable().optional(),
+  identitySourceUrl: z.string().max(2000).nullable().optional(),
+  inverseIcpText: z.string().max(4000).nullable().optional(),
   productsServices: z.array(z.string().max(200)).max(40).optional(),
   markets: z.array(z.string().max(120)).max(40).optional(),
   countries: z.array(z.string().max(120)).max(40).optional(),
@@ -69,7 +73,10 @@ agentTeamRoutes.put('/targeting', async (req: AuthRequest, res, next) => {
       create: {
         organizationId,
         activity: body.activity ?? null,
+        companyBrief: body.companyBrief ?? null,
         commercialPriorities: body.commercialPriorities ?? null,
+        identitySourceUrl: body.identitySourceUrl ?? null,
+        inverseIcpText: body.inverseIcpText ?? null,
         productsServices: body.productsServices ?? [],
         markets: body.markets ?? [],
         countries: body.countries ?? [],
@@ -84,9 +91,17 @@ agentTeamRoutes.put('/targeting', async (req: AuthRequest, res, next) => {
       },
       update: {
         ...(body.activity !== undefined ? { activity: body.activity } : {}),
+        ...(body.companyBrief !== undefined ? { companyBrief: body.companyBrief } : {}),
         ...(body.commercialPriorities !== undefined
           ? { commercialPriorities: body.commercialPriorities }
           : {}),
+        ...(body.identitySourceUrl !== undefined
+          ? {
+              identitySourceUrl: body.identitySourceUrl,
+              ...(body.identitySourceUrl ? { identitySourceType: 'website' as const } : {}),
+            }
+          : {}),
+        ...(body.inverseIcpText !== undefined ? { inverseIcpText: body.inverseIcpText } : {}),
         ...(body.productsServices !== undefined ? { productsServices: body.productsServices } : {}),
         ...(body.markets !== undefined ? { markets: body.markets } : {}),
         ...(body.countries !== undefined ? { countries: body.countries } : {}),
@@ -106,6 +121,40 @@ agentTeamRoutes.put('/targeting', async (req: AuthRequest, res, next) => {
           : {}),
       },
     });
+
+    // Synchronise la fiche offre (messages IA) avec les produits saisis
+    if (body.productsServices !== undefined) {
+      const services = body.productsServices
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((libelle) => ({
+          libelle,
+          description_courte: '',
+          cible_typique: '',
+          valide_par_tenant: true,
+          source_extraction: null as string | null,
+        }));
+      if (services.length > 0) {
+        const existing = parseOfferSheet(profile.offerSheet);
+        await prisma.orgTargetingProfile.update({
+          where: { organizationId },
+          data: {
+            offerSheet: {
+              services_valides: services,
+              proposition_de_valeur:
+                body.activity?.trim() ||
+                existing?.proposition_de_valeur ||
+                profile.companyBrief ||
+                '',
+              validee_le: new Date().toISOString(),
+              validee_par: req.userId || null,
+            },
+            offerValidatedAt: new Date(),
+            offerValidatedBy: req.userId || null,
+          },
+        });
+      }
+    }
 
     // Aligne le profil Veilleur existant sur le ciblage
     const geoZones = [...profile.countries, ...profile.cities, ...profile.markets];
