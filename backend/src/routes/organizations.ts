@@ -45,11 +45,11 @@ const upload = multer({
 
 const organizationSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  tva: z.string().optional(),
-  logoUrl: z.string().optional(),
+  email: z.union([z.string().email(), z.literal(''), z.null()]).optional(),
+  phone: z.string().nullish(),
+  address: z.string().nullish(),
+  tva: z.string().nullish(),
+  logoUrl: z.string().nullish(),
 });
 
 // GET /api/organizations - Get current user's organization

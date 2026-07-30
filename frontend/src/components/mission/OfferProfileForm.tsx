@@ -243,7 +243,7 @@ export function OfferProfileForm() {
         email: email.trim() || null,
         phone: phone.trim() || null,
         address: address.trim() || null,
-        tva: org.tva,
+        tva: org.tva?.trim() || null,
       });
 
       if (user?.id && dirigeant.trim() && dirigeant.trim() !== user.name) {
