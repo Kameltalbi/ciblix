@@ -1,5 +1,5 @@
 import { prisma } from '../../db/prisma.js';
-import { searchCompaniesWithCache } from './index.js';
+import { isMockOrFakeHit, searchCompaniesWithCache } from './index.js';
 import { emptyWebEnrichment } from './websiteEnrichment.js';
 import type { CompanySearchCriteria, CompanySearchHit, WebEnrichmentResult } from './types.js';
 import { recordHuntProspectFound } from '../agent-memory/agentIntegrations.js';
@@ -97,7 +97,13 @@ export async function importProspectsFromSearch(
   options?: { refresh?: boolean; importMax?: number; userId?: string }
 ): Promise<ImportProspectsResult> {
   const refresh = Boolean(options?.refresh);
-  const { hits, providerUsed, fromCache } = await searchCompaniesWithCache(organizationId, criteria, { refresh });
+  const { hits: rawHits, providerUsed, fromCache } = await searchCompaniesWithCache(
+    organizationId,
+    criteria,
+    { refresh }
+  );
+  // Jamais importer de démo / .example.com
+  const hits = rawHits.filter((h) => !isMockOrFakeHit(h));
 
   const importMax = Math.min(
     120,
@@ -107,6 +113,7 @@ export async function importProspectsFromSearch(
 
   const prospects: unknown[] = [];
   const dedupeKeys = new Set<string>();
+  const seenProspectIds = new Set<string>();
   let createdCount = 0;
   let alreadyKnown = 0;
 
@@ -117,6 +124,8 @@ export async function importProspectsFromSearch(
 
     const existing = await findExistingProspect(organizationId, hitBase, dedupeKey);
     if (existing) {
+      if (seenProspectIds.has(existing.id)) continue;
+      seenProspectIds.add(existing.id);
       alreadyKnown += 1;
       prospects.push(existing);
       continue;
@@ -129,6 +138,7 @@ export async function importProspectsFromSearch(
       },
     });
     createdCount += 1;
+    seenProspectIds.add(row.id);
     prospects.push(row);
 
     if (options?.userId) {
@@ -162,7 +172,7 @@ export async function importProspectsFromSearch(
     providerUsed,
     fromCache,
     count: createdCount,
-    rawHits: hits.length,
+    rawHits: rawHits.length,
     skippedExisting: alreadyKnown,
     prospects,
   };

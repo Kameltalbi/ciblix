@@ -5,15 +5,12 @@ import { GooglePlacesNewProvider } from './providers/GooglePlacesNewProvider.js'
 import { OutscraperProvider } from './providers/OutscraperProvider.js';
 import { BingSearchProvider } from './providers/BingSearchProvider.js';
 import { GoogleCustomSearchProvider } from './providers/GoogleCustomSearchProvider.js';
+import { allowMockProspecting } from './mockPolicy.js';
 
 /**
  * Fournisseur de recherche :
- * - Actif maintenant : `google_places` (défaut) + OpenAI au qualify
- * - Prêts pour plus tard : `bing_search`, `google_cse` (scraping site déjà dans le pipeline)
- * - Stubs : apollo, hunter (recherche), clearbit
- *
- * Env `PROSPECTING_SEARCH_PROVIDER` sélectionne le moteur de recherche.
- * Le scrape des sites trouvés est indépendant (Firecrawl | HTML natif) dans enrichmentPipeline.
+ * - Actif : `google_places` / `outscraper` si clé API
+ * - Mock UNIQUEMENT si PROSPECTING_ALLOW_MOCK=1 (sinon liste vide — jamais d’entreprises inventées en prod)
  */
 export function resolveProspectingSearchProvider(): CompanySearchPort {
   const outscraperKey = process.env.OUTSCRAPER_API_KEY?.trim() || '';
@@ -27,6 +24,17 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
     (outscraperKey ? 'outscraper' : 'google_places')
   ).toLowerCase() as ProspectingSearchProviderId;
 
+  const mockOrEmpty = (): CompanySearchPort => {
+    if (allowMockProspecting()) return new MockCompanySearchProvider();
+    console.warn('[Prospecting] aucune clé API recherche — résultats vides (pas de mock).');
+    return {
+      id: 'mock',
+      async searchCompanies() {
+        return [];
+      },
+    };
+  };
+
   switch (raw) {
     case 'outscraper':
       if (outscraperKey) {
@@ -34,7 +42,7 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
       }
       console.warn('[Prospecting] outscraper sans OUTSCRAPER_API_KEY — repli Google Places.');
       if (placesKey) return new GooglePlacesNewProvider(placesKey);
-      return new MockCompanySearchProvider();
+      return mockOrEmpty();
     case 'bing_search':
       return new BingSearchProvider();
     case 'google_cse':
@@ -49,10 +57,12 @@ export function resolveProspectingSearchProvider(): CompanySearchPort {
       if (placesKey) {
         return new GooglePlacesNewProvider(placesKey);
       }
-      console.warn('[Prospecting] google_places sans GOOGLE_PLACES_API_KEY — repli mock.');
-      return new MockCompanySearchProvider();
+      console.warn('[Prospecting] google_places sans GOOGLE_PLACES_API_KEY.');
+      return mockOrEmpty();
     case 'mock':
+      return mockOrEmpty();
     default:
-      return new MockCompanySearchProvider();
+      if (placesKey) return new GooglePlacesNewProvider(placesKey);
+      return mockOrEmpty();
   }
 }

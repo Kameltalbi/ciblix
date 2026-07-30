@@ -14,15 +14,33 @@ import {
   websiteCacheKeyFromRawWebsite,
 } from './prospectingCache.js';
 
-export { runProspectEnrichmentPipeline } from './enrichmentPipeline.js';
+import { allowMockProspecting } from './mockPolicy.js';
 
-/** Recherche entreprises — délègue au fournisseur (Google Places par défaut si clé, sinon mock). */
+export { runProspectEnrichmentPipeline } from './enrichmentPipeline.js';
+export { allowMockProspecting } from './mockPolicy.js';
+
+/** True si le hit vient du générateur mock / domaines .example.com. */
+export function isMockOrFakeHit(hit: CompanySearchHit): boolean {
+  const ext = (hit.externalId || '').toLowerCase();
+  if (ext.startsWith('mock:')) return true;
+  const web = (hit.website || '').toLowerCase();
+  const email = (hit.email || '').toLowerCase();
+  if (web.includes('.example.com') || email.includes('.example.com')) return true;
+  const name = (hit.companyName || '').trim();
+  if (/#\d+\s*$/.test(name) && /—/.test(name)) return true;
+  return false;
+}
+
+/** Recherche entreprises — délègue au fournisseur réel (pas de mock silencieux). */
 export async function searchCompanies(criteria: CompanySearchCriteria): Promise<CompanySearchHit[]> {
   const provider = resolveProspectingSearchProvider();
   return provider.searchCompanies(criteria);
 }
 
-/** Si le fournisseur externe ne renvoie rien (non configuré), repli démo mock. */
+/**
+ * Recherche réelle uniquement.
+ * Mock UNIQUEMENT si PROSPECTING_ALLOW_MOCK=1 (dev) — jamais en prod par défaut.
+ */
 export async function searchCompaniesWithFallback(criteria: CompanySearchCriteria): Promise<{
   hits: CompanySearchHit[];
   providerUsed: string;
@@ -30,14 +48,25 @@ export async function searchCompaniesWithFallback(criteria: CompanySearchCriteri
   const provider = resolveProspectingSearchProvider();
   let hits = await provider.searchCompanies(criteria);
   let providerUsed: string = provider.id;
-  if (hits.length === 0 && provider.id !== 'mock') {
+
+  if (provider.id === 'mock' && !allowMockProspecting()) {
+    console.warn(
+      '[Prospecting] fournisseur mock refusé (pas de clé API Places/Outscraper). Résultats vides.'
+    );
+    return { hits: [], providerUsed: 'none' };
+  }
+
+  hits = hits.filter((h) => !isMockOrFakeHit(h) || allowMockProspecting());
+
+  if (hits.length === 0 && provider.id !== 'mock' && allowMockProspecting()) {
     hits = await new MockCompanySearchProvider().searchCompanies(criteria);
     providerUsed = 'mock_fallback';
   }
+
   return { hits, providerUsed };
 }
 
-/** Recherche avec cache Prisma (TTL 7 j. par défaut) — clé par organisation + critères. */
+/** Recherche avec cache Prisma — ignore / invalide les caches mock. */
 export async function searchCompaniesWithCache(
   organizationId: string,
   criteria: CompanySearchCriteria,
@@ -45,9 +74,21 @@ export async function searchCompaniesWithCache(
 ): Promise<{ hits: CompanySearchHit[]; providerUsed: string; fromCache: boolean }> {
   await pruneProspectingCaches().catch(() => {});
   const cached = options?.refresh ? null : await getCachedSearchHits(organizationId, criteria);
-  if (cached) return { ...cached, fromCache: true };
+  if (cached) {
+    const isMockCache =
+      cached.providerUsed === 'mock' ||
+      cached.providerUsed === 'mock_fallback' ||
+      cached.hits.some((h) => isMockOrFakeHit(h));
+    if (isMockCache && !allowMockProspecting()) {
+      // ne pas resservir de la démo
+    } else {
+      return { ...cached, fromCache: true };
+    }
+  }
   const fresh = await searchCompaniesWithFallback(criteria);
-  await setCachedSearchHits(organizationId, criteria, fresh.providerUsed, fresh.hits).catch(() => {});
+  if (fresh.hits.length > 0 && fresh.providerUsed !== 'none') {
+    await setCachedSearchHits(organizationId, criteria, fresh.providerUsed, fresh.hits).catch(() => {});
+  }
   return { ...fresh, fromCache: false };
 }
 
