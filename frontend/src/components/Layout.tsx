@@ -327,7 +327,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             {sidebarOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
           </button>
-          <Link to="/contacts" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80 lg:hidden">
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted lg:flex"
+            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+          >
+            {collapsed ? <PanelLeft size={18} strokeWidth={2} /> : <PanelLeftClose size={18} strokeWidth={2} />}
+          </button>
+          <Link
+            to="/contacts"
+            className={cn(
+              'flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80',
+              collapsed ? 'lg:flex' : 'lg:hidden'
+            )}
+          >
             {organization && orgLogoSrc ? (
               <img
                 src={orgLogoSrc}
@@ -371,49 +386,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Desktop sidebar */}
+        {/* Desktop sidebar — fermée = 0 largeur, le contenu prend tout l’espace */}
         <aside
           className={cn(
             'hidden lg:relative lg:z-0 lg:flex lg:flex-shrink-0 lg:flex-col lg:overflow-hidden',
-            'border-r border-white/[0.07] bg-[#0F1629] text-[#E8ECF7] transition-[width,min-width] duration-[180ms] ease-out',
-            collapsed ? 'lg:w-[72px] lg:min-w-[72px]' : 'lg:w-[264px] lg:min-w-[264px]',
+            'border-r border-white/[0.07] bg-[#0F1629] text-[#E8ECF7] transition-[width,min-width,opacity] duration-200 ease-out',
+            collapsed
+              ? 'lg:pointer-events-none lg:w-0 lg:min-w-0 lg:border-0 lg:opacity-0'
+              : 'lg:w-[264px] lg:min-w-[264px] lg:opacity-100',
           )}
+          aria-hidden={collapsed}
         >
-          <div
-            className={cn(
-              'flex min-h-14 items-center border-b border-white/[0.07] px-3.5 py-4',
-              collapsed ? 'justify-center' : 'gap-2.5',
-            )}
-          >
+          <div className="flex min-h-14 items-center gap-2.5 border-b border-white/[0.07] px-3.5 py-4">
             <button
               type="button"
               onClick={toggleCollapsed}
               className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg text-[#8B93AC] transition-colors hover:bg-[#1B2540] hover:text-[#E8ECF7]"
-              title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+              title={t('nav.collapseSidebar')}
             >
-              {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+              <PanelLeftClose size={16} />
             </button>
-            {!collapsed && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (user?.role === 'OWNER') navigate('/settings');
-                }}
-                className="flex min-w-0 flex-1 flex-col overflow-hidden text-left"
-              >
-                <span className="truncate text-sm font-semibold text-[#E8ECF7]">
-                  {organization?.name ?? 'CIBLIX'}
-                </span>
-                <span className="flex items-center gap-1 truncate text-[11px] text-[#5B637E]">
-                  <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#3B6BFB]" aria-hidden />
-                  {t('nav.workspaceSub')}
-                </span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (user?.role === 'OWNER') navigate('/settings');
+              }}
+              className="flex min-w-0 flex-1 flex-col overflow-hidden text-left"
+            >
+              <span className="truncate text-sm font-semibold text-[#E8ECF7]">
+                {organization?.name ?? 'CIBLIX'}
+              </span>
+              <span className="flex items-center gap-1 truncate text-[11px] text-[#5B637E]">
+                <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#3B6BFB]" aria-hidden />
+                {t('nav.workspaceSub')}
+              </span>
+            </button>
           </div>
 
-          {renderNav({ expanded: !collapsed })}
-          {renderFooter({ expanded: !collapsed })}
+          {renderNav({ expanded: true })}
+          {renderFooter({ expanded: true })}
         </aside>
 
         {/* Mobile sidebar */}
