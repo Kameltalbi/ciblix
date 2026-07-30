@@ -6,7 +6,6 @@ import {
   Calendar,
   CheckCircle2,
   Crosshair,
-  Link2,
   Mic,
   Settings,
   Shield,
@@ -193,8 +192,8 @@ const SECTIONS: Section[] = [
             'Compléter Paramètres → Organisation : nom, logo, secteur, site web',
             'Inviter l’équipe : Paramètres → Utilisateurs → Ajouter un utilisateur',
             'Attribuer le rôle (Commercial / Partenaire) et cocher les pages autorisées',
-            'Connecter Gmail si vous utilisez l’agent email : Connecteurs ou Paramètres → Gmail',
-            'Configurer WhatsApp (webhook) si c’est votre canal principal : Connecteurs',
+            'Connecter Gmail si besoin : Paramètres → Gmail',
+            'Compléter Paramètres → Organisation (site web, offre, priorité commerciale)',
             'Régler la veille Scout : mots-clés, secteurs, zones géographiques',
             'Optionnel — automatiser la prospection : Prospection IA → panneau Automatisation',
             'Vérifier le plan et les sièges : Paramètres → Organisation → Facturation',
@@ -248,29 +247,24 @@ const SECTIONS: Section[] = [
       <div className="space-y-5">
         {[
           {
-            name: 'Aujourd’hui',
-            path: '/aujourdhui',
-            desc: 'Votre to-do du jour : relances dues, message prêt, raison du contact.',
+            name: 'Prospecteur',
+            path: '/prospection-ia',
+            desc: 'Recherche d’entreprises cibles, scoring, ajout au pipeline.',
           },
           {
-            name: 'Contacts',
+            name: 'Contacts / Fiche',
             path: '/contacts',
-            desc: 'Toutes vos fiches entreprise. Filtrez par agent source (Hunt, Scout, Gmail…).',
-          },
-          {
-            name: 'Fiche contact',
-            path: '/contacts/:id',
-            desc: 'Vue complète : décideur, actualités, historique, message IA, dictée vocale.',
-          },
-          {
-            name: 'Dashboard',
-            path: '/dashboard',
-            desc: 'Performance du mois : entonnoir, activité des agents, actions du jour.',
+            desc: 'Le centre : décideur, actualités, message IA, dictée vocale, historique.',
           },
           {
             name: 'Mission',
             path: '/mission',
             desc: 'Votre brief commercial : cible, offre, zones. À jour = messages pertinents.',
+          },
+          {
+            name: 'Paramètres',
+            path: '/settings',
+            desc: 'Organisation, équipe, priorité commerciale du moment, intégrations.',
           },
         ].map((screen) => (
           <div
@@ -354,32 +348,6 @@ const SECTIONS: Section[] = [
           une signature générique, vérifiez que votre site web est renseigné dans Paramètres →
           Organisation → Métier.
         </div>
-      </>
-    ),
-  },
-  {
-    id: 'connecteurs',
-    title: 'Connecteurs & intégrations',
-    icon: Link2,
-    content: (
-      <>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Menu <strong className="text-foreground">Connecteurs</strong> — branchez Ciblix à vos outils
-          existants.
-        </p>
-        <DocTable
-          headers={['Connecteur', 'Statut', 'Usage']}
-          rows={[
-            ['Gmail', 'Disponible', 'Brouillons email depuis votre boîte'],
-            ['WhatsApp (webhook)', 'Disponible', 'Canal principal de prospection dans la région'],
-            ['Webhook CRM', 'Disponible', 'Envoie les fiches vers votre CRM existant'],
-            ['Softfacture', 'Disponible', 'Sync clients / facturation'],
-            ['Outlook, Calendar, LinkedIn OAuth', 'Bientôt', 'Annoncés dans Connecteurs'],
-          ]}
-        />
-        <p className="mt-4 text-sm text-muted-foreground">
-          Vous gardez votre CRM ? Parfait. Ciblix le remplit — vos commerciaux ne l’ouvrent plus.
-        </p>
       </>
     ),
   },

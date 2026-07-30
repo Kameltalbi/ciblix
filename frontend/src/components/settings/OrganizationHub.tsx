@@ -67,10 +67,10 @@ export function OrganizationHub() {
       {tab === 'targeting' && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            La Mission IA est le brief permanent de votre équipe. Modifiez-la à tout moment — les agents s’adaptent automatiquement.
+            Votre offre et votre cible commerciale. Modifiez-les quand vous lancez une formation ou changez de produit.
           </p>
           <Button asChild className="rounded-xl">
-            <Link to="/mission">Ouvrir la Mission IA</Link>
+            <Link to="/mission">Ouvrir mon offre</Link>
           </Button>
           <TargetingSettings />
         </div>

@@ -12,16 +12,10 @@ import type { User, UserRole } from '@/types';
 const EMPTY = { id: '', email: '', name: '', password: '', confirmPassword: '', role: 'PARTNER' as UserRole };
 
 const PAGES = [
-  { key: 'dashboard', label: 'Dashboard' },
-  { key: 'agents-marketplace', label: 'Agents IA' },
+  { key: 'prospection-ia', label: 'Prospecteur' },
   { key: 'contacts', label: 'Contacts' },
-  { key: 'connectors', label: 'Connecteurs' },
-  { key: 'prospection-ia', label: 'Chasseur IA' },
-  { key: 'ai-assistant', label: 'Assistant IA' },
-  { key: 'scout-ai', label: 'Veilleur IA' },
-  { key: 'offre-bot', label: "Rédacteur d'offres" },
+  { key: 'mission', label: 'Mission IA' },
   { key: 'settings', label: 'Paramètres' },
-  { key: 'support', label: 'Support' },
 ];
 
 type PermissionState = { page: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean };

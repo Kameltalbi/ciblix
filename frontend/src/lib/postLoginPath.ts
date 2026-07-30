@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 
 /**
- * Après login / Google : Mission IA si pas encore ACTIVE, sinon dashboard.
+ * Après login / Google : Mission IA si pas encore ACTIVE, sinon Contacts.
  * SUPERADMIN → /admin.
  */
 export async function resolvePostLoginPath(role?: string | null): Promise<string> {
@@ -14,9 +14,9 @@ export async function resolvePostLoginPath(role?: string | null): Promise<string
   } catch (err: unknown) {
     const status = (err as { response?: { status?: number } })?.response?.status;
     // Paiement / accès bloqué : ne pas forcer la mission
-    if (status === 402 || status === 403) return '/dashboard';
+    if (status === 402 || status === 403) return '/contacts';
     return '/mission';
   }
 
-  return '/dashboard';
+  return '/contacts';
 }

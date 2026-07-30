@@ -1,6 +1,5 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
   Settings,
   LogOut,
   Menu,
@@ -8,13 +7,10 @@ import {
   Building2,
   Users,
   Globe,
-  MessageSquare,
   Crosshair,
-  Plug,
   Target,
   PanelLeftClose,
   PanelLeft,
-  Sun,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -40,26 +36,20 @@ type NavItem = {
 };
 
 /**
- * Sidebar simplifiée — Overview · Commercial (Prospecteur + Contacts) · Workspace.
- * Scout / Analyste / Copilot / LinkedIn retirés du menu (logique utile → fiche contact).
+ * Sidebar minimale — Prospecteur, Contacts, Mon offre, Paramètres.
+ * Aujourd’hui / Performance / Connecteurs / Support retirés du menu.
  */
 const NAV_STRUCTURE: NavItem[] = [
-  { to: '/aujourdhui', labelKey: 'nav.today', icon: Sun, page: 'aujourdhui', section: 'OVERVIEW' },
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
-  { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'OVERVIEW', missionBadge: true },
-  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'PIPELINE' },
-  { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'PIPELINE' },
-  { to: '/connecteurs', labelKey: 'nav.connectors', icon: Plug, page: 'connectors', section: 'WORKSPACE' },
-  { to: '/settings', labelKey: 'nav.settings', icon: Settings, page: 'settings', section: 'WORKSPACE' },
-  { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'WORKSPACE' },
+  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'MAIN' },
+  { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'MAIN' },
+  { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'MAIN', missionBadge: true },
+  { to: '/settings', labelKey: 'nav.settings', icon: Settings, page: 'settings', section: 'MAIN' },
 ];
 
-const SIDEBAR_SECTION_ORDER = ['OVERVIEW', 'PIPELINE', 'WORKSPACE'] as const;
+const SIDEBAR_SECTION_ORDER = ['MAIN'] as const;
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
-  OVERVIEW: 'nav.sectionOverview',
-  PIPELINE: 'nav.sectionPipeline',
-  WORKSPACE: 'nav.sectionWorkspace',
+  MAIN: '',
 };
 
 const SIDEBAR_COLLAPSED_KEY = 'ciblix-sidebar-collapsed';
@@ -182,7 +172,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (user.role === 'COMMERCIAL') {
         if (page === 'support') return true;
         if (permissionsData === undefined) return true;
-        if (page === 'dashboard' || page === 'aujourdhui' || page === 'connectors' || page === 'settings' || page === 'mission') return true;
+        if (page === 'dashboard' || page === 'connectors' || page === 'settings' || page === 'mission') return true;
         if (!Array.isArray(permissionsData)) return true;
         const permission = permissionsData.find((p) => p.page === page);
         return permission?.canView ?? false;
@@ -338,7 +328,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             {sidebarOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
           </button>
-          <Link to="/dashboard" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80 lg:hidden">
+          <Link to="/contacts" className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-80 lg:hidden">
             {organization && orgLogoSrc ? (
               <img
                 src={orgLogoSrc}

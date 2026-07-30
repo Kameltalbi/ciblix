@@ -89,6 +89,8 @@ export function MissionWizard() {
   const [offerItems, setOfferItems] = useState<OfferItem[]>([]);
   const [valueProp, setValueProp] = useState('');
   const [hydrated, setHydrated] = useState(false);
+  /** Permet de réouvrir l’édition après activation (évite l’écran mort « Mission active »). */
+  const [forceEdit, setForceEdit] = useState(false);
 
   const presets = data?.geoZonePresets || [
     'Tunisie',
@@ -213,14 +215,90 @@ export function MissionWizard() {
     );
   }
 
-  if (data?.profile.missionStatus === 'ACTIVE' && step >= 5) {
+  if (data?.profile.missionStatus === 'ACTIVE' && step >= 5 && !forceEdit) {
+    const services = (offerItems.length
+      ? offerItems
+      : data.profile.offerSheet?.services_valides || []
+    ).filter((s) => s.valide_par_tenant && s.libelle.trim());
+    const prop =
+      valueProp.trim() ||
+      data.profile.offerSheet?.proposition_de_valeur?.trim() ||
+      data.profile.companyBrief?.trim() ||
+      '';
+    const icpText =
+      icp?.texte_naturel?.trim() ||
+      data.profile.inverseIcpText?.trim() ||
+      data.profile.inverseIcp?.texte_naturel?.trim() ||
+      '';
+
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center" dir={isAr ? 'rtl' : 'ltr'}>
-        <h1 className="mb-3 font-serif text-2xl font-bold">Mission active</h1>
-        <p className="mb-6 text-muted-foreground">
-          Votre équipe cherche déjà des entreprises. Vous pouvez ajuster l’offre à tout moment.
-        </p>
-        <Button onClick={() => navigate('/prospection-ia')}>Voir les entreprises</Button>
+      <div className="mx-auto max-w-xl space-y-6 px-4 py-10" dir={isAr ? 'rtl' : 'ltr'}>
+        <header>
+          <h1 className="font-serif text-2xl font-bold tracking-tight">Mon offre &amp; ma cible</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            C’est ce que Ciblix utilise pour chercher des entreprises et rédiger vos messages.
+            Mettez à jour quand vous lancez une formation ou changez d’offre.
+          </p>
+        </header>
+
+        <section className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Ce que vous vendez</h2>
+          {services.length ? (
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              {services.map((s) => (
+                <li key={s.libelle} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#016AEB]" />
+                  {s.libelle}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-amber-700">Aucune offre renseignée — les messages resteront génériques.</p>
+          )}
+          {prop ? (
+            <p className="border-t border-neutral-100 pt-3 text-sm leading-relaxed text-neutral-700">{prop}</p>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              setStep(4);
+              setForceEdit(true);
+            }}
+          >
+            Modifier mon offre
+          </Button>
+        </section>
+
+        <section className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Qui vous cherchez</h2>
+          {icpText ? (
+            <p className="text-sm leading-relaxed text-muted-foreground">{icpText}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">Cible définie lors du démarrage.</p>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              setStep(3);
+              setForceEdit(true);
+            }}
+          >
+            Modifier ma cible
+          </Button>
+        </section>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button className="flex-1" onClick={() => navigate('/prospection-ia')}>
+            Chercher des entreprises
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={() => navigate('/contacts')}>
+            Voir mes contacts
+          </Button>
+        </div>
       </div>
     );
   }
@@ -228,14 +306,28 @@ export function MissionWizard() {
   return (
     <div className="mx-auto min-h-[70vh] max-w-xl px-4 py-8 sm:py-12" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="mb-8">
+        {forceEdit ? (
+          <button
+            type="button"
+            className="mb-3 text-sm font-medium text-[#016AEB] hover:underline"
+            onClick={() => {
+              setForceEdit(false);
+              setStep(5);
+            }}
+          >
+            ← Retour au résumé
+          </button>
+        ) : null}
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#016AEB]">
-          Démarrage · {step}/5
+          {forceEdit ? 'Ajustement' : `Démarrage · ${step}/5`}
         </p>
         <h1 className="font-serif text-2xl font-bold tracking-tight sm:text-3xl">
-          Première liste en moins de 5 minutes
+          {forceEdit ? 'Mettre à jour votre offre ou votre cible' : 'Première liste en moins de 5 minutes'}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          On déduit le maximum. Vous ne validez que ce qui compte.
+          {forceEdit
+            ? 'Les changements s’appliquent aux prochaines recherches et messages.'
+            : 'On déduit le maximum. Vous ne validez que ce qui compte.'}
         </p>
       </div>
 

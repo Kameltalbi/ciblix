@@ -79,9 +79,6 @@ const Aujourdhui = lazy(() =>
 const ContactDetail = lazy(() =>
   import('./pages/ContactDetail').then((m) => ({ default: m.ContactDetail }))
 );
-const Connecteurs = lazy(() =>
-  import('./pages/Connecteurs').then((m) => ({ default: m.Connecteurs }))
-);
 
 // Public agent pages (marketing / pre-login)
 const HuntAIPage = lazy(() => import('./pages/public/HuntAIPage').then((m) => ({ default: m.HuntAIPage })));
@@ -180,7 +177,7 @@ export default function App() {
                   <Layout>
                     <Suspense fallback={<PageFallback />}>
                       <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/" element={<Navigate to="/contacts" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/aujourdhui" element={<Aujourdhui />} />
                         <Route path="/affaires" element={<Navigate to="/dashboard" replace />} />
@@ -254,7 +251,7 @@ export default function App() {
                         <Route path="/agents/:agentId" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/contacts" element={<Contacts />} />
                         <Route path="/contacts/:id" element={<ContactDetail />} />
-                        <Route path="/connecteurs" element={<Connecteurs />} />
+                        <Route path="/connecteurs" element={<Navigate to="/settings" replace />} />
                         <Route path="/all-prospects" element={<AllProspects />} />
                         <Route
                           path="/ai-assistant"
