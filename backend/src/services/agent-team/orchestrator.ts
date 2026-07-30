@@ -1,4 +1,5 @@
 import { prisma } from '../../db/prisma.js';
+import { runWithRlsContextAsync } from '../../db/rlsContext.js';
 import {
   claimNextAgentTask,
   completeAgentTask,
@@ -48,7 +49,6 @@ async function scheduleTeamJobs(): Promise<void> {
 
   for (const p of profiles) {
     if (hasMissionLock(p.organizationId, 'FIND_COMPANIES')) {
-      // Prospecteur encore en cours pour cette org — skip silencieux
       continue;
     }
 
@@ -59,7 +59,6 @@ async function scheduleTeamJobs(): Promise<void> {
 
     const hourBucket = now.toISOString().slice(0, 13);
 
-    // 1) Prospecteur — priorité absolue
     await enqueueAgentTask({
       organizationId: p.organizationId,
       assignee: 'HUNT',
@@ -69,7 +68,6 @@ async function scheduleTeamJobs(): Promise<void> {
       payload: { triggeredBy: 'orchestrator', refresh: true, importMax: 40 },
     });
 
-    // 2) Veilleur — optionnel / moins fréquent (signaux seulement)
     const cycle = Math.floor(now.getTime() / intervalMs);
     if (cycle % SCOUT_EVERY_N_HUNT_CYCLES === 0) {
       await enqueueAgentTask({
@@ -90,113 +88,115 @@ async function scheduleTeamJobs(): Promise<void> {
 }
 
 async function processOneTask(): Promise<boolean> {
-  const task = await claimNextAgentTask();
+  const task = await runWithRlsContextAsync({ type: 'bypass' }, () => claimNextAgentTask());
   if (!task) return false;
 
-  const mission = await prisma.orgTargetingProfile.findUnique({
-    where: { organizationId: task.organizationId },
-    select: { missionStatus: true, missionCompletedAt: true },
-  });
-  if (mission?.missionStatus !== 'ACTIVE' || !mission.missionCompletedAt) {
-    await prisma.agentTask.update({
-      where: { id: task.id },
-      data: {
-        status: 'CANCELLED',
-        error: 'MISSION_REQUIRED',
-        completedAt: new Date(),
-        startedAt: null,
-      },
-    });
-    return true;
-  }
-
-  const needsOrgLock = task.kind === 'FIND_COMPANIES' || task.kind === 'WATCH_SIGNALS';
-
-  if (needsOrgLock && !tryAcquireMissionLock(task.organizationId, task.kind)) {
-    // Remettre en file pour un tick ultérieur (évite double Places / doublons)
-    await prisma.agentTask.update({
-      where: { id: task.id },
-      data: {
-        status: 'PENDING',
-        startedAt: null,
-        availableAt: new Date(Date.now() + 30_000),
-        attempts: { decrement: 1 },
-      },
-    });
-    return true;
-  }
-
-  try {
-    let result: Record<string, unknown>;
-    switch (task.kind) {
-      case 'FIND_COMPANIES':
-        result = await handleFindCompanies(task);
-        break;
-      case 'WATCH_SIGNALS':
-        result = await handleWatchSignals(task);
-        break;
-      case 'ENRICH_COMPANY':
-        result = await handleEnrichCompany(task);
-        break;
-      case 'ANALYZE_FIT':
-        result = await handleAnalyzeFit(task);
-        break;
-      case 'PREPARE_OUTREACH':
-        result = await handlePrepareOutreach(task);
-        break;
-      case 'PROCESS_INTERACTION':
-        result = await handleProcessInteraction(task);
-        break;
-      case 'SCRIBE_ENRICH': {
-        if (!task.contactId) {
-          result = { skipped: true, reason: 'missing_contact' };
-          break;
-        }
-        const enrich = await enrichScribeContact({
-          organizationId: task.organizationId,
-          contactId: task.contactId,
-          triggeredBy: 'orchestrator',
+  return runWithRlsContextAsync(
+    { type: 'tenant', organizationId: task.organizationId },
+    async () => {
+      const mission = await prisma.orgTargetingProfile.findUnique({
+        where: { organizationId: task.organizationId },
+        select: { missionStatus: true, missionCompletedAt: true },
+      });
+      if (mission?.missionStatus !== 'ACTIVE' || !mission.missionCompletedAt) {
+        await prisma.agentTask.update({
+          where: { id: task.id },
+          data: {
+            status: 'CANCELLED',
+            error: 'MISSION_REQUIRED',
+            completedAt: new Date(),
+            startedAt: null,
+          },
         });
-        result = { ...enrich };
-        break;
+        return true;
       }
-      default:
-        result = { skipped: true, reason: 'unknown_kind' };
+
+      const needsOrgLock = task.kind === 'FIND_COMPANIES' || task.kind === 'WATCH_SIGNALS';
+
+      if (needsOrgLock && !tryAcquireMissionLock(task.organizationId, task.kind)) {
+        await prisma.agentTask.update({
+          where: { id: task.id },
+          data: {
+            status: 'PENDING',
+            startedAt: null,
+            availableAt: new Date(Date.now() + 30_000),
+            attempts: { decrement: 1 },
+          },
+        });
+        return true;
+      }
+
+      try {
+        let result: Record<string, unknown>;
+        switch (task.kind) {
+          case 'FIND_COMPANIES':
+            result = await handleFindCompanies(task);
+            break;
+          case 'WATCH_SIGNALS':
+            result = await handleWatchSignals(task);
+            break;
+          case 'ENRICH_COMPANY':
+            result = await handleEnrichCompany(task);
+            break;
+          case 'ANALYZE_FIT':
+            result = await handleAnalyzeFit(task);
+            break;
+          case 'PREPARE_OUTREACH':
+            result = await handlePrepareOutreach(task);
+            break;
+          case 'PROCESS_INTERACTION':
+            result = await handleProcessInteraction(task);
+            break;
+          case 'SCRIBE_ENRICH': {
+            if (!task.contactId) {
+              result = { skipped: true, reason: 'missing_contact' };
+              break;
+            }
+            const enrich = await enrichScribeContact({
+              organizationId: task.organizationId,
+              contactId: task.contactId,
+              triggeredBy: 'orchestrator',
+            });
+            result = { ...enrich };
+            break;
+          }
+          default:
+            result = { skipped: true, reason: 'unknown_kind' };
+        }
+        await completeAgentTask(task.id, result);
+        console.log(
+          `[agent-orchestrator] ${task.kind} org=${task.organizationId} task=${task.id} ok`
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await failAgentTask(task.id, msg);
+        console.warn(`[agent-orchestrator] ${task.kind} failed`, task.id, msg);
+      } finally {
+        if (needsOrgLock) {
+          releaseMissionLock(task.organizationId, task.kind);
+        }
+      }
+      return true;
     }
-    await completeAgentTask(task.id, result);
-    console.log(
-      `[agent-orchestrator] ${task.kind} org=${task.organizationId} task=${task.id} ok`
-    );
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    await failAgentTask(task.id, msg);
-    console.warn(`[agent-orchestrator] ${task.kind} failed`, task.id, msg);
-  } finally {
-    if (needsOrgLock) {
-      releaseMissionLock(task.organizationId, task.kind);
-    }
-  }
-  return true;
+  );
 }
 
 async function tickOnce(): Promise<void> {
   if (process.env.AGENT_ORCHESTRATOR_DISABLED === '1') return;
   if (running) return;
   running = true;
-  const { setRlsBypass, clearTenantRlsContext } = await import(
-    '../referentiel/tenantIsolation.js'
-  );
   try {
-    await setRlsBypass(true);
-    const { bumpHeartbeat } = await import('../../lib/heartbeats.js');
-    bumpHeartbeat('agentOrchestrator');
-    await scheduleTeamJobs();
-    try {
-      const n = await scheduleScribeEnrichJobs();
-      if (n > 0) console.log(`[agent-orchestrator] scribe enrich enqueued=${n}`);
-    } catch (err) {
-      console.warn('[agent-orchestrator] scribe enrich schedule', err);
-    }
+    await runWithRlsContextAsync({ type: 'bypass' }, async () => {
+      const { bumpHeartbeat } = await import('../../lib/heartbeats.js');
+      bumpHeartbeat('agentOrchestrator');
+      await scheduleTeamJobs();
+      try {
+        const n = await scheduleScribeEnrichJobs();
+        if (n > 0) console.log(`[agent-orchestrator] scribe enrich enqueued=${n}`);
+      } catch (err) {
+        console.warn('[agent-orchestrator] scribe enrich schedule', err);
+      }
+    });
     for (let i = 0; i < MAX_TASKS_PER_TICK; i++) {
       const did = await processOneTask();
       if (!did) break;
@@ -204,7 +204,6 @@ async function tickOnce(): Promise<void> {
   } catch (err) {
     console.warn('[agent-orchestrator] tick', err);
   } finally {
-    await clearTenantRlsContext().catch(() => undefined);
     running = false;
   }
 }
@@ -220,10 +219,8 @@ export function startAgentOrchestrator(): void {
   }, TICK_MS);
 }
 
-/** Exposé pour tests / admin. */
 export async function runOrchestratorTickNow(): Promise<void> {
   await tickOnce();
 }
 
-/** Exposé pour tests — verrou anti-collision. */
 export { runningMissions, missionLockKey };

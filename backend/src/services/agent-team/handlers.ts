@@ -125,14 +125,9 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
       ? Math.min(60, Math.floor(payload.importMax))
       : 40;
 
-  // 1) Collecte externe org-scopée UNIQUEMENT.
-  // Ne plus seed depuis le référentiel mutualisé : les découvertes Hunt d’un tenant
-  // y étaient réinjectées et redistribuées aux autres (fuite cross-tenant).
-  const { linkReferentielToTenantFiche, ingestPublicCompanyFromHunt } = await import(
-    '../referentiel/index.js'
-  );
-
-  let fromReferentiel = 0;
+  // Collecte externe STRICTEMENT org-scopée.
+  // Isolation absolue : aucun écriture / seed via le référentiel mutualisé.
+  let contactsCreated = 0;
   let imp = {
     count: 0,
     skippedExisting: 0,
@@ -161,19 +156,13 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
       qualified = q.qualifiedCount;
     }
 
-    // Pont AiProspect → Contact pour CE tenant uniquement.
-    // Le référentiel ne reçoit que des faits publics (sans téléphone / email Hunt).
+    // AiProspect → Contact pour CE tenant uniquement (jamais de catalogue partagé).
     const freshProspects = await prisma.aiProspect.findMany({
       where: { organizationId: task.organizationId, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
       take: Math.min(40, importMax),
       select: {
         companyName: true,
-        website: true,
-        city: true,
-        country: true,
-        industry: true,
-        companySize: true,
         phone: true,
         email: true,
       },
@@ -181,36 +170,22 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
     for (const p of freshProspects) {
       if (!p.companyName?.trim()) continue;
       try {
-        const refId = await ingestPublicCompanyFromHunt({
-          companyName: p.companyName,
-          website: p.website,
-          city: p.city,
-          country: p.country,
-          industry: p.industry,
-          companySize: p.companySize,
-          phone: null,
-          email: null,
+        const before = await prisma.contact.findFirst({
+          where: {
+            organizationId: task.organizationId,
+            erasedAt: null,
+            companyName: { equals: p.companyName, mode: 'insensitive' },
+          },
+          select: { id: true },
         });
-        const linked = await linkReferentielToTenantFiche({
+        await upsertCompanyContact({
           organizationId: task.organizationId,
-          entrepriseId: refId,
+          companyName: p.companyName.trim(),
+          phone: p.phone?.trim() || null,
+          email: p.email?.trim() || null,
           createdVia: 'HUNT',
-          copyCoordinates: false,
         });
-        // Coords restent privées au tenant (depuis AiProspect), jamais via le référentiel
-        if (p.phone || p.email) {
-          await prisma.contact.updateMany({
-            where: {
-              id: linked.contactId,
-              organizationId: task.organizationId,
-            },
-            data: {
-              ...(p.phone?.trim() ? { phone: p.phone.trim() } : {}),
-              ...(p.email?.trim() ? { email: p.email.trim() } : {}),
-            },
-          });
-        }
-        if (linked.created) fromReferentiel++;
+        if (!before) contactsCreated++;
       } catch {
         /* ignore */
       }
@@ -263,13 +238,12 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
     handedToEnrich += 1;
   }
 
-  if (fromReferentiel > 0) {
+  if (contactsCreated > 0) {
     const ficheContacts = await prisma.contact.findMany({
       where: {
         organizationId: task.organizationId,
         erasedAt: null,
-        ficheEtat: 'DECOUVERTE',
-        entrepriseReferentielId: { not: null },
+        createdVia: 'HUNT',
       },
       take: 20,
       orderBy: { createdAt: 'desc' },
@@ -283,11 +257,11 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
         kind: 'ANALYZE_FIT',
         priority: 70,
         contactId: c.id,
-        dedupeKey: `analyze:ref:${c.id}`,
+        dedupeKey: `analyze:hunt:${c.id}`,
         payload: {
           contactId: c.id,
           companyName: c.companyName,
-          triggeredBy: 'referentiel',
+          triggeredBy: 'find_companies',
         },
       });
     }
@@ -295,7 +269,8 @@ export async function handleFindCompanies(task: AgentTask): Promise<Record<strin
 
   return {
     criteria,
-    fromReferentiel,
+    contactsCreated,
+    fromReferentiel: 0,
     referentielHits: 0,
     usedExternalCollecte: true,
     coverageWithoutExternal: false,
@@ -680,8 +655,8 @@ export async function handleAnalyzeFit(task: AgentTask): Promise<Record<string, 
     });
 
     if (scoreResult.decision === 'PRIORITY') {
-      await prisma.contact.update({
-        where: { id: contactId },
+      await prisma.contact.updateMany({
+        where: { id: contactId, organizationId: task.organizationId },
         data: {
           pipelineStatus: 'CHAUD',
           pipelineStatusScore: scoreResult.score,
@@ -689,8 +664,8 @@ export async function handleAnalyzeFit(task: AgentTask): Promise<Record<string, 
         },
       });
     } else if (scoreResult.decision === 'WATCH') {
-      await prisma.contact.update({
-        where: { id: contactId },
+      await prisma.contact.updateMany({
+        where: { id: contactId, organizationId: task.organizationId },
         data: {
           pipelineStatus: 'TIEDE',
           pipelineStatusScore: scoreResult.score,

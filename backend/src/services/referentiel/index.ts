@@ -5,6 +5,7 @@ export {
   queryReferentielForTenant,
   linkReferentielToTenantFiche,
   ingestPublicCompanyFromHunt,
+  adminUpsertReferentielPublic,
 } from './query.js';
 export {
   computeFreshnessScore,

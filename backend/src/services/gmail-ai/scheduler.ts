@@ -7,10 +7,8 @@ const TICK_MS = 2 * 60_000; // 2 min
 async function tickOnce(): Promise<void> {
   if (process.env.GMAIL_AI_SCHEDULER_DISABLED === '1') return;
 
-  const { setRlsBypass, clearTenantRlsContext } = await import('../referentiel/tenantIsolation.js');
-  try {
-    await setRlsBypass(true);
-
+  const { withRlsBypass } = await import('../referentiel/tenantIsolation.js');
+  await withRlsBypass(async () => {
     const states = await prisma.gmailAiSyncState.findMany({
       where: { historyId: { not: null }, enabled: true },
       select: { userId: true, organizationId: true },
@@ -43,9 +41,7 @@ async function tickOnce(): Promise<void> {
         console.warn('[gmail-ai-scheduler] sync failed', state.userId, err);
       }
     }
-  } finally {
-    await clearTenantRlsContext().catch(() => undefined);
-  }
+  });
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null;

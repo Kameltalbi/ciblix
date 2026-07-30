@@ -1,8 +1,3 @@
-import type { Prisma } from '@prisma/client';
-import { prisma } from '../../db/prisma.js';
-import { upsertEntrepriseReferentiel } from './upsert.js';
-import type { ReferentielUpsertInput } from './types.js';
-
 export type ReferentielQueryCriteria = {
   sectors?: string[];
   zones?: string[];
@@ -14,11 +9,11 @@ export type ReferentielQueryCriteria = {
 };
 
 /**
- * Interroge le référentiel pour un tenant (hors entreprises déjà en fiche / rejetées).
+ * Isolation absolue : le référentiel mutualisé ne sert PLUS de source de prospects.
  */
 export async function queryReferentielForTenant(
-  organizationId: string,
-  criteria: ReferentielQueryCriteria
+  _organizationId: string,
+  _criteria: ReferentielQueryCriteria
 ): Promise<
   Array<{
     id: string;
@@ -31,163 +26,25 @@ export async function queryReferentielForTenant(
     emailGenerique: string | null;
   }>
 > {
-  // Sécurité : le référentiel a été pollué par des Hunt multi-tenant.
-  // Ne plus auto-servir ces entrées à d’autres orgs (fuite de recherches).
-  if (process.env.REFERENTIEL_CROSS_TENANT_SEED !== '1') {
-    return [];
-  }
-
-  const take = Math.min(60, criteria.take || 40);
-  const [linked, targeting] = await Promise.all([
-    prisma.contact.findMany({
-      where: {
-        organizationId,
-        erasedAt: null,
-        entrepriseReferentielId: { not: null },
-      },
-      select: { entrepriseReferentielId: true },
-    }),
-    prisma.orgTargetingProfile.findUnique({
-      where: { organizationId },
-      select: { onboardingEvents: true, excludeCompanies: true },
-    }),
-  ]);
-  const linkedIds = linked
-    .map((c) => c.entrepriseReferentielId)
-    .filter((id): id is string => Boolean(id));
-
-  // Feedback « pas pour moi » / rejets onboarding → ne pas reproposer
-  const rejectedNames = new Set<string>();
-  for (const n of [
-    ...(criteria.excludeCompanyNames || []),
-    ...(targeting?.excludeCompanies || []),
-  ]) {
-    if (n.trim()) rejectedNames.add(n.trim().toLowerCase());
-  }
-  const events = Array.isArray(targeting?.onboardingEvents)
-    ? (targeting!.onboardingEvents as Array<{ event?: string; companyName?: string | null }>)
-    : [];
-  for (const e of events) {
-    if (e.event === 'prospect_reject' && e.companyName?.trim()) {
-      rejectedNames.add(e.companyName.trim().toLowerCase());
-    }
-  }
-
-  const orFilters: Prisma.EntrepriseReferentielWhereInput[] = [];
-  for (const s of criteria.sectors || []) {
-    if (s.trim()) orFilters.push({ secteur: { contains: s.trim(), mode: 'insensitive' } });
-  }
-  for (const z of [...(criteria.zones || []), ...(criteria.countries || [])]) {
-    if (z.trim()) {
-      orFilters.push({ zoneGeographique: { contains: z.trim(), mode: 'insensitive' } });
-      orFilters.push({ paysImmatriculation: { contains: z.trim(), mode: 'insensitive' } });
-    }
-  }
-  for (const k of criteria.keywords || []) {
-    if (k.trim()) {
-      orFilters.push({ nomLegal: { contains: k.trim(), mode: 'insensitive' } });
-      orFilters.push({ secteur: { contains: k.trim(), mode: 'insensitive' } });
-    }
-  }
-
-  const rows = await prisma.entrepriseReferentiel.findMany({
-    where: {
-      statutActivite: { in: ['ACTIVE', 'INCONNUE'] },
-      scoreFraicheur: { gte: criteria.minFraicheur ?? 20 },
-      ...(linkedIds.length ? { id: { notIn: linkedIds } } : {}),
-      ...(orFilters.length ? { OR: orFilters } : {}),
-    },
-    orderBy: [{ scoreFraicheur: 'desc' }, { scoreConfianceGlobal: 'desc' }, { updatedAt: 'desc' }],
-    take: take * 2,
-    select: {
-      id: true,
-      nomLegal: true,
-      secteur: true,
-      zoneGeographique: true,
-      siteWeb: true,
-      scoreFraicheur: true,
-      telephoneStandard: true,
-      emailGenerique: true,
-    },
-  });
-
-  return rows
-    .filter((r) => {
-      const name = r.nomLegal.toLowerCase();
-      for (const e of rejectedNames) {
-        if (e && name.includes(e)) return false;
-      }
-      return true;
-    })
-    .slice(0, take);
+  return [];
 }
 
 /**
- * Crée / rattache une fiche Contact (couche 2) à une entrée référentiel (couche 1).
- * Par défaut : identité + lien seulement — JAMAIS de téléphone/email du référentiel
- * (données souvent issues d’un Hunt d’un autre tenant).
+ * @deprecated Pont référentiel → fiche désactivé (isolation absolue).
  */
-export async function linkReferentielToTenantFiche(opts: {
+export async function linkReferentielToTenantFiche(_opts: {
   organizationId: string;
   entrepriseId: string;
   createdVia?: 'HUNT' | 'SCOUT' | 'MANUAL_IMPORT';
-  /** @deprecated dangereux cross-tenant — rester à false */
   copyCoordinates?: boolean;
 }): Promise<{ contactId: string; created: boolean }> {
-  const ent = await prisma.entrepriseReferentiel.findUniqueOrThrow({
-    where: { id: opts.entrepriseId },
-  });
-
-  const existing = await prisma.contact.findFirst({
-    where: {
-      organizationId: opts.organizationId,
-      erasedAt: null,
-      OR: [
-        { entrepriseReferentielId: ent.id },
-        { companyName: { equals: ent.nomLegal, mode: 'insensitive' } },
-      ],
-    },
-  });
-  if (existing) {
-    if (!existing.entrepriseReferentielId) {
-      await prisma.contact.update({
-        where: { id: existing.id },
-        data: { entrepriseReferentielId: ent.id },
-      });
-    }
-    return { contactId: existing.id, created: false };
-  }
-
-  const copyCoords = opts.copyCoordinates === true;
-
-  const created = await prisma.contact.create({
-    data: {
-      organizationId: opts.organizationId,
-      name: ent.nomLegal,
-      companyName: ent.nomLegal,
-      email: copyCoords ? ent.emailGenerique : null,
-      phone: copyCoords ? ent.telephoneStandard : null,
-      createdVia: opts.createdVia || 'HUNT',
-      entrepriseReferentielId: ent.id,
-      ficheEtat: 'DECOUVERTE',
-      ficheEtatAt: new Date(),
-      ficheData: {
-        identite_entreprise: { nom_legal: ent.nomLegal },
-        source_decouverte: {
-          source: 'referentiel',
-          url: ent.siteWeb,
-          at: new Date().toISOString(),
-        },
-        secteur_declare: ent.secteur,
-        zone_geographique: ent.zoneGeographique,
-        critere_de_match: 'referentiel_icp',
-      } as object,
-    },
-  });
-  return { contactId: created.id, created: true };
+  throw new Error('REFERENTIEL_TENANT_LINK_DISABLED');
 }
 
-export async function ingestPublicCompanyFromHunt(hit: {
+/**
+ * @deprecated Hunt n’écrit plus dans le catalogue partagé.
+ */
+export async function ingestPublicCompanyFromHunt(_hit: {
   companyName: string;
   website?: string | null;
   city?: string | null;
@@ -197,22 +54,33 @@ export async function ingestPublicCompanyFromHunt(hit: {
   email?: string | null;
   companySize?: string | null;
 }): Promise<string> {
-  const input: ReferentielUpsertInput = {
-    nomLegal: hit.companyName,
-    siteWeb: hit.website,
-    zoneGeographique: [hit.city, hit.country].filter(Boolean).join(', ') || null,
-    paysImmatriculation: hit.country || null,
-    secteur: hit.industry || null,
-    // Isolation tenant : jamais de coords Hunt dans le pool partagé
+  throw new Error('REFERENTIEL_HUNT_INGEST_DISABLED');
+}
+
+/** Réservé admin / imports officiels sous bypass RLS — pas Hunt. */
+export async function adminUpsertReferentielPublic(input: {
+  nomLegal: string;
+  siteWeb?: string | null;
+  zoneGeographique?: string | null;
+  paysImmatriculation?: string | null;
+  secteur?: string | null;
+  tailleEstimee?: string | null;
+}): Promise<string> {
+  const { upsertEntrepriseReferentiel } = await import('./upsert.js');
+  const r = await upsertEntrepriseReferentiel({
+    nomLegal: input.nomLegal,
+    siteWeb: input.siteWeb,
+    zoneGeographique: input.zoneGeographique,
+    paysImmatriculation: input.paysImmatriculation,
+    secteur: input.secteur,
     telephoneStandard: null,
     emailGenerique: null,
-    tailleEstimee: hit.companySize || null,
+    tailleEstimee: input.tailleEstimee,
     source: {
       type_source: 'annuaire',
-      url: hit.website || null,
+      url: input.siteWeb || null,
       date_collecte: new Date().toISOString(),
     },
-  };
-  const r = await upsertEntrepriseReferentiel(input);
+  });
   return r.id;
 }

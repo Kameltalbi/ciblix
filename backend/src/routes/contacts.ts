@@ -247,7 +247,7 @@ contactsRoutes.get('/:id', async (req: AuthRequest, res: Response, next: NextFun
             ? {
                 siteWeb: contact.entrepriseReferentiel.siteWeb,
                 secteur: contact.entrepriseReferentiel.secteur,
-                sources: contact.entrepriseReferentiel.sources,
+                sources: null,
                 scoreFraicheur: contact.entrepriseReferentiel.scoreFraicheur,
                 scoreConfianceGlobal: contact.entrepriseReferentiel.scoreConfianceGlobal,
                 dateDerniereVerification: contact.entrepriseReferentiel.dateDerniereVerification,

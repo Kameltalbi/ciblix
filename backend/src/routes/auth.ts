@@ -22,8 +22,7 @@ import {
   mintGoogleOAuthState,
 } from '../services/googleLoginOAuth.js';
 import {
-  clearTenantRlsContext,
-  setRlsBypass,
+  withRlsBypass,
 } from '../services/referentiel/tenantIsolation.js';
 
 export const authRoutes = Router();
@@ -31,11 +30,17 @@ export const authRoutes = Router();
 /** Login / register / refresh : lecture users hors contexte tenant. */
 authRoutes.use(async (_req, res, next) => {
   try {
-    await setRlsBypass(true);
-    res.on('finish', () => {
-      void clearTenantRlsContext().catch(() => undefined);
+    await withRlsBypass(async () => {
+      await new Promise<void>((resolve, reject) => {
+        try {
+          next();
+          res.on('finish', () => resolve());
+          res.on('close', () => resolve());
+        } catch (e) {
+          reject(e);
+        }
+      });
     });
-    next();
   } catch (err) {
     next(err);
   }

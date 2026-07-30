@@ -13,10 +13,8 @@ let lastWeeklyRetry = 0;
 
 async function tickOnce(): Promise<void> {
   bumpHeartbeat('agentMemory');
-  const { setRlsBypass, clearTenantRlsContext } = await import('../referentiel/tenantIsolation.js');
-  try {
-    await setRlsBypass(true);
-
+  const { withRlsBypass } = await import('../referentiel/tenantIsolation.js');
+  await withRlsBypass(async () => {
     try {
       await processDueResolutions(30);
     } catch (err) {
@@ -87,9 +85,7 @@ async function tickOnce(): Promise<void> {
         console.warn('[agent-memory-scheduler] weekly retry', err);
       }
     }
-  } finally {
-    await clearTenantRlsContext().catch(() => undefined);
-  }
+  });
 }
 
 export function startAgentMemoryScheduler(): void {

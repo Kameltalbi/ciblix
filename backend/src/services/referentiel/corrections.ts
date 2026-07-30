@@ -5,8 +5,6 @@ const MAX_REPORTS_PER_DAY = 20;
 
 const CORRECTABLE_FIELDS = new Set([
   'adresseSiege',
-  'telephoneStandard',
-  'emailGenerique',
   'secteur',
   'siteWeb',
   'zoneGeographique',

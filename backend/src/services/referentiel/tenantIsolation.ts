@@ -1,19 +1,19 @@
 /**
  * Isolation multi-tenant Postgres RLS.
  *
- * - Fail-closed : sans `app.current_tenant_id` et sans bypass → 0 ligne.
- * - Bypass explicite : migrations, login, SUPERADMIN, workers (qui filtrent déjà en app).
- * - SET LOCAL (is_local=true) dès qu’on est dans une transaction ; sinon session + clear en fin de requête.
+ * - Fail-closed DB : sans tenant et sans bypass → 0 ligne.
+ * - Contexte requête : AsyncLocalStorage (`rlsContext`) + SET LOCAL par query (prisma.ts).
+ * - Helpers legacy set_* conservés pour scripts / chemins sans ALS.
  */
 
 import { prisma } from '../../db/prisma.js';
+import { runWithRlsContextAsync } from '../../db/rlsContext.js';
 
 export async function setTenantRlsContext(organizationId: string): Promise<void> {
   const org = organizationId.trim();
   if (!org) {
     throw new Error('TENANT_RLS_MISSING_ORG');
   }
-  // Désactive le bypass si on pose un tenant
   await prisma.$executeRawUnsafe(
     `SELECT set_config('app.bypass_rls', 'off', false), set_config('app.current_tenant_id', $1, false)`,
     org
@@ -26,7 +26,7 @@ export async function clearTenantRlsContext(): Promise<void> {
   );
 }
 
-/** Accès cross-tenant contrôlé (login, SUPERADMIN, cron/orchestrateur). */
+/** Accès cross-tenant contrôlé (login, SUPERADMIN, cron claim). */
 export async function setRlsBypass(enabled: boolean): Promise<void> {
   await prisma.$executeRawUnsafe(
     `SELECT set_config('app.bypass_rls', $1, false), set_config('app.current_tenant_id', '', false)`,
@@ -34,21 +34,8 @@ export async function setRlsBypass(enabled: boolean): Promise<void> {
   );
 }
 
-/**
- * Exécute `fn` avec bypass RLS (même connexion / session Prisma).
- * Toujours clear en finally.
- */
 export async function withRlsBypass<T>(fn: () => Promise<T>): Promise<T> {
-  await setRlsBypass(true);
-  try {
-    return await fn();
-  } finally {
-    try {
-      await clearTenantRlsContext();
-    } catch {
-      /* ignore */
-    }
-  }
+  return runWithRlsContextAsync({ type: 'bypass' }, fn);
 }
 
 /**
@@ -60,27 +47,22 @@ export async function withTenantRlsTransaction<T>(
 ): Promise<T> {
   const org = organizationId.trim();
   if (!org) throw new Error('TENANT_RLS_MISSING_ORG');
-  return prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(
-      `SELECT set_config('app.bypass_rls', 'off', true), set_config('app.current_tenant_id', $1, true)`,
-      org
-    );
-    return fn(tx);
-  });
+  return runWithRlsContextAsync({ type: 'tenant', organizationId: org }, async () =>
+    prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('app.bypass_rls', 'off', true), set_config('app.current_tenant_id', $1, true)`,
+        org
+      );
+      return fn(tx);
+    })
+  );
 }
 
-/** @deprecated alias — préférer setTenantRlsContext */
+/** Exécute sous contexte tenant ALS (SET LOCAL auto via prisma extends). */
 export async function withTenantRls<T>(organizationId: string, fn: () => Promise<T>): Promise<T> {
-  await setTenantRlsContext(organizationId);
-  try {
-    return await fn();
-  } finally {
-    try {
-      await clearTenantRlsContext();
-    } catch {
-      /* ignore */
-    }
-  }
+  const org = organizationId.trim();
+  if (!org) throw new Error('TENANT_RLS_MISSING_ORG');
+  return runWithRlsContextAsync({ type: 'tenant', organizationId: org }, fn);
 }
 
 /** Test helper : toute query Contact DOIT filtrer organizationId. */
@@ -97,15 +79,12 @@ export async function assertContactIsolated(opts: {
   attackerOrgId: string;
   victimContactId: string;
 }): Promise<void> {
-  await setTenantRlsContext(opts.attackerOrgId);
-  try {
+  await withTenantRls(opts.attackerOrgId, async () => {
     const leak = await prisma.contact.findFirst({
       where: { id: opts.victimContactId },
     });
     if (leak) {
       throw new Error('TENANT_ISOLATION_BREACH — contact visible hors organisation');
     }
-  } finally {
-    await clearTenantRlsContext();
-  }
+  });
 }
