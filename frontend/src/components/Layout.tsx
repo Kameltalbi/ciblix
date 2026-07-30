@@ -10,15 +10,11 @@ import {
   Globe,
   MessageSquare,
   Crosshair,
-  Radar,
-  Search,
-  Bot,
   Plug,
   Target,
   PanelLeftClose,
   PanelLeft,
   Sun,
-  Link2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -44,29 +40,24 @@ type NavItem = {
 };
 
 /**
- * Sidebar optimisée — Overview · Agents · Pipeline · Workspace
- * Compte une seule fois en bas ; badge Mission ; collapse manuel.
+ * Sidebar simplifiée — Overview · Commercial (Prospecteur + Contacts) · Workspace.
+ * Scout / Analyste / Copilot / LinkedIn retirés du menu (logique utile → fiche contact).
  */
 const NAV_STRUCTURE: NavItem[] = [
   { to: '/aujourdhui', labelKey: 'nav.today', icon: Sun, page: 'aujourdhui', section: 'OVERVIEW' },
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, page: 'dashboard', section: 'OVERVIEW' },
   { to: '/mission', labelKey: 'nav.mission', icon: Target, page: 'mission', section: 'OVERVIEW', missionBadge: true },
-  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'AGENTS' },
-  { to: '/agents/scout-ai', labelKey: 'nav.agentScout', icon: Radar, page: 'scout-ai', section: 'AGENTS' },
-  { to: '/agents/analyste-ai', labelKey: 'nav.agentAnalyste', icon: Search, page: 'analyste-ai', section: 'AGENTS' },
-  { to: '/ai-assistant', labelKey: 'nav.agentCopilot', icon: Bot, page: 'ai-assistant', section: 'AGENTS' },
-  { to: '/agents/connect-ai', labelKey: 'nav.agentConnect', icon: Link2, page: 'connect-ai', section: 'AGENTS' },
+  { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'PIPELINE' },
   { to: '/contacts', labelKey: 'nav.contacts', icon: Users, page: 'contacts', section: 'PIPELINE' },
   { to: '/connecteurs', labelKey: 'nav.connectors', icon: Plug, page: 'connectors', section: 'WORKSPACE' },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings, page: 'settings', section: 'WORKSPACE' },
   { to: '/support', labelKey: 'nav.support', icon: MessageSquare, page: 'support', section: 'WORKSPACE' },
 ];
 
-const SIDEBAR_SECTION_ORDER = ['OVERVIEW', 'AGENTS', 'PIPELINE', 'WORKSPACE'] as const;
+const SIDEBAR_SECTION_ORDER = ['OVERVIEW', 'PIPELINE', 'WORKSPACE'] as const;
 
 const SECTION_LABEL_KEYS: Record<string, string> = {
   OVERVIEW: 'nav.sectionOverview',
-  AGENTS: 'nav.sectionAgents',
   PIPELINE: 'nav.sectionPipeline',
   WORKSPACE: 'nav.sectionWorkspace',
 };
@@ -205,10 +196,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const PAGE_TO_SLUG: Record<string, string> = {
     'prospection-ia': 'hunt-ai',
-    contacts: 'copilot-ia',
-    'ai-assistant': 'copilot-ia',
-    'scout-ai': 'scout-ai',
-    'analyste-ai': 'analyste-ai',
   };
 
   const filteredNav = useMemo(() => {

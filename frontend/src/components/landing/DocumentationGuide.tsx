@@ -7,10 +7,7 @@ import {
   CheckCircle2,
   Crosshair,
   Link2,
-  Mail,
   Mic,
-  Radar,
-  Search,
   Settings,
   Shield,
   Sun,
@@ -290,46 +287,28 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'agents',
-    title: 'Les agents IA',
+    title: 'Prospecteur & fiche client',
     icon: Bot,
     content: (
       <div className="space-y-4">
         {[
           {
             Icon: Crosshair,
-            name: 'Prospecteur (Hunt)',
+            name: 'Prospecteur',
             path: '/prospection-ia',
-            role: 'Trouve des entreprises qui correspondent à votre cible. Qualifie et ajoute au pipeline.',
+            role: 'Trouve des entreprises qui correspondent à votre cible. Qualifie et ajoute au pipeline (Contacts).',
           },
           {
-            Icon: Radar,
-            name: 'Scout',
-            path: '/agents/scout-ai',
-            role: 'Veille : appels d’offres, actualités, événements. Alertes sur les comptes suivis.',
+            Icon: Users,
+            name: 'Fiche contact (le centre)',
+            path: '/contacts',
+            role: 'Tout converge ici : enrichissement web, actualités, salons, interviews, message, dictée après appel. Les recherches périodiques mettent la fiche à jour.',
           },
           {
-            Icon: Search,
-            name: 'Analyste',
-            path: '/agents/analyste-ai',
-            role: 'Analyse ponctuelle d’une entreprise : activité, décideurs, angles d’approche.',
-          },
-          {
-            Icon: Bot,
-            name: 'Copilot',
-            path: '/ai-assistant',
-            role: 'Chat IA : priorités, reformulation, analyse d’un échange collé ou audio.',
-          },
-          {
-            Icon: Link2,
-            name: 'LinkedIn',
-            path: '/agents/connect-ai',
-            role: 'Message préparé sur la fiche → copier-coller sur LinkedIn. Extension Chrome optionnelle.',
-          },
-          {
-            Icon: Mail,
-            name: 'Gmail',
-            path: '/agents/gmail-ai',
-            role: 'Connecte votre boîte, propose des brouillons. Jamais d’envoi automatique.',
+            Icon: Mic,
+            name: 'Scribe (sur la fiche)',
+            path: '/contacts/:id',
+            role: 'Après un échange : dictez 15 secondes. En continu : le système relance des recherches sur le client pour enrichir la fiche.',
           },
         ].map(({ Icon, name, path, role }) => (
           <div key={name} className="flex gap-3 rounded-xl border border-neutral-200 px-4 py-3">
@@ -344,8 +323,8 @@ const SECTIONS: Section[] = [
           </div>
         ))}
         <p className="text-sm text-muted-foreground">
-          Les agents visibles dépendent de votre <strong className="text-foreground">formule</strong>{' '}
-          (Découverte, Équipe, Direction). Le menu s’adapte automatiquement.
+          Scout, Analyste, Assistant et LinkedIn ne sont plus dans le menu — leur valeur utile
+          alimente la <strong className="text-foreground">fiche contact</strong>.
         </p>
       </div>
     ),
