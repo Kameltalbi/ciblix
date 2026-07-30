@@ -36,8 +36,7 @@ type NavItem = {
 };
 
 /**
- * Sidebar minimale — Prospecteur, Contacts, Mon offre, Paramètres.
- * Aujourd’hui / Performance / Connecteurs / Support retirés du menu.
+ * Sidebar — Intelligence commerciale : Prospecteur, Entreprises (dossiers), Mon offre, Paramètres.
  */
 const NAV_STRUCTURE: NavItem[] = [
   { to: '/prospection-ia', labelKey: 'nav.agentHunt', icon: Crosshair, page: 'prospection-ia', section: 'MAIN' },
@@ -455,7 +454,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div
             className={cn(
               'mx-auto w-full',
-              location.pathname.startsWith('/mission')
+              location.pathname.startsWith('/mission') ||
+              location.pathname.startsWith('/contacts')
                 ? 'max-w-none px-5 py-5 md:px-8 md:py-6'
                 : 'max-w-[1400px] px-5 py-6 md:px-8 md:py-8'
             )}

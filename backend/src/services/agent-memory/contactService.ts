@@ -242,6 +242,7 @@ export async function getContactById(organizationId: string, contactId: string) 
           tailleEstimee: true,
           statutActivite: true,
           scoreFraicheur: true,
+          scoreConfianceGlobal: true,
           dateDerniereVerification: true,
           sources: true,
         },

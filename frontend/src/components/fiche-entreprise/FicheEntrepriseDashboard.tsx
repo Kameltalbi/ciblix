@@ -29,12 +29,17 @@ import {
 } from './ficheDisplay';
 import { mailtoLink, mapsLink, siteHref, waLink } from './ficheLinks';
 import type { FicheEntrepriseProps } from './FicheEntreprise';
+import {
+  DossierFilDuJourPanel,
+  DossierManquesPanel,
+  DossierQualitePanel,
+} from './DossierIntelligencePanels';
 
 export type FicheEntrepriseDashboardProps = FicheEntrepriseProps & {
   contactName?: string | null;
 };
 
-type TabId = 'apercu' | 'decideurs' | 'actualites' | 'historique' | 'fichiers' | 'notes';
+type TabId = 'apercu' | 'decideurs' | 'actualites' | 'historique' | 'qualite';
 
 type DecideurRow = {
   id: string;
@@ -48,12 +53,11 @@ type DecideurRow = {
 };
 
 const TABS: { id: TabId; label: string; count?: number }[] = [
-  { id: 'apercu', label: 'Aperçu' },
+  { id: 'apercu', label: 'Dossier' },
   { id: 'decideurs', label: 'Décideurs' },
   { id: 'actualites', label: 'Actualités' },
-  { id: 'historique', label: 'Historique' },
-  { id: 'fichiers', label: 'Fichiers' },
-  { id: 'notes', label: 'Notes' },
+  { id: 'historique', label: 'Évolutions' },
+  { id: 'qualite', label: 'Qualité' },
 ];
 
 function formatWhen(iso: string): string {
@@ -92,17 +96,6 @@ function scoreLabel(score: number): string {
   if (score >= 70) return 'Prospect pertinent';
   if (score >= 50) return 'Prospect à qualifier';
   return 'Prospect faible';
-}
-
-function deriveDimensions(score: number) {
-  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
-  return [
-    { label: 'Adéquation ICP', value: clamp(score + 1) },
-    { label: 'Engagement digital', value: clamp(score - 4) },
-    { label: 'Potentiel commercial', value: clamp(score - 2) },
-    { label: 'Urgence / Timing', value: clamp(score + 3) },
-    { label: 'Accessibilité', value: clamp(score - 14) },
-  ];
 }
 
 function splitAngles(text?: string | null): string[] {
@@ -185,6 +178,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
     senderHints,
     dictationPrompt,
     onDismissDictationPrompt,
+    intelligence,
     className,
   } = props;
 
@@ -196,7 +190,6 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
 
   const score = typeof scoreFit === 'number' ? Math.round(scoreFit) : null;
   const stars = score != null ? scoreStars(score) : null;
-  const dimensions = score != null ? deriveDimensions(score) : [];
 
   const sortedHisto = useMemo(() => {
     return [...(historique || [])].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -246,7 +239,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
   const resumeIa =
     [raisonDuScore, besoinDetecte].filter(Boolean).join(' ') ||
     pourquoi ||
-    'Analyse en cours — les agents Ciblix enrichissent cette fiche.';
+    'Le Prospecteur a ouvert ce dossier. Le Scribe l’enrichit automatiquement.';
 
   const angles = splitAngles(raisonDuScore || besoinDetecte);
   const whyItems = useMemo(() => {
@@ -638,7 +631,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
 
           {/* Colonne centrale — qualification */}
           <div className="space-y-4 xl:col-span-4">
-            <Panel title="Pourquoi contacter aujourd'hui ?">
+            <Panel title="Pourquoi agir maintenant ?">
               {whyItems.length ? (
                 <ul className="space-y-2.5">
                   {whyItems.map((item) => (
@@ -650,13 +643,17 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                 </ul>
               ) : (
                 <p className="text-sm text-neutral-500">
-                  {pourquoi || 'En attente de signaux ou d’interactions.'}
+                  {pourquoi || 'Le Scribe enrichit ce dossier — les signaux apparaîtront ici.'}
                 </p>
               )}
             </Panel>
 
-            {score != null ? (
-              <Panel title="Score détaillé">
+            {intelligence ? <DossierFilDuJourPanel intelligence={intelligence} /> : null}
+
+            {intelligence ? (
+              <DossierQualitePanel intelligence={intelligence} contactId={contactId} />
+            ) : score != null ? (
+              <Panel title="Potentiel commercial">
                 <div className="flex items-center gap-4">
                   <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
                     <svg className="h-24 w-24 -rotate-90" viewBox="0 0 36 36">
@@ -674,22 +671,7 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
                     </svg>
                     <span className="absolute text-lg font-semibold text-neutral-900">{score}</span>
                   </div>
-                  <div className="min-w-0 flex-1 space-y-2.5">
-                    {dimensions.map((d) => (
-                      <div key={d.label}>
-                        <div className="mb-1 flex justify-between text-xs">
-                          <span className="text-neutral-600">{d.label}</span>
-                          <span className="font-medium text-neutral-800">{d.value}/100</span>
-                        </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
-                          <div
-                            className="h-full rounded-full bg-[#016AEB]"
-                            style={{ width: `${d.value}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm text-neutral-600">{scoreLabel(score)}</p>
                 </div>
               </Panel>
             ) : null}
@@ -705,8 +687,9 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
             </Panel>
           </div>
 
-          {/* Colonne droite — entreprise & actions */}
+          {/* Colonne droite — entreprise & intelligence */}
           <div className="space-y-4 xl:col-span-4">
+            {intelligence ? <DossierManquesPanel intelligence={intelligence} /> : null}
             <Panel title="Informations entreprise" icon={<Building2 size={16} className="text-neutral-500" />}>
               <dl className="space-y-2.5 text-sm">
                 <InfoRow label="Industrie" value={secteur} />
@@ -925,9 +908,10 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
       ) : null}
 
       {tab === 'historique' ? (
-        <div className="mt-5 max-w-2xl">
+        <div className="mt-5 max-w-2xl space-y-4">
+          {intelligence ? <DossierFilDuJourPanel intelligence={intelligence} /> : null}
           {sortedHisto.length ? (
-            <Panel title="Historique complet">
+            <Panel title="Historique des interactions">
               <ul className="space-y-4">
                 {sortedHisto.map((ix, i) => (
                   <li key={`${ix.at}-${i}`} className="border-b border-neutral-100 pb-4 last:border-0">
@@ -940,20 +924,21 @@ export function FicheEntrepriseDashboard(props: FicheEntrepriseDashboardProps) {
               </ul>
             </Panel>
           ) : (
-            <EmptyTab message="Aucun échange enregistré." />
+            <EmptyTab message="Aucune évolution historisée. Le Scribe consigne ici chaque analyse." />
           )}
         </div>
       ) : null}
 
-      {tab === 'fichiers' || tab === 'notes' ? (
-        <div className="mt-5">
-          <EmptyTab
-            message={
-              tab === 'fichiers'
-                ? 'Aucun fichier attaché à cette fiche.'
-                : 'Aucune note — utilisez « Dicter une note » pour en ajouter.'
-            }
-          />
+      {tab === 'qualite' ? (
+        <div className="mt-5 grid max-w-4xl gap-4 lg:grid-cols-2">
+          {intelligence ? (
+            <>
+              <DossierQualitePanel intelligence={intelligence} contactId={contactId} />
+              <DossierManquesPanel intelligence={intelligence} />
+            </>
+          ) : (
+            <EmptyTab message="Qualité du dossier en cours de calcul…" />
+          )}
         </div>
       ) : null}
     </div>

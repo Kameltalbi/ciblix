@@ -47,6 +47,17 @@ export {
 } from './ficheService.js';
 export { ingestScribeInteraction, enqueueScribeIngest } from './scribeService.js';
 export {
+  enrichScribeContact,
+  pickContactsDueForScribeEnrich,
+  scheduleScribeEnrichJobs,
+} from './scribeEnrichService.js';
+export { buildDossierIntelligence } from './dossierIntelligence.js';
+export type {
+  DossierIntelligence,
+  DossierMissingItem,
+  DossierUpdateItem,
+} from './dossierIntelligence.js';
+export {
   listTodayContacts,
   resurfaceDueRelances,
   isRelanceDue,

@@ -13,6 +13,7 @@ import {
   handleWatchSignals,
 } from './handlers.js';
 import { handleProcessInteraction } from './stateReaction.js';
+import { enrichScribeContact, scheduleScribeEnrichJobs } from '../company-fiche/scribeEnrichService.js';
 import {
   hasMissionLock,
   missionLockKey,
@@ -146,6 +147,19 @@ async function processOneTask(): Promise<boolean> {
       case 'PROCESS_INTERACTION':
         result = await handleProcessInteraction(task);
         break;
+      case 'SCRIBE_ENRICH': {
+        if (!task.contactId) {
+          result = { skipped: true, reason: 'missing_contact' };
+          break;
+        }
+        const enrich = await enrichScribeContact({
+          organizationId: task.organizationId,
+          contactId: task.contactId,
+          triggeredBy: 'orchestrator',
+        });
+        result = { ...enrich };
+        break;
+      }
       default:
         result = { skipped: true, reason: 'unknown_kind' };
     }
@@ -173,6 +187,12 @@ async function tickOnce(): Promise<void> {
     const { bumpHeartbeat } = await import('../../lib/heartbeats.js');
     bumpHeartbeat('agentOrchestrator');
     await scheduleTeamJobs();
+    try {
+      const n = await scheduleScribeEnrichJobs();
+      if (n > 0) console.log(`[agent-orchestrator] scribe enrich enqueued=${n}`);
+    } catch (err) {
+      console.warn('[agent-orchestrator] scribe enrich schedule', err);
+    }
     for (let i = 0; i < MAX_TASKS_PER_TICK; i++) {
       const did = await processOneTask();
       if (!did) break;
@@ -187,7 +207,7 @@ async function tickOnce(): Promise<void> {
 export function startAgentOrchestrator(): void {
   if (intervalId) return;
   console.log(
-    '[agent-orchestrator] actif (tick 60s) — machine à états fiche ; Veilleur = couche transverse'
+    '[agent-orchestrator] actif (tick 60s) — Prospecteur + Scribe continu + Veilleur'
   );
   void tickOnce();
   intervalId = setInterval(() => {

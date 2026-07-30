@@ -2133,6 +2133,8 @@ enum AgentTaskKind {
   PREPARE_OUTREACH
   /// Scribe — structurer une interaction (note / WhatsApp / email / vocal)
   PROCESS_INTERACTION
+  /// Scribe continu — revisite sources publiques, historise (y compris no-op)
+  SCRIBE_ENRICH
 }
 
 enum AgentTaskStatus {

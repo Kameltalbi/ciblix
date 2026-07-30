@@ -64,8 +64,8 @@ export function canAutoTransition(
     // Prospecteur crée toujours en decouverte
     return agent === 'prospecteur' && to === 'decouverte';
   }
-  if (from === to && agent === 'scribe' && (from === 'en_discussion' || from === 'contactee')) {
-    return true; // mise à jour CRM sans changer d’état
+  if (from === to && agent === 'scribe' && !isTerminalEtat(from)) {
+    return true; // enrichissement continu / note sans changer d’état
   }
   // Rédacteur : mise à jour du brouillon sans changer d’état (fiche encore découverte / qualifiée / contactée)
   if (

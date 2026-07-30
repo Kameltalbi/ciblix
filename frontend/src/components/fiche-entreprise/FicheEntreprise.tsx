@@ -92,6 +92,8 @@ export type FicheEntrepriseProps = {
   onOutbound?: (canal: 'appel' | 'whatsapp') => void;
   dictationPrompt?: string | null;
   onDismissDictationPrompt?: () => void;
+  /** Qualité dossier vivant (complétude, fil du jour, manques). */
+  intelligence?: import('./DossierIntelligencePanels').DossierIntelligenceView | null;
   className?: string;
 };
 

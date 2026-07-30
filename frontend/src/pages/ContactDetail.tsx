@@ -12,6 +12,7 @@ import {
 } from '@/components/fiche-entreprise/DicterNoteModal';
 import type { FicheEntrepriseDataView } from '@/components/fiche-entreprise/types';
 import { normalizeMessageDraft } from '@/components/fiche-entreprise/ficheDisplay';
+import type { DossierIntelligenceView } from '@/components/fiche-entreprise/DossierIntelligencePanels';
 
 type ContactApi = {
   id: string;
@@ -253,15 +254,17 @@ export function ContactDetail() {
 
   if (isPending) return <p className="p-4 text-sm text-muted-foreground">Chargement…</p>;
   if (error || !contact || !mapped) {
-    return <p className="p-4 text-sm text-destructive">Contact introuvable.</p>;
+    return <p className="p-4 text-sm text-destructive">Dossier introuvable.</p>;
   }
+
+  const intelligence = (data as { intelligence?: DossierIntelligenceView } | undefined)?.intelligence ?? null;
 
   return (
     <div className="relative min-h-[70vh]">
       <div className="mx-auto mb-4 flex max-w-7xl items-center gap-2 px-1">
         <Link to="/contacts">
           <Button variant="ghost" size="sm" className="h-10 gap-1.5 px-2">
-            <ArrowLeft size={14} /> Retour
+            <ArrowLeft size={14} /> Entreprises
           </Button>
         </Link>
       </div>
@@ -270,6 +273,7 @@ export function ContactDetail() {
         contactId={contact.id}
         contactName={contact.name}
         {...mapped}
+        intelligence={intelligence}
         messagePending={reprendre.isPending}
         messageSavePending={saveMessage.isPending}
         messageError={messageError}

@@ -322,6 +322,28 @@ agentTeamRoutes.post('/scribe/ingest', async (req: AuthRequest, res, next) => {
   }
 });
 
+/** Scribe continu — force une ré-analyse des sources publiques pour un dossier. */
+agentTeamRoutes.post('/scribe/enrich', async (req: AuthRequest, res, next) => {
+  try {
+    const contactId = z.string().min(1).parse(req.body?.contactId);
+    const contact = await prisma.contact.findFirst({
+      where: { id: contactId, organizationId: req.organizationId!, erasedAt: null },
+      select: { id: true },
+    });
+    if (!contact) return res.status(404).json({ error: 'Dossier introuvable' });
+
+    const { enrichScribeContact } = await import('../services/company-fiche/scribeEnrichService.js');
+    const result = await enrichScribeContact({
+      organizationId: req.organizationId!,
+      contactId,
+      triggeredBy: 'manual',
+    });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 /** File « En attente de vous » */
 agentTeamRoutes.get('/attente-humain', async (req: AuthRequest, res, next) => {
   try {

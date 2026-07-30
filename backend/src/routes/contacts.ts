@@ -232,13 +232,32 @@ contactsRoutes.get('/:id', async (req: AuthRequest, res: Response, next: NextFun
     const contact = await getContactById(req.organizationId!, contactId);
     if (!contact) return res.status(404).json({ error: 'Contact introuvable' });
 
-    const [events, pipeline, suggestions] = await Promise.all([
+    const [events, pipeline, suggestions, intelligence] = await Promise.all([
       listEventsForContact(req.organizationId!, contactId, { take: 50 }),
       getPipelineStatusExplanation(contactId, req.organizationId!),
       listSuggestionsForContact(req.organizationId!, contactId, 'PENDING'),
+      import('../services/company-fiche/dossierIntelligence.js').then(({ buildDossierIntelligence }) =>
+        buildDossierIntelligence({
+          organizationId: req.organizationId!,
+          contactId,
+          ficheData: contact.ficheData,
+          email: contact.email,
+          phone: contact.phone,
+          referentiel: contact.entrepriseReferentiel
+            ? {
+                siteWeb: contact.entrepriseReferentiel.siteWeb,
+                secteur: contact.entrepriseReferentiel.secteur,
+                sources: contact.entrepriseReferentiel.sources,
+                scoreFraicheur: contact.entrepriseReferentiel.scoreFraicheur,
+                scoreConfianceGlobal: contact.entrepriseReferentiel.scoreConfianceGlobal,
+                dateDerniereVerification: contact.entrepriseReferentiel.dateDerniereVerification,
+              }
+            : null,
+        })
+      ),
     ]);
 
-    res.json({ contact, pipeline, events: events.items, suggestions });
+    res.json({ contact, pipeline, events: events.items, suggestions, intelligence });
   } catch (err) {
     next(err);
   }
