@@ -183,7 +183,11 @@ async function tickOnce(): Promise<void> {
   if (process.env.AGENT_ORCHESTRATOR_DISABLED === '1') return;
   if (running) return;
   running = true;
+  const { setRlsBypass, clearTenantRlsContext } = await import(
+    '../referentiel/tenantIsolation.js'
+  );
   try {
+    await setRlsBypass(true);
     const { bumpHeartbeat } = await import('../../lib/heartbeats.js');
     bumpHeartbeat('agentOrchestrator');
     await scheduleTeamJobs();
@@ -200,6 +204,7 @@ async function tickOnce(): Promise<void> {
   } catch (err) {
     console.warn('[agent-orchestrator] tick', err);
   } finally {
+    await clearTenantRlsContext().catch(() => undefined);
     running = false;
   }
 }

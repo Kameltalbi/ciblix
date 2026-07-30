@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db/prisma.js';
-import { setTenantRlsContext } from '../services/referentiel/tenantIsolation.js';
+import {
+  clearTenantRlsContext,
+  setRlsBypass,
+  setTenantRlsContext,
+} from '../services/referentiel/tenantIsolation.js';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -13,6 +17,14 @@ export interface AuthRequest extends Request {
     role: string;
     organizationId: string;
   };
+}
+
+function attachRlsCleanup(res: Response): void {
+  if ((res as Response & { __rlsCleanup?: boolean }).__rlsCleanup) return;
+  (res as Response & { __rlsCleanup?: boolean }).__rlsCleanup = true;
+  res.on('finish', () => {
+    void clearTenantRlsContext().catch(() => undefined);
+  });
 }
 
 async function loadUserWithOrg(userId: string) {
@@ -46,13 +58,17 @@ const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     req.userId = decoded.userId;
 
+    // Lecture user avant contexte tenant → bypass temporaire
+    await setRlsBypass(true);
     const user = await loadUserWithOrg(decoded.userId);
 
     if (!user) {
+      await clearTenantRlsContext().catch(() => undefined);
       return res.status(401).json({ error: 'Utilisateur introuvable' });
     }
 
     if (isOrgSuspended(user)) {
+      await clearTenantRlsContext().catch(() => undefined);
       return res.status(403).json({
         error: 'Organisation suspendue. Contactez le support.',
         code: 'ORGANIZATION_SUSPENDED',
@@ -67,10 +83,21 @@ const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
       role: user.role,
       organizationId: user.organizationId,
     };
-    // Filet RLS Postgres — en plus du filtre organizationId applicatif
-    await setTenantRlsContext(user.organizationId);
+
+    attachRlsCleanup(res);
+
+    // SUPERADMIN : bypass contrôlé (APIs cross-org). Autres : tenant strict.
+    if (user.role === 'SUPERADMIN') {
+      await setRlsBypass(true);
+    } else {
+      await setTenantRlsContext(user.organizationId);
+    }
     next();
-  } catch {
+  } catch (err) {
+    await clearTenantRlsContext().catch(() => undefined);
+    if (err instanceof Error && err.message === 'TENANT_RLS_MISSING_ORG') {
+      return res.status(500).json({ error: 'Isolation tenant indisponible' });
+    }
     return res.status(401).json({ error: 'Token invalide ou expiré' });
   }
 };
@@ -84,8 +111,12 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
   const token = authHeader.substring(7);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    await setRlsBypass(true);
     const user = await loadUserWithOrg(decoded.userId);
-    if (!user || isOrgSuspended(user)) return next();
+    if (!user || isOrgSuspended(user)) {
+      await clearTenantRlsContext().catch(() => undefined);
+      return next();
+    }
     req.userId = user.id;
     req.organizationId = user.organizationId;
     req.user = {
@@ -95,8 +126,14 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
       role: user.role,
       organizationId: user.organizationId,
     };
+    attachRlsCleanup(res);
+    if (user.role === 'SUPERADMIN') {
+      await setRlsBypass(true);
+    } else {
+      await setTenantRlsContext(user.organizationId);
+    }
   } catch {
-    // Jeton expiré ou invalide : route publique, on ignore.
+    await clearTenantRlsContext().catch(() => undefined);
   }
   next();
 };

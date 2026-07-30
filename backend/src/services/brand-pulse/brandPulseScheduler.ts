@@ -124,9 +124,15 @@ async function tickAutoTopics(): Promise<void> {
 
 async function tickOnce(): Promise<void> {
   if (process.env.BRAND_PULSE_SCHEDULER_DISABLED === '1') return;
-  await tickScheduledPublish();
-  await tickSeoImpact();
-  await tickAutoTopics();
+  const { setRlsBypass, clearTenantRlsContext } = await import('../referentiel/tenantIsolation.js');
+  try {
+    await setRlsBypass(true);
+    await tickScheduledPublish();
+    await tickSeoImpact();
+    await tickAutoTopics();
+  } finally {
+    await clearTenantRlsContext().catch(() => undefined);
+  }
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null;

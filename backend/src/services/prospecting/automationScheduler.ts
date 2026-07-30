@@ -23,63 +23,74 @@ async function tickOnce(): Promise<void> {
     return;
   }
 
-  const now = new Date();
-  const jobs = await prisma.prospectingAutomation.findMany({
-    where: {
-      active: true,
-      nextRunAt: { lte: now },
-      organization: {
-        suspended: false,
+  const { setRlsBypass, clearTenantRlsContext } = await import('../referentiel/tenantIsolation.js');
+  try {
+    await setRlsBypass(true);
+  } catch (err) {
+    console.warn('[prospecting-automation] rls bypass', err);
+  }
+
+  try {
+    const now = new Date();
+    const jobs = await prisma.prospectingAutomation.findMany({
+      where: {
+        active: true,
+        nextRunAt: { lte: now },
+        organization: {
+          suspended: false,
+        },
       },
-    },
-    take: 50,
-    orderBy: { nextRunAt: 'asc' },
-  });
+      take: 50,
+      orderBy: { nextRunAt: 'asc' },
+    });
 
-  for (const job of jobs) {
-    if (RUN_LOCK.has(job.id)) continue;
-    RUN_LOCK.add(job.id);
-    try {
-      const criteria = job.criteria as unknown as CompanySearchCriteria;
-      const imp = await importProspectsFromSearch(job.organizationId, criteria, {
-        refresh: job.refreshCache,
-        importMax: job.maxNewPerRun,
-      });
+    for (const job of jobs) {
+      if (RUN_LOCK.has(job.id)) continue;
+      RUN_LOCK.add(job.id);
+      try {
+        const criteria = job.criteria as unknown as CompanySearchCriteria;
+        const imp = await importProspectsFromSearch(job.organizationId, criteria, {
+          refresh: job.refreshCache,
+          importMax: job.maxNewPerRun,
+        });
 
-      let qualifiedTotal = 0;
-      if (job.qualifyAfterSearch && imp.count > 0) {
-        const { qualifiedCount } = await qualifyFoundBatchForOrganization(
-          job.organizationId,
-          Math.min(120, Math.max(10, job.maxNewPerRun))
-        );
-        qualifiedTotal = qualifiedCount;
+        let qualifiedTotal = 0;
+        if (job.qualifyAfterSearch && imp.count > 0) {
+          const { qualifiedCount } = await qualifyFoundBatchForOrganization(
+            job.organizationId,
+            Math.min(120, Math.max(10, job.maxNewPerRun))
+          );
+          qualifiedTotal = qualifiedCount;
+        }
+
+        const next = scheduleNextFrom(new Date(), job.intervalHours);
+        await prisma.prospectingAutomation.update({
+          where: { id: job.id },
+          data: {
+            lastRunAt: new Date(),
+            lastRunImported: imp.count,
+            lastRunQualified: job.qualifyAfterSearch ? qualifiedTotal : null,
+            lastRunError: null,
+            nextRunAt: next,
+          },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error('[prospecting-automation]', job.organizationId, msg);
+        await prisma.prospectingAutomation.update({
+          where: { id: job.id },
+          data: {
+            lastRunError: msg.slice(0, 4000),
+            lastRunAt: new Date(),
+            nextRunAt: scheduleNextFrom(new Date(), job.intervalHours),
+          },
+        });
+      } finally {
+        RUN_LOCK.delete(job.id);
       }
-
-      const next = scheduleNextFrom(new Date(), job.intervalHours);
-      await prisma.prospectingAutomation.update({
-        where: { id: job.id },
-        data: {
-          lastRunAt: new Date(),
-          lastRunImported: imp.count,
-          lastRunQualified: job.qualifyAfterSearch ? qualifiedTotal : null,
-          lastRunError: null,
-          nextRunAt: next,
-        },
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('[prospecting-automation]', job.organizationId, msg);
-      await prisma.prospectingAutomation.update({
-        where: { id: job.id },
-        data: {
-          lastRunError: msg.slice(0, 4000),
-          lastRunAt: new Date(),
-          nextRunAt: scheduleNextFrom(new Date(), job.intervalHours),
-        },
-      });
-    } finally {
-      RUN_LOCK.delete(job.id);
     }
+  } finally {
+    await clearTenantRlsContext().catch(() => undefined);
   }
 }
 

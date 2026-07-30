@@ -18,7 +18,11 @@ export {
 } from './corrections.js';
 export {
   setTenantRlsContext,
+  clearTenantRlsContext,
+  setRlsBypass,
+  withRlsBypass,
   withTenantRls,
+  withTenantRlsTransaction,
   assertTenantFilterPresent,
   assertContactIsolated,
 } from './tenantIsolation.js';

@@ -9,7 +9,9 @@ let running = false;
 async function processDueProfiles(): Promise<void> {
   if (running) return;
   running = true;
+  const { setRlsBypass, clearTenantRlsContext } = await import('../referentiel/tenantIsolation.js');
   try {
+    await setRlsBypass(true);
     const profiles = await prisma.scoutProfile.findMany({
       where: {
         autoScanEnabled: true,
@@ -58,6 +60,7 @@ async function processDueProfiles(): Promise<void> {
   } catch (err) {
     console.warn('[scout-scheduler] tick failed', err);
   } finally {
+    await clearTenantRlsContext().catch(() => undefined);
     running = false;
   }
 }

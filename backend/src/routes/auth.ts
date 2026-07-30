@@ -21,8 +21,25 @@ import {
   fetchGoogleOidUserProfile,
   mintGoogleOAuthState,
 } from '../services/googleLoginOAuth.js';
+import {
+  clearTenantRlsContext,
+  setRlsBypass,
+} from '../services/referentiel/tenantIsolation.js';
 
 export const authRoutes = Router();
+
+/** Login / register / refresh : lecture users hors contexte tenant. */
+authRoutes.use(async (_req, res, next) => {
+  try {
+    await setRlsBypass(true);
+    res.on('finish', () => {
+      void clearTenantRlsContext().catch(() => undefined);
+    });
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 function isJwtClientError(e: unknown): e is jwt.JsonWebTokenError {
   return e instanceof jwt.JsonWebTokenError;
