@@ -990,23 +990,15 @@ export function ProspectionIA() {
             Recharger depuis Mission
           </Button>
           </div>
-          {searchMutation.isSuccess && skippedExisting > 0 ? (
+          {searchMutation.isSuccess && results.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              {skippedExisting} entreprise{skippedExisting > 1 ? 's' : ''} déjà connue
-              {skippedExisting > 1 ? 's' : ''} masquée{skippedExisting > 1 ? 's' : ''} — voir{' '}
-              <Link to="/all-prospects" className="font-medium text-primary underline-offset-2 hover:underline">
-                Tous les prospects IA
-              </Link>
-              .
+              Aucune entreprise trouvée pour ces critères. Élargissez secteur / ville ou mots-clés.
             </p>
           ) : null}
-          {searchMutation.isSuccess && results.length === 0 && skippedExisting === 0 ? (
+          {searchMutation.isSuccess && results.length > 0 && skippedExisting > 0 ? (
             <p className="text-xs text-muted-foreground">
-              Aucune nouvelle entreprise pour ces critères. Élargissez secteur / ville ou consultez{' '}
-              <Link to="/all-prospects" className="font-medium text-primary underline-offset-2 hover:underline">
-                Tous les prospects IA
-              </Link>
-              .
+              {results.length} résultat{results.length > 1 ? 's' : ''} — dont {skippedExisting} déjà en base
+              (affichés ci-dessous).
             </p>
           ) : null}
         </CardContent>
@@ -1017,7 +1009,7 @@ export function ProspectionIA() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground">
               <Filter size={18} />
-              Nouveaux résultats ({filtered.length}/{results.length})
+              Résultats ({filtered.length}/{results.length})
             </h2>
             {fromCache ? (
               <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">

@@ -78,18 +78,18 @@ async function findExistingProspect(organizationId: string, hit: CompanySearchHi
 export type ImportProspectsResult = {
   providerUsed: string;
   fromCache: boolean;
-  /** Nouvelles fiches créées (affichées dans les résultats). */
+  /** Nouvelles fiches créées. */
   count: number;
-  /** Hits API bruts avant dédup / filtre déjà connus. */
+  /** Hits API bruts avant dédup. */
   rawHits: number;
-  /** Déjà en base — masquées de la liste résultats. */
+  /** Déjà en base (incluses dans prospects, pas masquées). */
   skippedExisting: number;
   prospects: unknown[];
 };
 
 /**
- * Lance une recherche comme l’endpoint HTTP, puis crée des `FOUND` jusqu’à `importMax`.
- * Ne renvoie que les **nouvelles** entreprises (les déjà connues restent dans « Tous les prospects »).
+ * Lance une recherche, upsert les hits, et renvoie TOUTES les entreprises trouvées
+ * (nouvelles + déjà connues) — plus de masquage silencieux.
  */
 export async function importProspectsFromSearch(
   organizationId: string,
@@ -105,9 +105,10 @@ export async function importProspectsFromSearch(
   );
   const empty = emptyWebEnrichment();
 
-  const created: unknown[] = [];
+  const prospects: unknown[] = [];
   const dedupeKeys = new Set<string>();
-  let skippedExisting = 0;
+  let createdCount = 0;
+  let alreadyKnown = 0;
 
   for (const hitBase of hits.slice(0, importMax)) {
     const dedupeKey = dedupeProviderKey(providerUsed, hitBase);
@@ -116,7 +117,8 @@ export async function importProspectsFromSearch(
 
     const existing = await findExistingProspect(organizationId, hitBase, dedupeKey);
     if (existing) {
-      skippedExisting += 1;
+      alreadyKnown += 1;
+      prospects.push(existing);
       continue;
     }
 
@@ -126,7 +128,8 @@ export async function importProspectsFromSearch(
         ...hitToFoundProspectData(hitBase, criteria, dedupeKey, empty),
       },
     });
-    created.push(row);
+    createdCount += 1;
+    prospects.push(row);
 
     if (options?.userId) {
       void recordHuntProspectFound({
@@ -145,11 +148,11 @@ export async function importProspectsFromSearch(
     }
   }
 
-  if (options?.userId && created.length > 0) {
+  if (options?.userId && createdCount > 0) {
     scheduleOrgRescan(organizationId);
   }
 
-  if (created.length > 0) {
+  if (createdCount > 0) {
     void import('../tenant-onboarding/index.js').then(({ markTtfrlFirstLead }) =>
       markTtfrlFirstLead(organizationId)
     );
@@ -158,9 +161,9 @@ export async function importProspectsFromSearch(
   return {
     providerUsed,
     fromCache,
-    count: created.length,
+    count: createdCount,
     rawHits: hits.length,
-    skippedExisting,
-    prospects: created,
+    skippedExisting: alreadyKnown,
+    prospects,
   };
 }
