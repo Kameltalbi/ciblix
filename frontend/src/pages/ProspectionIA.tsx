@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -7,7 +7,6 @@ import {
   Building2,
   Mail,
   MessageCircle,
-  CalendarClock,
   Copy,
   Loader2,
   Flame,
@@ -20,6 +19,7 @@ import {
   ExternalLink,
   Filter,
   Clock,
+  User,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/api';
@@ -32,7 +32,7 @@ import {
   CHANNEL_UNAVAILABLE_HINTS,
   getChannelAvailability,
 } from '@/lib/prospectChannelAvailability';
-
+import { siteHref, whatsappEligiblePhone } from '@/components/fiche-entreprise/ficheLinks';
 type Potential = 'TRES_FORT' | 'MOYEN' | 'FAIBLE' | string | null;
 
 type ProspectingAutomationDTO = {
@@ -88,6 +88,58 @@ function joinUnique(parts: Array<string | null | undefined>, max = 10): string {
     if (out.length >= max) break;
   }
   return out.join(', ');
+}
+
+function displayHost(url?: string | null): string | null {
+  if (!url?.trim()) return null;
+  try {
+    const u = new URL(siteHref(url.trim()));
+    return u.hostname.replace(/^www\./i, '') + (u.pathname !== '/' ? u.pathname.replace(/\/$/, '') : '');
+  } catch {
+    return url.trim();
+  }
+}
+
+/** Ligne coordonnée : valeur cliquable ou « Non trouvé ». */
+function CoordFact({
+  label,
+  value,
+  href,
+  icon,
+}: {
+  label: string;
+  value?: string | null;
+  href?: string | null;
+  icon?: ReactNode;
+}) {
+  const found = Boolean(value?.trim());
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {icon}
+        {label}
+      </span>
+      {found ? (
+        href ? (
+          <a
+            href={href}
+            target={href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') ? '_blank' : undefined}
+            rel="noreferrer"
+            className="truncate text-sm font-medium text-primary hover:underline"
+            title={value!}
+          >
+            {value}
+          </a>
+        ) : (
+          <span className="truncate text-sm font-medium text-foreground" title={value!}>
+            {value}
+          </span>
+        )
+      ) : (
+        <span className="text-sm italic text-muted-foreground">Non trouvé</span>
+      )}
+    </div>
+  );
 }
 
 function asIdealProfiles(raw: unknown): MissionIdealProfile[] {
@@ -588,12 +640,6 @@ export function ProspectionIA() {
       setResults((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'IGNORED' } : p)));
       void qc.invalidateQueries({ queryKey: ['prospecting-dashboard'] });
     },
-  });
-
-  const scheduleMutation = useMutation({
-    mutationFn: ({ id, dayOffset }: { id: string; dayOffset: 3 | 7 | 15 }) =>
-      api.post(`/prospecting/prospects/${id}/schedule-followup`, { dayOffset }).then((r) => r.data),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['calendar'] }),
   });
 
   const saveAutomationMutation = useMutation({
@@ -1111,11 +1157,18 @@ export function ProspectionIA() {
               const pot = potentialLabel(p.potentialLevel);
               const ignored = p.status === 'IGNORED';
               const inPipe = Boolean(p.leadId) || p.status === 'IN_PIPELINE';
-              const emails = [p.email, ...parseEmailList(p.detectedEmails)].filter(Boolean);
-              const mainEmail = emails[0];
+              const emails = [p.email, ...parseEmailList(p.detectedEmails)].filter(Boolean) as string[];
+              const mainEmail = emails[0] || null;
               const techs = techList(p.technologiesDetected);
-              const tel = p.phone?.replace(/\s/g, '') || '';
+              const phoneDisplay = p.phone?.trim() || null;
+              const tel = phoneDisplay?.replace(/\s/g, '') || '';
+              const waPhone = whatsappEligiblePhone(p.phone);
+              const siteUrl = p.website?.trim() || null;
+              const siteLabel = displayHost(siteUrl);
+              const linkedinUrl = p.linkedin?.trim() || null;
               const channels = getChannelAvailability(p);
+              // Pas de champ dirigeant sur AiProspect pour l’instant
+              const dirigeant: string | null = null;
 
               return (
                 <Card
@@ -1189,71 +1242,42 @@ export function ProspectionIA() {
                       <ScoreRing score={p.score} pending={p.status === 'FOUND'} />
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <span title={channels.canCall ? undefined : CHANNEL_UNAVAILABLE_HINTS.call} className="inline-flex">
-                        {channels.canCall ? (
-                          <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
-                            <a href={`tel:${tel}`}>
-                              <Phone size={14} /> Appeler
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1.5 rounded-lg opacity-50 cursor-not-allowed"
-                            disabled
-                          >
-                            <Phone size={14} /> Appeler
-                          </Button>
-                        )}
-                      </span>
-                      {p.website ? (
-                        <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
-                          <a href={p.website} target="_blank" rel="noreferrer">
-                            <Globe size={14} /> Site web
-                          </a>
-                        </Button>
-                      ) : null}
-                      {mainEmail ? (
-                        <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
-                          <a href={`mailto:${mainEmail}`}>
-                            <Mail size={14} /> {mainEmail}
-                          </a>
-                        </Button>
-                      ) : null}
-                      <span title={channels.canLinkedIn ? undefined : CHANNEL_UNAVAILABLE_HINTS.linkedin} className="inline-flex">
-                        {channels.canLinkedIn && p.linkedin ? (
-                          <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
-                            <a href={p.linkedin} target="_blank" rel="noreferrer">
-                              <ExternalLink size={14} /> LinkedIn
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1.5 rounded-lg opacity-50 cursor-not-allowed"
-                            disabled
-                          >
-                            <ExternalLink size={14} /> LinkedIn
-                          </Button>
-                        )}
-                      </span>
-                      {p.facebookUrl ? (
-                        <Button size="sm" variant="ghost" className="rounded-lg px-2 text-xs" asChild>
-                          <a href={p.facebookUrl} target="_blank" rel="noreferrer">
-                            FB
-                          </a>
-                        </Button>
-                      ) : null}
-                      {p.instagramUrl ? (
-                        <Button size="sm" variant="ghost" className="rounded-lg px-2 text-xs" asChild>
-                          <a href={p.instagramUrl} target="_blank" rel="noreferrer">
-                            IG
-                          </a>
-                        </Button>
-                      ) : null}
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <CoordFact
+                        label="Site web"
+                        icon={<Globe size={10} />}
+                        value={siteLabel}
+                        href={siteUrl ? siteHref(siteUrl) : null}
+                      />
+                      <CoordFact
+                        label="Email"
+                        icon={<Mail size={10} />}
+                        value={mainEmail}
+                        href={mainEmail ? `mailto:${mainEmail}` : null}
+                      />
+                      <CoordFact
+                        label="Téléphone"
+                        icon={<Phone size={10} />}
+                        value={phoneDisplay}
+                        href={tel ? `tel:${tel}` : null}
+                      />
+                      <CoordFact
+                        label="WhatsApp"
+                        icon={<MessageCircle size={10} />}
+                        value={waPhone}
+                        href={waPhone ? `https://wa.me/${waPhone.replace(/\D/g, '')}` : null}
+                      />
+                      <CoordFact
+                        label="LinkedIn"
+                        icon={<ExternalLink size={10} />}
+                        value={linkedinUrl ? displayHost(linkedinUrl) || linkedinUrl : null}
+                        href={linkedinUrl || null}
+                      />
+                      <CoordFact
+                        label="Dirigeant"
+                        icon={<User size={10} />}
+                        value={dirigeant}
+                      />
                     </div>
 
                     {p.aiSummary ? (
@@ -1385,32 +1409,23 @@ export function ProspectionIA() {
                               Message LinkedIn
                             </Button>
                           </span>
-                          <span title={channels.canWhatsApp ? undefined : CHANNEL_UNAVAILABLE_HINTS.whatsapp} className="inline-flex">
+                          <span title={waPhone ? undefined : CHANNEL_UNAVAILABLE_HINTS.whatsapp} className="inline-flex">
                             <Button
                               size="sm"
                               variant="outline"
-                              className={cn('rounded-lg gap-1.5', !channels.canWhatsApp && 'opacity-50 cursor-not-allowed')}
-                              disabled={ignored || !channels.canWhatsApp || messageMutation.isPending}
+                              className={cn('rounded-lg gap-1.5', !waPhone && 'opacity-50 cursor-not-allowed')}
+                              disabled={ignored || !waPhone || messageMutation.isPending}
                               onClick={() =>
-                                channels.canWhatsApp &&
+                                waPhone &&
                                 messageMutation.mutate({ id: p.id, messageType: 'WHATSAPP', tone: 'commercial' })
                               }
                             >
-                              <MessageCircle size={14} /> WhatsApp
+                              <MessageCircle size={14} /> WhatsApp{waPhone ? ` · ${waPhone}` : ''}
                             </Button>
                           </span>
                         </>
                       )}
 
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="rounded-lg gap-1.5"
-                        disabled={ignored}
-                        onClick={() => scheduleMutation.mutate({ id: p.id, dayOffset: 7 })}
-                      >
-                        <CalendarClock size={14} /> Relance J+7
-                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -1502,6 +1517,48 @@ export function ProspectionIA() {
           </DialogHeader>
           {fiche.prospect ? (
             <div className="space-y-3 text-sm">
+              {(() => {
+                const fp = fiche.prospect!;
+                const emails = [fp.email, ...parseEmailList(fp.detectedEmails)].filter(Boolean) as string[];
+                const mainEmail = emails[0] || null;
+                const siteUrl = fp.website?.trim() || null;
+                const wa = whatsappEligiblePhone(fp.phone);
+                return (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <CoordFact
+                      label="Site web"
+                      icon={<Globe size={10} />}
+                      value={displayHost(siteUrl)}
+                      href={siteUrl ? siteHref(siteUrl) : null}
+                    />
+                    <CoordFact
+                      label="Email"
+                      icon={<Mail size={10} />}
+                      value={mainEmail}
+                      href={mainEmail ? `mailto:${mainEmail}` : null}
+                    />
+                    <CoordFact
+                      label="Téléphone"
+                      icon={<Phone size={10} />}
+                      value={fp.phone?.trim() || null}
+                      href={fp.phone ? `tel:${fp.phone.replace(/\s/g, '')}` : null}
+                    />
+                    <CoordFact
+                      label="WhatsApp"
+                      icon={<MessageCircle size={10} />}
+                      value={wa}
+                      href={wa ? `https://wa.me/${wa.replace(/\D/g, '')}` : null}
+                    />
+                    <CoordFact
+                      label="LinkedIn"
+                      icon={<ExternalLink size={10} />}
+                      value={fp.linkedin ? displayHost(fp.linkedin) || fp.linkedin : null}
+                      href={fp.linkedin || null}
+                    />
+                    <CoordFact label="Dirigeant" icon={<User size={10} />} value={null} />
+                  </div>
+                );
+              })()}
               <p>
                 <span className="font-semibold">Activité : </span>
                 {fiche.prospect.industry || '—'}
@@ -1509,20 +1566,6 @@ export function ProspectionIA() {
               <p>
                 <span className="font-semibold">Adresse : </span>
                 {[fiche.prospect.city, fiche.prospect.country].filter(Boolean).join(', ') || '—'}
-              </p>
-              <p>
-                <span className="font-semibold">Téléphone : </span>
-                {fiche.prospect.phone || '—'}
-              </p>
-              <p>
-                <span className="font-semibold">Site : </span>
-                {fiche.prospect.website || '—'}
-              </p>
-              <p>
-                <span className="font-semibold">Emails : </span>
-                {[fiche.prospect.email, ...parseEmailList(fiche.prospect.detectedEmails)]
-                  .filter(Boolean)
-                  .join(', ') || '—'}
               </p>
               {fiche.prospect.aiSummary ? (
                 <p>
